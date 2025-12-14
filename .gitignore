@@ -44,7 +44,7 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Generated localization files (run: flutter gen-l10n)
+# Generated localization files (regenerate with: flutter gen-l10n)
 lib/l10n/generated/
 lib/l10n/app_localizations*.dart
 

@@ -5,6 +5,7 @@ import 'l10n/generated/app_localizations.dart';
 
 import 'services/storage_service.dart';
 import 'services/settings_provider.dart';
+import 'services/nutrition_provider.dart';
 import 'theme/app_theme.dart';
 import 'screens/home_screen.dart';
 
@@ -18,6 +19,9 @@ void main() async {
       providers: [
         ChangeNotifierProvider(
           create: (_) => SettingsProvider(storageService),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => NutritionProvider(storageService),
         ),
       ],
       child: const SophisApp(),
