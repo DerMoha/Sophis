@@ -186,7 +186,7 @@ class HomeScreen extends StatelessWidget {
                   child: LinearProgressIndicator(
                     value: (waterTotal / waterGoal).clamp(0, 1),
                     minHeight: 8,
-                    backgroundColor: Colors.blue.withOpacity(0.1),
+                    backgroundColor: Colors.blue.withAlpha(26),
                     valueColor: const AlwaysStoppedAnimation(Colors.blue),
                   ),
                 ),
@@ -219,7 +219,7 @@ class HomeScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: (isOver ? AppTheme.error : AppTheme.success).withOpacity(0.1),
+        color: (isOver ? AppTheme.error : AppTheme.success).withAlpha(26),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
@@ -261,7 +261,7 @@ class HomeScreen extends StatelessWidget {
           child: LinearProgressIndicator(
             value: progress,
             minHeight: 6,
-            backgroundColor: color.withOpacity(0.1),
+            backgroundColor: color.withAlpha(26),
             valueColor: AlwaysStoppedAnimation(color),
           ),
         ),
@@ -274,7 +274,7 @@ class HomeScreen extends StatelessWidget {
       onPressed: () => context.read<NutritionProvider>().addWater(ml),
       style: OutlinedButton.styleFrom(
         foregroundColor: Colors.blue,
-        side: BorderSide(color: Colors.blue.withOpacity(0.3)),
+        side: BorderSide(color: Colors.blue.withAlpha(77)),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       ),
       child: Text(label),
@@ -306,12 +306,12 @@ class HomeScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: AppTheme.accent.withOpacity(0.1),
+                        color: AppTheme.accent.withAlpha(26),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         '${total.toStringAsFixed(0)} kcal',
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: AppTheme.accent,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,

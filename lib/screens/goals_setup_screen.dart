@@ -310,6 +310,7 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
     required void Function(T?) onChanged,
   }) {
     return DropdownButtonFormField<T>(
+      // ignore: deprecated_member_use
       value: value,
       decoration: InputDecoration(labelText: label),
       items: items.map((item) => DropdownMenuItem(
