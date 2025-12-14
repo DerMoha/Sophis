@@ -11,6 +11,7 @@ import 'food_search_screen.dart';
 import 'barcode_scanner_screen.dart';
 import 'weight_tracker_screen.dart';
 import 'recipes_screen.dart';
+import 'ai_food_camera_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -374,12 +375,19 @@ class HomeScreen extends StatelessWidget {
                             MaterialPageRoute(builder: (_) => BarcodeScannerScreen(meal: mealType)),
                           );
                           break;
+                        case 'ai':
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => AIFoodCameraScreen(meal: mealType)),
+                          );
+                          break;
                       }
                     },
                     itemBuilder: (_) => const [
                       PopupMenuItem(value: 'manual', child: Text('Manual entry')),
                       PopupMenuItem(value: 'search', child: Text('Search food')),
                       PopupMenuItem(value: 'barcode', child: Text('Scan barcode')),
+                      PopupMenuItem(value: 'ai', child: Text('📷 AI recognition')),
                     ],
                   ),
                 ],
