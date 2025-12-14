@@ -7,6 +7,10 @@ import '../theme/app_theme.dart';
 import 'goals_setup_screen.dart';
 import 'settings_screen.dart';
 import 'add_food_screen.dart';
+import 'food_search_screen.dart';
+import 'barcode_scanner_screen.dart';
+import 'weight_tracker_screen.dart';
+import 'recipes_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -205,6 +209,36 @@ class HomeScreen extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         
+        // Quick actions
+        Row(
+          children: [
+            Expanded(
+              child: _buildQuickAction(
+                context,
+                icon: Icons.monitor_weight_outlined,
+                label: l10n.weight,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const WeightTrackerScreen()),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildQuickAction(
+                context,
+                icon: Icons.restaurant_menu_outlined,
+                label: l10n.recipes,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const RecipesScreen()),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+        
         // Meals
         _buildMealSection(context, l10n, 'breakfast', l10n.breakfast, Icons.wb_twilight_outlined),
         _buildMealSection(context, l10n, 'lunch', l10n.lunch, Icons.wb_sunny_outlined),
@@ -318,14 +352,35 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-                  IconButton(
+                  PopupMenuButton<String>(
                     icon: const Icon(Icons.add),
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => AddFoodScreen(meal: mealType),
-                      ),
-                    ),
+                    onSelected: (value) {
+                      switch (value) {
+                        case 'manual':
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => AddFoodScreen(meal: mealType)),
+                          );
+                          break;
+                        case 'search':
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => FoodSearchScreen(meal: mealType)),
+                          );
+                          break;
+                        case 'barcode':
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => BarcodeScannerScreen(meal: mealType)),
+                          );
+                          break;
+                      }
+                    },
+                    itemBuilder: (_) => const [
+                      PopupMenuItem(value: 'manual', child: Text('Manual entry')),
+                      PopupMenuItem(value: 'search', child: Text('Search food')),
+                      PopupMenuItem(value: 'barcode', child: Text('Scan barcode')),
+                    ],
                   ),
                 ],
               ),
@@ -371,6 +426,31 @@ class HomeScreen extends StatelessWidget {
                 },
               )),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickAction(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: AppTheme.accent),
+              const SizedBox(width: 8),
+              Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+            ],
+          ),
         ),
       ),
     );
