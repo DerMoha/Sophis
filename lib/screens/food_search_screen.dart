@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../l10n/generated/app_localizations.dart';
@@ -22,15 +23,43 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
   List<FoodItem> _results = [];
   bool _isLoading = false;
   String? _error;
+  Timer? _debounce;
+
+  @override
+  void initState() {
+    super.initState();
+    // Listen to text changes for live search
+    _searchController.addListener(_onSearchChanged);
+  }
 
   @override
   void dispose() {
+    _debounce?.cancel();
+    _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
   }
 
-  Future<void> _search() async {
+  void _onSearchChanged() {
+    // Cancel previous timer
+    _debounce?.cancel();
+    
     final query = _searchController.text.trim();
+    
+    // Start searching after 2+ characters with 300ms debounce
+    if (query.length >= 2) {
+      _debounce = Timer(const Duration(milliseconds: 300), () {
+        _search(query);
+      });
+    } else if (query.isEmpty) {
+      setState(() {
+        _results = [];
+        _error = null;
+      });
+    }
+  }
+
+  Future<void> _search(String query) async {
     if (query.isEmpty) return;
 
     setState(() {
@@ -40,15 +69,20 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
 
     try {
       final results = await _service.search(query);
-      setState(() {
-        _results = results;
-        _isLoading = false;
-      });
+      // Only update if query hasn't changed
+      if (_searchController.text.trim() == query) {
+        setState(() {
+          _results = results;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
+      if (_searchController.text.trim() == query) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -125,14 +159,28 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
             padding: const EdgeInsets.all(16),
             child: TextField(
               controller: _searchController,
+              autofocus: true,
               decoration: InputDecoration(
-                hintText: 'Search OpenFoodFacts...',
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.search),
-                  onPressed: _search,
-                ),
+                hintText: 'Type to search...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _isLoading 
+                    ? const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    : _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _searchController.clear();
+                            },
+                          )
+                        : null,
               ),
-              onSubmitted: (_) => _search(),
             ),
           ),
           if (_isLoading)
