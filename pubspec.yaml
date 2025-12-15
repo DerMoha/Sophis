@@ -22,10 +22,9 @@ dependencies:
   mobile_scanner: ^5.1.1
   http: ^1.2.0
   
-  # Phase 3a: TFLite AI
-  tflite_flutter: ^0.11.0
+  # Phase 3: Gemini Cloud AI
+  google_generative_ai: ^0.4.6
   image_picker: ^1.0.7
-  image: ^4.2.0
 
 dev_dependencies:
   flutter_test:
@@ -35,7 +34,5 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   generate: true
-  
-  assets:
-    - assets/ml/
+
 

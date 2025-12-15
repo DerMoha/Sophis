@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../l10n/generated/app_localizations.dart';
-import '../services/tflite_food_service.dart';
+import '../services/gemini_food_service.dart';
 import '../services/nutrition_provider.dart';
+import '../services/settings_provider.dart';
 import '../models/food_entry.dart';
 import '../theme/app_theme.dart';
 
@@ -19,10 +20,10 @@ class AIFoodCameraScreen extends StatefulWidget {
 
 class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
   final _picker = ImagePicker();
-  final _tfliteService = TFLiteFoodService();
+  final _geminiService = GeminiFoodService();
   
   File? _imageFile;
-  List<FoodPrediction>? _predictions;
+  List<FoodAnalysis>? _results;
   bool _isLoading = false;
   String? _error;
   bool _serviceInitialized = false;
@@ -34,17 +35,23 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
   }
 
   Future<void> _initService() async {
+    final apiKey = context.read<SettingsProvider>().geminiApiKey;
+    if (apiKey == null || apiKey.isEmpty) {
+      setState(() => _error = 'Please set your Gemini API key in Settings');
+      return;
+    }
+
     try {
-      await _tfliteService.initialize();
-      setState(() => _serviceInitialized = true);
+      await _geminiService.initialize(apiKey);
+      if (mounted) setState(() => _serviceInitialized = true);
     } catch (e) {
-      setState(() => _error = 'Failed to load AI model: $e');
+      if (mounted) setState(() => _error = 'Failed to initialize: $e');
     }
   }
 
   @override
   void dispose() {
-    _tfliteService.dispose();
+    _geminiService.dispose();
     super.dispose();
   }
 
@@ -52,8 +59,8 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     try {
       final picked = await _picker.pickImage(
         source: source,
-        maxWidth: 512,
-        maxHeight: 512,
+        maxWidth: 1024,
+        maxHeight: 1024,
         imageQuality: 85,
       );
       
@@ -61,17 +68,17 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       
       setState(() {
         _imageFile = File(picked.path);
-        _predictions = null;
+        _results = null;
         _error = null;
       });
       
-      await _classify();
+      await _analyzeFood();
     } catch (e) {
-      setState(() => _error = 'Failed to pick image: $e');
+      if (mounted) setState(() => _error = 'Failed to pick image: $e');
     }
   }
 
-  Future<void> _classify() async {
+  Future<void> _analyzeFood() async {
     if (_imageFile == null) return;
     
     setState(() {
@@ -80,120 +87,50 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     });
 
     try {
-      final predictions = await _tfliteService.classify(_imageFile!);
-      setState(() {
-        _predictions = predictions;
-        _isLoading = false;
-      });
+      final results = await _geminiService.analyzeFood(_imageFile!);
+      if (mounted) {
+        setState(() {
+          _results = results;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _error = 'Classification failed: $e';
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _error = 'Analysis failed: $e';
+          _isLoading = false;
+        });
+      }
     }
   }
 
-  void _addPrediction(FoodPrediction prediction) {
-    final l10n = AppLocalizations.of(context)!;
-    final caloriesController = TextEditingController(text: '200');
-    final proteinController = TextEditingController(text: '10');
-    final carbsController = TextEditingController(text: '20');
-    final fatController = TextEditingController(text: '8');
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(prediction.displayLabel),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Confidence: ${prediction.confidencePercent}',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Estimate nutrition values:',
-                style: TextStyle(fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: caloriesController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Calories',
-                  suffixText: 'kcal',
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: proteinController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Protein',
-                        suffixText: 'g',
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextField(
-                      controller: carbsController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Carbs',
-                        suffixText: 'g',
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextField(
-                      controller: fatController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Fat',
-                        suffixText: 'g',
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(l10n.cancel),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final entry = FoodEntry(
-                id: DateTime.now().millisecondsSinceEpoch.toString(),
-                name: prediction.displayLabel,
-                calories: double.tryParse(caloriesController.text) ?? 200,
-                protein: double.tryParse(proteinController.text) ?? 10,
-                carbs: double.tryParse(carbsController.text) ?? 20,
-                fat: double.tryParse(fatController.text) ?? 8,
-                timestamp: DateTime.now(),
-                meal: widget.meal,
-              );
-              
-              context.read<NutritionProvider>().addFoodEntry(entry);
-              Navigator.pop(ctx);
-              Navigator.pop(context);
-            },
-            child: Text(l10n.add),
-          ),
-        ],
-      ),
+  void _addFood(FoodAnalysis food) {
+    final entry = FoodEntry(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      name: '${food.name} (${food.portionDisplay})',
+      calories: food.calories,
+      protein: food.protein,
+      carbs: food.carbs,
+      fat: food.fat,
+      timestamp: DateTime.now(),
+      meal: widget.meal,
     );
+    
+    context.read<NutritionProvider>().addFoodEntry(entry);
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Added ${food.name}')),
+    );
+  }
+
+  void _addAllFoods() {
+    if (_results == null || _results!.isEmpty) return;
+    
+    for (final food in _results!) {
+      _addFood(food);
+    }
+    
+    Navigator.pop(context);
   }
 
   @override
@@ -204,10 +141,17 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('AI Food Recognition'),
+        actions: [
+          if (_results != null && _results!.isNotEmpty)
+            TextButton(
+              onPressed: _addAllFoods,
+              child: const Text('Add All'),
+            ),
+        ],
       ),
       body: Column(
         children: [
-          // Image preview area
+          // Image preview
           Expanded(
             flex: 2,
             child: Container(
@@ -226,7 +170,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            'Take or select a photo',
+                            'Take or select a photo of your food',
                             style: TextStyle(color: theme.disabledColor),
                           ),
                         ],
@@ -259,7 +203,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
             ),
           ),
           
-          // Results area
+          // Results
           Expanded(
             flex: 2,
             child: _buildResultsArea(l10n, theme),
@@ -270,11 +214,8 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
   }
 
   Widget _buildResultsArea(AppLocalizations l10n, ThemeData theme) {
-    if (!_serviceInitialized) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    
     if (_error != null) {
+      final isApiKeyError = _error!.contains('API key');
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(20),
@@ -284,6 +225,13 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
               const Icon(Icons.error_outline, size: 48, color: AppTheme.error),
               const SizedBox(height: 16),
               Text(_error!, textAlign: TextAlign.center),
+              if (isApiKeyError) ...[
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Go to Settings'),
+                ),
+              ],
             ],
           ),
         ),
@@ -297,40 +245,66 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
           children: [
             CircularProgressIndicator(),
             SizedBox(height: 16),
-            Text('Analyzing food...'),
+            Text('Analyzing your food with AI...'),
           ],
         ),
       );
     }
     
-    if (_predictions == null || _predictions!.isEmpty) {
+    if (_results == null) {
       return Center(
         child: Text(
-          'Take a photo to identify food',
+          _serviceInitialized 
+              ? 'Take a photo to identify food'
+              : 'Initializing AI...',
           style: TextStyle(color: theme.disabledColor),
+        ),
+      );
+    }
+    
+    if (_results!.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.no_food, size: 48, color: theme.disabledColor),
+            const SizedBox(height: 16),
+            Text(
+              'No food detected in image',
+              style: TextStyle(color: theme.disabledColor),
+            ),
+          ],
         ),
       );
     }
     
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: _predictions!.length,
+      itemCount: _results!.length,
       itemBuilder: (context, index) {
-        final pred = _predictions![index];
+        final food = _results![index];
         return Card(
           margin: const EdgeInsets.only(bottom: 8),
           child: ListTile(
-            title: Text(pred.displayLabel),
-            subtitle: LinearProgressIndicator(
-              value: pred.confidence,
-              backgroundColor: AppTheme.accent.withAlpha(26),
-              valueColor: const AlwaysStoppedAnimation(AppTheme.accent),
+            title: Text(food.displayName),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${food.portionDisplay} • ${food.caloriesDisplay}',
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                ),
+                Text(
+                  food.macrosDisplay,
+                  style: theme.textTheme.bodySmall,
+                ),
+              ],
             ),
-            trailing: Text(
-              pred.confidencePercent,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+            isThreeLine: true,
+            trailing: IconButton(
+              icon: const Icon(Icons.add_circle, color: AppTheme.accent),
+              onPressed: () => _addFood(food),
             ),
-            onTap: () => _addPrediction(pred),
           ),
         );
       },
