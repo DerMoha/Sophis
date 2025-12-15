@@ -166,6 +166,10 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     
     context.read<NutritionProvider>().addFoodEntry(entry);
     
+    setState(() {
+      result.isAdded = true;
+    });
+    
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Added ${entry.name}')),
     );
@@ -234,35 +238,40 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
           
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
+            child: Column(
               children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _serviceInitialized && _images.length < maxImages
-                        ? () => _pickImage(ImageSource.camera)
-                        : null,
-                    icon: const Icon(Icons.camera_alt),
-                    label: const Text('Camera'),
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _serviceInitialized && _images.length < maxImages
+                            ? () => _pickImage(ImageSource.camera)
+                            : null,
+                        icon: const Icon(Icons.camera_alt),
+                        label: const Text('Camera'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _serviceInitialized && _images.length < maxImages
+                            ? () => _pickImage(ImageSource.gallery)
+                            : null,
+                        icon: const Icon(Icons.photo_library),
+                        label: const Text('Gallery'),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _serviceInitialized && _images.length < maxImages
-                        ? () => _pickImage(ImageSource.gallery)
-                        : null,
-                    icon: const Icon(Icons.photo_library),
-                    label: const Text('Gallery'),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: _serviceInitialized && _images.isNotEmpty && !_isLoading
                         ? () => _analyzeFood()
                         : null,
                     icon: const Icon(Icons.auto_awesome),
-                    label: const Text('Analyze'),
+                    label: const Text('Analyze with AI'),
                   ),
                 ),
               ],
@@ -431,14 +440,30 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                     Text(food.macrosDisplay, style: theme.textTheme.bodySmall),
                   ],
                 ),
-                ElevatedButton.icon(
-                  onPressed: () => _addFood(result),
-                  icon: const Icon(Icons.add, size: 18),
-                  label: const Text('Add'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  ),
-                ),
+                result.isAdded
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.green,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.check, color: Colors.white, size: 18),
+                            SizedBox(width: 4),
+                            Text('Added', style: TextStyle(color: Colors.white)),
+                          ],
+                        ),
+                      )
+                    : ElevatedButton.icon(
+                        onPressed: () => _addFood(result),
+                        icon: const Icon(Icons.add, size: 18),
+                        label: const Text('Add'),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        ),
+                      ),
               ],
             ),
           ],
@@ -451,6 +476,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
 class EditableFoodResult {
   final FoodAnalysis analysis;
   final TextEditingController controller;
+  bool isAdded = false;
 
   EditableFoodResult({required this.analysis})
       : controller = TextEditingController(text: analysis.name);
