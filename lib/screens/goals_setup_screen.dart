@@ -196,7 +196,7 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
                             value: _gender,
                             label: 'Gender',
                             items: Gender.values,
-                            itemLabel: (g) => g.name,
+                            itemLabel: (g) => _genderLabel(g),
                             onChanged: (v) => setState(() => _gender = v),
                           ),
                         ),
@@ -207,7 +207,7 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
                       value: _activityLevel,
                       label: 'Activity Level',
                       items: ActivityLevel.values,
-                      itemLabel: (a) => a.name,
+                      itemLabel: (a) => _activityLabel(a),
                       onChanged: (v) => setState(() => _activityLevel = v),
                     ),
                     const SizedBox(height: 12),
@@ -215,7 +215,7 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
                       value: _goal,
                       label: 'Goal',
                       items: Goal.values,
-                      itemLabel: (g) => g.name,
+                      itemLabel: (g) => _goalLabel(g),
                       onChanged: (v) => setState(() => _goal = v),
                     ),
                     const SizedBox(height: 16),
@@ -319,5 +319,31 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
       )).toList(),
       onChanged: onChanged,
     );
+  }
+
+  String _genderLabel(Gender g) {
+    switch (g) {
+      case Gender.male: return 'Male';
+      case Gender.female: return 'Female';
+      case Gender.other: return 'Other';
+    }
+  }
+
+  String _activityLabel(ActivityLevel a) {
+    switch (a) {
+      case ActivityLevel.sedentary: return 'Sedentary (Little/No Exercise)';
+      case ActivityLevel.light: return 'Light (1-2 Days/Week)';
+      case ActivityLevel.moderate: return 'Moderate (3-4 Days/Week)';
+      case ActivityLevel.active: return 'Active (5-6 Days/Week)';
+      case ActivityLevel.veryActive: return 'Very Active (Daily/Intense)';
+    }
+  }
+
+  String _goalLabel(Goal g) {
+    switch (g) {
+      case Goal.lose: return 'Lose Weight';
+      case Goal.maintain: return 'Maintain Weight';
+      case Goal.gain: return 'Gain Weight';
+    }
   }
 }
