@@ -12,6 +12,47 @@ class AppTheme {
   static const Color warning = Color(0xFFF59E0B);
   static const Color error = Color(0xFFEF4444);
 
+  // Animation durations
+  static const Duration animFast = Duration(milliseconds: 200);
+  static const Duration animNormal = Duration(milliseconds: 300);
+  static const Duration animSlow = Duration(milliseconds: 500);
+
+  // Smooth page transition
+  static Route<T> fadeRoute<T>(Widget page) {
+    return PageRouteBuilder<T>(
+      pageBuilder: (context, animation, secondaryAnimation) => page,
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        return FadeTransition(
+          opacity: CurvedAnimation(parent: animation, curve: Curves.easeInOut),
+          child: child,
+        );
+      },
+      transitionDuration: animNormal,
+    );
+  }
+
+  // Slide up page transition
+  static Route<T> slideRoute<T>(Widget page) {
+    return PageRouteBuilder<T>(
+      pageBuilder: (context, animation, secondaryAnimation) => page,
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        final offsetAnimation = Tween<Offset>(
+          begin: const Offset(0, 0.1),
+          end: Offset.zero,
+        ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic));
+        
+        return SlideTransition(
+          position: offsetAnimation,
+          child: FadeTransition(
+            opacity: animation,
+            child: child,
+          ),
+        );
+      },
+      transitionDuration: animNormal,
+    );
+  }
+
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,

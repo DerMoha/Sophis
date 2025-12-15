@@ -4,6 +4,7 @@ import '../l10n/generated/app_localizations.dart';
 import '../services/nutrition_provider.dart';
 import '../services/settings_provider.dart';
 import '../theme/app_theme.dart';
+import '../theme/animations.dart';
 import 'goals_setup_screen.dart';
 import 'settings_screen.dart';
 import 'add_food_screen.dart';
@@ -291,14 +292,12 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 4),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(2),
-          child: LinearProgressIndicator(
-            value: progress,
-            minHeight: 6,
-            backgroundColor: color.withAlpha(26),
-            valueColor: AlwaysStoppedAnimation(color),
-          ),
+        AnimatedProgressBar(
+          value: progress,
+          height: 6,
+          backgroundColor: color.withAlpha(26),
+          valueColor: color,
+          borderRadius: BorderRadius.circular(3),
         ),
       ],
     );
