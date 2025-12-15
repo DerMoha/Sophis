@@ -77,6 +77,26 @@ class SettingsScreen extends StatelessWidget {
               ),
               const Divider(),
               
+              // AI Section
+              const _SectionHeader(title: 'AI'),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: TextField(
+                  decoration: InputDecoration(
+                    labelText: 'Gemini API Key',
+                    hintText: 'Enter your API key',
+                    helperText: 'Get a free key at aistudio.google.com',
+                    suffixIcon: settings.geminiApiKey?.isNotEmpty == true
+                        ? const Icon(Icons.check_circle, color: Colors.green)
+                        : null,
+                  ),
+                  obscureText: true,
+                  controller: TextEditingController(text: settings.geminiApiKey ?? ''),
+                  onChanged: (value) => settings.setGeminiApiKey(value),
+                ),
+              ),
+              const SizedBox(height: 16),
+              
               // Version info
               const SizedBox(height: 32),
               Center(
