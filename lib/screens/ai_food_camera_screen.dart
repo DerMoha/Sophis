@@ -19,11 +19,13 @@ class AIFoodCameraScreen extends StatefulWidget {
 }
 
 class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
+  static const int maxImages = 5;
+  
   final _picker = ImagePicker();
   final _geminiService = GeminiFoodService();
   
-  File? _imageFile;
-  List<FoodAnalysis>? _results;
+  final List<File> _images = [];
+  List<EditableFoodResult>? _results;
   bool _isLoading = false;
   String? _error;
   bool _serviceInitialized = false;
@@ -56,6 +58,13 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
   }
 
   Future<void> _pickImage(ImageSource source) async {
+    if (_images.length >= maxImages) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Maximum 5 images reached')),
+      );
+      return;
+    }
+
     try {
       final picked = await _picker.pickImage(
         source: source,
@@ -67,19 +76,24 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       if (picked == null) return;
       
       setState(() {
-        _imageFile = File(picked.path);
+        _images.add(File(picked.path));
         _results = null;
         _error = null;
       });
-      
-      await _analyzeFood();
     } catch (e) {
       if (mounted) setState(() => _error = 'Failed to pick image: $e');
     }
   }
 
-  Future<void> _analyzeFood() async {
-    if (_imageFile == null) return;
+  void _removeImage(int index) {
+    setState(() {
+      _images.removeAt(index);
+      _results = null;
+    });
+  }
+
+  Future<void> _analyzeFood({String? correctionHint}) async {
+    if (_images.isEmpty) return;
     
     setState(() {
       _isLoading = true;
@@ -87,10 +101,13 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     });
 
     try {
-      final results = await _geminiService.analyzeFood(_imageFile!);
+      final results = await _geminiService.analyzeFoodMultiple(
+        _images,
+        correctionHint: correctionHint,
+      );
       if (mounted) {
         setState(() {
-          _results = results;
+          _results = results.map((r) => EditableFoodResult(analysis: r)).toList();
           _isLoading = false;
         });
       }
@@ -104,10 +121,41 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     }
   }
 
-  void _addFood(FoodAnalysis food) {
+  Future<void> _reAnalyzeWithCorrection(EditableFoodResult result) async {
+    final correctedName = result.controller.text.trim();
+    if (correctedName.isEmpty || correctedName == result.analysis.name) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final updatedResults = await _geminiService.analyzeFoodMultiple(
+        _images,
+        correctionHint: 'The food "${result.analysis.name}" is actually "$correctedName". Please update the nutrition estimate.',
+      );
+      
+      if (mounted) {
+        setState(() {
+          _results = updatedResults.map((r) => EditableFoodResult(analysis: r)).toList();
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = 'Re-analysis failed: $e';
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _addFood(EditableFoodResult result) {
+    final food = result.analysis;
+    final customName = result.controller.text.trim();
+    
     final entry = FoodEntry(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      name: '${food.name} (${food.portionDisplay})',
+      name: customName.isNotEmpty ? customName : '${food.name} (${food.portionDisplay})',
       calories: food.calories,
       protein: food.protein,
       carbs: food.carbs,
@@ -119,15 +167,15 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     context.read<NutritionProvider>().addFoodEntry(entry);
     
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Added ${food.name}')),
+      SnackBar(content: Text('Added ${entry.name}')),
     );
   }
 
   void _addAllFoods() {
     if (_results == null || _results!.isEmpty) return;
     
-    for (final food in _results!) {
-      _addFood(food);
+    for (final result in _results!) {
+      _addFood(result);
     }
     
     Navigator.pop(context);
@@ -142,6 +190,22 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       appBar: AppBar(
         title: const Text('AI Food Recognition'),
         actions: [
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppTheme.accent.withAlpha(26),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${_images.length}/$maxImages',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ),
           if (_results != null && _results!.isNotEmpty)
             TextButton(
               onPressed: _addAllFoods,
@@ -151,65 +215,100 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       ),
       body: Column(
         children: [
-          // Image preview
-          Expanded(
-            flex: 2,
-            child: Container(
-              width: double.infinity,
-              color: theme.colorScheme.surfaceContainerHighest,
-              child: _imageFile != null
-                  ? Image.file(_imageFile!, fit: BoxFit.contain)
-                  : Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.camera_alt_outlined,
-                            size: 64,
-                            color: theme.disabledColor,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Take or select a photo of your food',
-                            style: TextStyle(color: theme.disabledColor),
-                          ),
-                        ],
-                      ),
+          SizedBox(
+            height: 140,
+            child: _images.isEmpty
+                ? Center(
+                    child: Text(
+                      'Take photos of your food',
+                      style: TextStyle(color: theme.disabledColor),
                     ),
-            ),
+                  )
+                : ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.all(8),
+                    itemCount: _images.length,
+                    itemBuilder: (context, index) => _buildImageTile(index),
+                  ),
           ),
           
-          // Capture buttons
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: _serviceInitialized ? () => _pickImage(ImageSource.camera) : null,
+                    onPressed: _serviceInitialized && _images.length < maxImages
+                        ? () => _pickImage(ImageSource.camera)
+                        : null,
                     icon: const Icon(Icons.camera_alt),
                     label: const Text('Camera'),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: _serviceInitialized ? () => _pickImage(ImageSource.gallery) : null,
+                    onPressed: _serviceInitialized && _images.length < maxImages
+                        ? () => _pickImage(ImageSource.gallery)
+                        : null,
                     icon: const Icon(Icons.photo_library),
                     label: const Text('Gallery'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _serviceInitialized && _images.isNotEmpty && !_isLoading
+                        ? () => _analyzeFood()
+                        : null,
+                    icon: const Icon(Icons.auto_awesome),
+                    label: const Text('Analyze'),
                   ),
                 ),
               ],
             ),
           ),
           
-          // Results
+          const Divider(),
+          
           Expanded(
-            flex: 2,
             child: _buildResultsArea(l10n, theme),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildImageTile(int index) {
+    return Stack(
+      children: [
+        Container(
+          width: 120,
+          margin: const EdgeInsets.only(right: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            image: DecorationImage(
+              image: FileImage(_images[index]),
+              fit: BoxFit.cover,
+            ),
+          ),
+        ),
+        Positioned(
+          top: 4,
+          right: 12,
+          child: GestureDetector(
+            onTap: () => _removeImage(index),
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: const BoxDecoration(
+                color: Colors.black54,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.close, color: Colors.white, size: 16),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -255,7 +354,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       return Center(
         child: Text(
           _serviceInitialized 
-              ? 'Take a photo to identify food'
+              ? 'Take photos and tap Analyze'
               : 'Initializing AI...',
           style: TextStyle(color: theme.disabledColor),
         ),
@@ -269,45 +368,90 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
           children: [
             Icon(Icons.no_food, size: 48, color: theme.disabledColor),
             const SizedBox(height: 16),
-            Text(
-              'No food detected in image',
-              style: TextStyle(color: theme.disabledColor),
-            ),
+            Text('No food detected', style: TextStyle(color: theme.disabledColor)),
           ],
         ),
       );
     }
     
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(16),
       itemCount: _results!.length,
       itemBuilder: (context, index) {
-        final food = _results![index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 8),
-          child: ListTile(
-            title: Text(food.displayName),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${food.portionDisplay} • ${food.caloriesDisplay}',
-                  style: const TextStyle(fontWeight: FontWeight.w500),
-                ),
-                Text(
-                  food.macrosDisplay,
-                  style: theme.textTheme.bodySmall,
-                ),
-              ],
-            ),
-            isThreeLine: true,
-            trailing: IconButton(
-              icon: const Icon(Icons.add_circle, color: AppTheme.accent),
-              onPressed: () => _addFood(food),
-            ),
-          ),
-        );
+        final result = _results![index];
+        return _buildFoodResultCard(result, theme);
       },
     );
   }
+
+  Widget _buildFoodResultCard(EditableFoodResult result, ThemeData theme) {
+    final food = result.analysis;
+    
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: result.controller,
+                    decoration: InputDecoration(
+                      labelText: 'Food name',
+                      hintText: food.name,
+                      isDense: true,
+                      suffixIcon: result.controller.text != food.name
+                          ? IconButton(
+                              icon: const Icon(Icons.refresh, size: 20),
+                              onPressed: () => _reAnalyzeWithCorrection(result),
+                              tooltip: 'Re-analyze with this name',
+                            )
+                          : null,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${food.portionDisplay} • ${food.caloriesDisplay}',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(food.macrosDisplay, style: theme.textTheme.bodySmall),
+                  ],
+                ),
+                ElevatedButton.icon(
+                  onPressed: () => _addFood(result),
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('Add'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class EditableFoodResult {
+  final FoodAnalysis analysis;
+  final TextEditingController controller;
+
+  EditableFoodResult({required this.analysis})
+      : controller = TextEditingController(text: analysis.name);
 }

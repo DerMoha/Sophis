@@ -19,30 +19,54 @@ class GeminiFoodService {
 
     _apiKey = apiKey;
     _model = GenerativeModel(
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash-lite',
       apiKey: apiKey,
     );
     _isInitialized = true;
   }
 
-  /// Analyze a food image and return nutrition estimates
+  /// Analyze a single food image
   Future<List<FoodAnalysis>> analyzeFood(File imageFile) async {
+    return analyzeFoodMultiple([imageFile]);
+  }
+
+  /// Analyze multiple food images with optional correction hint
+  Future<List<FoodAnalysis>> analyzeFoodMultiple(
+    List<File> imageFiles, {
+    String? correctionHint,
+  }) async {
     if (!_isInitialized || _model == null) {
       throw Exception('Gemini service not initialized');
     }
 
-    final imageBytes = await imageFile.readAsBytes();
-    final imagePart = DataPart('image/jpeg', imageBytes);
+    if (imageFiles.isEmpty) {
+      return [];
+    }
 
-    final prompt = TextPart('''
-Analyze this food image and identify all food items visible.
+    // Build image parts
+    final imageParts = <DataPart>[];
+    for (final file in imageFiles) {
+      final bytes = await file.readAsBytes();
+      imageParts.add(DataPart('image/jpeg', bytes));
+    }
+
+    // Build prompt
+    var promptText = '''
+Analyze these food images and identify all food items visible.
 For each food item, provide:
-1. Name of the food
+1. Name of the food (be specific, e.g., "Pepperoni Pizza" not just "Pizza")
 2. Estimated portion size in grams
 3. Estimated calories
 4. Estimated protein in grams
 5. Estimated carbs in grams
 6. Estimated fat in grams
+''';
+
+    if (correctionHint != null && correctionHint.isNotEmpty) {
+      promptText += '\n\nIMPORTANT CORRECTION: $correctionHint\n';
+    }
+
+    promptText += '''
 
 Respond ONLY with valid JSON in this exact format, no other text:
 {
@@ -59,11 +83,13 @@ Respond ONLY with valid JSON in this exact format, no other text:
 }
 
 If no food is visible, return: {"foods": []}
-''');
+''';
+
+    final prompt = TextPart(promptText);
 
     try {
       final response = await _model!.generateContent([
-        Content.multi([prompt, imagePart])
+        Content.multi([prompt, ...imageParts])
       ]);
 
       final text = response.text;
@@ -71,7 +97,6 @@ If no food is visible, return: {"foods": []}
         return [];
       }
 
-      // Parse JSON response
       return _parseResponse(text);
     } catch (e) {
       throw Exception('Failed to analyze image: $e');
@@ -80,7 +105,6 @@ If no food is visible, return: {"foods": []}
 
   List<FoodAnalysis> _parseResponse(String text) {
     try {
-      // Clean up response - remove markdown code blocks if present
       var cleaned = text.trim();
       if (cleaned.startsWith('```json')) {
         cleaned = cleaned.substring(7);
@@ -107,7 +131,6 @@ If no food is visible, return: {"foods": []}
         );
       }).toList();
     } catch (e) {
-      // If parsing fails, return empty list
       return [];
     }
   }
@@ -118,7 +141,6 @@ If no food is visible, return: {"foods": []}
   }
 }
 
-/// Result of Gemini food analysis
 class FoodAnalysis {
   final String name;
   final double portionGrams;
