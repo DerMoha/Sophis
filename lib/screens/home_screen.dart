@@ -13,6 +13,7 @@ import 'barcode_scanner_screen.dart';
 import 'weight_tracker_screen.dart';
 import 'recipes_screen.dart';
 import 'ai_food_camera_screen.dart';
+import 'activity_graph_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -237,6 +238,18 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
             ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildQuickAction(
+                context,
+                icon: Icons.bar_chart_outlined,
+                label: 'Activity',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ActivityGraphScreen()),
+                ),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 24),
@@ -449,13 +462,19 @@ class HomeScreen extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: AppTheme.accent),
-              const SizedBox(width: 8),
-              Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+              Icon(icon, color: AppTheme.accent, size: 20),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  label,
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
           ),
         ),

@@ -76,6 +76,14 @@ class NutritionProvider extends ChangeNotifier {
     ).toList();
   }
 
+  List<FoodEntry> getEntriesForDate(DateTime date) {
+    return _entries.where((e) =>
+      e.timestamp.year == date.year &&
+      e.timestamp.month == date.month &&
+      e.timestamp.day == date.day
+    ).toList();
+  }
+
   List<FoodEntry> getEntriesByMeal(String meal) {
     return getTodayEntries().where((e) => e.meal == meal).toList();
   }
