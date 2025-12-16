@@ -58,5 +58,5 @@ workflows:
           rm -rf Payload
           
     artifacts:
-      - sophis-unsigned.ipa
+      - "*.ipa"
       - build/ios/iphoneos/Runner.app

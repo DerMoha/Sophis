@@ -31,7 +31,9 @@ dependencies:
   timezone: ^0.9.4
   
   # Phase 6: Health Integration (Google Health Connect + Apple HealthKit)
-  health: ^13.2.1
+  # DISABLED: Requires paid Apple Developer account for HealthKit entitlements
+  # To re-enable: uncomment below and see lib/services/health_service_real.dart
+  # health: ^13.2.1
 
 dev_dependencies:
   flutter_test:

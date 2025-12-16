@@ -1,139 +1,35 @@
-import 'dart:io';
-import 'package:health/health.dart';
+// ============================================================================
+// HEALTH INTEGRATION - CURRENTLY DISABLED
+// ============================================================================
+// To re-enable health integration:
+// 1. Uncomment the health dependency in pubspec.yaml
+// 2. Replace this file with health_service_real.dart content
+// 3. Add HealthKit entitlement for iOS (requires paid Apple Developer account)
+// 4. Run flutter pub get
+// ============================================================================
 
-/// Service for reading health data from Apple HealthKit / Google Health Connect
+/// Stub service for health data - returns disabled/zero values
+/// See health_service_real.dart for the actual implementation
 class HealthService {
   static final HealthService _instance = HealthService._internal();
   factory HealthService() => _instance;
   HealthService._internal();
 
-  final Health _health = Health();
-  bool _isInitialized = false;
+  /// Initialize the health service (no-op when disabled)
+  Future<void> initialize() async {}
 
-  /// The types of health data we want to read
-  static final List<HealthDataType> _types = [
-    HealthDataType.ACTIVE_ENERGY_BURNED,
-  ];
+  /// Health data is not available when disabled
+  bool isAvailable() => false;
 
-  /// Initialize the health service
-  Future<void> initialize() async {
-    if (_isInitialized) return;
-    await _health.configure();
-    _isInitialized = true;
-  }
+  /// Request permission - always returns false when disabled
+  Future<bool> requestPermissions() async => false;
 
-  /// Check if health data is available on this platform
-  bool isAvailable() {
-    return Platform.isIOS || Platform.isAndroid;
-  }
+  /// Check if permissions are granted - always false when disabled
+  Future<bool> hasPermissions() async => false;
 
-  /// Request permission to read active energy burned
-  Future<bool> requestPermissions() async {
-    if (!isAvailable()) return false;
-    
-    await initialize();
-    
-    try {
-      // Request read permissions for active energy burned
-      final granted = await _health.requestAuthorization(
-        _types,
-        permissions: [HealthDataAccess.READ],
-      );
-      return granted;
-    } catch (e) {
-      return false;
-    }
-  }
+  /// Get today's burned calories - returns 0 when disabled
+  Future<double> getTodayBurnedCalories() async => 0.0;
 
-  /// Check if permissions are granted
-  Future<bool> hasPermissions() async {
-    if (!isAvailable()) return false;
-    
-    await initialize();
-    
-    try {
-      final status = await _health.hasPermissions(
-        _types,
-        permissions: [HealthDataAccess.READ],
-      );
-      return status ?? false;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  /// Get today's burned calories (active energy)
-  Future<double> getTodayBurnedCalories() async {
-    if (!isAvailable()) return 0.0;
-    
-    await initialize();
-
-    try {
-      // Check permissions first
-      final hasPerms = await hasPermissions();
-      if (!hasPerms) return 0.0;
-
-      // Get today's date range
-      final now = DateTime.now();
-      final startOfDay = DateTime(now.year, now.month, now.day);
-
-      // Fetch active energy burned data for today
-      final healthData = await _health.getHealthDataFromTypes(
-        types: _types,
-        startTime: startOfDay,
-        endTime: now,
-      );
-
-      // Sum up all active energy burned values
-      double totalCalories = 0.0;
-      for (final dataPoint in healthData) {
-        if (dataPoint.type == HealthDataType.ACTIVE_ENERGY_BURNED) {
-          // Value is in kilocalories
-          final value = dataPoint.value;
-          if (value is NumericHealthValue) {
-            totalCalories += value.numericValue.toDouble();
-          }
-        }
-      }
-
-      return totalCalories;
-    } catch (e) {
-      return 0.0;
-    }
-  }
-
-  /// Get burned calories for a specific date
-  Future<double> getBurnedCaloriesForDate(DateTime date) async {
-    if (!isAvailable()) return 0.0;
-    
-    await initialize();
-
-    try {
-      final hasPerms = await hasPermissions();
-      if (!hasPerms) return 0.0;
-
-      final startOfDay = DateTime(date.year, date.month, date.day);
-      final endOfDay = startOfDay.add(const Duration(days: 1));
-
-      final healthData = await _health.getHealthDataFromTypes(
-        types: _types,
-        startTime: startOfDay,
-        endTime: endOfDay,
-      );
-
-      double totalCalories = 0.0;
-      for (final dataPoint in healthData) {
-        if (dataPoint.type == HealthDataType.ACTIVE_ENERGY_BURNED) {
-          final value = dataPoint.value;
-          if (value is NumericHealthValue) {
-            totalCalories += value.numericValue.toDouble();
-          }
-        }
-      }
-
-      return totalCalories;
-    } catch (e) {
-      return 0.0;
-    }
-  }
+  /// Get burned calories for a specific date - returns 0 when disabled
+  Future<double> getBurnedCaloriesForDate(DateTime date) async => 0.0;
 }

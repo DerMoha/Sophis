@@ -45,10 +45,13 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
-	<!-- HealthKit Usage Descriptions -->
+	<!--
+	HealthKit Usage Descriptions - DISABLED (requires paid Apple Developer account)
+	To re-enable: uncomment these and add HealthKit entitlement
 	<key>NSHealthShareUsageDescription</key>
 	<string>Sophis reads your burned calories to calculate your net calorie balance.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Sophis may write workout data in future updates.</string>
+	-->
 </dict>
 </plist>
