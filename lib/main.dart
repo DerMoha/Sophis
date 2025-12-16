@@ -6,6 +6,7 @@ import 'l10n/generated/app_localizations.dart';
 import 'services/storage_service.dart';
 import 'services/settings_provider.dart';
 import 'services/nutrition_provider.dart';
+import 'services/notification_service.dart';
 import 'theme/app_theme.dart';
 import 'screens/home_screen.dart';
 
@@ -13,6 +14,10 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   final storageService = await StorageService.create();
+  
+  // Initialize notification service (without requesting permission yet)
+  final notificationService = NotificationService();
+  await notificationService.initialize();
   
   runApp(
     MultiProvider(

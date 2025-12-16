@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Gemini AI service for accurate food recognition and nutrition estimation
 class GeminiFoodService {
@@ -8,8 +9,58 @@ class GeminiFoodService {
   String? _apiKey;
   bool _isInitialized = false;
 
+  // Rate limits for gemini-2.5-flash-lite
+  static const int dailyLimit = 20;
+  static const String _requestCountKey = 'gemini_request_count';
+  static const String _requestDateKey = 'gemini_request_date';
+
   bool get isInitialized => _isInitialized;
   bool get hasApiKey => _apiKey != null && _apiKey!.isNotEmpty;
+
+  /// Get today's request count
+  static Future<int> getRequestsToday() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedDate = prefs.getString(_requestDateKey);
+    final today = _getTodayString();
+    
+    if (savedDate != today) {
+      // New day, reset counter
+      return 0;
+    }
+    
+    return prefs.getInt(_requestCountKey) ?? 0;
+  }
+
+  /// Get remaining requests today
+  static Future<int> getRemainingRequests() async {
+    final used = await getRequestsToday();
+    return (dailyLimit - used).clamp(0, dailyLimit);
+  }
+
+  /// Check if we can make a request
+  static Future<bool> canMakeRequest() async {
+    final remaining = await getRemainingRequests();
+    return remaining > 0;
+  }
+
+  static String _getTodayString() {
+    final now = DateTime.now();
+    return '${now.year}-${now.month}-${now.day}';
+  }
+
+  Future<void> _incrementRequestCount() async {
+    final prefs = await SharedPreferences.getInstance();
+    final today = _getTodayString();
+    final savedDate = prefs.getString(_requestDateKey);
+    
+    int count = 0;
+    if (savedDate == today) {
+      count = prefs.getInt(_requestCountKey) ?? 0;
+    }
+    
+    await prefs.setString(_requestDateKey, today);
+    await prefs.setInt(_requestCountKey, count + 1);
+  }
 
   /// Initialize with API key
   Future<void> initialize(String apiKey) async {
@@ -41,6 +92,11 @@ class GeminiFoodService {
 
     if (imageFiles.isEmpty) {
       return [];
+    }
+
+    // Check rate limit
+    if (!await canMakeRequest()) {
+      throw Exception('Daily limit reached (20 requests/day). Try again tomorrow.');
     }
 
     // Build image parts
@@ -91,6 +147,9 @@ If no food is visible, return: {"foods": []}
       final response = await _model!.generateContent([
         Content.multi([prompt, ...imageParts])
       ]);
+
+      // Increment counter after successful request
+      await _incrementRequestCount();
 
       final text = response.text;
       if (text == null || text.isEmpty) {

@@ -25,6 +25,10 @@ dependencies:
   # Phase 3: Gemini Cloud AI
   google_generative_ai: ^0.4.6
   image_picker: ^1.0.7
+  
+  # Phase 5: Notifications
+  flutter_local_notifications: ^17.2.3
+  timezone: ^0.9.4
 
 dev_dependencies:
   flutter_test:

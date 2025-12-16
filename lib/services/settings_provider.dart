@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 import '../models/app_settings.dart';
 import 'storage_service.dart';
+import 'notification_service.dart';
 
 /// Settings provider for theme, locale, and AI mode
 class SettingsProvider extends ChangeNotifier {
   final StorageService _storage;
+  final NotificationService _notifications = NotificationService();
   AppSettings _settings;
 
-  SettingsProvider(this._storage) : _settings = _storage.loadSettings();
+  SettingsProvider(this._storage) : _settings = _storage.loadSettings() {
+    // Schedule notifications on startup based on saved settings
+    _updateNotifications();
+  }
 
   AppSettings get settings => _settings;
   ThemeMode get themeMode => _settings.themeMode;
@@ -75,8 +80,18 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   Future<void> setRemindersEnabled(bool enabled) async {
+    if (enabled) {
+      // Request permission when user enables reminders
+      final granted = await _notifications.requestPermissions();
+      if (!granted) {
+        // Permission denied, don't enable reminders
+        return;
+      }
+    }
+    
     _settings = _settings.copyWith(remindersEnabled: enabled);
     await _storage.saveSettings(_settings);
+    await _updateNotifications();
     notifyListeners();
   }
 
@@ -86,6 +101,7 @@ class SettingsProvider extends ChangeNotifier {
       clearBreakfast: time == null,
     );
     await _storage.saveSettings(_settings);
+    await _updateNotifications();
     notifyListeners();
   }
 
@@ -95,6 +111,7 @@ class SettingsProvider extends ChangeNotifier {
       clearLunch: time == null,
     );
     await _storage.saveSettings(_settings);
+    await _updateNotifications();
     notifyListeners();
   }
 
@@ -104,7 +121,17 @@ class SettingsProvider extends ChangeNotifier {
       clearDinner: time == null,
     );
     await _storage.saveSettings(_settings);
+    await _updateNotifications();
     notifyListeners();
   }
-}
 
+  /// Update scheduled notifications based on current settings
+  Future<void> _updateNotifications() async {
+    await _notifications.updateMealReminders(
+      enabled: _settings.remindersEnabled,
+      breakfastTime: _settings.breakfastReminderTime,
+      lunchTime: _settings.lunchReminderTime,
+      dinnerTime: _settings.dinnerReminderTime,
+    );
+  }
+}

@@ -29,6 +29,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
   bool _isLoading = false;
   String? _error;
   bool _serviceInitialized = false;
+  int _remainingRequests = 20;
 
   @override
   void initState() {
@@ -37,9 +38,15 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
   }
 
   Future<void> _initService() async {
+    // Read API key before any async operation
     final apiKey = context.read<SettingsProvider>().geminiApiKey;
+    
+    // Load remaining requests
+    final remaining = await GeminiFoodService.getRemainingRequests();
+    if (mounted) setState(() => _remainingRequests = remaining);
+    
     if (apiKey == null || apiKey.isEmpty) {
-      setState(() => _error = 'Please set your Gemini API key in Settings');
+      if (mounted) setState(() => _error = 'Please set your Gemini API key in Settings');
       return;
     }
 
@@ -105,9 +112,14 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
         _images,
         correctionHint: correctionHint,
       );
+      
+      // Update remaining requests count
+      final remaining = await GeminiFoodService.getRemainingRequests();
+      
       if (mounted) {
         setState(() {
           _results = results.map((r) => EditableFoodResult(analysis: r)).toList();
+          _remainingRequests = remaining;
           _isLoading = false;
         });
       }
@@ -194,6 +206,45 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       appBar: AppBar(
         title: const Text('AI Food Recognition'),
         actions: [
+          // Remaining requests badge
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: _remainingRequests <= 3 
+                      ? AppTheme.warning.withAlpha(26)
+                      : AppTheme.success.withAlpha(26),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.bolt,
+                      size: 14,
+                      color: _remainingRequests <= 3 
+                          ? AppTheme.warning 
+                          : AppTheme.success,
+                    ),
+                    const SizedBox(width: 2),
+                    Text(
+                      '$_remainingRequests left',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: _remainingRequests <= 3 
+                            ? AppTheme.warning 
+                            : AppTheme.success,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          // Images count
           Center(
             child: Padding(
               padding: const EdgeInsets.only(right: 8),
