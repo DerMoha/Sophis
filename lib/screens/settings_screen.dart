@@ -155,6 +155,36 @@ class SettingsScreen extends StatelessWidget {
               ],
               const Divider(),
               
+              // Fitness Sync Section
+              const _SectionHeader(title: 'Fitness Sync'),
+              SwitchListTile(
+                secondary: const Icon(Icons.fitness_center_outlined),
+                title: const Text('Health Sync'),
+                subtitle: const Text('Sync burned calories from Health Connect / HealthKit'),
+                value: settings.healthSyncEnabled,
+                onChanged: (value) async {
+                  final success = await settings.setHealthSyncEnabled(value);
+                  if (!success && value && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Health permission denied or not available'),
+                      ),
+                    );
+                  }
+                },
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Text(
+                  'Burned calories will be added to your daily budget',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.outline,
+                  ),
+                ),
+              ),
+              const Divider(),
+              
               // AI Section
               const _SectionHeader(title: 'AI'),
               Padding(

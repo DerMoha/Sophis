@@ -30,6 +30,7 @@ class AppSettings {
   final String? lunchReminderTime;
   final String? dinnerReminderTime;
   final bool remindersEnabled;
+  final bool healthSyncEnabled;
 
   const AppSettings({
     this.geminiApiKey,
@@ -42,6 +43,7 @@ class AppSettings {
     this.lunchReminderTime,
     this.dinnerReminderTime,
     this.remindersEnabled = false,
+    this.healthSyncEnabled = false,
   });
 
   bool get hasGeminiApiKey => geminiApiKey != null && geminiApiKey!.isNotEmpty;
@@ -58,6 +60,7 @@ class AppSettings {
     'lunchReminderTime': lunchReminderTime,
     'dinnerReminderTime': dinnerReminderTime,
     'remindersEnabled': remindersEnabled,
+    'healthSyncEnabled': healthSyncEnabled,
   };
 
   factory AppSettings.fromJson(Map<String, dynamic> json) => AppSettings(
@@ -75,6 +78,7 @@ class AppSettings {
     lunchReminderTime: json['lunchReminderTime'],
     dinnerReminderTime: json['dinnerReminderTime'],
     remindersEnabled: json['remindersEnabled'] ?? false,
+    healthSyncEnabled: json['healthSyncEnabled'] ?? false,
   );
 
   AppSettings copyWith({
@@ -88,6 +92,7 @@ class AppSettings {
     String? lunchReminderTime,
     String? dinnerReminderTime,
     bool? remindersEnabled,
+    bool? healthSyncEnabled,
     bool clearApiKey = false,
     bool clearLocale = false,
     bool clearBreakfast = false,
@@ -104,6 +109,7 @@ class AppSettings {
     lunchReminderTime: clearLunch ? null : (lunchReminderTime ?? this.lunchReminderTime),
     dinnerReminderTime: clearDinner ? null : (dinnerReminderTime ?? this.dinnerReminderTime),
     remindersEnabled: remindersEnabled ?? this.remindersEnabled,
+    healthSyncEnabled: healthSyncEnabled ?? this.healthSyncEnabled,
   );
 }
 

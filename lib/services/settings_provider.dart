@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/app_settings.dart';
 import 'storage_service.dart';
 import 'notification_service.dart';
+import 'health_service.dart';
 
 /// Settings provider for theme, locale, and AI mode
 class SettingsProvider extends ChangeNotifier {
@@ -31,6 +32,9 @@ class SettingsProvider extends ChangeNotifier {
   String? get breakfastReminderTime => _settings.breakfastReminderTime;
   String? get lunchReminderTime => _settings.lunchReminderTime;
   String? get dinnerReminderTime => _settings.dinnerReminderTime;
+  
+  // Health sync
+  bool get healthSyncEnabled => _settings.healthSyncEnabled;
 
   Locale? get locale {
     if (_settings.localeOverride == null) return null;
@@ -133,5 +137,23 @@ class SettingsProvider extends ChangeNotifier {
       lunchTime: _settings.lunchReminderTime,
       dinnerTime: _settings.dinnerReminderTime,
     );
+  }
+
+  /// Enable or disable health sync
+  Future<bool> setHealthSyncEnabled(bool enabled) async {
+    if (enabled) {
+      // Request permissions when enabling
+      final healthService = HealthService();
+      final granted = await healthService.requestPermissions();
+      if (!granted) {
+        // Permission denied, don't enable health sync
+        return false;
+      }
+    }
+    
+    _settings = _settings.copyWith(healthSyncEnabled: enabled);
+    await _storage.saveSettings(_settings);
+    notifyListeners();
+    return true;
   }
 }

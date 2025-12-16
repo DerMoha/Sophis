@@ -6,6 +6,7 @@ import '../models/water_entry.dart';
 import '../models/weight_entry.dart';
 import '../models/recipe.dart';
 import 'storage_service.dart';
+import 'health_service.dart';
 
 /// Central state management for nutrition tracking
 class NutritionProvider extends ChangeNotifier {
@@ -17,6 +18,10 @@ class NutritionProvider extends ChangeNotifier {
   List<WaterEntry> _waterEntries = [];
   List<WeightEntry> _weightEntries = [];
   List<Recipe> _recipes = [];
+  
+  // Burned calories from health apps
+  double _burnedCalories = 0.0;
+  final HealthService _healthService = HealthService();
 
   NutritionProvider(this._storage) {
     _loadData();
@@ -29,6 +34,7 @@ class NutritionProvider extends ChangeNotifier {
   List<WaterEntry> get waterEntries => _waterEntries;
   List<WeightEntry> get weightEntries => _weightEntries;
   List<Recipe> get recipes => _recipes;
+  double get burnedCalories => _burnedCalories;
 
   void _loadData() {
     _goals = _storage.loadGoals();
@@ -102,7 +108,25 @@ class NutritionProvider extends ChangeNotifier {
 
   double getRemainingCalories() {
     if (_goals == null) return 0;
-    return _goals!.calories - getTodayTotals()['calories']!;
+    // Net remaining = goal - eaten + burned
+    return _goals!.calories - getTodayTotals()['calories']! + _burnedCalories;
+  }
+  
+  /// Refresh burned calories from health service (call on app open/resume)
+  Future<void> refreshBurnedCalories({bool enabled = true}) async {
+    if (!enabled) {
+      _burnedCalories = 0.0;
+      notifyListeners();
+      return;
+    }
+    
+    try {
+      _burnedCalories = await _healthService.getTodayBurnedCalories();
+      notifyListeners();
+    } catch (e) {
+      // Silently fail, keep previous value or 0
+      debugPrint('Failed to fetch burned calories: $e');
+    }
   }
 
   // Water

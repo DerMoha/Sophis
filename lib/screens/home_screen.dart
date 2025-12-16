@@ -15,8 +15,28 @@ import 'recipes_screen.dart';
 import 'ai_food_camera_screen.dart';
 import 'activity_graph_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Auto-refresh burned calories when screen loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshBurnedCalories();
+    });
+  }
+
+  Future<void> _refreshBurnedCalories() async {
+    final settings = context.read<SettingsProvider>();
+    final nutrition = context.read<NutritionProvider>();
+    await nutrition.refreshBurnedCalories(enabled: settings.healthSyncEnabled);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,10 +50,14 @@ class HomeScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.settings_outlined),
             tooltip: l10n.settings,
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const SettingsScreen()),
-            ),
+            onPressed: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              );
+              // Refresh burned calories after returning from settings
+              _refreshBurnedCalories();
+            },
           ),
         ],
       ),
@@ -102,8 +126,10 @@ class HomeScreen extends StatelessWidget {
     final totals = nutrition.getTodayTotals();
     final goals = nutrition.goals!;
     final remaining = nutrition.getRemainingCalories();
+    final burnedCalories = nutrition.burnedCalories;
+    final settings = context.watch<SettingsProvider>();
     final waterTotal = nutrition.getTodayWaterTotal();
-    final waterGoal = context.read<SettingsProvider>().waterGoalMl;
+    final waterGoal = settings.waterGoalMl;
 
     return ListView(
       padding: const EdgeInsets.all(20),
@@ -122,6 +148,25 @@ class HomeScreen extends StatelessWidget {
                     _buildRemainingBadge(remaining, l10n),
                   ],
                 ),
+                // Show burned calories if health sync is enabled and has data
+                if (settings.healthSyncEnabled && burnedCalories > 0) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(Icons.local_fire_department, 
+                        size: 16, 
+                        color: Colors.orange.shade600),
+                      const SizedBox(width: 4),
+                      Text(
+                        '+${burnedCalories.toStringAsFixed(0)} burned',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: Colors.orange.shade600,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 20),
                 _buildProgressBar(
                   label: l10n.calories,

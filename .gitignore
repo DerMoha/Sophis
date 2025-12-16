@@ -55,3 +55,4 @@ app.*.map.json
 lib/l10n/generated/
 lib/l10n/app_localizations*.dart
 
+macos/Flutter/GeneratedPluginRegistrant.swift
