@@ -1,15 +1,16 @@
 // ============================================================================
 // HEALTH INTEGRATION - CURRENTLY DISABLED
 // ============================================================================
-// To re-enable health integration:
-// 1. Uncomment the health dependency in pubspec.yaml
-// 2. Replace this file with health_service_real.dart content
-// 3. Add HealthKit entitlement for iOS (requires paid Apple Developer account)
-// 4. Run flutter pub get
+// iOS: Crashes without HealthKit entitlements (requires paid Apple Developer account)
+// Android: Would work with Health Connect, but disabled for cross-platform consistency
+//
+// To re-enable Android Health Connect only:
+// 1. Uncomment health dependency in pubspec.yaml
+// 2. Use conditional imports to only import health on Android
+// 3. See health_service_real.dart for the full implementation
 // ============================================================================
 
 /// Stub service for health data - returns disabled/zero values
-/// See health_service_real.dart for the actual implementation
 class HealthService {
   static final HealthService _instance = HealthService._internal();
   factory HealthService() => _instance;

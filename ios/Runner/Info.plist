@@ -45,6 +45,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- Camera and Photo Library permissions (required for barcode scanner and food photo) -->
+	<key>NSCameraUsageDescription</key>
+	<string>Sophis uses the camera to scan food barcodes and take photos of meals for AI analysis.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Sophis accesses your photo library to let you select food photos for AI analysis.</string>
 	<!--
 	HealthKit Usage Descriptions - DISABLED (requires paid Apple Developer account)
 	To re-enable: uncomment these and add HealthKit entitlement
