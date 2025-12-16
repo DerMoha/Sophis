@@ -16,6 +16,16 @@ class SettingsProvider extends ChangeNotifier {
   String? get geminiApiKey => _settings.geminiApiKey;
   bool get hasGeminiApiKey => _settings.hasGeminiApiKey;
   double get waterGoalMl => _settings.waterGoalMl;
+  
+  // Accent color
+  Color get accentColor => _settings.accentColor;
+  int get accentColorValue => _settings.accentColorValue;
+  
+  // Meal reminders
+  bool get remindersEnabled => _settings.remindersEnabled;
+  String? get breakfastReminderTime => _settings.breakfastReminderTime;
+  String? get lunchReminderTime => _settings.lunchReminderTime;
+  String? get dinnerReminderTime => _settings.dinnerReminderTime;
 
   Locale? get locale {
     if (_settings.localeOverride == null) return null;
@@ -57,4 +67,44 @@ class SettingsProvider extends ChangeNotifier {
     await _storage.saveSettings(_settings);
     notifyListeners();
   }
+
+  Future<void> setAccentColor(int colorValue) async {
+    _settings = _settings.copyWith(accentColorValue: colorValue);
+    await _storage.saveSettings(_settings);
+    notifyListeners();
+  }
+
+  Future<void> setRemindersEnabled(bool enabled) async {
+    _settings = _settings.copyWith(remindersEnabled: enabled);
+    await _storage.saveSettings(_settings);
+    notifyListeners();
+  }
+
+  Future<void> setBreakfastReminder(String? time) async {
+    _settings = _settings.copyWith(
+      breakfastReminderTime: time,
+      clearBreakfast: time == null,
+    );
+    await _storage.saveSettings(_settings);
+    notifyListeners();
+  }
+
+  Future<void> setLunchReminder(String? time) async {
+    _settings = _settings.copyWith(
+      lunchReminderTime: time,
+      clearLunch: time == null,
+    );
+    await _storage.saveSettings(_settings);
+    notifyListeners();
+  }
+
+  Future<void> setDinnerReminder(String? time) async {
+    _settings = _settings.copyWith(
+      dinnerReminderTime: time,
+      clearDinner: time == null,
+    );
+    await _storage.saveSettings(_settings);
+    notifyListeners();
+  }
 }
+

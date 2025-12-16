@@ -40,10 +40,10 @@ class SophisApp extends StatelessWidget {
           title: 'Sophis',
           debugShowCheckedModeBanner: false,
           
-          // Theme
+          // Theme with dynamic accent color
           themeMode: settings.themeMode,
-          theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.darkTheme,
+          theme: AppTheme.lightThemeWithAccent(settings.accentColor),
+          darkTheme: AppTheme.darkThemeWithAccent(settings.accentColor),
           
           // Localization
           locale: settings.locale,

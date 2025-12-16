@@ -53,15 +53,27 @@ class AppTheme {
     );
   }
 
-  static ThemeData get lightTheme {
+  // Factory method for dynamic accent color
+  static ThemeData lightThemeWithAccent(Color accentColor) {
+    return _buildLightTheme(accentColor);
+  }
+
+  static ThemeData darkThemeWithAccent(Color accentColor) {
+    return _buildDarkTheme(accentColor);
+  }
+
+  static ThemeData get lightTheme => _buildLightTheme(accent);
+  static ThemeData get darkTheme => _buildDarkTheme(accent);
+
+  static ThemeData _buildLightTheme(Color accentColor) {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: accent,
+        seedColor: accentColor,
         brightness: Brightness.light,
       ).copyWith(
-        primary: accent,
+        primary: accentColor,
         surface: Colors.white,
         error: error,
       ),
@@ -137,7 +149,7 @@ class AppTheme {
     );
   }
 
-  static ThemeData get darkTheme {
+  static ThemeData _buildDarkTheme(Color accentColor) {
     const darkBg = Color(0xFF0A0A0A);
     const darkSurface = Color(0xFF141414);
     const darkBorder = Color(0xFF2A2A2A);
@@ -148,10 +160,10 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: accent,
+        seedColor: accentColor,
         brightness: Brightness.dark,
       ).copyWith(
-        primary: accent,
+        primary: accentColor,
         surface: darkSurface,
         error: error,
       ),
