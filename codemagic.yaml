@@ -13,34 +13,15 @@ workflows:
       - name: Get Flutter packages
         script: flutter pub get
           
-      - name: Configure iOS for health plugin
+      - name: Set Xcode deployment target
         script: |
           cd ios
-          
-          # Debug: Show current Podfile content
-          echo "=== Current Podfile ==="
-          cat Podfile
-          echo "======================="
-          
-          # Fix 1: Update Xcode project deployment target
-          echo "Updating Xcode deployment target to 14.0..."
+          # Ensure Xcode project deployment target matches Podfile (14.0)
           sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9]*\.[0-9]*/IPHONEOS_DEPLOYMENT_TARGET = 14.0/g' Runner.xcodeproj/project.pbxproj
-          
-          # Fix 2: Ensure Podfile has platform :ios, '14.0' uncommented
-          # The default Flutter Podfile has: # platform :ios, '12.0'
-          echo "Updating Podfile platform..."
-          sed -i '' "s/^# platform :ios.*/platform :ios, '14.0'/" Podfile
-          sed -i '' "s/^platform :ios.*/platform :ios, '14.0'/" Podfile
-          
-          # Debug: Show updated Podfile content
-          echo "=== Updated Podfile ==="
-          cat Podfile
-          echo "======================="
           
       - name: Build unsigned iOS app
         script: |
           # Build for iOS without code signing (for AltStore re-signing)
-          # Note: flutter build ios runs pod install internally
           flutter build ios --release --no-codesign
           
       - name: Create unsigned IPA
