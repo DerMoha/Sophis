@@ -1,0 +1,67 @@
+workflows:
+  ios-altstore:
+    name: iOS Build for AltStore
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      
+    scripts:
+      - name: Get Flutter packages
+        script: flutter pub get
+          
+      - name: Set iOS deployment target
+        script: |
+          cd ios
+          # Ensure minimum iOS version for Health/HealthKit compatibility
+          sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9]*\.[0-9]*/IPHONEOS_DEPLOYMENT_TARGET = 13.0/g' Runner.xcodeproj/project.pbxproj
+          
+      - name: Install CocoaPods dependencies
+        script: |
+          cd ios
+          pod install --repo-update
+          
+      - name: Build unsigned iOS app
+        script: |
+          # Build for iOS without code signing (for AltStore re-signing)
+          flutter build ios --release --no-codesign
+          
+      - name: Create unsigned IPA
+        script: |
+          set -e  # Exit on any error
+          
+          APP_PATH="build/ios/iphoneos/Runner.app"
+          
+          # Verify the app was built
+          if [ ! -d "$APP_PATH" ]; then
+            echo "ERROR: Runner.app not found at $APP_PATH"
+            ls -la build/ios/iphoneos/ || echo "Directory doesn't exist"
+            exit 1
+          fi
+          
+          echo "Found Runner.app, creating IPA..."
+          
+          # Create Payload directory structure
+          mkdir -p Payload
+          cp -r "$APP_PATH" Payload/
+          
+          # Create the IPA (just a zip file with .ipa extension)
+          zip -r sophis-unsigned.ipa Payload
+          
+          # Verify IPA was created
+          if [ -f "sophis-unsigned.ipa" ]; then
+            echo "SUCCESS: IPA created - $(ls -lh sophis-unsigned.ipa)"
+          else
+            echo "ERROR: IPA creation failed"
+            exit 1
+          fi
+          
+          # Clean up
+          rm -rf Payload
+          
+    artifacts:
+      - sophis-unsigned.ipa
+      - build/ios/iphoneos/Runner.app
