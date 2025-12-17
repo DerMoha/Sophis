@@ -16,4 +16,19 @@ import flutter_local_notifications
     GeneratedPluginRegistrant.register(with: self)
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
+  
+  // iOS 26 UIScene lifecycle support
+  override func application(
+    _ application: UIApplication,
+    configurationForConnecting connectingSceneSession: UISceneSession,
+    options: UIScene.ConnectionOptions
+  ) -> UISceneConfiguration {
+    return UISceneConfiguration(name: "Default Configuration", sessionRole: connectingSceneSession.role)
+  }
+  
+  override func application(
+    _ application: UIApplication,
+    didDiscardSceneSessions sceneSessions: Set<UISceneSession>
+  ) {
+  }
 }

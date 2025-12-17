@@ -10,8 +10,11 @@ workflows:
       cocoapods: default
       
     scripts:
-      - name: Get Flutter packages
-        script: flutter pub get
+      - name: Clean and get Flutter packages
+        script: |
+          # Remove stale pubspec.lock to ensure disabled dependencies (like health) are excluded
+          rm -f pubspec.lock
+          flutter pub get
           
       - name: Set Xcode deployment target
         script: |

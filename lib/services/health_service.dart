@@ -7,7 +7,7 @@
 // To re-enable Android Health Connect only:
 // 1. Uncomment health dependency in pubspec.yaml
 // 2. Use conditional imports to only import health on Android
-// 3. See health_service_real.dart for the full implementation
+// 3. See health_service_real.dart.disabled for the full implementation
 // ============================================================================
 
 /// Stub service for health data - returns disabled/zero values
