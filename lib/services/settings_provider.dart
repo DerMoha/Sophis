@@ -9,18 +9,26 @@ class SettingsProvider extends ChangeNotifier {
   final StorageService _storage;
   final NotificationService _notifications = NotificationService();
   AppSettings _settings;
+  String? _geminiApiKey;
 
   SettingsProvider(this._storage) : _settings = _storage.loadSettings() {
+    _loadSecureData();
     // Schedule notifications on startup based on saved settings
     _updateNotifications();
+  }
+
+  Future<void> _loadSecureData() async {
+    _geminiApiKey = await _storage.loadApiKey();
+    notifyListeners();
   }
 
   AppSettings get settings => _settings;
   ThemeMode get themeMode => _settings.themeMode;
   String? get localeOverride => _settings.localeOverride;
   AIMode get aiMode => _settings.aiMode;
-  String? get geminiApiKey => _settings.geminiApiKey;
-  bool get hasGeminiApiKey => _settings.hasGeminiApiKey;
+
+  String? get geminiApiKey => _geminiApiKey;
+  bool get hasGeminiApiKey => _geminiApiKey != null && _geminiApiKey!.isNotEmpty;
   double get waterGoalMl => _settings.waterGoalMl;
   
   // Accent color
@@ -63,11 +71,8 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   Future<void> setGeminiApiKey(String? key) async {
-    _settings = _settings.copyWith(
-      geminiApiKey: key,
-      clearApiKey: key == null || key.isEmpty,
-    );
-    await _storage.saveSettings(_settings);
+    _geminiApiKey = key;
+    await _storage.saveApiKey(key);
     notifyListeners();
   }
 

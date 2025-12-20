@@ -29,6 +29,7 @@ dependencies:
   # Phase 5: Notifications
   flutter_local_notifications: ^17.2.3
   timezone: ^0.9.4
+  flutter_secure_storage: ^10.0.0
   
   # Phase 6: Health Integration (Google Health Connect + Apple HealthKit)
   # DISABLED: iOS crashes without HealthKit entitlement (requires paid Apple Developer)

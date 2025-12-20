@@ -20,7 +20,6 @@ class AccentColors {
 
 /// App settings and preferences
 class AppSettings {
-  final String? geminiApiKey;
   final AIMode aiMode;
   final ThemeMode themeMode;
   final String? localeOverride;
@@ -33,7 +32,6 @@ class AppSettings {
   final bool healthSyncEnabled;
 
   const AppSettings({
-    this.geminiApiKey,
     this.aiMode = AIMode.offlineBasic,
     this.themeMode = ThemeMode.system,
     this.localeOverride,
@@ -46,11 +44,9 @@ class AppSettings {
     this.healthSyncEnabled = false,
   });
 
-  bool get hasGeminiApiKey => geminiApiKey != null && geminiApiKey!.isNotEmpty;
   Color get accentColor => Color(accentColorValue);
 
   Map<String, dynamic> toJson() => {
-    'geminiApiKey': geminiApiKey,
     'aiMode': aiMode.index,
     'themeMode': themeMode.index,
     'localeOverride': localeOverride,
@@ -64,7 +60,6 @@ class AppSettings {
   };
 
   factory AppSettings.fromJson(Map<String, dynamic> json) => AppSettings(
-    geminiApiKey: json['geminiApiKey'],
     aiMode: json['aiMode'] != null 
         ? AIMode.values[json['aiMode']] 
         : AIMode.offlineBasic,
@@ -82,7 +77,6 @@ class AppSettings {
   );
 
   AppSettings copyWith({
-    String? geminiApiKey,
     AIMode? aiMode,
     ThemeMode? themeMode,
     String? localeOverride,
@@ -93,13 +87,11 @@ class AppSettings {
     String? dinnerReminderTime,
     bool? remindersEnabled,
     bool? healthSyncEnabled,
-    bool clearApiKey = false,
     bool clearLocale = false,
     bool clearBreakfast = false,
     bool clearLunch = false,
     bool clearDinner = false,
   }) => AppSettings(
-    geminiApiKey: clearApiKey ? null : (geminiApiKey ?? this.geminiApiKey),
     aiMode: aiMode ?? this.aiMode,
     themeMode: themeMode ?? this.themeMode,
     localeOverride: clearLocale ? null : (localeOverride ?? this.localeOverride),

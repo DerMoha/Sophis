@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/nutrition_goals.dart';
 import '../models/food_entry.dart';
 import '../models/user_profile.dart';
@@ -17,14 +18,17 @@ class StorageService {
   static const _weightEntriesKey = 'weight_entries';
   static const _recipesKey = 'recipes';
   static const _settingsKey = 'app_settings';
+  static const _apiKeyStorageKey = 'gemini_api_key';
 
   final SharedPreferences _prefs;
+  final FlutterSecureStorage _secureStorage;
 
-  StorageService(this._prefs);
+  StorageService(this._prefs, this._secureStorage);
 
   static Future<StorageService> create() async {
     final prefs = await SharedPreferences.getInstance();
-    return StorageService(prefs);
+    const secureStorage = FlutterSecureStorage();
+    return StorageService(prefs, secureStorage);
   }
 
   // Goals
@@ -115,5 +119,19 @@ class StorageService {
   // Clear all data
   Future<void> clear() async {
     await _prefs.clear();
+    await _secureStorage.deleteAll();
+  }
+
+  // Secure API Key Storage
+  Future<void> saveApiKey(String? key) async {
+    if (key == null || key.isEmpty) {
+      await _secureStorage.delete(key: _apiKeyStorageKey);
+    } else {
+      await _secureStorage.write(key: _apiKeyStorageKey, value: key);
+    }
+  }
+
+  Future<String?> loadApiKey() async {
+    return await _secureStorage.read(key: _apiKeyStorageKey);
   }
 }
