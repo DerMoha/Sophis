@@ -31,5 +31,125 @@
   "delete": "Delete",
   "welcomeTitle": "Welcome to Sophis",
   "welcomeSubtitle": "Set your goals to get started",
-  "setGoals": "Set Goals"
+  "setGoals": "Set Goals",
+  "aiFoodRecognition": "AI Food Recognition",
+  "camera": "Camera",
+  "gallery": "Gallery",
+  "analyzeWithAI": "Analyze with AI",
+  "analyzingFood": "Analyzing your food with AI...",
+  "takePhotosPrompt": "Take photos of your food",
+  "takePhotosAndAnalyze": "Take photos and tap Analyze",
+  "initializingAI": "Initializing AI...",
+  "noFoodDetected": "No food detected",
+  "foodName": "Food name",
+  "addAll": "Add All",
+  "added": "Added",
+  "addedSnack": "Added {name}",
+  "@addedSnack": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "maxImagesReached": "Maximum 5 images reached",
+  "imagesLeft": "{count} left",
+  "@imagesLeft": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "errorApiKey": "Please set your Gemini API key in Settings",
+  "errorInit": "Failed to initialize: {error}",
+  "@errorInit": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "errorPickImage": "Failed to pick image: {error}",
+  "@errorPickImage": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "errorAnalysis": "Analysis failed: {error}",
+  "@errorAnalysis": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "goToSettings": "Go to Settings",
+  "activity": "Activity",
+  "burned": "+{amount} burned",
+  "@burned": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "manualEntry": "Manual entry",
+  "searchFood": "Search food",
+  "scanBarcode": "Scan barcode",
+  "aiRecognition": "📷 AI recognition",
+  "deleteConfirmation": "Delete \"{name}\"?",
+  "@deleteConfirmation": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "appearance": "Appearance",
+  "accentColor": "Accent Color",
+  "mealReminders": "Meal Reminders",
+  "enableReminders": "Enable Reminders",
+  "enableRemindersSubtitle": "Get notified when it's time to eat",
+  "fitnessSync": "Fitness Sync",
+  "healthSync": "Health Sync",
+  "healthSyncSubtitle": "Sync burned calories from Health Connect / HealthKit",
+  "healthPermissionError": "Health permission denied or not available",
+  "burnedCaloriesDisclaimer": "Burned calories will be added to your daily budget",
+  "aiSection": "AI",
+  "geminiApiKey": "Gemini API Key",
+  "enterApiKey": "Enter your API key",
+  "getApiKeyHelper": "Get a free key at aistudio.google.com",
+  "notSet": "Not set",
+  "clear": "Clear",
+  "calculate": "Calculate",
+  "weightKg": "Weight (kg)",
+  "heightCm": "Height (cm)",
+  "age": "Age",
+  "gender": "Gender",
+  "activityLevel": "Activity Level",
+  "goal": "Goal",
+  "calculateCalories": "Calculate Calories",
+  "orSetManually": "Or set manually",
+  "targetWeight": "Target Weight (kg)",
+  "genderMale": "Male",
+  "genderFemale": "Female",
+  "genderOther": "Other",
+  "activitySedentary": "Sedentary (Little/No Exercise)",
+  "activityLight": "Light (1-2 Days/Week)",
+  "activityModerate": "Moderate (3-4 Days/Week)",
+  "activityActive": "Active (5-6 Days/Week)",
+  "activityVeryActive": "Very Active (Daily/Intense)",
+  "goalLose": "Lose Weight",
+  "goalMaintain": "Maintain Weight",
+  "goalGain": "Gain Weight",
+  "logWeight": "Log Weight",
+  "noteOptional": "Note (optional)",
+  "current": "Current",
+  "toGo": "To Go",
+  "progress": "Progress",
+  "history": "History",
+  "deleteEntryConfirmation": "Delete this entry?"
 }

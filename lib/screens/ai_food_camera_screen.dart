@@ -50,7 +50,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     if (mounted) setState(() => _remainingRequests = remaining);
     
     if (apiKey == null || apiKey.isEmpty) {
-      if (mounted) setState(() => _error = 'Please set your Gemini API key in Settings');
+      if (mounted) setState(() => _error = AppLocalizations.of(context)!.errorApiKey);
       return;
     }
 
@@ -67,7 +67,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       await _geminiService.initialize(apiKey);
       if (mounted) setState(() => _serviceInitialized = true);
     } catch (e) {
-      if (mounted) setState(() => _error = 'Failed to initialize: $e');
+      if (mounted) setState(() => _error = AppLocalizations.of(context)!.errorInit(e.toString()));
     } finally {
       if (mounted) setState(() => _isInitializing = false);
     }
@@ -82,7 +82,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
   Future<void> _pickImage(ImageSource source) async {
     if (_images.length >= maxImages) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Maximum 5 images reached')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.maxImagesReached)),
       );
       return;
     }
@@ -103,7 +103,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
         _error = null;
       });
     } catch (e) {
-      if (mounted) setState(() => _error = 'Failed to pick image: $e');
+      if (mounted) setState(() => _error = AppLocalizations.of(context)!.errorPickImage(e.toString()));
     }
   }
 
@@ -141,7 +141,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = 'Analysis failed: $e';
+          _error = AppLocalizations.of(context)!.errorAnalysis(e.toString());
           _isLoading = false;
         });
       }
@@ -198,7 +198,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     });
     
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Added ${entry.name}')),
+      SnackBar(content: Text(AppLocalizations.of(context)!.addedSnack(entry.name))),
     );
   }
 
@@ -216,10 +216,10 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-    
+
     // Watch only for API key changes to avoid unnecessary rebuilds
     final hasApiKey = context.select<SettingsProvider, bool>((s) => s.hasGeminiApiKey);
-    
+
     // Retry initialization if key becomes available and we failed previously
     if (hasApiKey && !_serviceInitialized && !_isInitializing) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -229,7 +229,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('AI Food Recognition'),
+        title: Text(l10n.aiFoodRecognition),
         actions: [
           // Remaining requests badge
           Center(
@@ -255,7 +255,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                     ),
                     const SizedBox(width: 2),
                     Text(
-                      '$_remainingRequests left',
+                      l10n.imagesLeft(_remainingRequests),
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
@@ -289,7 +289,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
           if (_results != null && _results!.isNotEmpty)
             TextButton(
               onPressed: _addAllFoods,
-              child: const Text('Add All'),
+              child: Text(l10n.addAll),
             ),
         ],
       ),
@@ -300,7 +300,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
             child: _images.isEmpty
                 ? Center(
                     child: Text(
-                      'Take photos of your food',
+                      l10n.takePhotosPrompt,
                       style: TextStyle(color: theme.disabledColor),
                     ),
                   )
@@ -324,7 +324,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                             ? () => _pickImage(ImageSource.camera)
                             : null,
                         icon: const Icon(Icons.camera_alt),
-                        label: const Text('Camera'),
+                        label: Text(l10n.camera),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -334,7 +334,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                             ? () => _pickImage(ImageSource.gallery)
                             : null,
                         icon: const Icon(Icons.photo_library),
-                        label: const Text('Gallery'),
+                        label: Text(l10n.gallery),
                       ),
                     ),
                   ],
@@ -347,7 +347,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                         ? () => _analyzeFood()
                         : null,
                     icon: const Icon(Icons.auto_awesome),
-                    label: const Text('Analyze with AI'),
+                    label: Text(l10n.analyzeWithAI),
                   ),
                 ),
               ],
@@ -413,7 +413,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Go to Settings'),
+                  child: Text(l10n.goToSettings),
                 ),
               ],
             ],
@@ -423,13 +423,13 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     }
     
     if (_isLoading) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text('Analyzing your food with AI...'),
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            Text(l10n.analyzingFood),
           ],
         ),
       );
@@ -439,8 +439,8 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       return Center(
         child: Text(
           _serviceInitialized 
-              ? 'Take photos and tap Analyze'
-              : 'Initializing AI...',
+              ? l10n.takePhotosAndAnalyze
+              : l10n.initializingAI,
           style: TextStyle(color: theme.disabledColor),
         ),
       );
@@ -453,7 +453,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
           children: [
             Icon(Icons.no_food, size: 48, color: theme.disabledColor),
             const SizedBox(height: 16),
-            Text('No food detected', style: TextStyle(color: theme.disabledColor)),
+            Text(l10n.noFoodDetected, style: TextStyle(color: theme.disabledColor)),
           ],
         ),
       );
@@ -485,7 +485,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                   child: TextField(
                     controller: result.controller,
                     decoration: InputDecoration(
-                      labelText: 'Food name',
+                      labelText: AppLocalizations.of(context)!.foodName,
                       hintText: food.name,
                       isDense: true,
                       suffixIcon: result.controller.text != food.name
@@ -523,19 +523,19 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                           color: Colors.green,
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.check, color: Colors.white, size: 18),
-                            SizedBox(width: 4),
-                            Text('Added', style: TextStyle(color: Colors.white)),
+                            const Icon(Icons.check, color: Colors.white, size: 18),
+                            const SizedBox(width: 4),
+                            Text(AppLocalizations.of(context)!.added, style: const TextStyle(color: Colors.white)),
                           ],
                         ),
                       )
                     : ElevatedButton.icon(
                         onPressed: () => _addFood(result),
                         icon: const Icon(Icons.add, size: 18),
-                        label: const Text('Add'),
+                        label: Text(AppLocalizations.of(context)!.add),
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         ),

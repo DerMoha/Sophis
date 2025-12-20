@@ -159,14 +159,14 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Calculate', style: theme.textTheme.titleMedium),
+                    Text(l10n.calculate, style: theme.textTheme.titleMedium),
                     const SizedBox(height: 16),
                     Row(
                       children: [
                         Expanded(
                           child: _buildTextField(
                             controller: _weightController,
-                            label: 'Weight (kg)',
+                            label: l10n.weightKg,
                             keyboardType: TextInputType.number,
                           ),
                         ),
@@ -174,7 +174,7 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
                         Expanded(
                           child: _buildTextField(
                             controller: _heightController,
-                            label: 'Height (cm)',
+                            label: l10n.heightCm,
                             keyboardType: TextInputType.number,
                           ),
                         ),
@@ -186,7 +186,7 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
                         Expanded(
                           child: _buildTextField(
                             controller: _ageController,
-                            label: 'Age',
+                            label: l10n.age,
                             keyboardType: TextInputType.number,
                           ),
                         ),
@@ -194,7 +194,7 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
                         Expanded(
                           child: _buildDropdown<Gender>(
                             value: _gender,
-                            label: 'Gender',
+                            label: l10n.gender,
                             items: Gender.values,
                             itemLabel: (g) => _genderLabel(g),
                             onChanged: (v) => setState(() => _gender = v),
@@ -205,7 +205,7 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
                     const SizedBox(height: 12),
                     _buildDropdown<ActivityLevel>(
                       value: _activityLevel,
-                      label: 'Activity Level',
+                      label: l10n.activityLevel,
                       items: ActivityLevel.values,
                       itemLabel: (a) => _activityLabel(a),
                       onChanged: (v) => setState(() => _activityLevel = v),
@@ -213,7 +213,7 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
                     const SizedBox(height: 12),
                     _buildDropdown<Goal>(
                       value: _goal,
-                      label: 'Goal',
+                      label: l10n.goal,
                       items: Goal.values,
                       itemLabel: (g) => _goalLabel(g),
                       onChanged: (v) => setState(() => _goal = v),
@@ -223,7 +223,7 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
                       width: double.infinity,
                       child: OutlinedButton(
                         onPressed: _calculateFromProfile,
-                        child: const Text('Calculate Calories'),
+                        child: Text(l10n.calculateCalories),
                       ),
                     ),
                   ],
@@ -233,7 +233,7 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
             const SizedBox(height: 24),
             
             // Manual goals section
-            Text('Or set manually', style: theme.textTheme.titleMedium),
+            Text(l10n.orSetManually, style: theme.textTheme.titleMedium),
             const SizedBox(height: 12),
             _buildTextField(
               controller: _caloriesController,
@@ -277,7 +277,7 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
             // Target weight
             _buildTextField(
               controller: _targetWeightController,
-              label: 'Target Weight (kg)',
+              label: l10n.targetWeight,
               keyboardType: TextInputType.number,
             ),
           ],
@@ -322,28 +322,31 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
   }
 
   String _genderLabel(Gender g) {
+    final l10n = AppLocalizations.of(context)!;
     switch (g) {
-      case Gender.male: return 'Male';
-      case Gender.female: return 'Female';
-      case Gender.other: return 'Other';
+      case Gender.male: return l10n.genderMale;
+      case Gender.female: return l10n.genderFemale;
+      case Gender.other: return l10n.genderOther;
     }
   }
 
   String _activityLabel(ActivityLevel a) {
+    final l10n = AppLocalizations.of(context)!;
     switch (a) {
-      case ActivityLevel.sedentary: return 'Sedentary (Little/No Exercise)';
-      case ActivityLevel.light: return 'Light (1-2 Days/Week)';
-      case ActivityLevel.moderate: return 'Moderate (3-4 Days/Week)';
-      case ActivityLevel.active: return 'Active (5-6 Days/Week)';
-      case ActivityLevel.veryActive: return 'Very Active (Daily/Intense)';
+      case ActivityLevel.sedentary: return l10n.activitySedentary;
+      case ActivityLevel.light: return l10n.activityLight;
+      case ActivityLevel.moderate: return l10n.activityModerate;
+      case ActivityLevel.active: return l10n.activityActive;
+      case ActivityLevel.veryActive: return l10n.activityVeryActive;
     }
   }
 
   String _goalLabel(Goal g) {
+    final l10n = AppLocalizations.of(context)!;
     switch (g) {
-      case Goal.lose: return 'Lose Weight';
-      case Goal.maintain: return 'Maintain Weight';
-      case Goal.gain: return 'Gain Weight';
+      case Goal.lose: return l10n.goalLose;
+      case Goal.maintain: return l10n.goalMaintain;
+      case Goal.gain: return l10n.goalGain;
     }
   }
 }

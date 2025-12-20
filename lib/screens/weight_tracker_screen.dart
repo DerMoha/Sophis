@@ -61,7 +61,7 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Log Weight', style: theme.textTheme.titleMedium),
+                      Text(l10n.logWeight, style: theme.textTheme.titleMedium),
                       const SizedBox(height: 16),
                       Row(
                         children: [
@@ -70,8 +70,8 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
                             child: TextField(
                               controller: _weightController,
                               keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(
-                                labelText: 'Weight (kg)',
+                              decoration: InputDecoration(
+                                labelText: l10n.weightKg,
                                 suffixText: 'kg',
                               ),
                             ),
@@ -81,8 +81,8 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
                             flex: 3,
                             child: TextField(
                               controller: _noteController,
-                              decoration: const InputDecoration(
-                                labelText: 'Note (optional)',
+                              decoration: InputDecoration(
+                                labelText: l10n.noteOptional,
                               ),
                             ),
                           ),
@@ -111,12 +111,12 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
                         if (latest != null)
-                          _buildStat('Current', '${latest.weightKg.toStringAsFixed(1)} kg'),
+                          _buildStat(l10n.current, '${latest.weightKg.toStringAsFixed(1)} kg'),
                         if (profile?.targetWeight != null)
-                          _buildStat('Goal', '${profile!.targetWeight!.toStringAsFixed(1)} kg'),
+                          _buildStat(l10n.goal, '${profile!.targetWeight!.toStringAsFixed(1)} kg'),
                         if (latest != null && profile?.targetWeight != null)
                           _buildStat(
-                            'To Go',
+                            l10n.toGo,
                             '${(latest.weightKg - profile!.targetWeight!).abs().toStringAsFixed(1)} kg',
                           ),
                       ],
@@ -133,7 +133,7 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Progress', style: theme.textTheme.titleMedium),
+                        Text(l10n.progress, style: theme.textTheme.titleMedium),
                         const SizedBox(height: 16),
                         SizedBox(
                           height: 200,
@@ -146,7 +146,7 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
               const SizedBox(height: 20),
 
               // History
-              Text('History', style: theme.textTheme.titleMedium),
+              Text(l10n.history, style: theme.textTheme.titleMedium),
               const SizedBox(height: 8),
               if (entries.isEmpty)
                 Center(
@@ -242,7 +242,7 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(l10n.delete),
-        content: const Text('Delete this entry?'),
+        content: Text(l10n.deleteEntryConfirmation),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),

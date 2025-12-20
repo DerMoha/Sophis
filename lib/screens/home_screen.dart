@@ -159,7 +159,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: AppTheme.fire),
                       const SizedBox(width: 4),
                       Text(
-                        '+${burnedCalories.toStringAsFixed(0)} burned',
+                        l10n.burned(burnedCalories.toStringAsFixed(0)),
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: AppTheme.fire,
                           fontWeight: FontWeight.w600,
@@ -298,7 +298,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: _buildQuickAction(
                 context,
                 icon: Icons.bar_chart_outlined,
-                label: 'Activity',
+                label: l10n.activity,
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const ActivityGraphScreen()),
@@ -455,11 +455,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           break;
                       }
                     },
-                    itemBuilder: (_) => const [
-                      PopupMenuItem(value: 'manual', child: Text('Manual entry')),
-                      PopupMenuItem(value: 'search', child: Text('Search food')),
-                      PopupMenuItem(value: 'barcode', child: Text('Scan barcode')),
-                      PopupMenuItem(value: 'ai', child: Text('📷 AI recognition')),
+                    itemBuilder: (_) => [
+                      PopupMenuItem(value: 'manual', child: Text(l10n.manualEntry)),
+                      PopupMenuItem(value: 'search', child: Text(l10n.searchFood)),
+                      PopupMenuItem(value: 'barcode', child: Text(l10n.scanBarcode)),
+                      PopupMenuItem(value: 'ai', child: Text(l10n.aiRecognition)),
                     ],
                   ),
                 ],
@@ -487,7 +487,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     context: context,
                     builder: (ctx) => AlertDialog(
                       title: Text(l10n.delete),
-                      content: Text('Delete "${entry.name}"?'),
+                      content: Text(l10n.deleteConfirmation(entry.name)),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(ctx),

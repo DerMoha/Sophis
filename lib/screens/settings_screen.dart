@@ -22,7 +22,7 @@ class SettingsScreen extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 8),
             children: [
               // Appearance Section
-              const _SectionHeader(title: 'Appearance'),
+              _SectionHeader(title: l10n.appearance),
               _SettingsTile(
                 icon: Icons.palette_outlined,
                 title: l10n.theme,
@@ -55,7 +55,7 @@ class SettingsScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Accent Color', style: theme.textTheme.bodyMedium),
+                    Text(l10n.accentColor, style: theme.textTheme.bodyMedium),
                     const SizedBox(height: 12),
                     Wrap(
                       spacing: 12,
@@ -121,11 +121,11 @@ class SettingsScreen extends StatelessWidget {
               const Divider(),
               
               // Meal Reminders Section
-              const _SectionHeader(title: 'Meal Reminders'),
+              _SectionHeader(title: l10n.mealReminders),
               SwitchListTile(
                 secondary: const Icon(Icons.notifications_outlined),
-                title: const Text('Enable Reminders'),
-                subtitle: const Text('Get notified when it\'s time to eat'),
+                title: Text(l10n.enableReminders),
+                subtitle: Text(l10n.enableRemindersSubtitle),
                 value: settings.remindersEnabled,
                 onChanged: (value) => settings.setRemindersEnabled(value),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 20),
@@ -133,21 +133,21 @@ class SettingsScreen extends StatelessWidget {
               if (settings.remindersEnabled) ...[
                 _ReminderTimeTile(
                   icon: Icons.wb_twilight_outlined,
-                  title: 'Breakfast',
+                  title: l10n.breakfast,
                   time: settings.breakfastReminderTime,
                   defaultTime: const TimeOfDay(hour: 8, minute: 0),
                   onChanged: (time) => settings.setBreakfastReminder(time),
                 ),
                 _ReminderTimeTile(
                   icon: Icons.wb_sunny_outlined,
-                  title: 'Lunch',
+                  title: l10n.lunch,
                   time: settings.lunchReminderTime,
                   defaultTime: const TimeOfDay(hour: 12, minute: 30),
                   onChanged: (time) => settings.setLunchReminder(time),
                 ),
                 _ReminderTimeTile(
                   icon: Icons.nights_stay_outlined,
-                  title: 'Dinner',
+                  title: l10n.dinner,
                   time: settings.dinnerReminderTime,
                   defaultTime: const TimeOfDay(hour: 18, minute: 30),
                   onChanged: (time) => settings.setDinnerReminder(time),
@@ -156,18 +156,18 @@ class SettingsScreen extends StatelessWidget {
               const Divider(),
               
               // Fitness Sync Section
-              const _SectionHeader(title: 'Fitness Sync'),
+              _SectionHeader(title: l10n.fitnessSync),
               SwitchListTile(
                 secondary: const Icon(Icons.fitness_center_outlined),
-                title: const Text('Health Sync'),
-                subtitle: const Text('Sync burned calories from Health Connect / HealthKit'),
+                title: Text(l10n.healthSync),
+                subtitle: Text(l10n.healthSyncSubtitle),
                 value: settings.healthSyncEnabled,
                 onChanged: (value) async {
                   final success = await settings.setHealthSyncEnabled(value);
                   if (!success && value && context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Health permission denied or not available'),
+                      SnackBar(
+                        content: Text(l10n.healthPermissionError),
                       ),
                     );
                   }
@@ -177,7 +177,7 @@ class SettingsScreen extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Text(
-                  'Burned calories will be added to your daily budget',
+                  l10n.burnedCaloriesDisclaimer,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.outline,
                   ),
@@ -186,14 +186,14 @@ class SettingsScreen extends StatelessWidget {
               const Divider(),
               
               // AI Section
-              const _SectionHeader(title: 'AI'),
+              _SectionHeader(title: l10n.aiSection),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: TextField(
                   decoration: InputDecoration(
-                    labelText: 'Gemini API Key',
-                    hintText: 'Enter your API key',
-                    helperText: 'Get a free key at aistudio.google.com',
+                    labelText: l10n.geminiApiKey,
+                    hintText: l10n.enterApiKey,
+                    helperText: l10n.getApiKeyHelper,
                     suffixIcon: settings.geminiApiKey?.isNotEmpty == true
                         ? const Icon(Icons.check_circle, color: Colors.green)
                         : null,
@@ -298,7 +298,7 @@ class _ReminderTimeTile extends StatelessWidget {
       title: Text(title),
       subtitle: isEnabled 
           ? Text(currentTime.format(context))
-          : const Text('Not set'),
+          : Text(AppLocalizations.of(context)!.notSet),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -306,7 +306,7 @@ class _ReminderTimeTile extends StatelessWidget {
             IconButton(
               icon: const Icon(Icons.clear),
               onPressed: () => onChanged(null),
-              tooltip: 'Clear',
+              tooltip: AppLocalizations.of(context)!.clear,
             ),
           IconButton(
             icon: Icon(isEnabled ? Icons.edit : Icons.add),
