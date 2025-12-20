@@ -29,12 +29,16 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
   bool _isLoading = false;
   String? _error;
   bool _serviceInitialized = false;
+  bool _isInitializing = false;
   int _remainingRequests = 20;
 
   @override
   void initState() {
     super.initState();
-    _initService();
+    // Initial load attempt
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initService();
+    });
   }
 
   Future<void> _initService() async {
@@ -50,11 +54,20 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       return;
     }
 
+    if (_isInitializing) return;
+
+    if (mounted) setState(() {
+      _isInitializing = true;
+      _error = null; // Clear previous errors
+    });
+
     try {
       await _geminiService.initialize(apiKey);
       if (mounted) setState(() => _serviceInitialized = true);
     } catch (e) {
       if (mounted) setState(() => _error = 'Failed to initialize: $e');
+    } finally {
+      if (mounted) setState(() => _isInitializing = false);
     }
   }
 
@@ -201,6 +214,16 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    
+    // Watch settings to react to API key changes (e.g. when loaded from storage)
+    final settings = context.watch<SettingsProvider>();
+    
+    // Retry initialization if key becomes available and we failed previously
+    if (settings.hasGeminiApiKey && !_serviceInitialized && !_isInitializing) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _initService();
+      });
+    }
 
     return Scaffold(
       appBar: AppBar(
