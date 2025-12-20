@@ -56,10 +56,12 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
 
     if (_isInitializing) return;
 
-    if (mounted) setState(() {
-      _isInitializing = true;
-      _error = null; // Clear previous errors
-    });
+    if (mounted) {
+      setState(() {
+        _isInitializing = true;
+        _error = null; // Clear previous errors
+      });
+    }
 
     try {
       await _geminiService.initialize(apiKey);
@@ -215,11 +217,11 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     
-    // Watch settings to react to API key changes (e.g. when loaded from storage)
-    final settings = context.watch<SettingsProvider>();
+    // Watch only for API key changes to avoid unnecessary rebuilds
+    final hasApiKey = context.select<SettingsProvider, bool>((s) => s.hasGeminiApiKey);
     
     // Retry initialization if key becomes available and we failed previously
-    if (settings.hasGeminiApiKey && !_serviceInitialized && !_isInitializing) {
+    if (hasApiKey && !_serviceInitialized && !_isInitializing) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _initService();
       });
