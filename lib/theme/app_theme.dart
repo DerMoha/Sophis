@@ -11,6 +11,8 @@ class AppTheme {
   static const Color success = Color(0xFF22C55E);
   static const Color warning = Color(0xFFF59E0B);
   static const Color error = Color(0xFFEF4444);
+  static const Color water = Color(0xFF3B82F6); // Blue
+  static const Color fire = Color(0xFFF97316); // Orange
 
   // Animation durations
   static const Duration animFast = Duration(milliseconds: 200);
@@ -114,15 +116,15 @@ class AppTheme {
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: border),
         ),
-        focusedBorder: OutlineInputBorder(
+          focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: accent, width: 2),
+          borderSide: BorderSide(color: accentColor, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: accent,
+          backgroundColor: accentColor,
           foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
@@ -132,7 +134,7 @@ class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: accent,
+          foregroundColor: accentColor,
           textStyle: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
@@ -206,13 +208,13 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: accent, width: 2),
+          borderSide: BorderSide(color: accentColor, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: accent,
+          backgroundColor: accentColor,
           foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
@@ -222,7 +224,7 @@ class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: accent,
+          foregroundColor: accentColor,
           textStyle: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),

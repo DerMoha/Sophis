@@ -14,6 +14,7 @@ import 'weight_tracker_screen.dart';
 import 'recipes_screen.dart';
 import 'ai_food_camera_screen.dart';
 import 'activity_graph_screen.dart';
+import '../widgets/water_details_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -153,14 +154,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Icon(Icons.local_fire_department, 
+                      const Icon(Icons.local_fire_department, 
                         size: 16, 
-                        color: Colors.orange.shade600),
+                        color: AppTheme.fire),
                       const SizedBox(width: 4),
                       Text(
                         '+${burnedCalories.toStringAsFixed(0)} burned',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: Colors.orange.shade600,
+                          color: AppTheme.fire,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -172,7 +173,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   label: l10n.calories,
                   current: totals['calories']!,
                   goal: goals.calories,
-                  color: AppTheme.accent,
+                  color: theme.colorScheme.primary,
                   unit: 'kcal',
                 ),
                 const SizedBox(height: 16),
@@ -211,47 +212,56 @@ class _HomeScreenState extends State<HomeScreen> {
         
         // Water tracker
         Card(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.water_drop_outlined, color: Colors.blue),
-                        const SizedBox(width: 8),
-                        Text(l10n.water, style: theme.textTheme.titleMedium),
-                      ],
-                    ),
-                    Text(
-                      '${(waterTotal / 1000).toStringAsFixed(1)} / ${(waterGoal / 1000).toStringAsFixed(1)} L',
-                      style: theme.textTheme.bodyMedium,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: (waterTotal / waterGoal).clamp(0, 1),
-                    minHeight: 8,
-                    backgroundColor: Colors.blue.withAlpha(26),
-                    valueColor: const AlwaysStoppedAnimation(Colors.blue),
+          child: InkWell(
+            onTap: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                builder: (_) => const WaterDetailsSheet(),
+              );
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.water_drop_outlined, color: AppTheme.water),
+                          const SizedBox(width: 8),
+                          Text(l10n.water, style: theme.textTheme.titleMedium),
+                        ],
+                      ),
+                      Text(
+                        '${(waterTotal / 1000).toStringAsFixed(1)} / ${(waterGoal / 1000).toStringAsFixed(1)} L',
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildWaterButton(context, 250, '250ml'),
-                    _buildWaterButton(context, 500, '500ml'),
-                    _buildWaterButton(context, 1000, '1L'),
-                  ],
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: (waterTotal / waterGoal).clamp(0, 1),
+                      minHeight: 8,
+                      backgroundColor: AppTheme.water.withAlpha(26),
+                      valueColor: const AlwaysStoppedAnimation(AppTheme.water),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildWaterButton(context, 250, '+250ml'),
+                      _buildWaterButton(context, 500, '+500ml'),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -362,14 +372,19 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildWaterButton(BuildContext context, double ml, String label) {
-    return OutlinedButton(
-      onPressed: () => context.read<NutritionProvider>().addWater(ml),
-      style: OutlinedButton.styleFrom(
-        foregroundColor: Colors.blue,
-        side: BorderSide(color: Colors.blue.withAlpha(77)),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: OutlinedButton(
+          onPressed: () => context.read<NutritionProvider>().addWater(ml),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppTheme.water,
+            side: BorderSide(color: AppTheme.water.withAlpha(77)),
+            padding: const EdgeInsets.symmetric(vertical: 8),
+          ),
+          child: Text(label),
+        ),
       ),
-      child: Text(label),
     );
   }
 
@@ -398,13 +413,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: AppTheme.accent.withAlpha(26),
+                        color: Theme.of(context).colorScheme.primary.withAlpha(26),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         '${total.toStringAsFixed(0)} kcal',
-                        style: const TextStyle(
-                          color: AppTheme.accent,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
@@ -511,7 +526,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: AppTheme.accent, size: 20),
+              Icon(icon, color: Theme.of(context).colorScheme.primary, size: 20),
               const SizedBox(width: 4),
               Flexible(
                 child: Text(

@@ -157,6 +157,17 @@ class NutritionProvider extends ChangeNotifier {
         .fold(0.0, (sum, e) => sum + e.amountMl);
   }
 
+  List<WaterEntry> getTodayWaterEntries() {
+    final now = DateTime.now();
+    return _waterEntries
+        .where((e) =>
+            e.timestamp.year == now.year &&
+            e.timestamp.month == now.month &&
+            e.timestamp.day == now.day)
+        .toList()
+      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+  }
+
   // Weight
   Future<void> addWeight(double kg, {String? note}) async {
     final entry = WeightEntry(

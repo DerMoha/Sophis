@@ -251,7 +251,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppTheme.accent.withAlpha(26),
+                  color: theme.colorScheme.primary.withAlpha(26),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(

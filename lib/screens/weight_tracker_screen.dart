@@ -182,7 +182,7 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
   Widget _buildStat(String label, String value) {
     return Column(
       children: [
-        Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        Text(value, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
         const SizedBox(height: 4),
         Text(label, style: TextStyle(color: Theme.of(context).disabledColor)),
       ],
@@ -191,6 +191,7 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
 
   Widget _buildChart(List entries) {
     if (entries.isEmpty) return const SizedBox();
+    final theme = Theme.of(context);
 
     final spots = <FlSpot>[];
     for (var i = 0; i < entries.length; i++) {
@@ -211,19 +212,19 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
           LineChartBarData(
             spots: spots,
             isCurved: true,
-            color: AppTheme.accent,
+            color: theme.colorScheme.primary,
             barWidth: 3,
             dotData: FlDotData(
               show: true,
               getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(
                 radius: 4,
-                color: AppTheme.accent,
+                color: theme.colorScheme.primary,
                 strokeWidth: 0,
               ),
             ),
             belowBarData: BarAreaData(
               show: true,
-              color: AppTheme.accent.withAlpha(26),
+              color: theme.colorScheme.primary.withAlpha(26),
             ),
           ),
         ],
