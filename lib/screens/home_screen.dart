@@ -5,6 +5,7 @@ import '../services/nutrition_provider.dart';
 import '../services/settings_provider.dart';
 import '../theme/app_theme.dart';
 import '../theme/animations.dart';
+import '../widgets/organic_components.dart';
 import 'goals_setup_screen.dart';
 import 'settings_screen.dart';
 import 'add_food_screen.dart';
@@ -23,14 +24,29 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
+  late ScrollController _scrollController;
+  double _scrollOffset = 0;
+
   @override
   void initState() {
     super.initState();
-    // Auto-refresh burned calories when screen loads
+    _scrollController = ScrollController()
+      ..addListener(() {
+        setState(() {
+          _scrollOffset = _scrollController.offset;
+        });
+      });
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refreshBurnedCalories();
     });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _refreshBurnedCalories() async {
@@ -45,23 +61,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.appTitle),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            tooltip: l10n.settings,
-            onPressed: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SettingsScreen()),
-              );
-              // Refresh burned calories after returning from settings
-              _refreshBurnedCalories();
-            },
-          ),
-        ],
-      ),
       body: Consumer<NutritionProvider>(
         builder: (context, nutrition, _) {
           if (nutrition.goals == null) {
@@ -73,37 +72,77 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildWelcomeView(BuildContext context, AppLocalizations l10n, ThemeData theme) {
+  Widget _buildWelcomeView(
+      BuildContext context, AppLocalizations l10n, ThemeData theme) {
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(l10n.today, style: theme.textTheme.headlineMedium),
-            const SizedBox(height: 24),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
+            const SizedBox(height: 40),
+            FadeInSlide(
+              index: 0,
+              child: Text(
+                l10n.appTitle,
+                style: theme.textTheme.displaySmall,
+              ),
+            ),
+            const SizedBox(height: 8),
+            FadeInSlide(
+              index: 1,
+              child: Text(
+                l10n.today,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+            const Spacer(),
+            FadeInSlide(
+              index: 2,
+              child: OrganicCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.restaurant_menu_outlined,
-                      size: 48,
-                      color: theme.colorScheme.primary,
+                    Container(
+                      width: 64,
+                      height: 64,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            theme.colorScheme.primary,
+                            theme.colorScheme.primary.withOpacity(0.7),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Icon(
+                        Icons.restaurant_menu_rounded,
+                        size: 32,
+                        color: Colors.white,
+                      ),
                     ),
-                    const SizedBox(height: 16),
-                    Text(l10n.welcomeTitle, style: theme.textTheme.titleLarge),
-                    const SizedBox(height: 8),
-                    Text(l10n.welcomeSubtitle, style: theme.textTheme.bodyMedium),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 24),
+                    Text(
+                      l10n.welcomeTitle,
+                      style: theme.textTheme.headlineMedium,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      l10n.welcomeSubtitle,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        height: 1.6,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () => Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => const GoalsSetupScreen()),
+                          AppTheme.slideRoute(const GoalsSetupScreen()),
                         ),
                         child: Text(l10n.setGoals),
                       ),
@@ -112,6 +151,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
+            const Spacer(flex: 2),
           ],
         ),
       ),
@@ -132,258 +172,412 @@ class _HomeScreenState extends State<HomeScreen> {
     final waterTotal = nutrition.getTodayWaterTotal();
     final waterGoal = settings.waterGoalMl;
 
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        // Calories summary
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+    final calorieProgress =
+        (totals['calories']! / goals.calories).clamp(0.0, 1.0);
+
+    return CustomScrollView(
+      controller: _scrollController,
+      physics: const BouncingScrollPhysics(),
+      slivers: [
+        // Animated App Bar
+        SliverAppBar(
+          expandedHeight: 100,
+          floating: true,
+          pinned: true,
+          backgroundColor: theme.scaffoldBackgroundColor.withOpacity(
+            (_scrollOffset / 100).clamp(0.0, 1.0),
+          ),
+          elevation: 0,
+          flexibleSpace: FlexibleSpaceBar(
+            titlePadding: const EdgeInsets.only(left: 24, bottom: 16),
+            title: AnimatedOpacity(
+              opacity: _scrollOffset > 50 ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 200),
+              child: Text(
+                l10n.appTitle,
+                style: theme.textTheme.titleLarge,
+              ),
+            ),
+            background: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(l10n.today, style: theme.textTheme.titleMedium),
-                    _buildRemainingBadge(remaining, l10n),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l10n.appTitle,
+                          style: theme.textTheme.headlineMedium,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _getGreeting(l10n),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
-                // Show burned calories if health sync is enabled and has data
-                if (settings.healthSyncEnabled && burnedCalories > 0) ...[
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Icon(Icons.local_fire_department, 
-                        size: 16, 
-                        color: AppTheme.fire),
-                      const SizedBox(width: 4),
-                      Text(
-                        l10n.burned(burnedCalories.toStringAsFixed(0)),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: AppTheme.fire,
-                          fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: IconButton(
+                icon: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: theme.colorScheme.outline.withOpacity(0.1),
+                    ),
+                  ),
+                  child: const Icon(Icons.settings_outlined, size: 20),
+                ),
+                tooltip: l10n.settings,
+                onPressed: () async {
+                  await Navigator.push(
+                    context,
+                    AppTheme.slideRoute(const SettingsScreen()),
+                  );
+                  _refreshBurnedCalories();
+                },
+              ),
+            ),
+          ],
+        ),
+
+        // Main Content
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate([
+              // Hero Calorie Card
+              FadeInSlide(
+                index: 0,
+                child: _buildCalorieHeroCard(
+                  context,
+                  l10n,
+                  theme,
+                  totals,
+                  goals,
+                  remaining,
+                  calorieProgress,
+                  burnedCalories,
+                  settings.healthSyncEnabled,
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Macro Rings Row
+              FadeInSlide(
+                index: 1,
+                child: _buildMacroRingsCard(context, l10n, theme, totals, goals),
+              ),
+              const SizedBox(height: 20),
+
+              // Water Tracker
+              FadeInSlide(
+                index: 2,
+                child: _buildWaterCard(context, l10n, theme, waterTotal, waterGoal),
+              ),
+              const SizedBox(height: 24),
+
+              // Quick Actions
+              FadeInSlide(
+                index: 3,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: QuickActionCard(
+                        icon: Icons.monitor_weight_outlined,
+                        label: l10n.weight,
+                        onTap: () => Navigator.push(
+                          context,
+                          AppTheme.slideRoute(const WeightTrackerScreen()),
                         ),
                       ),
-                    ],
-                  ),
-                ],
-                const SizedBox(height: 20),
-                _buildProgressBar(
-                  label: l10n.calories,
-                  current: totals['calories']!,
-                  goal: goals.calories,
-                  color: theme.colorScheme.primary,
-                  unit: 'kcal',
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(child: _buildProgressBar(
-                      label: l10n.protein,
-                      current: totals['protein']!,
-                      goal: goals.protein,
-                      color: AppTheme.success,
-                      unit: 'g',
-                    )),
+                    ),
                     const SizedBox(width: 12),
-                    Expanded(child: _buildProgressBar(
-                      label: l10n.carbs,
-                      current: totals['carbs']!,
-                      goal: goals.carbs,
-                      color: AppTheme.warning,
-                      unit: 'g',
-                    )),
+                    Expanded(
+                      child: QuickActionCard(
+                        icon: Icons.menu_book_outlined,
+                        label: l10n.recipes,
+                        onTap: () => Navigator.push(
+                          context,
+                          AppTheme.slideRoute(const RecipesScreen()),
+                        ),
+                      ),
+                    ),
                     const SizedBox(width: 12),
-                    Expanded(child: _buildProgressBar(
-                      label: l10n.fat,
-                      current: totals['fat']!,
-                      goal: goals.fat,
-                      color: AppTheme.error,
-                      unit: 'g',
-                    )),
+                    Expanded(
+                      child: QuickActionCard(
+                        icon: Icons.insights_outlined,
+                        label: l10n.activity,
+                        onTap: () => Navigator.push(
+                          context,
+                          AppTheme.slideRoute(const ActivityGraphScreen()),
+                        ),
+                      ),
+                    ),
                   ],
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              // Meals Section
+              FadeInSlide(
+                index: 4,
+                child: SectionHeader(
+                  title: l10n.today,
+                  icon: Icons.restaurant_outlined,
+                ),
+              ),
+
+              _buildMealSection(context, l10n, 'breakfast', l10n.breakfast,
+                  Icons.wb_twilight_rounded, 5),
+              const SizedBox(height: 12),
+              _buildMealSection(context, l10n, 'lunch', l10n.lunch,
+                  Icons.wb_sunny_rounded, 6),
+              const SizedBox(height: 12),
+              _buildMealSection(context, l10n, 'dinner', l10n.dinner,
+                  Icons.nights_stay_rounded, 7),
+              const SizedBox(height: 12),
+              _buildMealSection(context, l10n, 'snack', l10n.snacks,
+                  Icons.cookie_outlined, 8),
+            ]),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _getGreeting(AppLocalizations l10n) {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return l10n.today;
+    if (hour < 17) return l10n.today;
+    return l10n.today;
+  }
+
+  Widget _buildCalorieHeroCard(
+    BuildContext context,
+    AppLocalizations l10n,
+    ThemeData theme,
+    Map<String, double> totals,
+    goals,
+    double remaining,
+    double progress,
+    double burnedCalories,
+    bool healthSyncEnabled,
+  ) {
+    final isOver = remaining < 0;
+    final statusColor = isOver ? AppTheme.error : AppTheme.success;
+
+    return GlassCard(
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Radial Progress - fixed size
+          RadialProgress(
+            value: progress,
+            size: 130,
+            strokeWidth: 12,
+            color: theme.colorScheme.primary,
+            gradient: LinearGradient(
+              colors: [
+                theme.colorScheme.primary,
+                theme.colorScheme.primary.withOpacity(0.6),
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AnimatedNumber(
+                  value: totals['calories']!,
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  '/ ${goals.calories.toStringAsFixed(0)}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                Text(
+                  'kcal',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),
           ),
-        ),
-        const SizedBox(height: 16),
-        
-        // Water tracker
-        Card(
-          child: InkWell(
-            onTap: () {
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                builder: (_) => const WaterDetailsSheet(),
-              );
-            },
-            borderRadius: BorderRadius.circular(12),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.water_drop_outlined, color: AppTheme.water),
-                          const SizedBox(width: 8),
-                          Text(l10n.water, style: theme.textTheme.titleMedium),
-                        ],
-                      ),
-                      Text(
-                        '${(waterTotal / 1000).toStringAsFixed(1)} / ${(waterGoal / 1000).toStringAsFixed(1)} L',
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: (waterTotal / waterGoal).clamp(0, 1),
-                      minHeight: 8,
-                      backgroundColor: AppTheme.water.withAlpha(26),
-                      valueColor: const AlwaysStoppedAnimation(AppTheme.water),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildWaterButton(context, 250, '+250ml'),
-                      _buildWaterButton(context, 500, '+500ml'),
-                    ],
+          const SizedBox(width: 20),
+          // Stats Column - flexible
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  l10n.calories,
+                  style: theme.textTheme.titleMedium,
+                ),
+                const SizedBox(height: 12),
+                // Remaining badge
+                _CompactStatRow(
+                  icon: isOver
+                      ? Icons.warning_amber_rounded
+                      : Icons.check_circle_outline,
+                  value: remaining.abs().toStringAsFixed(0),
+                  label: isOver ? l10n.over : l10n.remaining,
+                  color: statusColor,
+                ),
+                // Burned calories
+                if (healthSyncEnabled && burnedCalories > 0) ...[
+                  const SizedBox(height: 8),
+                  _CompactStatRow(
+                    icon: Icons.local_fire_department_rounded,
+                    value: burnedCalories.toStringAsFixed(0),
+                    label: l10n.burned('').trim(),
+                    color: AppTheme.fire,
                   ),
                 ],
-              ),
+              ],
             ),
           ),
-        ),
-        const SizedBox(height: 24),
-        
-        // Quick actions
-        Row(
-          children: [
-            Expanded(
-              child: _buildQuickAction(
-                context,
-                icon: Icons.monitor_weight_outlined,
-                label: l10n.weight,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const WeightTrackerScreen()),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildQuickAction(
-                context,
-                icon: Icons.restaurant_menu_outlined,
-                label: l10n.recipes,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const RecipesScreen()),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildQuickAction(
-                context,
-                icon: Icons.bar_chart_outlined,
-                label: l10n.activity,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ActivityGraphScreen()),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 24),
-        
-        // Meals
-        _buildMealSection(context, l10n, 'breakfast', l10n.breakfast, Icons.wb_twilight_outlined),
-        _buildMealSection(context, l10n, 'lunch', l10n.lunch, Icons.wb_sunny_outlined),
-        _buildMealSection(context, l10n, 'dinner', l10n.dinner, Icons.nights_stay_outlined),
-        _buildMealSection(context, l10n, 'snack', l10n.snacks, Icons.cookie_outlined),
-      ],
-    );
-  }
-
-  Widget _buildRemainingBadge(double remaining, AppLocalizations l10n) {
-    final isOver = remaining < 0;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: (isOver ? AppTheme.error : AppTheme.success).withAlpha(26),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        '${remaining.abs().toStringAsFixed(0)} ${isOver ? l10n.over : l10n.remaining}',
-        style: TextStyle(
-          color: isOver ? AppTheme.error : AppTheme.success,
-          fontWeight: FontWeight.w600,
-          fontSize: 12,
-        ),
+        ],
       ),
     );
   }
 
-  Widget _buildProgressBar({
-    required String label,
-    required double current,
-    required double goal,
-    required Color color,
-    required String unit,
-  }) {
-    final progress = (current / goal).clamp(0.0, 1.0);
-    
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(label, style: const TextStyle(fontSize: 12)),
-            Text(
-              '${current.toStringAsFixed(0)}/${goal.toStringAsFixed(0)}$unit',
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        AnimatedProgressBar(
-          value: progress,
-          height: 6,
-          backgroundColor: color.withAlpha(26),
-          valueColor: color,
-          borderRadius: BorderRadius.circular(3),
-        ),
-      ],
+  Widget _buildMacroRingsCard(
+    BuildContext context,
+    AppLocalizations l10n,
+    ThemeData theme,
+    Map<String, double> totals,
+    goals,
+  ) {
+    return GlassCard(
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          MacroRing(
+            label: l10n.protein,
+            value: totals['protein']!,
+            goal: goals.protein,
+            color: AppTheme.protein,
+          ),
+          MacroRing(
+            label: l10n.carbs,
+            value: totals['carbs']!,
+            goal: goals.carbs,
+            color: AppTheme.carbs,
+          ),
+          MacroRing(
+            label: l10n.fat,
+            value: totals['fat']!,
+            goal: goals.fat,
+            color: AppTheme.fat,
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildWaterButton(BuildContext context, double ml, String label) {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: OutlinedButton(
-          onPressed: () => context.read<NutritionProvider>().addWater(ml),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: AppTheme.water,
-            side: BorderSide(color: AppTheme.water.withAlpha(77)),
-            padding: const EdgeInsets.symmetric(vertical: 8),
+  Widget _buildWaterCard(
+    BuildContext context,
+    AppLocalizations l10n,
+    ThemeData theme,
+    double waterTotal,
+    double waterGoal,
+  ) {
+    final progress = (waterTotal / waterGoal).clamp(0.0, 1.0);
+
+    return GlassCard(
+      onTap: () {
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (_) => const WaterDetailsSheet(),
+        );
+      },
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: AppTheme.water.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.water_drop_rounded,
+                      color: AppTheme.water,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(l10n.water, style: theme.textTheme.titleMedium),
+                ],
+              ),
+              Text(
+                '${(waterTotal / 1000).toStringAsFixed(1)} / ${(waterGoal / 1000).toStringAsFixed(1)} L',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: AppTheme.water,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ),
-          child: Text(label),
-        ),
+          const SizedBox(height: 16),
+          FluidProgressBar(
+            value: progress,
+            color: AppTheme.water,
+            height: 10,
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: WaterDropButton(
+                  label: '+250ml',
+                  onPressed: () =>
+                      context.read<NutritionProvider>().addWater(250),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: WaterDropButton(
+                  label: '+500ml',
+                  onPressed: () =>
+                      context.read<NutritionProvider>().addWater(500),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -394,151 +588,171 @@ class _HomeScreenState extends State<HomeScreen> {
     String mealType,
     String title,
     IconData icon,
+    int animationIndex,
   ) {
-    final entries = context.watch<NutritionProvider>().getEntriesByMeal(mealType);
+    final entries =
+        context.watch<NutritionProvider>().getEntriesByMeal(mealType);
     final total = entries.fold(0.0, (sum, e) => sum + e.calories);
+    final theme = Theme.of(context);
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Card(
-        child: Column(
-          children: [
-            ListTile(
-              leading: Icon(icon),
-              title: Text(title),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (total > 0)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary.withAlpha(26),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '${total.toStringAsFixed(0)} kcal',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  PopupMenuButton<String>(
-                    icon: const Icon(Icons.add),
-                    onSelected: (value) {
-                      switch (value) {
-                        case 'manual':
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => AddFoodScreen(meal: mealType)),
-                          );
-                          break;
-                        case 'search':
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => FoodSearchScreen(meal: mealType)),
-                          );
-                          break;
-                        case 'barcode':
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => BarcodeScannerScreen(meal: mealType)),
-                          );
-                          break;
-                        case 'ai':
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => AIFoodCameraScreen(meal: mealType)),
-                          );
-                          break;
-                      }
-                    },
-                    itemBuilder: (_) => [
-                      PopupMenuItem(value: 'manual', child: Text(l10n.manualEntry)),
-                      PopupMenuItem(value: 'search', child: Text(l10n.searchFood)),
-                      PopupMenuItem(value: 'barcode', child: Text(l10n.scanBarcode)),
-                      PopupMenuItem(value: 'ai', child: Text(l10n.aiRecognition)),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            if (entries.isEmpty)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: Text(
-                  l10n.noEntries,
-                  style: TextStyle(color: Theme.of(context).disabledColor),
-                ),
-              )
-            else
-              ...entries.map((entry) => ListTile(
-                dense: true,
-                title: Text(entry.name),
-                subtitle: Text(
-                  'P: ${entry.protein.toStringAsFixed(0)}g | C: ${entry.carbs.toStringAsFixed(0)}g | F: ${entry.fat.toStringAsFixed(0)}g',
-                  style: const TextStyle(fontSize: 11),
-                ),
-                trailing: Text('${entry.calories.toStringAsFixed(0)} kcal'),
-                onLongPress: () {
-                  showDialog(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: Text(l10n.delete),
-                      content: Text(l10n.deleteConfirmation(entry.name)),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx),
-                          child: Text(l10n.cancel),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            context.read<NutritionProvider>().removeFoodEntry(entry.id);
-                            Navigator.pop(ctx);
-                          },
-                          child: Text(l10n.delete),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              )),
+    return FadeInSlide(
+      index: animationIndex,
+      child: MealCard(
+        title: title,
+        icon: icon,
+        calories: total,
+        addMenu: PopupMenuButton<String>(
+          icon: Icon(
+            Icons.add_circle_outline,
+            color: theme.colorScheme.primary,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+          ),
+          onSelected: (value) => _handleMealAction(context, value, mealType),
+          itemBuilder: (_) => [
+            _buildPopupItem(Icons.edit_outlined, l10n.manualEntry, 'manual'),
+            _buildPopupItem(Icons.search_outlined, l10n.searchFood, 'search'),
+            _buildPopupItem(
+                Icons.qr_code_scanner_outlined, l10n.scanBarcode, 'barcode'),
+            _buildPopupItem(
+                Icons.auto_awesome_outlined, l10n.aiRecognition, 'ai'),
           ],
         ),
+        entries: entries.isEmpty
+            ? [
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                  child: Text(
+                    l10n.noEntries,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ]
+            : entries
+                .map((entry) => FoodEntryTile(
+                      name: entry.name,
+                      calories: entry.calories,
+                      protein: entry.protein,
+                      carbs: entry.carbs,
+                      fat: entry.fat,
+                      onLongPress: () => _showDeleteDialog(context, l10n, entry),
+                    ))
+                .toList(),
       ),
     );
   }
 
-  Widget _buildQuickAction(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return Card(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: Theme.of(context).colorScheme.primary, size: 20),
-              const SizedBox(width: 4),
-              Flexible(
-                child: Text(
-                  label,
-                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
-                  overflow: TextOverflow.ellipsis,
+  PopupMenuItem<String> _buildPopupItem(
+      IconData icon, String label, String value) {
+    return PopupMenuItem(
+      value: value,
+      child: Row(
+        children: [
+          Icon(icon, size: 20),
+          const SizedBox(width: 12),
+          Text(label),
+        ],
+      ),
+    );
+  }
+
+  void _handleMealAction(BuildContext context, String action, String mealType) {
+    Widget screen;
+    switch (action) {
+      case 'manual':
+        screen = AddFoodScreen(meal: mealType);
+        break;
+      case 'search':
+        screen = FoodSearchScreen(meal: mealType);
+        break;
+      case 'barcode':
+        screen = BarcodeScannerScreen(meal: mealType);
+        break;
+      case 'ai':
+        screen = AIFoodCameraScreen(meal: mealType);
+        break;
+      default:
+        return;
+    }
+    Navigator.push(context, AppTheme.slideRoute(screen));
+  }
+
+  void _showDeleteDialog(BuildContext context, AppLocalizations l10n, entry) {
+    final theme = Theme.of(context);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.delete),
+        content: Text(l10n.deleteConfirmation(entry.name)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () {
+              context.read<NutritionProvider>().removeFoodEntry(entry.id);
+              Navigator.pop(ctx);
+            },
+            style: TextButton.styleFrom(foregroundColor: theme.colorScheme.error),
+            child: Text(l10n.delete),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Compact stat row that doesn't overflow
+class _CompactStatRow extends StatelessWidget {
+  final IconData icon;
+  final String value;
+  final String label;
+  final Color color;
+
+  const _CompactStatRow({
+    required this.icon,
+    required this.value,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: color),
+        const SizedBox(width: 8),
+        Flexible(
+          child: RichText(
+            overflow: TextOverflow.ellipsis,
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: value,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-            ],
+                TextSpan(
+                  text: ' $label',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: color.withOpacity(0.8),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-      ),
+      ],
     );
   }
 }
