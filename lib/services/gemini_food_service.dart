@@ -194,9 +194,200 @@ If no food is visible, return: {"foods": []}
     }
   }
 
+  /// Extract recipe ingredients from an image of a recipe (cookbook, screenshot, etc.)
+  Future<RecipeExtraction> extractRecipeFromImage(File imageFile) async {
+    if (!_isInitialized || _model == null) {
+      throw Exception('Gemini service not initialized');
+    }
+
+    // Check rate limit
+    if (!await canMakeRequest()) {
+      throw Exception('Daily limit reached (20 requests/day). Try again tomorrow.');
+    }
+
+    final bytes = await imageFile.readAsBytes();
+    final imagePart = DataPart('image/jpeg', bytes);
+
+    const promptText = '''
+Analyze this image of a recipe and extract the following information.
+This could be a photo of a cookbook page, a screenshot, a handwritten recipe, or a printed recipe.
+
+Extract:
+1. Recipe name (if visible, otherwise suggest a name based on ingredients)
+2. Number of servings (if visible, otherwise estimate based on quantities)
+3. All ingredients with:
+   - Name of ingredient
+   - Amount (numeric)
+   - Unit (g, ml, cups, tbsp, pieces, etc.)
+   - Category for shopping (produce, dairy, protein, grains, pantry, frozen, beverages, other)
+4. Estimated total nutrition for the entire recipe:
+   - Calories
+   - Protein (g)
+   - Carbs (g)
+   - Fat (g)
+
+Respond ONLY with valid JSON in this exact format, no other text:
+{
+  "recipe_name": "Recipe Name",
+  "servings": 4,
+  "ingredients": [
+    {
+      "name": "Chicken breast",
+      "amount": 500,
+      "unit": "g",
+      "category": "protein"
+    },
+    {
+      "name": "Olive oil",
+      "amount": 2,
+      "unit": "tbsp",
+      "category": "pantry"
+    }
+  ],
+  "total_nutrition": {
+    "calories": 1200,
+    "protein": 80,
+    "carbs": 40,
+    "fat": 50
+  }
+}
+
+If no recipe is visible or readable, return:
+{
+  "recipe_name": null,
+  "servings": 0,
+  "ingredients": [],
+  "total_nutrition": {"calories": 0, "protein": 0, "carbs": 0, "fat": 0}
+}
+''';
+
+    final prompt = TextPart(promptText);
+
+    try {
+      final response = await _model!.generateContent([
+        Content.multi([prompt, imagePart])
+      ]);
+
+      // Increment counter after successful request
+      await _incrementRequestCount();
+
+      final text = response.text;
+      if (text == null || text.isEmpty) {
+        return RecipeExtraction.empty();
+      }
+
+      return _parseRecipeResponse(text);
+    } catch (e) {
+      throw Exception('Failed to extract recipe: $e');
+    }
+  }
+
+  RecipeExtraction _parseRecipeResponse(String text) {
+    try {
+      var cleaned = text.trim();
+      if (cleaned.startsWith('```json')) {
+        cleaned = cleaned.substring(7);
+      } else if (cleaned.startsWith('```')) {
+        cleaned = cleaned.substring(3);
+      }
+      if (cleaned.endsWith('```')) {
+        cleaned = cleaned.substring(0, cleaned.length - 3);
+      }
+      cleaned = cleaned.trim();
+
+      final json = jsonDecode(cleaned) as Map<String, dynamic>;
+
+      final ingredients = (json['ingredients'] as List<dynamic>? ?? []).map((i) {
+        final ing = i as Map<String, dynamic>;
+        return ExtractedIngredient(
+          name: ing['name']?.toString() ?? '',
+          amount: (ing['amount'] as num?)?.toDouble() ?? 0,
+          unit: ing['unit']?.toString() ?? 'g',
+          category: ing['category']?.toString() ?? 'other',
+        );
+      }).where((i) => i.name.isNotEmpty).toList();
+
+      final nutrition = json['total_nutrition'] as Map<String, dynamic>? ?? {};
+
+      return RecipeExtraction(
+        recipeName: json['recipe_name']?.toString(),
+        servings: (json['servings'] as num?)?.toInt() ?? 1,
+        ingredients: ingredients,
+        totalCalories: (nutrition['calories'] as num?)?.toDouble() ?? 0,
+        totalProtein: (nutrition['protein'] as num?)?.toDouble() ?? 0,
+        totalCarbs: (nutrition['carbs'] as num?)?.toDouble() ?? 0,
+        totalFat: (nutrition['fat'] as num?)?.toDouble() ?? 0,
+      );
+    } catch (e) {
+      return RecipeExtraction.empty();
+    }
+  }
+
   void dispose() {
     _model = null;
     _isInitialized = false;
+  }
+}
+
+/// Result of extracting a recipe from an image
+class RecipeExtraction {
+  final String? recipeName;
+  final int servings;
+  final List<ExtractedIngredient> ingredients;
+  final double totalCalories;
+  final double totalProtein;
+  final double totalCarbs;
+  final double totalFat;
+
+  RecipeExtraction({
+    required this.recipeName,
+    required this.servings,
+    required this.ingredients,
+    required this.totalCalories,
+    required this.totalProtein,
+    required this.totalCarbs,
+    required this.totalFat,
+  });
+
+  factory RecipeExtraction.empty() => RecipeExtraction(
+        recipeName: null,
+        servings: 0,
+        ingredients: [],
+        totalCalories: 0,
+        totalProtein: 0,
+        totalCarbs: 0,
+        totalFat: 0,
+      );
+
+  bool get isEmpty => ingredients.isEmpty;
+  bool get isNotEmpty => ingredients.isNotEmpty;
+
+  /// Nutrition per serving
+  double get caloriesPerServing => servings > 0 ? totalCalories / servings : 0;
+  double get proteinPerServing => servings > 0 ? totalProtein / servings : 0;
+  double get carbsPerServing => servings > 0 ? totalCarbs / servings : 0;
+  double get fatPerServing => servings > 0 ? totalFat / servings : 0;
+}
+
+/// A single ingredient extracted from a recipe image
+class ExtractedIngredient {
+  final String name;
+  final double amount;
+  final String unit;
+  final String category;
+
+  ExtractedIngredient({
+    required this.name,
+    required this.amount,
+    required this.unit,
+    required this.category,
+  });
+
+  String get displayAmount {
+    if (amount == amount.toInt()) {
+      return '${amount.toInt()} $unit';
+    }
+    return '${amount.toStringAsFixed(1)} $unit';
   }
 }
 

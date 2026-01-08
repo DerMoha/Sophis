@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/nutrition_provider.dart';
+import '../services/settings_provider.dart';
 import '../theme/app_theme.dart';
 import '../theme/animations.dart';
 import '../l10n/generated/app_localizations.dart';
@@ -109,40 +110,45 @@ class _WaterDetailsSheetState extends State<WaterDetailsSheet> {
           // Quick add buttons
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Row(
-              children: [
-                _QuickAddButton(
-                  amount: 150,
-                  icon: Icons.local_cafe_outlined,
-                  onTap: () {
-                    context.read<NutritionProvider>().addWater(150);
-                  },
-                ),
-                const SizedBox(width: 12),
-                _QuickAddButton(
-                  amount: 250,
-                  icon: Icons.coffee_outlined,
-                  onTap: () {
-                    context.read<NutritionProvider>().addWater(250);
-                  },
-                ),
-                const SizedBox(width: 12),
-                _QuickAddButton(
-                  amount: 500,
-                  icon: Icons.water_drop_outlined,
-                  onTap: () {
-                    context.read<NutritionProvider>().addWater(500);
-                  },
-                ),
-                const SizedBox(width: 12),
-                _QuickAddButton(
-                  amount: 1000,
-                  icon: Icons.local_drink_outlined,
-                  onTap: () {
-                    context.read<NutritionProvider>().addWater(1000);
-                  },
-                ),
-              ],
+            child: Consumer<SettingsProvider>(
+              builder: (context, settings, _) {
+                final sizes = settings.waterSizes;
+                return Row(
+                  children: [
+                    _QuickAddButton(
+                      amount: sizes[0],
+                      icon: Icons.local_cafe_outlined,
+                      onTap: () {
+                        context.read<NutritionProvider>().addWater(sizes[0].toDouble());
+                      },
+                    ),
+                    const SizedBox(width: 12),
+                    _QuickAddButton(
+                      amount: sizes[1],
+                      icon: Icons.coffee_outlined,
+                      onTap: () {
+                        context.read<NutritionProvider>().addWater(sizes[1].toDouble());
+                      },
+                    ),
+                    const SizedBox(width: 12),
+                    _QuickAddButton(
+                      amount: sizes[2],
+                      icon: Icons.water_drop_outlined,
+                      onTap: () {
+                        context.read<NutritionProvider>().addWater(sizes[2].toDouble());
+                      },
+                    ),
+                    const SizedBox(width: 12),
+                    _QuickAddButton(
+                      amount: sizes[3],
+                      icon: Icons.local_drink_outlined,
+                      onTap: () {
+                        context.read<NutritionProvider>().addWater(sizes[3].toDouble());
+                      },
+                    ),
+                  ],
+                );
+              },
             ),
           ),
           const SizedBox(height: 20),

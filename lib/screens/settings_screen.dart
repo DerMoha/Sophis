@@ -2,13 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../models/app_settings.dart';
+import '../services/data_export_service.dart';
+import '../services/nutrition_provider.dart';
 import '../services/settings_provider.dart';
 import '../theme/app_theme.dart';
 import '../theme/animations.dart';
 import '../widgets/organic_components.dart';
+import 'goals_setup_screen.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  bool _isExporting = false;
+  bool _isImporting = false;
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +40,7 @@ class SettingsScreen extends StatelessWidget {
               titlePadding: const EdgeInsets.only(left: 56, bottom: 16),
               title: Text(
                 l10n.settings,
-                style: theme.textTheme.titleLarge,
+                style: theme.textTheme.headlineMedium,
               ),
             ),
           ),
@@ -75,9 +86,44 @@ class SettingsScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
 
-                    // Language Section
+                    // Nutrition Section
                     FadeInSlide(
                       index: 1,
+                      child: _buildSectionCard(
+                        context,
+                        title: l10n.nutrition,
+                        icon: Icons.restaurant_outlined,
+                        children: [
+                          // Calorie Goals
+                          _buildNavigationTile(
+                            context,
+                            title: l10n.calorieGoals,
+                            subtitle: l10n.calorieGoalsSubtitle,
+                            icon: Icons.local_fire_department_outlined,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                AppTheme.slideRoute(const GoalsSetupScreen()),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          // Water Sizes
+                          _buildNavigationTile(
+                            context,
+                            title: l10n.waterSizes,
+                            subtitle: l10n.waterSizesSubtitle,
+                            icon: Icons.water_drop_outlined,
+                            onTap: () => _showWaterSizesDialog(context, settings, l10n),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Language Section
+                    FadeInSlide(
+                      index: 2,
                       child: _buildSectionCard(
                         context,
                         title: l10n.language,
@@ -91,7 +137,7 @@ class SettingsScreen extends StatelessWidget {
 
                     // Meal Reminders Section
                     FadeInSlide(
-                      index: 2,
+                      index: 3,
                       child: _buildSectionCard(
                         context,
                         title: l10n.mealReminders,
@@ -137,7 +183,7 @@ class SettingsScreen extends StatelessWidget {
 
                     // Fitness Sync Section
                     FadeInSlide(
-                      index: 3,
+                      index: 4,
                       child: _buildSectionCard(
                         context,
                         title: l10n.fitnessSync,
@@ -174,7 +220,7 @@ class SettingsScreen extends StatelessWidget {
 
                     // AI Section
                     FadeInSlide(
-                      index: 4,
+                      index: 5,
                       child: _buildSectionCard(
                         context,
                         title: l10n.aiSection,
@@ -184,11 +230,41 @@ class SettingsScreen extends StatelessWidget {
                         ],
                       ),
                     ),
+                    const SizedBox(height: 16),
+
+                    // Data Section
+                    FadeInSlide(
+                      index: 6,
+                      child: _buildSectionCard(
+                        context,
+                        title: l10n.dataSection,
+                        icon: Icons.folder_outlined,
+                        children: [
+                          _buildDataActionTile(
+                            context,
+                            title: l10n.exportData,
+                            subtitle: l10n.exportDataSubtitle,
+                            icon: Icons.upload_outlined,
+                            isLoading: _isExporting,
+                            onTap: () => _handleExport(context, l10n),
+                          ),
+                          const SizedBox(height: 12),
+                          _buildDataActionTile(
+                            context,
+                            title: l10n.importData,
+                            subtitle: l10n.importDataSubtitle,
+                            icon: Icons.download_outlined,
+                            isLoading: _isImporting,
+                            onTap: () => _handleImport(context, l10n),
+                          ),
+                        ],
+                      ),
+                    ),
                     const SizedBox(height: 32),
 
                     // Version info
                     FadeInSlide(
-                      index: 5,
+                      index: 7,
                       child: Center(
                         child: Column(
                           children: [
@@ -269,6 +345,85 @@ class SettingsScreen extends StatelessWidget {
         const SizedBox(height: 12),
         child,
       ],
+    );
+  }
+
+  Widget _buildNavigationTile(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+            border: Border.all(
+              color: theme.colorScheme.outline.withOpacity(0.1),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  icon,
+                  size: 18,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: theme.textTheme.titleSmall),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                color: theme.colorScheme.onSurfaceVariant,
+                size: 20,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showWaterSizesDialog(
+    BuildContext context,
+    SettingsProvider settings,
+    AppLocalizations l10n,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) => _WaterSizesDialog(
+        settings: settings,
+        l10n: l10n,
+      ),
     );
   }
 
@@ -508,6 +663,150 @@ class SettingsScreen extends StatelessWidget {
       ],
     );
   }
+
+  Widget _buildDataActionTile(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required bool isLoading,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: isLoading ? null : onTap,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+            border: Border.all(
+              color: theme.colorScheme.outline.withOpacity(0.1),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: isLoading
+                    ? Padding(
+                        padding: const EdgeInsets.all(6),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: theme.colorScheme.primary,
+                        ),
+                      )
+                    : Icon(
+                        icon,
+                        size: 18,
+                        color: theme.colorScheme.primary,
+                      ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: theme.textTheme.titleSmall),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                color: theme.colorScheme.onSurfaceVariant,
+                size: 20,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleExport(BuildContext context, AppLocalizations l10n) async {
+    setState(() => _isExporting = true);
+
+    try {
+      final nutritionProvider = context.read<NutritionProvider>();
+      final success = await DataExportService.exportData(nutritionProvider.storage);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(success ? l10n.exportSuccess : l10n.exportFailed),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isExporting = false);
+      }
+    }
+  }
+
+  Future<void> _handleImport(BuildContext context, AppLocalizations l10n) async {
+    // Show confirmation dialog first
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.importData),
+        content: Text(l10n.importConfirmation),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l10n.importData),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isImporting = true);
+
+    try {
+      final nutritionProvider = context.read<NutritionProvider>();
+      final result = await DataExportService.importData(nutritionProvider.storage);
+
+      if (!mounted) return;
+
+      if (result.success) {
+        // Reload the data in the provider
+        await nutritionProvider.reloadAll();
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.message),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isImporting = false);
+      }
+    }
+  }
 }
 
 class _ReminderTimeTile extends StatelessWidget {
@@ -623,6 +922,102 @@ class _ReminderTimeTile extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _WaterSizesDialog extends StatefulWidget {
+  final SettingsProvider settings;
+  final AppLocalizations l10n;
+
+  const _WaterSizesDialog({
+    required this.settings,
+    required this.l10n,
+  });
+
+  @override
+  State<_WaterSizesDialog> createState() => _WaterSizesDialogState();
+}
+
+class _WaterSizesDialogState extends State<_WaterSizesDialog> {
+  late final List<TextEditingController> _controllers;
+
+  @override
+  void initState() {
+    super.initState();
+    final sizes = widget.settings.waterSizes;
+    _controllers = [
+      TextEditingController(text: sizes[0].toString()),
+      TextEditingController(text: sizes[1].toString()),
+      TextEditingController(text: sizes[2].toString()),
+      TextEditingController(text: sizes[3].toString()),
+    ];
+  }
+
+  @override
+  void dispose() {
+    for (final c in _controllers) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = widget.l10n;
+    final labels = [
+      l10n.waterSizeSmall,
+      l10n.waterSizeMedium,
+      l10n.waterSizeLarge,
+      l10n.waterSizeExtraLarge,
+    ];
+
+    return AlertDialog(
+      title: Text(l10n.waterSizes),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(4, (i) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: TextField(
+                controller: _controllers[i],
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: labels[i],
+                  suffixText: 'ml',
+                  prefixIcon: Icon(
+                    Icons.water_drop_outlined,
+                    color: AppTheme.water,
+                    size: 20,
+                  ),
+                ),
+              ),
+            );
+          }),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(l10n.cancel),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            final newSizes = _controllers
+                .map((c) => int.tryParse(c.text) ?? 250)
+                .toList();
+            widget.settings.setWaterSizes(
+              newSizes[0],
+              newSizes[1],
+              newSizes[2],
+              newSizes[3],
+            );
+            Navigator.pop(context);
+          },
+          child: Text(l10n.save),
+        ),
+      ],
     );
   }
 }

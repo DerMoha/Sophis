@@ -8,6 +8,7 @@ import '../models/water_entry.dart';
 import '../models/weight_entry.dart';
 import '../models/recipe.dart';
 import '../models/app_settings.dart';
+import '../models/meal_plan.dart';
 
 /// Local storage service using SharedPreferences
 class StorageService {
@@ -19,6 +20,8 @@ class StorageService {
   static const _recipesKey = 'recipes';
   static const _settingsKey = 'app_settings';
   static const _apiKeyStorageKey = 'gemini_api_key';
+  static const _plannedMealsKey = 'planned_meals';
+  static const _shoppingListKey = 'shopping_list_checked';
 
   final SharedPreferences _prefs;
   final FlutterSecureStorage _secureStorage;
@@ -114,6 +117,29 @@ class StorageService {
     final json = _prefs.getString(_settingsKey);
     if (json == null) return const AppSettings();
     return AppSettings.fromJson(jsonDecode(json));
+  }
+
+  // Planned Meals
+  Future<void> savePlannedMeals(List<PlannedMeal> meals) async {
+    final list = meals.map((m) => m.toJson()).toList();
+    await _prefs.setString(_plannedMealsKey, jsonEncode(list));
+  }
+
+  List<PlannedMeal> loadPlannedMeals() {
+    final json = _prefs.getString(_plannedMealsKey);
+    if (json == null) return [];
+    final list = jsonDecode(json) as List;
+    return list.map((m) => PlannedMeal.fromJson(m)).toList();
+  }
+
+  // Shopping List Checked Items (store just the names of checked items)
+  Future<void> saveShoppingListChecked(Set<String> checkedItems) async {
+    await _prefs.setStringList(_shoppingListKey, checkedItems.toList());
+  }
+
+  Set<String> loadShoppingListChecked() {
+    final list = _prefs.getStringList(_shoppingListKey);
+    return list?.toSet() ?? {};
   }
 
   // Clear all data

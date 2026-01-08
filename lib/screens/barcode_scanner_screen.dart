@@ -48,8 +48,9 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
       if (!mounted) return;
 
       if (product == null) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Product not found: $barcode')),
+          SnackBar(content: Text(l10n.productNotFound(barcode))),
         );
         _controller.start();
         setState(() => _isProcessing = false);
@@ -60,8 +61,9 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
       _showProductDialog(product, barcode);
     } catch (e) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+          SnackBar(content: Text(l10n.errorGeneric(e.toString()))),
         );
         _controller.start();
         setState(() => _isProcessing = false);
@@ -95,8 +97,8 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
             TextField(
               controller: amountController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Amount (g)',
+              decoration: InputDecoration(
+                labelText: l10n.amountGrams,
                 suffixText: 'g',
               ),
             ),
@@ -140,9 +142,11 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Scan Barcode'),
+        title: Text(l10n.scanBarcode),
         actions: [
           IconButton(
             icon: ValueListenableBuilder(

@@ -15,6 +15,7 @@ import 'weight_tracker_screen.dart';
 import 'recipes_screen.dart';
 import 'ai_food_camera_screen.dart';
 import 'activity_graph_screen.dart';
+import 'meal_planner_screen.dart';
 import '../widgets/water_details_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -172,8 +173,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final waterTotal = nutrition.getTodayWaterTotal();
     final waterGoal = settings.waterGoalMl;
 
+    // Effective goal = base goal + burned calories (exercise earns extra calories)
+    final effectiveGoal = goals.calories + burnedCalories;
     final calorieProgress =
-        (totals['calories']! / goals.calories).clamp(0.0, 1.0);
+        (totals['calories']! / effectiveGoal).clamp(0.0, 1.0);
 
     return CustomScrollView(
       controller: _scrollController,
@@ -195,7 +198,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               duration: const Duration(milliseconds: 200),
               child: Text(
                 l10n.appTitle,
-                style: theme.textTheme.titleLarge,
+                style: theme.textTheme.headlineMedium,
               ),
             ),
             background: SafeArea(
@@ -269,6 +272,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   theme,
                   totals,
                   goals,
+                  effectiveGoal,
                   remaining,
                   calorieProgress,
                   burnedCalories,
@@ -291,42 +295,62 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
               const SizedBox(height: 24),
 
-              // Quick Actions
+              // Quick Actions - 2x2 Grid
               FadeInSlide(
                 index: 3,
-                child: Row(
+                child: Column(
                   children: [
-                    Expanded(
-                      child: QuickActionCard(
-                        icon: Icons.monitor_weight_outlined,
-                        label: l10n.weight,
-                        onTap: () => Navigator.push(
-                          context,
-                          AppTheme.slideRoute(const WeightTrackerScreen()),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: QuickActionCard(
+                            icon: Icons.calendar_month_outlined,
+                            label: l10n.mealPlanner,
+                            color: theme.colorScheme.primary,
+                            onTap: () => Navigator.push(
+                              context,
+                              AppTheme.slideRoute(const MealPlannerScreen()),
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: QuickActionCard(
+                            icon: Icons.monitor_weight_outlined,
+                            label: l10n.weight,
+                            onTap: () => Navigator.push(
+                              context,
+                              AppTheme.slideRoute(const WeightTrackerScreen()),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: QuickActionCard(
-                        icon: Icons.menu_book_outlined,
-                        label: l10n.recipes,
-                        onTap: () => Navigator.push(
-                          context,
-                          AppTheme.slideRoute(const RecipesScreen()),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: QuickActionCard(
+                            icon: Icons.menu_book_outlined,
+                            label: l10n.recipes,
+                            onTap: () => Navigator.push(
+                              context,
+                              AppTheme.slideRoute(const RecipesScreen()),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: QuickActionCard(
-                        icon: Icons.insights_outlined,
-                        label: l10n.activity,
-                        onTap: () => Navigator.push(
-                          context,
-                          AppTheme.slideRoute(const ActivityGraphScreen()),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: QuickActionCard(
+                            icon: Icons.insights_outlined,
+                            label: l10n.activity,
+                            onTap: () => Navigator.push(
+                              context,
+                              AppTheme.slideRoute(const ActivityGraphScreen()),
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                   ],
                 ),
@@ -373,6 +397,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     ThemeData theme,
     Map<String, double> totals,
     goals,
+    double effectiveGoal,
     double remaining,
     double progress,
     double burnedCalories,
@@ -409,11 +434,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                Text(
-                  '/ ${goals.calories.toStringAsFixed(0)}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
+                // Boosted goal display with visual indicator
+                _BoostedGoalDisplay(
+                  baseGoal: goals.calories.toDouble(),
+                  effectiveGoal: effectiveGoal,
+                  burnedCalories: burnedCalories,
                 ),
                 Text(
                   'kcal',
@@ -704,6 +729,165 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Boosted goal display - shows when exercise has expanded the calorie budget
+class _BoostedGoalDisplay extends StatefulWidget {
+  final double baseGoal;
+  final double effectiveGoal;
+  final double burnedCalories;
+
+  const _BoostedGoalDisplay({
+    required this.baseGoal,
+    required this.effectiveGoal,
+    required this.burnedCalories,
+  });
+
+  @override
+  State<_BoostedGoalDisplay> createState() => _BoostedGoalDisplayState();
+}
+
+class _BoostedGoalDisplayState extends State<_BoostedGoalDisplay>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _glowController;
+  late Animation<double> _glowAnimation;
+
+  bool get isBoosted => widget.burnedCalories > 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _glowController = AnimationController(
+      duration: const Duration(milliseconds: 2000),
+      vsync: this,
+    );
+    _glowAnimation = Tween<double>(begin: 0.4, end: 1.0).animate(
+      CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
+    );
+    if (isBoosted) {
+      _glowController.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void didUpdateWidget(_BoostedGoalDisplay oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (isBoosted && !_glowController.isAnimating) {
+      _glowController.repeat(reverse: true);
+    } else if (!isBoosted && _glowController.isAnimating) {
+      _glowController.stop();
+    }
+  }
+
+  @override
+  void dispose() {
+    _glowController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    // Normal display when not boosted
+    if (!isBoosted) {
+      return Text(
+        '/ ${widget.baseGoal.toStringAsFixed(0)}',
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      );
+    }
+
+    // Boosted display with fire accent and glow
+    return AnimatedBuilder(
+      animation: _glowAnimation,
+      builder: (context, child) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Boosted goal with glow effect
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(6),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.fire.withOpacity(0.3 * _glowAnimation.value),
+                    blurRadius: 8 * _glowAnimation.value,
+                    spreadRadius: 0,
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Struck-through base goal
+                  Text(
+                    widget.baseGoal.toStringAsFixed(0),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
+                      decoration: TextDecoration.lineThrough,
+                      decorationColor: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
+                      fontSize: 10,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  // Arrow indicator
+                  Icon(
+                    Icons.arrow_forward,
+                    size: 8,
+                    color: AppTheme.fire.withOpacity(0.7),
+                  ),
+                  const SizedBox(width: 4),
+                  // New boosted goal
+                  Text(
+                    '/ ${widget.effectiveGoal.toStringAsFixed(0)}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppTheme.fire,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 2),
+            // Bonus badge
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppTheme.fire.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: AppTheme.fire.withOpacity(0.3),
+                  width: 0.5,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.local_fire_department_rounded,
+                    size: 10,
+                    color: AppTheme.fire,
+                  ),
+                  const SizedBox(width: 2),
+                  Text(
+                    '+${widget.burnedCalories.toStringAsFixed(0)}',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: AppTheme.fire,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 9,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

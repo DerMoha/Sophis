@@ -21,7 +21,7 @@ class RecipesScreen extends StatelessWidget {
             icon: const Icon(Icons.add),
             onPressed: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const RecipeCreateScreen()),
+              AppTheme.slideRoute(const RecipeCreateScreen()),
             ),
           ),
         ],
@@ -42,10 +42,10 @@ class RecipesScreen extends StatelessWidget {
                   ElevatedButton.icon(
                     onPressed: () => Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const RecipeCreateScreen()),
+                      AppTheme.slideRoute(const RecipeCreateScreen()),
                     ),
                     icon: const Icon(Icons.add),
-                    label: const Text('Create Recipe'),
+                    label: Text(l10n.createRecipe),
                   ),
                 ],
               ),
@@ -64,14 +64,14 @@ class RecipesScreen extends StatelessWidget {
                 child: ListTile(
                   title: Text(recipe.name),
                   subtitle: Text(
-                    '${nutrients['calories']?.toStringAsFixed(0)} kcal/serving • '
-                    '${recipe.servings} serving${recipe.servings > 1 ? 's' : ''}',
+                    '${nutrients['calories']?.toStringAsFixed(0)} kcal/${l10n.serving} • '
+                    '${recipe.servings} ${recipe.servings > 1 ? l10n.servings : l10n.serving}',
                   ),
                   trailing: PopupMenuButton(
                     itemBuilder: (_) => [
-                      const PopupMenuItem(value: 'add', child: Text('Add to meal')),
-                      const PopupMenuItem(value: 'edit', child: Text('Edit')),
-                      const PopupMenuItem(value: 'delete', child: Text('Delete')),
+                      PopupMenuItem(value: 'add', child: Text(l10n.addToMeal)),
+                      PopupMenuItem(value: 'edit', child: Text(l10n.edit)),
+                      PopupMenuItem(value: 'delete', child: Text(l10n.delete)),
                     ],
                     onSelected: (value) {
                       switch (value) {
@@ -81,9 +81,7 @@ class RecipesScreen extends StatelessWidget {
                         case 'edit':
                           Navigator.push(
                             context,
-                            MaterialPageRoute(
-                              builder: (_) => RecipeCreateScreen(recipe: recipe),
-                            ),
+                            AppTheme.slideRoute(RecipeCreateScreen(recipe: recipe)),
                           );
                           break;
                         case 'delete':
@@ -111,22 +109,21 @@ class RecipesScreen extends StatelessWidget {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: Text('Add ${recipe.name}'),
+          title: Text(l10n.addRecipeName(recipe.name)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: servingsController,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Servings',
+                decoration: InputDecoration(
+                  labelText: l10n.servings,
                 ),
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                // ignore: deprecated_member_use
                 value: selectedMeal,
-                decoration: const InputDecoration(labelText: 'Meal'),
+                decoration: InputDecoration(labelText: l10n.meal),
                 items: [
                   DropdownMenuItem(value: 'breakfast', child: Text(l10n.breakfast)),
                   DropdownMenuItem(value: 'lunch', child: Text(l10n.lunch)),
@@ -208,26 +205,26 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Add Ingredient'),
+        title: Text(l10n.addIngredient),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameController,
-                decoration: const InputDecoration(labelText: 'Name'),
+                decoration: InputDecoration(labelText: l10n.name),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: amountController,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Amount (g)'),
+                decoration: InputDecoration(labelText: l10n.amountGrams),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: caloriesController,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Calories'),
+                decoration: InputDecoration(labelText: l10n.calories),
               ),
               const SizedBox(height: 12),
               Row(
@@ -236,7 +233,7 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
                     child: TextField(
                       controller: proteinController,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Protein (g)'),
+                      decoration: InputDecoration(labelText: l10n.proteinG),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -244,7 +241,7 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
                     child: TextField(
                       controller: carbsController,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Carbs (g)'),
+                      decoration: InputDecoration(labelText: l10n.carbsG),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -252,7 +249,7 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
                     child: TextField(
                       controller: fatController,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Fat (g)'),
+                      decoration: InputDecoration(labelText: l10n.fatG),
                     ),
                   ),
                 ],
@@ -322,7 +319,7 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.recipe != null ? 'Edit Recipe' : 'New Recipe'),
+        title: Text(widget.recipe != null ? l10n.editRecipe : l10n.newRecipe),
         actions: [
           TextButton(
             onPressed: _save,
@@ -335,7 +332,7 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
         children: [
           TextField(
             controller: _nameController,
-            decoration: const InputDecoration(labelText: 'Recipe Name'),
+            decoration: InputDecoration(labelText: l10n.recipeName),
           ),
           const SizedBox(height: 16),
           Row(
@@ -344,13 +341,13 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
                 child: TextField(
                   controller: _servingsController,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Servings'),
+                  decoration: InputDecoration(labelText: l10n.servings),
                   onChanged: (_) => setState(() {}),
                 ),
               ),
               const SizedBox(width: 16),
               Text(
-                '${perServing.toStringAsFixed(0)} kcal/serving',
+                l10n.kcalPerServing(perServing.toStringAsFixed(0)),
                 style: theme.textTheme.bodyMedium,
               ),
             ],
@@ -361,11 +358,11 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Ingredients', style: theme.textTheme.titleMedium),
+              Text(l10n.ingredients, style: theme.textTheme.titleMedium),
               TextButton.icon(
                 onPressed: _addIngredient,
                 icon: const Icon(Icons.add),
-                label: const Text('Add'),
+                label: Text(l10n.add),
               ),
             ],
           ),
@@ -376,7 +373,7 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(20),
                 child: Text(
-                  'No ingredients yet',
+                  l10n.noIngredientsYet,
                   style: TextStyle(color: theme.disabledColor),
                 ),
               ),
@@ -401,8 +398,8 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
           TextField(
             controller: _notesController,
             maxLines: 3,
-            decoration: const InputDecoration(
-              labelText: 'Notes (optional)',
+            decoration: InputDecoration(
+              labelText: l10n.noteOptional,
               alignLabelWithHint: true,
             ),
           ),

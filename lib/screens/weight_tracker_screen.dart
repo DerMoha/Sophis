@@ -57,7 +57,7 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
               titlePadding: const EdgeInsets.only(left: 56, bottom: 16),
               title: Text(
                 l10n.weight,
-                style: theme.textTheme.titleLarge,
+                style: theme.textTheme.headlineMedium,
               ),
             ),
           ),
@@ -110,7 +110,7 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
                                       style: theme.textTheme.titleMedium,
                                     ),
                                     Text(
-                                      'Track your progress',
+                                      l10n.trackYourProgress,
                                       style:
                                           theme.textTheme.bodySmall?.copyWith(
                                         color:

@@ -23,7 +23,7 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Activity'),
+        title: Text(l10n.activity),
         actions: [
           // Toggle between 7 and 30 days
           SegmentedButton<int>(
@@ -55,12 +55,12 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
                   Icon(Icons.bar_chart, size: 64, color: theme.disabledColor),
                   const SizedBox(height: 16),
                   Text(
-                    'No activity data yet',
+                    l10n.noActivityData,
                     style: TextStyle(color: theme.disabledColor),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Start logging meals to see your trends',
+                    l10n.startLoggingMeals,
                     style: theme.textTheme.bodySmall,
                   ),
                 ],
@@ -81,6 +81,7 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
                   goalValue: goals?.calories,
                   color: theme.colorScheme.primary,
                   theme: theme,
+                  l10n: l10n,
                 ),
                 const SizedBox(height: 16),
 
@@ -96,6 +97,7 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
                   goalValue: goals?.protein,
                   color: AppTheme.success,
                   theme: theme,
+                  l10n: l10n,
                   unit: 'g',
                 ),
                 const SizedBox(height: 16),
@@ -108,6 +110,7 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
                   goalValue: goals?.carbs,
                   color: AppTheme.warning,
                   theme: theme,
+                  l10n: l10n,
                   unit: 'g',
                 ),
                 const SizedBox(height: 16),
@@ -120,6 +123,7 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
                   goalValue: goals?.fat,
                   color: AppTheme.error,
                   theme: theme,
+                  l10n: l10n,
                   unit: 'g',
                 ),
               ],
@@ -164,6 +168,7 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
     required double Function(DayData) getValue,
     required Color color,
     required ThemeData theme,
+    required AppLocalizations l10n,
     double? goalValue,
     String unit = 'kcal',
   }) {
@@ -285,7 +290,7 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
                                   fontSize: 10,
                                   fontWeight: FontWeight.w600,
                                 ),
-                                labelResolver: (line) => 'Goal',
+                                labelResolver: (line) => l10n.goalLabel,
                               ),
                             ),
                           ],
@@ -329,13 +334,13 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Summary', style: theme.textTheme.titleMedium),
+            Text(l10n.summary, style: theme.textTheme.titleMedium),
             const SizedBox(height: 12),
             Row(
               children: [
                 Expanded(
                   child: _buildSummaryTile(
-                    'Avg Calories',
+                    l10n.avgCalories,
                     avgCalories.toStringAsFixed(0),
                     'kcal',
                     theme.colorScheme.primary,
@@ -345,7 +350,7 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _buildSummaryTile(
-                    'Avg Protein',
+                    l10n.avgProtein,
                     avgProtein.toStringAsFixed(0),
                     'g',
                     AppTheme.success,
@@ -361,7 +366,7 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
                   const Icon(Icons.check_circle, size: 16, color: AppTheme.success),
                   const SizedBox(width: 4),
                   Text(
-                    '$daysMetCalories/${data.length} days on track',
+                    l10n.daysOnTrack(daysMetCalories, data.length),
                     style: theme.textTheme.bodySmall,
                   ),
                 ],

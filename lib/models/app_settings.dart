@@ -30,6 +30,11 @@ class AppSettings {
   final String? dinnerReminderTime;
   final bool remindersEnabled;
   final bool healthSyncEnabled;
+  // Custom water quick-add sizes (ml)
+  final int waterSize1;
+  final int waterSize2;
+  final int waterSize3;
+  final int waterSize4;
 
   const AppSettings({
     this.aiMode = AIMode.offlineBasic,
@@ -42,6 +47,10 @@ class AppSettings {
     this.dinnerReminderTime,
     this.remindersEnabled = false,
     this.healthSyncEnabled = false,
+    this.waterSize1 = 150,
+    this.waterSize2 = 250,
+    this.waterSize3 = 500,
+    this.waterSize4 = 1000,
   });
 
   Color get accentColor => Color(accentColorValue);
@@ -57,6 +66,10 @@ class AppSettings {
     'dinnerReminderTime': dinnerReminderTime,
     'remindersEnabled': remindersEnabled,
     'healthSyncEnabled': healthSyncEnabled,
+    'waterSize1': waterSize1,
+    'waterSize2': waterSize2,
+    'waterSize3': waterSize3,
+    'waterSize4': waterSize4,
   };
 
   factory AppSettings.fromJson(Map<String, dynamic> json) => AppSettings(
@@ -74,6 +87,10 @@ class AppSettings {
     dinnerReminderTime: json['dinnerReminderTime'],
     remindersEnabled: json['remindersEnabled'] ?? false,
     healthSyncEnabled: json['healthSyncEnabled'] ?? false,
+    waterSize1: json['waterSize1'] ?? 150,
+    waterSize2: json['waterSize2'] ?? 250,
+    waterSize3: json['waterSize3'] ?? 500,
+    waterSize4: json['waterSize4'] ?? 1000,
   );
 
   AppSettings copyWith({
@@ -87,6 +104,10 @@ class AppSettings {
     String? dinnerReminderTime,
     bool? remindersEnabled,
     bool? healthSyncEnabled,
+    int? waterSize1,
+    int? waterSize2,
+    int? waterSize3,
+    int? waterSize4,
     bool clearLocale = false,
     bool clearBreakfast = false,
     bool clearLunch = false,
@@ -102,6 +123,10 @@ class AppSettings {
     dinnerReminderTime: clearDinner ? null : (dinnerReminderTime ?? this.dinnerReminderTime),
     remindersEnabled: remindersEnabled ?? this.remindersEnabled,
     healthSyncEnabled: healthSyncEnabled ?? this.healthSyncEnabled,
+    waterSize1: waterSize1 ?? this.waterSize1,
+    waterSize2: waterSize2 ?? this.waterSize2,
+    waterSize3: waterSize3 ?? this.waterSize3,
+    waterSize4: waterSize4 ?? this.waterSize4,
   );
 }
 

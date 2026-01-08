@@ -5,6 +5,7 @@ import '../models/user_profile.dart';
 import '../models/water_entry.dart';
 import '../models/weight_entry.dart';
 import '../models/recipe.dart';
+import '../models/meal_plan.dart';
 import 'storage_service.dart';
 import 'health_service.dart';
 
@@ -18,7 +19,9 @@ class NutritionProvider extends ChangeNotifier {
   List<WaterEntry> _waterEntries = [];
   List<WeightEntry> _weightEntries = [];
   List<Recipe> _recipes = [];
-  
+  List<PlannedMeal> _plannedMeals = [];
+  Set<String> _shoppingListChecked = {};
+
   // Burned calories from health apps
   double _burnedCalories = 0.0;
   final HealthService _healthService = HealthService();
@@ -34,7 +37,15 @@ class NutritionProvider extends ChangeNotifier {
   List<WaterEntry> get waterEntries => _waterEntries;
   List<WeightEntry> get weightEntries => _weightEntries;
   List<Recipe> get recipes => _recipes;
+  List<PlannedMeal> get plannedMeals => _plannedMeals;
+  Set<String> get shoppingListChecked => _shoppingListChecked;
   double get burnedCalories => _burnedCalories;
+  StorageService get storage => _storage;
+
+  /// Reload all data from storage (used after import)
+  Future<void> reloadAll() async {
+    _loadData();
+  }
 
   void _loadData() {
     _goals = _storage.loadGoals();
@@ -43,6 +54,8 @@ class NutritionProvider extends ChangeNotifier {
     _waterEntries = _storage.loadWaterEntries();
     _weightEntries = _storage.loadWeightEntries();
     _recipes = _storage.loadRecipes();
+    _plannedMeals = _storage.loadPlannedMeals();
+    _shoppingListChecked = _storage.loadShoppingListChecked();
     notifyListeners();
   }
 
@@ -228,6 +241,171 @@ class NutritionProvider extends ChangeNotifier {
     await addFoodEntry(entry);
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MEAL PLANNING
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  Future<void> addPlannedMeal(PlannedMeal meal) async {
+    _plannedMeals.add(meal);
+    await _storage.savePlannedMeals(_plannedMeals);
+    notifyListeners();
+  }
+
+  Future<void> removePlannedMeal(String id) async {
+    _plannedMeals.removeWhere((m) => m.id == id);
+    await _storage.savePlannedMeals(_plannedMeals);
+    notifyListeners();
+  }
+
+  Future<void> updatePlannedMeal(PlannedMeal meal) async {
+    final i = _plannedMeals.indexWhere((m) => m.id == meal.id);
+    if (i != -1) {
+      _plannedMeals[i] = meal;
+      await _storage.savePlannedMeals(_plannedMeals);
+      notifyListeners();
+    }
+  }
+
+  /// Get planned meals for a specific date
+  List<PlannedMeal> getPlannedMealsForDate(DateTime date) {
+    final normalized = DateTime(date.year, date.month, date.day);
+    return _plannedMeals.where((m) {
+      final mealDate = DateTime(m.date.year, m.date.month, m.date.day);
+      return mealDate == normalized;
+    }).toList();
+  }
+
+  /// Get planned meals for a date range (for week view)
+  List<PlannedMeal> getPlannedMealsForRange(DateTime start, DateTime end) {
+    final startNorm = DateTime(start.year, start.month, start.day);
+    final endNorm = DateTime(end.year, end.month, end.day);
+    return _plannedMeals.where((m) {
+      final mealDate = DateTime(m.date.year, m.date.month, m.date.day);
+      return !mealDate.isBefore(startNorm) && !mealDate.isAfter(endNorm);
+    }).toList();
+  }
+
+  /// Get planned meals by meal type for a specific date
+  List<PlannedMeal> getPlannedMealsByType(DateTime date, String meal) {
+    return getPlannedMealsForDate(date).where((m) => m.meal == meal).toList();
+  }
+
+  /// Calculate totals for a planned day
+  Map<String, double> getPlannedTotalsForDate(DateTime date) {
+    final meals = getPlannedMealsForDate(date);
+    double cal = 0, prot = 0, carb = 0, fat = 0;
+    for (final m in meals) {
+      cal += m.calories;
+      prot += m.protein;
+      carb += m.carbs;
+      fat += m.fat;
+    }
+    return {'calories': cal, 'protein': prot, 'carbs': carb, 'fat': fat};
+  }
+
+  /// Copy a planned meal to another date
+  Future<void> copyPlannedMealToDate(PlannedMeal meal, DateTime newDate) async {
+    final newMeal = PlannedMeal(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      date: newDate,
+      meal: meal.meal,
+      name: meal.name,
+      calories: meal.calories,
+      protein: meal.protein,
+      carbs: meal.carbs,
+      fat: meal.fat,
+      recipeId: meal.recipeId,
+      servings: meal.servings,
+      ingredients: meal.ingredients,
+    );
+    await addPlannedMeal(newMeal);
+  }
+
+  /// Copy all meals from one day to another
+  Future<void> copyDayMeals(DateTime from, DateTime to) async {
+    final meals = getPlannedMealsForDate(from);
+    for (final meal in meals) {
+      await copyPlannedMealToDate(meal, to);
+    }
+  }
+
+  /// Convert a planned meal to a food entry (add to today's log)
+  Future<void> logPlannedMeal(PlannedMeal planned) async {
+    final entry = FoodEntry(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      name: planned.name,
+      calories: planned.calories,
+      protein: planned.protein,
+      carbs: planned.carbs,
+      fat: planned.fat,
+      timestamp: DateTime.now(),
+      meal: planned.meal,
+    );
+    await addFoodEntry(entry);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SHOPPING LIST
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Generate shopping list from planned meals in date range
+  List<ShoppingListItem> generateShoppingList(DateTime start, DateTime end) {
+    final meals = getPlannedMealsForRange(start, end);
+    final Map<String, ShoppingListItem> aggregated = {};
+
+    for (final meal in meals) {
+      for (final ingredient in meal.ingredients) {
+        final key = '${ingredient.name.toLowerCase()}_${ingredient.unit}';
+        if (aggregated.containsKey(key)) {
+          final existing = aggregated[key]!;
+          aggregated[key] = existing.copyWith(
+            totalAmount: existing.totalAmount + ingredient.amount,
+          );
+        } else {
+          aggregated[key] = ShoppingListItem(
+            name: ingredient.name,
+            totalAmount: ingredient.amount,
+            unit: ingredient.unit,
+            category: ingredient.category,
+            isChecked: _shoppingListChecked.contains(key),
+          );
+        }
+      }
+    }
+
+    return aggregated.values.toList()
+      ..sort((a, b) {
+        // Sort by category first, then by name
+        final catCompare = a.category.compareTo(b.category);
+        if (catCompare != 0) return catCompare;
+        return a.name.compareTo(b.name);
+      });
+  }
+
+  /// Toggle shopping list item checked state
+  Future<void> toggleShoppingItem(String name, String unit) async {
+    final key = '${name.toLowerCase()}_$unit';
+    if (_shoppingListChecked.contains(key)) {
+      _shoppingListChecked.remove(key);
+    } else {
+      _shoppingListChecked.add(key);
+    }
+    await _storage.saveShoppingListChecked(_shoppingListChecked);
+    notifyListeners();
+  }
+
+  /// Clear all checked items
+  Future<void> clearCheckedShoppingItems() async {
+    _shoppingListChecked.clear();
+    await _storage.saveShoppingListChecked(_shoppingListChecked);
+    notifyListeners();
+  }
+
+  /// Check if a shopping item is checked
+  bool isShoppingItemChecked(String name, String unit) {
+    return _shoppingListChecked.contains('${name.toLowerCase()}_$unit');
+  }
+
   // Clear all
   Future<void> clearAllData() async {
     _goals = null;
@@ -236,6 +414,8 @@ class NutritionProvider extends ChangeNotifier {
     _waterEntries = [];
     _weightEntries = [];
     _recipes = [];
+    _plannedMeals = [];
+    _shoppingListChecked = {};
     await _storage.clear();
     notifyListeners();
   }

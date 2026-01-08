@@ -33,6 +33,13 @@ dependencies:
   flutter_local_notifications: ^17.2.3
   timezone: ^0.9.4
   flutter_secure_storage: ^10.0.0
+
+  # Phase 7: Meal Planning
+  share_plus: ^10.1.4
+
+  # Phase 8: Data Export/Import
+  file_picker: ^8.0.0+1
+  path_provider: ^2.1.2
   
   # Phase 6: Health Integration (Google Health Connect + Apple HealthKit)
   # DISABLED: iOS crashes without HealthKit entitlement (requires paid Apple Developer)

@@ -161,4 +161,23 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
     return true;
   }
+
+  // Water quick-add sizes
+  List<int> get waterSizes => [
+    _settings.waterSize1,
+    _settings.waterSize2,
+    _settings.waterSize3,
+    _settings.waterSize4,
+  ];
+
+  Future<void> setWaterSizes(int size1, int size2, int size3, int size4) async {
+    _settings = _settings.copyWith(
+      waterSize1: size1,
+      waterSize2: size2,
+      waterSize3: size3,
+      waterSize4: size4,
+    );
+    await _storage.saveSettings(_settings);
+    notifyListeners();
+  }
 }

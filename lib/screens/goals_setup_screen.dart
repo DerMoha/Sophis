@@ -156,7 +156,7 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
               titlePadding: const EdgeInsets.only(left: 56, bottom: 16),
               title: Text(
                 l10n.goals,
-                style: theme.textTheme.titleLarge,
+                style: theme.textTheme.headlineMedium,
               ),
             ),
             actions: [
@@ -225,7 +225,7 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
                                           style: theme.textTheme.titleMedium,
                                         ),
                                         Text(
-                                          'Based on your profile',
+                                          l10n.basedOnProfile,
                                           style: theme.textTheme.bodySmall
                                               ?.copyWith(
                                             color: theme
@@ -437,6 +437,7 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
   }) {
     return DropdownButtonFormField<T>(
       value: value,
+      isExpanded: true,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon, size: 20),
@@ -444,7 +445,10 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
       items: items
           .map((item) => DropdownMenuItem(
                 value: item,
-                child: Text(itemLabel(item)),
+                child: Text(
+                  itemLabel(item),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ))
           .toList(),
       onChanged: onChanged,

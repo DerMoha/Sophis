@@ -101,7 +101,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
               titlePadding: const EdgeInsets.only(left: 56, bottom: 16),
               title: Text(
                 l10n.manualEntry,
-                style: theme.textTheme.titleLarge,
+                style: theme.textTheme.headlineMedium,
               ),
             ),
             actions: [
@@ -173,7 +173,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Food Details',
+                                l10n.foodDetails,
                                 style: theme.textTheme.titleMedium,
                               ),
                               const SizedBox(height: 16),
@@ -186,7 +186,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                                 ),
                                 textCapitalization: TextCapitalization.sentences,
                                 validator: (v) =>
-                                    v == null || v.isEmpty ? 'Required' : null,
+                                    v == null || v.isEmpty ? l10n.required : null,
                               ),
                               const SizedBox(height: 16),
                               TextFormField(
@@ -200,7 +200,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                                 ),
                                 keyboardType: TextInputType.number,
                                 validator: (v) =>
-                                    v == null || v.isEmpty ? 'Required' : null,
+                                    v == null || v.isEmpty ? l10n.required : null,
                               ),
                             ],
                           ),
@@ -217,11 +217,11 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Macronutrients',
+                                l10n.macronutrients,
                                 style: theme.textTheme.titleMedium,
                               ),
                               Text(
-                                'Optional - for detailed tracking',
+                                l10n.optionalDetailedTracking,
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: theme.colorScheme.onSurfaceVariant,
                                 ),

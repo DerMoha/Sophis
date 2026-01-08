@@ -69,15 +69,15 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
 
     try {
       final results = await _service.search(query);
-      // Only update if query hasn't changed
-      if (_searchController.text.trim() == query) {
+      // Only update if query hasn't changed and widget is still mounted
+      if (mounted && _searchController.text.trim() == query) {
         setState(() {
           _results = results;
           _isLoading = false;
         });
       }
     } catch (e) {
-      if (_searchController.text.trim() == query) {
+      if (mounted && _searchController.text.trim() == query) {
         setState(() {
           _error = e.toString();
           _isLoading = false;
@@ -99,15 +99,15 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Per 100g: ${item.caloriesPer100g.toStringAsFixed(0)} kcal',
+              l10n.per100g(item.caloriesPer100g.toStringAsFixed(0)),
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 16),
             TextField(
               controller: amountController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Amount (g)',
+              decoration: InputDecoration(
+                labelText: l10n.amountGrams,
                 suffixText: 'g',
               ),
             ),
@@ -151,7 +151,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Search Food'),
+        title: Text(l10n.searchFood),
       ),
       body: Column(
         children: [
@@ -161,7 +161,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
               controller: _searchController,
               autofocus: true,
               decoration: InputDecoration(
-                hintText: 'Type to search...',
+                hintText: l10n.searchFoodHint,
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _isLoading 
                     ? const Padding(
