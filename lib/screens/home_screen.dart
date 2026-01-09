@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../l10n/generated/app_localizations.dart';
+import '../models/food_entry.dart';
+import '../models/shareable_meal.dart';
 import '../services/nutrition_provider.dart';
 import '../services/settings_provider.dart';
 import '../theme/app_theme.dart';
@@ -16,6 +18,7 @@ import 'recipes_screen.dart';
 import 'ai_food_camera_screen.dart';
 import 'activity_graph_screen.dart';
 import 'meal_planner_screen.dart';
+import 'share_meal_screen.dart';
 import '../widgets/water_details_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -626,22 +629,38 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         title: title,
         icon: icon,
         calories: total,
-        addMenu: PopupMenuButton<String>(
-          icon: Icon(
-            Icons.add_circle_outline,
-            color: theme.colorScheme.primary,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-          ),
-          onSelected: (value) => _handleMealAction(context, value, mealType),
-          itemBuilder: (_) => [
-            _buildPopupItem(Icons.edit_outlined, l10n.manualEntry, 'manual'),
-            _buildPopupItem(Icons.search_outlined, l10n.searchFood, 'search'),
-            _buildPopupItem(
-                Icons.qr_code_scanner_outlined, l10n.scanBarcode, 'barcode'),
-            _buildPopupItem(
-                Icons.auto_awesome_outlined, l10n.aiRecognition, 'ai'),
+        addMenu: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Share button (only visible when there are entries)
+            if (entries.isNotEmpty)
+              IconButton(
+                icon: Icon(
+                  Icons.share_outlined,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                onPressed: () => _shareMeal(context, l10n, entries, title),
+                tooltip: l10n.share,
+              ),
+            // Add menu
+            PopupMenuButton<String>(
+              icon: Icon(
+                Icons.add_circle_outline,
+                color: theme.colorScheme.primary,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+              ),
+              onSelected: (value) => _handleMealAction(context, value, mealType),
+              itemBuilder: (_) => [
+                _buildPopupItem(Icons.edit_outlined, l10n.manualEntry, 'manual'),
+                _buildPopupItem(Icons.search_outlined, l10n.searchFood, 'search'),
+                _buildPopupItem(
+                    Icons.qr_code_scanner_outlined, l10n.scanBarcode, 'barcode'),
+                _buildPopupItem(
+                    Icons.auto_awesome_outlined, l10n.aiRecognition, 'ai'),
+              ],
+            ),
           ],
         ),
         entries: entries.isEmpty
@@ -664,10 +683,31 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       protein: entry.protein,
                       carbs: entry.carbs,
                       fat: entry.fat,
-                      onLongPress: () => _showDeleteDialog(context, l10n, entry),
+                      onLongPress: () => _showEntryOptions(context, l10n, entry),
                     ))
                 .toList(),
       ),
+    );
+  }
+
+  void _shareMeal(
+    BuildContext context,
+    AppLocalizations l10n,
+    List<FoodEntry> entries,
+    String title,
+  ) {
+    final meal = ShareableMeal.fromFoodEntries(entries, title: title);
+    Navigator.push(
+      context,
+      AppTheme.slideRoute(ShareMealScreen(meal: meal)),
+    );
+  }
+
+  void _shareSingleItem(BuildContext context, FoodEntry entry) {
+    final meal = ShareableMeal.fromFoodEntries([entry]);
+    Navigator.push(
+      context,
+      AppTheme.slideRoute(ShareMealScreen(meal: meal)),
     );
   }
 
@@ -706,7 +746,38 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     Navigator.push(context, AppTheme.slideRoute(screen));
   }
 
-  void _showDeleteDialog(BuildContext context, AppLocalizations l10n, entry) {
+  void _showEntryOptions(BuildContext context, AppLocalizations l10n, FoodEntry entry) {
+    final theme = Theme.of(context);
+
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(Icons.share_outlined, color: theme.colorScheme.primary),
+              title: Text(l10n.share),
+              onTap: () {
+                Navigator.pop(ctx);
+                _shareSingleItem(context, entry);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.delete_outline, color: theme.colorScheme.error),
+              title: Text(l10n.delete, style: TextStyle(color: theme.colorScheme.error)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _showDeleteConfirmation(context, l10n, entry);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteConfirmation(BuildContext context, AppLocalizations l10n, FoodEntry entry) {
     final theme = Theme.of(context);
 
     showDialog(

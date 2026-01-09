@@ -37,6 +37,10 @@ dependencies:
   # Phase 7: Meal Planning
   share_plus: ^10.1.4
 
+  # Meal Sharing
+  qr_flutter: ^4.1.0
+  app_links: ^6.3.2
+
   # Phase 8: Data Export/Import
   file_picker: ^8.0.0+1
   path_provider: ^2.1.2

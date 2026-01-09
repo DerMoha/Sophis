@@ -216,5 +216,26 @@
   "portionSaved": "Portion gespeichert",
   "editPortions": "Portionen bearbeiten",
   "addWithAmount": "+ {grams}g hinzufügen ({kcal} kcal)",
-  "recentlyUsed": "Zuletzt verwendet"
+  "recentlyUsed": "Zuletzt verwendet",
+
+  "shareMeal": "Mahlzeit teilen",
+  "importMeal": "Mahlzeit importieren",
+  "sharedMeal": "Geteilte Mahlzeit",
+  "shareLink": "Link teilen",
+  "copyLink": "Link kopieren",
+  "linkCopied": "Link in Zwischenablage kopiert",
+  "shareInstructions": "Scanne den QR-Code mit der Sophis App oder teile den Link",
+  "importAll": "Alle importieren",
+  "importAs": "Importieren als",
+  "foods": "Lebensmittel",
+  "total": "Gesamt",
+  "share": "Teilen",
+  "shareSingleItem": "Eintrag teilen",
+  "shareEntireMeal": "Mahlzeit teilen",
+  "proteinShort": "P",
+  "carbsShort": "K",
+  "fatShort": "F",
+  "itemsImported": "{count} Einträge importiert",
+  "invalidShareData": "Ungültige Teilen-Daten",
+  "scanToImport": "QR-Code scannen"
 }

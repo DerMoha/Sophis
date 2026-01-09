@@ -7,7 +7,9 @@ import '../services/gemini_food_service.dart';
 import '../services/nutrition_provider.dart';
 import '../services/settings_provider.dart';
 import '../models/food_entry.dart';
+import '../models/shareable_meal.dart';
 import '../theme/app_theme.dart';
+import 'share_meal_screen.dart';
 
 class AIFoodCameraScreen extends StatefulWidget {
   final String meal;
@@ -204,12 +206,44 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
 
   void _addAllFoods() {
     if (_results == null || _results!.isEmpty) return;
-    
+
     for (final result in _results!) {
       _addFood(result);
     }
-    
+
     Navigator.pop(context);
+  }
+
+  void _shareAllFoods() {
+    if (_results == null || _results!.isEmpty) return;
+
+    final items = _results!.map((result) {
+      final customName = result.controller.text.trim();
+      return SharedFoodItem.fromFoodAnalysis(
+        result.analysis,
+        customName: customName.isNotEmpty ? customName : null,
+      );
+    }).toList();
+
+    final meal = ShareableMeal(items: items);
+    Navigator.push(
+      context,
+      AppTheme.slideRoute(ShareMealScreen(meal: meal)),
+    );
+  }
+
+  void _shareSingleFood(EditableFoodResult result) {
+    final customName = result.controller.text.trim();
+    final item = SharedFoodItem.fromFoodAnalysis(
+      result.analysis,
+      customName: customName.isNotEmpty ? customName : null,
+    );
+
+    final meal = ShareableMeal(items: [item]);
+    Navigator.push(
+      context,
+      AppTheme.slideRoute(ShareMealScreen(meal: meal)),
+    );
   }
 
   @override
@@ -286,11 +320,17 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
               ),
             ),
           ),
-          if (_results != null && _results!.isNotEmpty)
+          if (_results != null && _results!.isNotEmpty) ...[
+            IconButton(
+              icon: const Icon(Icons.share_outlined),
+              onPressed: _shareAllFoods,
+              tooltip: l10n.share,
+            ),
             TextButton(
               onPressed: _addAllFoods,
               child: Text(l10n.addAll),
             ),
+          ],
         ],
       ),
       body: Column(
@@ -516,30 +556,46 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                     Text(food.macrosDisplay, style: theme.textTheme.bodySmall),
                   ],
                 ),
-                result.isAdded
-                    ? Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.green,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.check, color: Colors.white, size: 18),
-                            const SizedBox(width: 4),
-                            Text(AppLocalizations.of(context)!.added, style: const TextStyle(color: Colors.white)),
-                          ],
-                        ),
-                      )
-                    : ElevatedButton.icon(
-                        onPressed: () => _addFood(result),
-                        icon: const Icon(Icons.add, size: 18),
-                        label: Text(AppLocalizations.of(context)!.add),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Share button
+                    IconButton(
+                      icon: Icon(
+                        Icons.share_outlined,
+                        size: 20,
+                        color: theme.colorScheme.onSurfaceVariant,
                       ),
+                      onPressed: () => _shareSingleFood(result),
+                      tooltip: AppLocalizations.of(context)!.share,
+                    ),
+                    // Add button or Added indicator
+                    result.isAdded
+                        ? Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.green,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.check, color: Colors.white, size: 18),
+                                const SizedBox(width: 4),
+                                Text(AppLocalizations.of(context)!.added, style: const TextStyle(color: Colors.white)),
+                              ],
+                            ),
+                          )
+                        : ElevatedButton.icon(
+                            onPressed: () => _addFood(result),
+                            icon: const Icon(Icons.add, size: 18),
+                            label: Text(AppLocalizations.of(context)!.add),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            ),
+                          ),
+                  ],
+                ),
               ],
             ),
           ],

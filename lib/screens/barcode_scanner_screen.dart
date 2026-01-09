@@ -4,9 +4,13 @@ import 'package:provider/provider.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../models/food_item.dart';
 import '../models/food_entry.dart';
+import '../models/shareable_meal.dart';
 import '../services/openfoodfacts_service.dart';
 import '../services/nutrition_provider.dart';
+import '../services/meal_sharing_service.dart';
+import '../theme/app_theme.dart';
 import '../widgets/portion_picker_sheet.dart';
+import 'import_meal_screen.dart';
 
 class BarcodeScannerScreen extends StatefulWidget {
   final String meal;
@@ -32,7 +36,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
 
   Future<void> _onBarcodeDetected(BarcodeCapture capture) async {
     if (_isProcessing) return;
-    
+
     final barcode = capture.barcodes.firstOrNull?.rawValue;
     if (barcode == null || barcode == _lastScannedCode) return;
 
@@ -44,9 +48,31 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
     // Pause scanning
     _controller.stop();
 
+    // Check if this is a Sophis share link (QR code)
+    if (MealSharingService.isShareLink(barcode)) {
+      final meal = ShareableMeal.fromDeepLink(barcode);
+      if (meal != null && mounted) {
+        // Navigate to import screen and close scanner
+        Navigator.pushReplacement(
+          context,
+          AppTheme.slideRoute(ImportMealScreen(meal: meal)),
+        );
+        return;
+      } else if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.invalidShareData)),
+        );
+        _controller.start();
+        setState(() => _isProcessing = false);
+        return;
+      }
+    }
+
+    // Normal barcode - look up product
     try {
       final product = await _service.lookupBarcode(barcode);
-      
+
       if (!mounted) return;
 
       if (product == null) {

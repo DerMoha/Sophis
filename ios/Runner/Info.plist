@@ -62,5 +62,17 @@
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Sophis may write workout data in future updates.</string>
 	-->
+	<!-- Deep linking for meal sharing -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>sophis</string>
+			</array>
+			<key>CFBundleURLName</key>
+			<string>com.sophis.share</string>
+		</dict>
+	</array>
 </dict>
 </plist>

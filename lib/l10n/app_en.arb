@@ -317,5 +317,31 @@
       "kcal": {"type": "String"}
     }
   },
-  "recentlyUsed": "Recently Used"
+  "recentlyUsed": "Recently Used",
+
+  "shareMeal": "Share Meal",
+  "importMeal": "Import Meal",
+  "sharedMeal": "Shared Meal",
+  "shareLink": "Share Link",
+  "copyLink": "Copy Link",
+  "linkCopied": "Link copied to clipboard",
+  "shareInstructions": "Scan the QR code with the Sophis app or share the link",
+  "importAll": "Import All",
+  "importAs": "Import as",
+  "foods": "Foods",
+  "total": "Total",
+  "share": "Share",
+  "shareSingleItem": "Share Item",
+  "shareEntireMeal": "Share Meal",
+  "proteinShort": "P",
+  "carbsShort": "C",
+  "fatShort": "F",
+  "itemsImported": "{count} items imported",
+  "@itemsImported": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "invalidShareData": "Invalid share data",
+  "scanToImport": "Scan QR Code"
 }
