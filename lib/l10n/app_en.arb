@@ -300,5 +300,22 @@
   "importSuccess": "Import complete",
   "importConfirmation": "This will replace all your current data. Continue?",
   "importing": "Importing...",
-  "exporting": "Exporting..."
+  "exporting": "Exporting...",
+
+  "portion": "Portion",
+  "myPortions": "My Portions",
+  "customAmount": "Custom Amount",
+  "saveAsPreset": "Save Preset",
+  "portionName": "Portion Name",
+  "portionNameHint": "e.g., My usual serving",
+  "portionSaved": "Portion saved",
+  "editPortions": "Edit Portions",
+  "addWithAmount": "+ Add {grams}g ({kcal} kcal)",
+  "@addWithAmount": {
+    "placeholders": {
+      "grams": {"type": "String"},
+      "kcal": {"type": "String"}
+    }
+  },
+  "recentlyUsed": "Recently Used"
 }

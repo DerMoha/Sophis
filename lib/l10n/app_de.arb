@@ -205,5 +205,16 @@
   "importSuccess": "Import abgeschlossen",
   "importConfirmation": "Dies ersetzt alle aktuellen Daten. Fortfahren?",
   "importing": "Importiere...",
-  "exporting": "Exportiere..."
+  "exporting": "Exportiere...",
+
+  "portion": "Portion",
+  "myPortions": "Meine Portionen",
+  "customAmount": "Eigene Menge",
+  "saveAsPreset": "Speichern",
+  "portionName": "Portionsname",
+  "portionNameHint": "z.B. Meine übliche Portion",
+  "portionSaved": "Portion gespeichert",
+  "editPortions": "Portionen bearbeiten",
+  "addWithAmount": "+ {grams}g hinzufügen ({kcal} kcal)",
+  "recentlyUsed": "Zuletzt verwendet"
 }

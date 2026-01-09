@@ -48,6 +48,8 @@
 	<!-- iOS 26 UIScene lifecycle support -->
 
 	<!-- Camera and Photo Library permissions (required for barcode scanner and food photo) -->
+	<key>NSFaceIDUsageDescription</key>
+	<string>Sophis uses Face ID to securely authenticate you.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Sophis uses the camera to scan food barcodes and take photos of meals for AI analysis.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

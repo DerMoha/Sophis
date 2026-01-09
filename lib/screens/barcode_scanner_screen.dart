@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 import '../l10n/generated/app_localizations.dart';
+import '../models/food_item.dart';
 import '../models/food_entry.dart';
 import '../services/openfoodfacts_service.dart';
 import '../services/nutrition_provider.dart';
+import '../widgets/portion_picker_sheet.dart';
 
 class BarcodeScannerScreen extends StatefulWidget {
   final String meal;
@@ -71,73 +73,44 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
     }
   }
 
-  void _showProductDialog(dynamic product, String barcode) {
-    final l10n = AppLocalizations.of(context)!;
-    final amountController = TextEditingController(text: '100');
-
-    showDialog(
+  void _showProductDialog(FoodItem product, String barcode) {
+    showModalBottomSheet(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(product.name),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Per 100g: ${product.caloriesPer100g.toStringAsFixed(0)} kcal',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            Text(
-              'P: ${product.proteinPer100g.toStringAsFixed(1)}g | '
-              'C: ${product.carbsPer100g.toStringAsFixed(1)}g | '
-              'F: ${product.fatPer100g.toStringAsFixed(1)}g',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: amountController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: l10n.amountGrams,
-                suffixText: 'g',
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              _controller.start();
-              setState(() => _isProcessing = false);
-            },
-            child: Text(l10n.cancel),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final amount = double.tryParse(amountController.text) ?? 100;
-              final nutrients = product.calculateFor(amount);
-              
-              final entry = FoodEntry(
-                id: DateTime.now().millisecondsSinceEpoch.toString(),
-                name: '${product.name} (${amount.toStringAsFixed(0)}g)',
-                calories: nutrients['calories']!,
-                protein: nutrients['protein']!,
-                carbs: nutrients['carbs']!,
-                fat: nutrients['fat']!,
-                timestamp: DateTime.now(),
-                meal: widget.meal,
-              );
-              
-              context.read<NutritionProvider>().addFoodEntry(entry);
-              Navigator.pop(ctx);
-              Navigator.pop(context);
-            },
-            child: Text(l10n.add),
-          ),
-        ],
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => PortionPickerSheet(
+        item: product,
+        meal: widget.meal,
+        onAdd: (grams) => _addFoodEntry(product, grams),
       ),
+    ).whenComplete(() {
+      // Resume scanning when sheet is closed
+      _controller.start();
+      setState(() => _isProcessing = false);
+    });
+  }
+
+  void _addFoodEntry(FoodItem product, double grams) {
+    final nutrients = product.calculateFor(grams);
+    final displayName = product.brand != null && product.brand!.isNotEmpty
+        ? '${product.brand} ${product.name}'
+        : product.name;
+
+    final entry = FoodEntry(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      name: '$displayName (${grams.toStringAsFixed(0)}g)',
+      calories: nutrients['calories']!,
+      protein: nutrients['protein']!,
+      carbs: nutrients['carbs']!,
+      fat: nutrients['fat']!,
+      timestamp: DateTime.now(),
+      meal: widget.meal,
     );
+
+    final provider = context.read<NutritionProvider>();
+    provider.addFoodEntry(entry);
+    provider.addRecentFood(product); // Save to recent foods
+    Navigator.pop(context); // Close barcode scanner
   }
 
   @override

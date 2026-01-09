@@ -6,6 +6,8 @@ import '../models/water_entry.dart';
 import '../models/weight_entry.dart';
 import '../models/recipe.dart';
 import '../models/meal_plan.dart';
+import '../models/custom_portion.dart';
+import '../models/food_item.dart';
 import 'storage_service.dart';
 import 'health_service.dart';
 
@@ -21,6 +23,8 @@ class NutritionProvider extends ChangeNotifier {
   List<Recipe> _recipes = [];
   List<PlannedMeal> _plannedMeals = [];
   Set<String> _shoppingListChecked = {};
+  List<CustomPortion> _customPortions = [];
+  List<FoodItem> _recentFoods = [];
 
   // Burned calories from health apps
   double _burnedCalories = 0.0;
@@ -39,6 +43,8 @@ class NutritionProvider extends ChangeNotifier {
   List<Recipe> get recipes => _recipes;
   List<PlannedMeal> get plannedMeals => _plannedMeals;
   Set<String> get shoppingListChecked => _shoppingListChecked;
+  List<CustomPortion> get customPortions => _customPortions;
+  List<FoodItem> get recentFoods => _recentFoods;
   double get burnedCalories => _burnedCalories;
   StorageService get storage => _storage;
 
@@ -56,6 +62,8 @@ class NutritionProvider extends ChangeNotifier {
     _recipes = _storage.loadRecipes();
     _plannedMeals = _storage.loadPlannedMeals();
     _shoppingListChecked = _storage.loadShoppingListChecked();
+    _customPortions = _storage.loadCustomPortions();
+    _recentFoods = _storage.loadRecentFoods();
     notifyListeners();
   }
 
@@ -406,6 +414,47 @@ class NutritionProvider extends ChangeNotifier {
     return _shoppingListChecked.contains('${name.toLowerCase()}_$unit');
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CUSTOM PORTIONS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Get custom portions for a specific product
+  List<CustomPortion> getCustomPortionsForProduct(String productKey) {
+    return _customPortions.where((p) => p.productKey == productKey).toList();
+  }
+
+  /// Add a new custom portion
+  Future<void> addCustomPortion(CustomPortion portion) async {
+    _customPortions.add(portion);
+    await _storage.saveCustomPortions(_customPortions);
+    notifyListeners();
+  }
+
+  /// Remove a custom portion
+  Future<void> removeCustomPortion(String id) async {
+    _customPortions.removeWhere((p) => p.id == id);
+    await _storage.saveCustomPortions(_customPortions);
+    notifyListeners();
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // RECENT FOODS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Add a food to recent foods list (moves to top if already exists)
+  Future<void> addRecentFood(FoodItem food) async {
+    // Remove if already exists (we'll add it to the top)
+    _recentFoods.removeWhere((f) => f.id == food.id);
+    // Add to the beginning
+    _recentFoods.insert(0, food);
+    // Keep only last 20
+    if (_recentFoods.length > 20) {
+      _recentFoods = _recentFoods.take(20).toList();
+    }
+    await _storage.saveRecentFoods(_recentFoods);
+    notifyListeners();
+  }
+
   // Clear all
   Future<void> clearAllData() async {
     _goals = null;
@@ -416,6 +465,8 @@ class NutritionProvider extends ChangeNotifier {
     _recipes = [];
     _plannedMeals = [];
     _shoppingListChecked = {};
+    _customPortions = [];
+    _recentFoods = [];
     await _storage.clear();
     notifyListeners();
   }

@@ -9,6 +9,8 @@ import '../models/weight_entry.dart';
 import '../models/recipe.dart';
 import '../models/app_settings.dart';
 import '../models/meal_plan.dart';
+import '../models/custom_portion.dart';
+import '../models/food_item.dart';
 
 /// Local storage service using SharedPreferences
 class StorageService {
@@ -22,6 +24,8 @@ class StorageService {
   static const _apiKeyStorageKey = 'gemini_api_key';
   static const _plannedMealsKey = 'planned_meals';
   static const _shoppingListKey = 'shopping_list_checked';
+  static const _customPortionsKey = 'custom_portions';
+  static const _recentFoodsKey = 'recent_foods';
 
   final SharedPreferences _prefs;
   final FlutterSecureStorage _secureStorage;
@@ -140,6 +144,34 @@ class StorageService {
   Set<String> loadShoppingListChecked() {
     final list = _prefs.getStringList(_shoppingListKey);
     return list?.toSet() ?? {};
+  }
+
+  // Custom Portions
+  Future<void> saveCustomPortions(List<CustomPortion> portions) async {
+    final list = portions.map((p) => p.toJson()).toList();
+    await _prefs.setString(_customPortionsKey, jsonEncode(list));
+  }
+
+  List<CustomPortion> loadCustomPortions() {
+    final json = _prefs.getString(_customPortionsKey);
+    if (json == null) return [];
+    final list = jsonDecode(json) as List;
+    return list.map((p) => CustomPortion.fromJson(p)).toList();
+  }
+
+  // Recent Foods
+  static const _maxRecentFoods = 20;
+
+  Future<void> saveRecentFoods(List<FoodItem> foods) async {
+    final list = foods.take(_maxRecentFoods).map((f) => f.toJson()).toList();
+    await _prefs.setString(_recentFoodsKey, jsonEncode(list));
+  }
+
+  List<FoodItem> loadRecentFoods() {
+    final json = _prefs.getString(_recentFoodsKey);
+    if (json == null) return [];
+    final list = jsonDecode(json) as List;
+    return list.map((f) => FoodItem.fromJson(f)).toList();
   }
 
   // Clear all data

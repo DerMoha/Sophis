@@ -6,6 +6,8 @@ import '../models/food_item.dart';
 import '../models/food_entry.dart';
 import '../services/openfoodfacts_service.dart';
 import '../services/nutrition_provider.dart';
+import '../widgets/food_search_result_tile.dart';
+import '../widgets/portion_picker_sheet.dart';
 
 class FoodSearchScreen extends StatefulWidget {
   final String meal;
@@ -86,62 +88,82 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
     }
   }
 
-  void _showAddDialog(FoodItem item) {
-    final amountController = TextEditingController(text: '100');
-    final l10n = AppLocalizations.of(context)!;
-
-    showDialog(
+  void _showPortionPicker(FoodItem item) {
+    showModalBottomSheet(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(item.name),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => PortionPickerSheet(
+        item: item,
+        meal: widget.meal,
+        onAdd: (grams) => _addFoodEntry(item, grams),
+      ),
+    );
+  }
+
+  void _addFoodEntry(FoodItem item, double grams) {
+    final nutrients = item.calculateFor(grams);
+    final displayName = item.brand != null && item.brand!.isNotEmpty
+        ? '${item.brand} ${item.name}'
+        : item.name;
+
+    final entry = FoodEntry(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      name: '$displayName (${grams.toStringAsFixed(0)}g)',
+      calories: nutrients['calories']!,
+      protein: nutrients['protein']!,
+      carbs: nutrients['carbs']!,
+      fat: nutrients['fat']!,
+      timestamp: DateTime.now(),
+      meal: widget.meal,
+    );
+
+    final provider = context.read<NutritionProvider>();
+    provider.addFoodEntry(entry);
+    provider.addRecentFood(item); // Save to recent foods
+    Navigator.pop(context); // Close search screen
+  }
+
+  Widget _buildRecentFoods(AppLocalizations l10n) {
+    final recentFoods = context.watch<NutritionProvider>().recentFoods;
+
+    if (recentFoods.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              l10n.per100g(item.caloriesPer100g.toStringAsFixed(0)),
-              style: Theme.of(context).textTheme.bodySmall,
+            Icon(
+              Icons.search,
+              size: 48,
+              color: Theme.of(context).disabledColor,
             ),
             const SizedBox(height: 16),
-            TextField(
-              controller: amountController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: l10n.amountGrams,
-                suffixText: 'g',
-              ),
+            Text(
+              l10n.searchForFood,
+              style: TextStyle(color: Theme.of(context).disabledColor),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(l10n.cancel),
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.only(top: 8, bottom: 16),
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          child: Text(
+            l10n.recentlyUsed,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
           ),
-          ElevatedButton(
-            onPressed: () {
-              final amount = double.tryParse(amountController.text) ?? 100;
-              final nutrients = item.calculateFor(amount);
-              
-              final entry = FoodEntry(
-                id: DateTime.now().millisecondsSinceEpoch.toString(),
-                name: '${item.name} (${amount.toStringAsFixed(0)}g)',
-                calories: nutrients['calories']!,
-                protein: nutrients['protein']!,
-                carbs: nutrients['carbs']!,
-                fat: nutrients['fat']!,
-                timestamp: DateTime.now(),
-                meal: widget.meal,
-              );
-              
-              context.read<NutritionProvider>().addFoodEntry(entry);
-              Navigator.pop(ctx);
-              Navigator.pop(context);
-            },
-            child: Text(l10n.add),
-          ),
-        ],
-      ),
+        ),
+        ...recentFoods.map((item) => FoodSearchResultTile(
+              item: item,
+              onTap: () => _showPortionPicker(item),
+            )),
+      ],
     );
   }
 
@@ -193,6 +215,9 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
                 child: Text(_error!, style: const TextStyle(color: Colors.red)),
               ),
             )
+          else if (_results.isEmpty && _searchController.text.trim().isEmpty)
+            // Show recent foods when search is empty
+            Expanded(child: _buildRecentFoods(l10n))
           else if (_results.isEmpty)
             Expanded(
               child: Center(
@@ -206,18 +231,12 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
             Expanded(
               child: ListView.builder(
                 itemCount: _results.length,
+                padding: const EdgeInsets.only(top: 8, bottom: 16),
                 itemBuilder: (context, index) {
                   final item = _results[index];
-                  return ListTile(
-                    title: Text(item.name),
-                    subtitle: Text(
-                      '${item.caloriesPer100g.toStringAsFixed(0)} kcal/100g | '
-                      'P: ${item.proteinPer100g.toStringAsFixed(1)}g | '
-                      'C: ${item.carbsPer100g.toStringAsFixed(1)}g | '
-                      'F: ${item.fatPer100g.toStringAsFixed(1)}g',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    onTap: () => _showAddDialog(item),
+                  return FoodSearchResultTile(
+                    item: item,
+                    onTap: () => _showPortionPicker(item),
                   );
                 },
               ),
