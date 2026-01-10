@@ -16,6 +16,7 @@ import 'recipes_screen.dart';
 import 'ai_food_camera_screen.dart';
 import 'activity_graph_screen.dart';
 import 'meal_planner_screen.dart';
+import 'food_diary_screen.dart';
 import '../widgets/water_details_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -27,16 +28,17 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late ScrollController _scrollController;
-  double _scrollOffset = 0;
+  // Use ValueNotifier to avoid full rebuilds on scroll - only widgets that
+  // listen via ValueListenableBuilder will rebuild
+  final ValueNotifier<double> _scrollOffset = ValueNotifier(0.0);
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController()
       ..addListener(() {
-        setState(() {
-          _scrollOffset = _scrollController.offset;
-        });
+        // Update ValueNotifier instead of calling setState
+        _scrollOffset.value = _scrollController.offset;
       });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -47,6 +49,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   void dispose() {
     _scrollController.dispose();
+    _scrollOffset.dispose();
     super.dispose();
   }
 
@@ -182,25 +185,28 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       controller: _scrollController,
       physics: const BouncingScrollPhysics(),
       slivers: [
-        // Animated App Bar
-        SliverAppBar(
-          expandedHeight: 100,
-          floating: true,
-          pinned: true,
-          backgroundColor: theme.scaffoldBackgroundColor.withOpacity(
-            (_scrollOffset / 100).clamp(0.0, 1.0),
-          ),
-          elevation: 0,
-          flexibleSpace: FlexibleSpaceBar(
-            titlePadding: const EdgeInsets.only(left: 24, bottom: 16),
-            title: AnimatedOpacity(
-              opacity: _scrollOffset > 50 ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 200),
-              child: Text(
-                l10n.appTitle,
-                style: theme.textTheme.headlineMedium,
+        // Animated App Bar - Uses ValueListenableBuilder to avoid full rebuilds
+        ValueListenableBuilder<double>(
+          valueListenable: _scrollOffset,
+          builder: (context, scrollOffset, child) {
+            return SliverAppBar(
+              expandedHeight: 100,
+              floating: true,
+              pinned: true,
+              backgroundColor: theme.scaffoldBackgroundColor.withOpacity(
+                (scrollOffset / 100).clamp(0.0, 1.0),
               ),
-            ),
+              elevation: 0,
+              flexibleSpace: FlexibleSpaceBar(
+                titlePadding: const EdgeInsets.only(left: 24, bottom: 16),
+                title: AnimatedOpacity(
+                  opacity: scrollOffset > 50 ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 200),
+                  child: Text(
+                    l10n.appTitle,
+                    style: theme.textTheme.headlineMedium,
+                  ),
+                ),
             background: SafeArea(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
@@ -256,6 +262,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
             ),
           ],
+        );
+          },
         ),
 
         // Main Content
@@ -295,7 +303,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
               const SizedBox(height: 24),
 
-              // Quick Actions - 2x2 Grid
+              // Quick Actions - 2x3 Grid
               FadeInSlide(
                 index: 3,
                 child: Column(
@@ -304,23 +312,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       children: [
                         Expanded(
                           child: QuickActionCard(
-                            icon: Icons.calendar_month_outlined,
-                            label: l10n.mealPlanner,
+                            icon: Icons.history_rounded,
+                            label: l10n.foodDiary,
                             color: theme.colorScheme.primary,
                             onTap: () => Navigator.push(
                               context,
-                              AppTheme.slideRoute(const MealPlannerScreen()),
+                              AppTheme.slideRoute(const FoodDiaryScreen()),
                             ),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: QuickActionCard(
-                            icon: Icons.monitor_weight_outlined,
-                            label: l10n.weight,
+                            icon: Icons.calendar_month_outlined,
+                            label: l10n.mealPlanner,
                             onTap: () => Navigator.push(
                               context,
-                              AppTheme.slideRoute(const WeightTrackerScreen()),
+                              AppTheme.slideRoute(const MealPlannerScreen()),
                             ),
                           ),
                         ),
@@ -331,6 +339,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       children: [
                         Expanded(
                           child: QuickActionCard(
+                            icon: Icons.monitor_weight_outlined,
+                            label: l10n.weight,
+                            onTap: () => Navigator.push(
+                              context,
+                              AppTheme.slideRoute(const WeightTrackerScreen()),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: QuickActionCard(
                             icon: Icons.menu_book_outlined,
                             label: l10n.recipes,
                             onTap: () => Navigator.push(
@@ -339,7 +358,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 12),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
                         Expanded(
                           child: QuickActionCard(
                             icon: Icons.insights_outlined,
@@ -350,6 +373,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             ),
                           ),
                         ),
+                        const SizedBox(width: 12),
+                        const Expanded(child: SizedBox()), // Placeholder for future
                       ],
                     ),
                   ],
@@ -659,6 +684,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ]
             : entries
                 .map((entry) => FoodEntryTile(
+                      key: ValueKey(entry.id), // Key for efficient list updates
                       name: entry.name,
                       calories: entry.calories,
                       protein: entry.protein,

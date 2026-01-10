@@ -8,6 +8,28 @@ import '../theme/app_theme.dart';
 /// ═══════════════════════════════════════════════════════════════════════════
 
 // ─────────────────────────────────────────────────────────────────────────────
+// CACHED COLORS - Pre-computed opacity values to avoid allocations in build
+// These static colors prevent creating new Color objects on every frame
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _CachedColors {
+  // Border colors for dark/light mode
+  static final Color borderDark = Colors.white.withValues(alpha: 0.08);
+  static final Color borderLight = Colors.black.withValues(alpha: 0.04);
+  static final Color borderDarkAlt = Colors.white.withValues(alpha: 0.06);
+
+  // Shadow colors
+  static final Color shadowDark = Colors.black.withValues(alpha: 0.3);
+  static final Color shadowLight = Colors.black.withValues(alpha: 0.06);
+  static final Color shadowDarkStrong = Colors.black.withValues(alpha: 0.4);
+  static final Color shadowLightStrong = Colors.black.withValues(alpha: 0.08);
+
+  // Water button colors (static since AppTheme.water is constant)
+  static final Color waterBg = AppTheme.water.withValues(alpha: 0.1);
+  static final Color waterBorder = AppTheme.water.withValues(alpha: 0.2);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // GLASS CARD - Frosted glass effect container
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -36,21 +58,20 @@ class GlassCard extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
+    // Use cached colors to avoid allocations
     final decoration = BoxDecoration(
-      color: tint?.withOpacity(isDark ? 0.15 : 0.9) ??
-          theme.colorScheme.surface.withOpacity(isDark ? 0.8 : 0.95),
+      color: tint?.withValues(alpha: isDark ? 0.15 : 0.9) ??
+          theme.colorScheme.surface.withValues(alpha: isDark ? 0.8 : 0.95),
       borderRadius: borderRadius ?? BorderRadius.circular(AppTheme.radiusLG),
       border: showBorder
           ? Border.all(
-              color: (isDark
-                      ? Colors.white.withOpacity(0.08)
-                      : Colors.black.withOpacity(0.04)),
+              color: isDark ? _CachedColors.borderDark : _CachedColors.borderLight,
               width: 1,
             )
           : null,
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(isDark ? 0.3 : 0.06),
+          color: isDark ? _CachedColors.shadowDark : _CachedColors.shadowLight,
           blurRadius: 24,
           offset: const Offset(0, 8),
           spreadRadius: -4,
@@ -114,7 +135,7 @@ class OrganicCard extends StatelessWidget {
       borderRadius: useAltRadius ? AppTheme.blobRadiusAlt : AppTheme.blobRadius,
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(isDark ? 0.4 : 0.08),
+          color: isDark ? _CachedColors.shadowDarkStrong : _CachedColors.shadowLightStrong,
           blurRadius: 32,
           offset: const Offset(0, 12),
           spreadRadius: -8,
@@ -590,9 +611,7 @@ class MealCard extends StatelessWidget {
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radiusLG),
         border: Border.all(
-          color: isDark
-              ? Colors.white.withOpacity(0.06)
-              : Colors.black.withOpacity(0.04),
+          color: isDark ? _CachedColors.borderDarkAlt : _CachedColors.borderLight,
         ),
       ),
       child: Column(
@@ -606,7 +625,7 @@ class MealCard extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withOpacity(0.1),
+                    color: theme.colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -649,9 +668,7 @@ class MealCard extends StatelessWidget {
           if (entries.isNotEmpty) ...[
             Divider(
               height: 1,
-              color: isDark
-                  ? Colors.white.withOpacity(0.06)
-                  : Colors.black.withOpacity(0.04),
+              color: isDark ? _CachedColors.borderDarkAlt : _CachedColors.borderLight,
             ),
             ...entries,
           ],
@@ -817,10 +834,10 @@ class WaterDropButton extends StatelessWidget {
             vertical: compact ? 8 : 10,
           ),
           decoration: BoxDecoration(
-            color: AppTheme.water.withOpacity(0.1),
+            color: _CachedColors.waterBg,
             borderRadius: BorderRadius.circular(AppTheme.radiusFull),
             border: Border.all(
-              color: AppTheme.water.withOpacity(0.2),
+              color: _CachedColors.waterBorder,
             ),
           ),
           child: Row(
@@ -885,9 +902,7 @@ class QuickActionCard extends StatelessWidget {
             color: theme.colorScheme.surface,
             borderRadius: BorderRadius.circular(AppTheme.radiusMD),
             border: Border.all(
-              color: isDark
-                  ? Colors.white.withOpacity(0.06)
-                  : Colors.black.withOpacity(0.04),
+              color: isDark ? _CachedColors.borderDarkAlt : _CachedColors.borderLight,
             ),
           ),
           child: Column(
@@ -897,7 +912,7 @@ class QuickActionCard extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: actionColor.withOpacity(0.1),
+                  color: actionColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(

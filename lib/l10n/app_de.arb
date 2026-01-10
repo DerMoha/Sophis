@@ -216,5 +216,17 @@
   "portionSaved": "Portion gespeichert",
   "editPortions": "Portionen bearbeiten",
   "addWithAmount": "+ {grams}g hinzufügen ({kcal} kcal)",
-  "recentlyUsed": "Zuletzt verwendet"
+  "recentlyUsed": "Zuletzt verwendet",
+  "foodDiary": "Ernährungstagebuch",
+  "yesterday": "Gestern",
+  "noEntriesForDay": "Keine Einträge für diesen Tag",
+
+  "categoryProduce": "Obst & Gemüse",
+  "categoryDairy": "Milchprodukte",
+  "categoryProtein": "Fleisch & Fisch",
+  "categoryGrains": "Getreide & Brot",
+  "categoryPantry": "Vorratskammer",
+  "categoryFrozen": "Tiefkühl",
+  "categoryBeverages": "Getränke",
+  "categoryOther": "Sonstiges"
 }

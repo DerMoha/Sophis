@@ -317,5 +317,17 @@
       "kcal": {"type": "String"}
     }
   },
-  "recentlyUsed": "Recently Used"
+  "recentlyUsed": "Recently Used",
+  "foodDiary": "Food Diary",
+  "yesterday": "Yesterday",
+  "noEntriesForDay": "No entries for this day",
+
+  "categoryProduce": "Produce",
+  "categoryDairy": "Dairy",
+  "categoryProtein": "Protein",
+  "categoryGrains": "Grains & Bread",
+  "categoryPantry": "Pantry",
+  "categoryFrozen": "Frozen",
+  "categoryBeverages": "Beverages",
+  "categoryOther": "Other"
 }
