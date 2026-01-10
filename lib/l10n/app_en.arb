@@ -347,5 +347,21 @@
 
   "foodDiary": "Food Diary",
   "yesterday": "Yesterday",
-  "noEntriesForDay": "No entries for this day"
+  "noEntriesForDay": "No entries for this day",
+
+  "moveTo": "Move to...",
+  "moveToMealSubtitle": "Change which meal this entry belongs to",
+  "movedTo": "Moved to {meal}",
+  "@movedTo": {
+    "placeholders": {
+      "meal": {"type": "String"}
+    }
+  },
+  "duplicate": "Duplicate",
+  "duplicateSubtitle": "Create a copy of this entry",
+  "entryDuplicated": "Entry duplicated",
+  "editEntry": "Edit Entry",
+  "editEntrySubtitle": "Change name and nutritional values",
+  "entrySaved": "Entry saved",
+  "pressEnterToAdd": "Press Done to add"
 }

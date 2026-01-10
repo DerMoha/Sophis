@@ -20,6 +20,7 @@ import 'activity_graph_screen.dart';
 import 'meal_planner_screen.dart';
 import 'share_meal_screen.dart';
 import 'food_diary_screen.dart';
+import 'meal_detail_screen.dart';
 import '../widgets/water_details_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -654,6 +655,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         title: title,
         icon: icon,
         calories: total,
+        onHeaderTap: () => Navigator.push(
+          context,
+          AppTheme.slideRoute(MealDetailScreen(
+            mealType: mealType,
+            mealTitle: title,
+            mealIcon: icon,
+          )),
+        ),
         addMenu: Row(
           mainAxisSize: MainAxisSize.min,
           children: [

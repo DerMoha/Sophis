@@ -241,5 +241,16 @@
 
   "foodDiary": "Ernährungstagebuch",
   "yesterday": "Gestern",
-  "noEntriesForDay": "Keine Einträge für diesen Tag"
+  "noEntriesForDay": "Keine Einträge für diesen Tag",
+
+  "moveTo": "Verschieben nach...",
+  "moveToMealSubtitle": "Ändere zu welcher Mahlzeit dieser Eintrag gehört",
+  "movedTo": "Verschoben zu {meal}",
+  "duplicate": "Duplizieren",
+  "duplicateSubtitle": "Erstelle eine Kopie dieses Eintrags",
+  "entryDuplicated": "Eintrag dupliziert",
+  "editEntry": "Eintrag bearbeiten",
+  "editEntrySubtitle": "Name und Nährwerte ändern",
+  "entrySaved": "Eintrag gespeichert",
+  "pressEnterToAdd": "Fertig drücken zum Hinzufügen"
 }

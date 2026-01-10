@@ -121,6 +121,27 @@ class NutritionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Update an existing food entry
+  Future<void> updateFoodEntry(FoodEntry entry) async {
+    final index = _entries.indexWhere((e) => e.id == entry.id);
+    if (index != -1) {
+      _entries[index] = entry;
+      _invalidateCache(); // Clear cache when entries change
+      await _storage.saveFoodEntries(_entries);
+      notifyListeners();
+    }
+  }
+
+  /// Duplicate a food entry (creates new entry with same data)
+  Future<void> duplicateFoodEntry(FoodEntry entry, {String? toMeal}) async {
+    final newEntry = entry.copyWith(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      timestamp: DateTime.now(),
+      meal: toMeal ?? entry.meal,
+    );
+    await addFoodEntry(newEntry);
+  }
+
   List<FoodEntry> getTodayEntries() {
     // Use cached value if valid
     if (_isCacheValid() && _cachedTodayEntries != null) {

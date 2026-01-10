@@ -20,6 +20,39 @@ class FoodEntry {
     required this.meal,
   });
 
+  /// Create a copy with updated fields
+  FoodEntry copyWith({
+    String? id,
+    String? name,
+    double? calories,
+    double? protein,
+    double? carbs,
+    double? fat,
+    DateTime? timestamp,
+    String? meal,
+  }) {
+    return FoodEntry(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      calories: calories ?? this.calories,
+      protein: protein ?? this.protein,
+      carbs: carbs ?? this.carbs,
+      fat: fat ?? this.fat,
+      timestamp: timestamp ?? this.timestamp,
+      meal: meal ?? this.meal,
+    );
+  }
+
+  /// Scale all macros by a factor (used for portion adjustment)
+  FoodEntry scaledBy(double factor) {
+    return copyWith(
+      calories: calories * factor,
+      protein: protein * factor,
+      carbs: carbs * factor,
+      fat: fat * factor,
+    );
+  }
+
   Map<String, dynamic> toJson() => {
     'id': id,
     'name': name,

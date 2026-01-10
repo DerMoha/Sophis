@@ -58,7 +58,13 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
   }
 
   void _dismissKeyboard() {
-    _focusNode.unfocus();
+    FocusScope.of(context).unfocus();
+  }
+
+  void _addAndClose() {
+    _dismissKeyboard();
+    widget.onAdd(_selectedGrams);
+    Navigator.pop(context);
   }
 
   Map<String, double> get _calculatedNutrients =>
@@ -227,7 +233,7 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
                         controller: _customController,
                         focusNode: _focusNode,
                         onChanged: _onCustomAmountChanged,
-                        onSubmitted: (_) => _dismissKeyboard(),
+                        onSubmitted: (_) => _addAndClose(), // Add directly when pressing Done
                         onSavePreset: _showSavePresetDialog,
                       ),
 
@@ -244,10 +250,7 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
                 grams: _selectedGrams,
                 calories: nutrients['calories'] ?? 0,
                 keyboardHeight: keyboardHeight,
-                onAdd: () {
-                  widget.onAdd(_selectedGrams);
-                  Navigator.pop(context);
-                },
+                onAdd: _addAndClose,
               ),
             ],
           ),
@@ -639,58 +642,72 @@ class _CustomAmountInput extends StatelessWidget {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
 
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Gram input - larger and more prominent
-        Expanded(
-          flex: 2,
-          child: TextField(
-            controller: controller,
-            focusNode: focusNode,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            textInputAction: TextInputAction.done,
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-            textAlign: TextAlign.center,
-            decoration: InputDecoration(
-              suffixText: 'g',
-              suffixStyle: theme.textTheme.titleMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(
-                  color: theme.colorScheme.outline.withValues(alpha: 0.3),
+        Row(
+          children: [
+            // Gram input - larger and more prominent
+            Expanded(
+              flex: 2,
+              child: TextField(
+                controller: controller,
+                focusNode: focusNode,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                textInputAction: TextInputAction.done,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
                 ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(
-                  color: theme.colorScheme.primary,
-                  width: 2,
+                textAlign: TextAlign.center,
+                decoration: InputDecoration(
+                  suffixText: 'g',
+                  suffixStyle: theme.textTheme.titleMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(
+                      color: theme.colorScheme.outline.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(
+                      color: theme.colorScheme.primary,
+                      width: 2,
+                    ),
+                  ),
                 ),
+                onChanged: onChanged,
+                onSubmitted: onSubmitted,
               ),
             ),
-            onChanged: onChanged,
-            onSubmitted: onSubmitted,
-          ),
+            const SizedBox(width: 12),
+            // Save preset button - icon only for cleaner look
+            IconButton.filled(
+              onPressed: onSavePreset,
+              icon: const Icon(Icons.bookmark_add_outlined),
+              tooltip: l10n.saveAsPreset,
+              style: IconButton.styleFrom(
+                backgroundColor: theme.colorScheme.primaryContainer,
+                foregroundColor: theme.colorScheme.onPrimaryContainer,
+                padding: const EdgeInsets.all(16),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 12),
-        // Save preset button - icon only for cleaner look
-        IconButton.filled(
-          onPressed: onSavePreset,
-          icon: const Icon(Icons.bookmark_add_outlined),
-          tooltip: l10n.saveAsPreset,
-          style: IconButton.styleFrom(
-            backgroundColor: theme.colorScheme.primaryContainer,
-            foregroundColor: theme.colorScheme.onPrimaryContainer,
-            padding: const EdgeInsets.all(16),
+        const SizedBox(height: 8),
+        // Hint text explaining keyboard behavior
+        Text(
+          l10n.pressEnterToAdd,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
           ),
+          textAlign: TextAlign.center,
         ),
       ],
     );

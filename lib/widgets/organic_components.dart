@@ -589,6 +589,7 @@ class MealCard extends StatelessWidget {
   final double calories;
   final List<Widget> entries;
   final VoidCallback? onAddPressed;
+  final VoidCallback? onHeaderTap;
   final Widget? addMenu;
 
   const MealCard({
@@ -598,6 +599,7 @@ class MealCard extends StatelessWidget {
     required this.calories,
     required this.entries,
     this.onAddPressed,
+    this.onHeaderTap,
     this.addMenu,
   });
 
@@ -616,52 +618,68 @@ class MealCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Header
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
+          // Header - tappable to view meal details
+          InkWell(
+            onTap: onHeaderTap,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(AppTheme.radiusLG)),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      icon,
+                      color: theme.colorScheme.primary,
+                      size: 20,
+                    ),
                   ),
-                  child: Icon(
-                    icon,
-                    color: theme.colorScheme.primary,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: theme.textTheme.titleMedium,
-                      ),
-                      if (calories > 0)
-                        Text(
-                          '${calories.toStringAsFixed(0)} kcal',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              title,
+                              style: theme.textTheme.titleMedium,
+                            ),
+                            if (onHeaderTap != null) ...[
+                              const SizedBox(width: 4),
+                              Icon(
+                                Icons.chevron_right,
+                                size: 18,
+                                color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
+                              ),
+                            ],
+                          ],
                         ),
-                    ],
+                        if (calories > 0)
+                          Text(
+                            '${calories.toStringAsFixed(0)} kcal',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
-                ),
-                addMenu ?? IconButton(
-                  icon: Icon(
-                    Icons.add_circle_outline,
-                    color: theme.colorScheme.primary,
+                  addMenu ?? IconButton(
+                    icon: Icon(
+                      Icons.add_circle_outline,
+                      color: theme.colorScheme.primary,
+                    ),
+                    onPressed: onAddPressed,
                   ),
-                  onPressed: onAddPressed,
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           // Entries
