@@ -30,6 +30,30 @@ class NutritionProvider extends ChangeNotifier {
   double _burnedCalories = 0.0;
   final HealthService _healthService = HealthService();
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CACHING - Avoid repeated filtering on every build
+  // ═══════════════════════════════════════════════════════════════════════════
+  List<FoodEntry>? _cachedTodayEntries;
+  Map<String, double>? _cachedTodayTotals;
+  Map<String, List<FoodEntry>>? _cachedMealEntries;
+  DateTime? _cacheDate; // Track which day the cache is for
+
+  /// Invalidate cache when entries change or day changes
+  void _invalidateCache() {
+    _cachedTodayEntries = null;
+    _cachedTodayTotals = null;
+    _cachedMealEntries = null;
+  }
+
+  /// Check if cache is still valid for today
+  bool _isCacheValid() {
+    if (_cacheDate == null) return false;
+    final now = DateTime.now();
+    return _cacheDate!.year == now.year &&
+        _cacheDate!.month == now.month &&
+        _cacheDate!.day == now.day;
+  }
+
   NutritionProvider(this._storage) {
     _loadData();
   }
@@ -64,6 +88,7 @@ class NutritionProvider extends ChangeNotifier {
     _shoppingListChecked = _storage.loadShoppingListChecked();
     _customPortions = _storage.loadCustomPortions();
     _recentFoods = _storage.loadRecentFoods();
+    _invalidateCache(); // Clear cache when loading fresh data
     notifyListeners();
   }
 
@@ -84,26 +109,48 @@ class NutritionProvider extends ChangeNotifier {
   // Food Entries
   Future<void> addFoodEntry(FoodEntry entry) async {
     _entries.add(entry);
+    _invalidateCache(); // Clear cache when entries change
     await _storage.saveFoodEntries(_entries);
     notifyListeners();
   }
 
   Future<void> removeFoodEntry(String id) async {
     _entries.removeWhere((e) => e.id == id);
+    _invalidateCache(); // Clear cache when entries change
     await _storage.saveFoodEntries(_entries);
     notifyListeners();
   }
 
   List<FoodEntry> getTodayEntries() {
+    // Use cached value if valid
+    if (_isCacheValid() && _cachedTodayEntries != null) {
+      return _cachedTodayEntries!;
+    }
+
+    // Rebuild cache
     final now = DateTime.now();
-    return _entries.where((e) =>
+    _cacheDate = now;
+    _cachedTodayEntries = _entries.where((e) =>
       e.timestamp.year == now.year &&
       e.timestamp.month == now.month &&
       e.timestamp.day == now.day
     ).toList();
+
+    // Also pre-compute meal entries while we're at it
+    _cachedMealEntries = {};
+    for (final entry in _cachedTodayEntries!) {
+      _cachedMealEntries!.putIfAbsent(entry.meal, () => []).add(entry);
+    }
+
+    return _cachedTodayEntries!;
   }
 
   List<FoodEntry> getEntriesForDate(DateTime date) {
+    // For non-today dates, don't use cache
+    final now = DateTime.now();
+    if (date.year == now.year && date.month == now.month && date.day == now.day) {
+      return getTodayEntries();
+    }
     return _entries.where((e) =>
       e.timestamp.year == date.year &&
       e.timestamp.month == date.month &&
@@ -112,13 +159,39 @@ class NutritionProvider extends ChangeNotifier {
   }
 
   List<FoodEntry> getEntriesByMeal(String meal) {
-    return getTodayEntries().where((e) => e.meal == meal).toList();
+    // Ensure cache is populated
+    getTodayEntries();
+
+    // Return cached meal entries or empty list
+    if (_cachedMealEntries != null && _cachedMealEntries!.containsKey(meal)) {
+      return _cachedMealEntries![meal]!;
+    }
+    return [];
   }
 
   Map<String, double> getTodayTotals() {
+    // Use cached value if valid
+    if (_isCacheValid() && _cachedTodayTotals != null) {
+      return _cachedTodayTotals!;
+    }
+
+    // Compute and cache
     final today = getTodayEntries();
     double cal = 0, prot = 0, carb = 0, fat = 0;
     for (final e in today) {
+      cal += e.calories;
+      prot += e.protein;
+      carb += e.carbs;
+      fat += e.fat;
+    }
+    _cachedTodayTotals = {'calories': cal, 'protein': prot, 'carbs': carb, 'fat': fat};
+    return _cachedTodayTotals!;
+  }
+
+  Map<String, double> getTotalsForDate(DateTime date) {
+    final entries = getEntriesForDate(date);
+    double cal = 0, prot = 0, carb = 0, fat = 0;
+    for (final e in entries) {
       cal += e.calories;
       prot += e.protein;
       carb += e.carbs;

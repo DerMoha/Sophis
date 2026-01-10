@@ -237,5 +237,9 @@
   "fatShort": "F",
   "itemsImported": "{count} Einträge importiert",
   "invalidShareData": "Ungültige Teilen-Daten",
-  "scanToImport": "QR-Code scannen"
+  "scanToImport": "QR-Code scannen",
+
+  "foodDiary": "Ernährungstagebuch",
+  "yesterday": "Gestern",
+  "noEntriesForDay": "Keine Einträge für diesen Tag"
 }

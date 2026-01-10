@@ -343,5 +343,9 @@
     }
   },
   "invalidShareData": "Invalid share data",
-  "scanToImport": "Scan QR Code"
+  "scanToImport": "Scan QR Code",
+
+  "foodDiary": "Food Diary",
+  "yesterday": "Yesterday",
+  "noEntriesForDay": "No entries for this day"
 }

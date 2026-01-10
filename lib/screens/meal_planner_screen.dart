@@ -228,11 +228,13 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
           final dateNorm = DateTime(date.year, date.month, date.day);
           final isToday = dateNorm == todayNorm;
           final isSelected = dayOffset == _selectedDayOffset;
-          final hasMeals = context.watch<NutritionProvider>()
-              .getPlannedMealsForDate(date)
-              .isNotEmpty;
 
-          return GestureDetector(
+          // Use Selector to only rebuild when THIS date's meals change
+          // instead of watching the entire NutritionProvider
+          return Selector<NutritionProvider, bool>(
+            selector: (_, provider) => provider.getPlannedMealsForDate(date).isNotEmpty,
+            builder: (context, hasMeals, child) {
+              return GestureDetector(
             onTap: () {
               setState(() {
                 _selectedDayOffset = dayOffset;
@@ -316,6 +318,8 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
                 ],
               ),
             ),
+          );
+            },
           );
         },
       ),
@@ -814,24 +818,25 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
     );
   }
 
-  void _showCopyDialog(BuildContext context, PlannedMeal meal) {
+  Future<void> _showCopyDialog(BuildContext context, PlannedMeal meal) async {
     final nutrition = context.read<NutritionProvider>();
     final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
 
-    showDatePicker(
+    final selectedDate = await showDatePicker(
       context: context,
       initialDate: _getDateForOffset(_selectedDayOffset).add(const Duration(days: 1)),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
       helpText: l10n.selectDate,
-    ).then((selectedDate) {
-      if (selectedDate != null) {
-        nutrition.copyPlannedMealToDate(meal, selectedDate);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.mealCopied)),
-        );
-      }
-    });
+    );
+
+    if (selectedDate != null && mounted) {
+      nutrition.copyPlannedMealToDate(meal, selectedDate);
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.mealCopied)),
+      );
+    }
   }
 
 }

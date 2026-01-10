@@ -743,11 +743,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     try {
       final nutritionProvider = context.read<NutritionProvider>();
+      final messenger = ScaffoldMessenger.of(context);
       final success = await DataExportService.exportData(nutritionProvider.storage);
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         SnackBar(
           content: Text(success ? l10n.exportSuccess : l10n.exportFailed),
           behavior: SnackBarBehavior.floating,
@@ -761,7 +762,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _handleImport(BuildContext context, AppLocalizations l10n) async {
-    // Show confirmation dialog first
+    // Capture context-dependent values before any async operations
+    final nutritionProvider = context.read<NutritionProvider>();
+    final messenger = ScaffoldMessenger.of(context);
+
+    // Show confirmation dialog
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -785,7 +790,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() => _isImporting = true);
 
     try {
-      final nutritionProvider = context.read<NutritionProvider>();
       final result = await DataExportService.importData(nutritionProvider.storage);
 
       if (!mounted) return;
@@ -795,7 +799,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         await nutritionProvider.reloadAll();
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      if (!mounted) return;
+
+      messenger.showSnackBar(
         SnackBar(
           content: Text(result.message),
           behavior: SnackBarBehavior.floating,

@@ -27,6 +27,7 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
   double _selectedGrams = 100;
   ServingSize? _selectedServing;
   final _customController = TextEditingController(text: '100');
+  final _focusNode = FocusNode(); // For keyboard management
 
   String get _productKey => CustomPortion.createProductKey(
         barcode: widget.item.barcode,
@@ -52,7 +53,12 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
   @override
   void dispose() {
     _customController.dispose();
+    _focusNode.dispose();
     super.dispose();
+  }
+
+  void _dismissKeyboard() {
+    _focusNode.unfocus();
   }
 
   Map<String, double> get _calculatedNutrients =>
@@ -130,110 +136,121 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
         .getCustomPortionsForProduct(_productKey);
     final nutrients = _calculatedNutrients;
 
-    return DraggableScrollableSheet(
-      initialChildSize: 0.65,
-      minChildSize: 0.4,
-      maxChildSize: 0.9,
-      expand: false,
-      builder: (context, scrollController) => Container(
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        child: Column(
-          children: [
-            // Drag handle
-            _DragHandle(),
+    // Track keyboard height to adjust layout on iOS
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+    final isKeyboardVisible = keyboardHeight > 0;
 
-            // Product header
-            _ProductHeader(
-              item: widget.item,
-              grams: _selectedGrams,
-              nutrients: nutrients,
-            ),
+    return GestureDetector(
+      // Dismiss keyboard when tapping outside TextField
+      onTap: _dismissKeyboard,
+      child: DraggableScrollableSheet(
+        initialChildSize: 0.65,
+        minChildSize: 0.4,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (context, scrollController) => Container(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Column(
+            children: [
+              // Drag handle
+              _DragHandle(),
 
-            Expanded(
-              child: ListView(
-                controller: scrollController,
-                padding: const EdgeInsets.all(20),
-                children: [
-                  // Preset portions from API
-                  if (widget.item.servings.isNotEmpty) ...[
-                    _SectionTitle(title: l10n.portion),
-                    const SizedBox(height: 8),
-                    _PortionGrid(
-                      servings: widget.item.servings,
-                      selected: _selectedServing,
-                      onSelect: _onServingSelected,
-                    ),
-                    const SizedBox(height: 24),
-                  ],
+              // Product header
+              _ProductHeader(
+                item: widget.item,
+                grams: _selectedGrams,
+                nutrients: nutrients,
+              ),
 
-                  // Custom portions (user-defined)
-                  if (customPortions.isNotEmpty) ...[
-                    _SectionTitle(
-                      title: l10n.myPortions,
-                      trailing: TextButton(
-                        onPressed: () => _showEditPortionsSheet(customPortions),
-                        child: Text(l10n.edit),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    _CustomPortionChips(
-                      portions: customPortions,
-                      selectedGrams: _selectedGrams,
-                      onSelect: (portion) {
-                        setState(() {
-                          _selectedServing = null;
-                          _selectedGrams = portion.grams;
-                          _customController.text =
-                              portion.grams.toStringAsFixed(0);
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-
-                  // Custom amount input
-                  _SectionTitle(title: l10n.customAmount),
-                  const SizedBox(height: 8),
-                  Row(
+              Expanded(
+                child: NotificationListener<ScrollNotification>(
+                  // Dismiss keyboard when scrolling
+                  onNotification: (notification) {
+                    if (notification is ScrollStartNotification) {
+                      _dismissKeyboard();
+                    }
+                    return false;
+                  },
+                  child: ListView(
+                    controller: scrollController,
+                    padding: const EdgeInsets.all(20),
+                    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                     children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _customController,
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            suffixText: 'g',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          onChanged: _onCustomAmountChanged,
+                      // Preset portions from API
+                      if (widget.item.servings.isNotEmpty) ...[
+                        _SectionTitle(title: l10n.portion),
+                        const SizedBox(height: 12),
+                        _PortionGrid(
+                          servings: widget.item.servings,
+                          selected: _selectedServing,
+                          onSelect: (serving) {
+                            _dismissKeyboard();
+                            _onServingSelected(serving);
+                          },
                         ),
+                        const SizedBox(height: 24),
+                      ],
+
+                      // Custom portions (user-defined)
+                      if (customPortions.isNotEmpty) ...[
+                        _SectionTitle(
+                          title: l10n.myPortions,
+                          trailing: TextButton(
+                            onPressed: () => _showEditPortionsSheet(customPortions),
+                            child: Text(l10n.edit),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _CustomPortionChips(
+                          portions: customPortions,
+                          selectedGrams: _selectedGrams,
+                          onSelect: (portion) {
+                            _dismissKeyboard();
+                            setState(() {
+                              _selectedServing = null;
+                              _selectedGrams = portion.grams;
+                              _customController.text =
+                                  portion.grams.toStringAsFixed(0);
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+
+                      // Custom amount input
+                      _SectionTitle(title: l10n.customAmount),
+                      const SizedBox(height: 12),
+                      _CustomAmountInput(
+                        controller: _customController,
+                        focusNode: _focusNode,
+                        onChanged: _onCustomAmountChanged,
+                        onSubmitted: (_) => _dismissKeyboard(),
+                        onSavePreset: _showSavePresetDialog,
                       ),
-                      const SizedBox(width: 12),
-                      OutlinedButton.icon(
-                        onPressed: _showSavePresetDialog,
-                        icon: const Icon(Icons.bookmark_add_outlined, size: 18),
-                        label: Text(l10n.saveAsPreset),
-                      ),
+
+                      // Extra padding when keyboard is visible to allow scrolling
+                      if (isKeyboardVisible)
+                        SizedBox(height: keyboardHeight * 0.5),
                     ],
                   ),
-                ],
+                ),
               ),
-            ),
 
-            // Bottom action bar
-            _AddButton(
-              grams: _selectedGrams,
-              calories: nutrients['calories'] ?? 0,
-              onAdd: () {
-                widget.onAdd(_selectedGrams);
-                Navigator.pop(context);
-              },
-            ),
-          ],
+              // Bottom action bar - with keyboard-aware padding
+              _AddButton(
+                grams: _selectedGrams,
+                calories: nutrients['calories'] ?? 0,
+                keyboardHeight: keyboardHeight,
+                onAdd: () {
+                  widget.onAdd(_selectedGrams);
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -447,26 +464,27 @@ class _PortionChip extends StatelessWidget {
 
     return Material(
       color: isSelected
-          ? theme.colorScheme.primary.withOpacity(isDark ? 0.3 : 0.15)
+          ? theme.colorScheme.primary.withValues(alpha: isDark ? 0.25 : 0.12)
           : theme.colorScheme.surfaceContainerHighest,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
             border: Border.all(
               color: isSelected
                   ? theme.colorScheme.primary
-                  : Colors.transparent,
-              width: 2,
+                  : theme.colorScheme.outline.withValues(alpha: 0.2),
+              width: isSelected ? 2 : 1,
             ),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Column(
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Portion name
               Text(
                 serving.name,
                 style: theme.textTheme.bodyMedium?.copyWith(
@@ -476,11 +494,24 @@ class _PortionChip extends StatelessWidget {
                       : theme.colorScheme.onSurface,
                 ),
               ),
-              const SizedBox(height: 2),
-              Text(
-                '${serving.grams.toStringAsFixed(0)}g',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+              const SizedBox(width: 8),
+              // Grams badge
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? theme.colorScheme.primary.withValues(alpha: 0.2)
+                      : theme.colorScheme.onSurface.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  '${serving.grams.toStringAsFixed(0)}g',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: isSelected
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ),
             ],
@@ -515,37 +546,63 @@ class _CustomPortionChips extends StatelessWidget {
 
         return Material(
           color: isSelected
-              ? theme.colorScheme.secondary.withOpacity(isDark ? 0.3 : 0.15)
+              ? theme.colorScheme.secondary.withValues(alpha: isDark ? 0.25 : 0.12)
               : theme.colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(12),
           child: InkWell(
             onTap: () => onSelect(p),
             borderRadius: BorderRadius.circular(12),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 border: Border.all(
                   color: isSelected
                       ? theme.colorScheme.secondary
-                      : Colors.transparent,
-                  width: 2,
+                      : theme.colorScheme.outline.withValues(alpha: 0.2),
+                  width: isSelected ? 2 : 1,
                 ),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Column(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Custom portion icon
+                  Icon(
+                    Icons.bookmark_rounded,
+                    size: 16,
+                    color: isSelected
+                        ? theme.colorScheme.secondary
+                        : theme.colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 6),
+                  // Portion name
                   Text(
                     p.name,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      color: isSelected
+                          ? theme.colorScheme.secondary
+                          : theme.colorScheme.onSurface,
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${p.grams.toStringAsFixed(0)}g',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  const SizedBox(width: 8),
+                  // Grams badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? theme.colorScheme.secondary.withValues(alpha: 0.2)
+                          : theme.colorScheme.onSurface.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      '${p.grams.toStringAsFixed(0)}g',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: isSelected
+                            ? theme.colorScheme.secondary
+                            : theme.colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ),
                 ],
@@ -558,14 +615,102 @@ class _CustomPortionChips extends StatelessWidget {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// CUSTOM AMOUNT INPUT - Better layout with inline save button
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _CustomAmountInput extends StatelessWidget {
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final ValueChanged<String> onChanged;
+  final ValueChanged<String> onSubmitted;
+  final VoidCallback onSavePreset;
+
+  const _CustomAmountInput({
+    required this.controller,
+    required this.focusNode,
+    required this.onChanged,
+    required this.onSubmitted,
+    required this.onSavePreset,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
+
+    return Row(
+      children: [
+        // Gram input - larger and more prominent
+        Expanded(
+          flex: 2,
+          child: TextField(
+            controller: controller,
+            focusNode: focusNode,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            textInputAction: TextInputAction.done,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+            textAlign: TextAlign.center,
+            decoration: InputDecoration(
+              suffixText: 'g',
+              suffixStyle: theme.textTheme.titleMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(
+                  color: theme.colorScheme.outline.withValues(alpha: 0.3),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(
+                  color: theme.colorScheme.primary,
+                  width: 2,
+                ),
+              ),
+            ),
+            onChanged: onChanged,
+            onSubmitted: onSubmitted,
+          ),
+        ),
+        const SizedBox(width: 12),
+        // Save preset button - icon only for cleaner look
+        IconButton.filled(
+          onPressed: onSavePreset,
+          icon: const Icon(Icons.bookmark_add_outlined),
+          tooltip: l10n.saveAsPreset,
+          style: IconButton.styleFrom(
+            backgroundColor: theme.colorScheme.primaryContainer,
+            foregroundColor: theme.colorScheme.onPrimaryContainer,
+            padding: const EdgeInsets.all(16),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ADD BUTTON - Keyboard-aware with proper padding
+// ─────────────────────────────────────────────────────────────────────────────
+
 class _AddButton extends StatelessWidget {
   final double grams;
   final double calories;
+  final double keyboardHeight;
   final VoidCallback onAdd;
 
   const _AddButton({
     required this.grams,
     required this.calories,
+    required this.keyboardHeight,
     required this.onAdd,
   });
 
@@ -574,17 +719,28 @@ class _AddButton extends StatelessWidget {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOutCubic,
+      padding: EdgeInsets.fromLTRB(
+        16,
+        12,
+        16,
+        // Add extra padding when keyboard is visible
+        keyboardHeight > 0 ? keyboardHeight + 12 : 16,
+      ),
       decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
         border: Border(
           top: BorderSide(
-            color: theme.dividerColor.withOpacity(0.5),
+            color: theme.dividerColor.withValues(alpha: 0.3),
           ),
         ),
       ),
       child: SafeArea(
         top: false,
+        // Disable bottom safe area when keyboard is visible (we handle it manually)
+        bottom: keyboardHeight == 0,
         child: SizedBox(
           width: double.infinity,
           child: ElevatedButton(

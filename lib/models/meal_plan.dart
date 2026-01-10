@@ -188,6 +188,31 @@ class ShoppingCategory {
         other,
       ];
 
+  /// Get localized display name for a category
+  /// Note: This method is kept for backwards compatibility but should use
+  /// the localization-aware version when possible
+  static String getLocalizedDisplayName(String category, dynamic l10n) {
+    switch (category) {
+      case produce:
+        return l10n.categoryProduce;
+      case dairy:
+        return l10n.categoryDairy;
+      case protein:
+        return l10n.categoryProtein;
+      case grains:
+        return l10n.categoryGrains;
+      case pantry:
+        return l10n.categoryPantry;
+      case frozen:
+        return l10n.categoryFrozen;
+      case beverages:
+        return l10n.categoryBeverages;
+      default:
+        return l10n.categoryOther;
+    }
+  }
+
+  @Deprecated('Use getLocalizedDisplayName with AppLocalizations instead')
   static String getDisplayName(String category) {
     switch (category) {
       case produce:
