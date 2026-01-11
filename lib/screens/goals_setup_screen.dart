@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../l10n/generated/app_localizations.dart';
+import '../models/app_settings.dart';
 import '../models/user_profile.dart';
 import '../models/nutrition_goals.dart';
 import '../services/nutrition_provider.dart';
+import '../services/settings_provider.dart';
 import '../theme/app_theme.dart';
 import '../theme/animations.dart';
+import '../utils/unit_converter.dart';
 import '../widgets/organic_components.dart';
 
 class GoalsSetupScreen extends StatefulWidget {
@@ -39,6 +42,7 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
 
   void _loadExistingData() {
     final provider = context.read<NutritionProvider>();
+    final unitSystem = context.read<SettingsProvider>().unitSystem;
 
     if (provider.goals != null) {
       _caloriesController.text = provider.goals!.calories.toStringAsFixed(0);
@@ -50,14 +54,17 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
     if (provider.profile != null) {
       final p = provider.profile!;
       if (p.weight != null) {
-        _weightController.text = p.weight!.toStringAsFixed(1);
+        final displayWeight = UnitConverter.displayWeight(p.weight!, unitSystem);
+        _weightController.text = displayWeight.toStringAsFixed(1);
       }
       if (p.height != null) {
-        _heightController.text = p.height!.toStringAsFixed(0);
+        final displayHeight = UnitConverter.displayHeight(p.height!, unitSystem);
+        _heightController.text = displayHeight.toStringAsFixed(0);
       }
       if (p.age != null) _ageController.text = p.age!.toString();
       if (p.targetWeight != null) {
-        _targetWeightController.text = p.targetWeight!.toStringAsFixed(1);
+        final displayTargetWeight = UnitConverter.displayWeight(p.targetWeight!, unitSystem);
+        _targetWeightController.text = displayTargetWeight.toStringAsFixed(1);
       }
       _gender = p.gender;
       _activityLevel = p.activityLevel;
@@ -89,14 +96,21 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
   }
 
   void _calculateFromProfile() {
+    final unitSystem = context.read<SettingsProvider>().unitSystem;
+
+    // Convert input values to metric for calculation
+    final weightInput = _parseDouble(_weightController.text);
+    final heightInput = _parseDouble(_heightController.text);
+    final targetWeightInput = _parseDouble(_targetWeightController.text);
+
     final profile = UserProfile(
-      weight: _parseDouble(_weightController.text),
-      height: _parseDouble(_heightController.text),
+      weight: weightInput != null ? UnitConverter.inputToKg(weightInput, unitSystem) : null,
+      height: heightInput != null ? UnitConverter.inputToCm(heightInput, unitSystem) : null,
       age: _parseInt(_ageController.text),
       gender: _gender,
       activityLevel: _activityLevel,
       goal: _goal,
-      targetWeight: _parseDouble(_targetWeightController.text),
+      targetWeight: targetWeightInput != null ? UnitConverter.inputToKg(targetWeightInput, unitSystem) : null,
     );
 
     final suggested = profile.suggestedCalories;
@@ -113,15 +127,21 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
 
   Future<void> _save() async {
     final provider = context.read<NutritionProvider>();
+    final unitSystem = context.read<SettingsProvider>().unitSystem;
+
+    // Convert input values to metric for storage
+    final weightInput = _parseDouble(_weightController.text);
+    final heightInput = _parseDouble(_heightController.text);
+    final targetWeightInput = _parseDouble(_targetWeightController.text);
 
     final profile = UserProfile(
-      weight: _parseDouble(_weightController.text),
-      height: _parseDouble(_heightController.text),
+      weight: weightInput != null ? UnitConverter.inputToKg(weightInput, unitSystem) : null,
+      height: heightInput != null ? UnitConverter.inputToCm(heightInput, unitSystem) : null,
       age: _parseInt(_ageController.text),
       gender: _gender,
       activityLevel: _activityLevel,
       goal: _goal,
-      targetWeight: _parseDouble(_targetWeightController.text),
+      targetWeight: targetWeightInput != null ? UnitConverter.inputToKg(targetWeightInput, unitSystem) : null,
     );
     await provider.setProfile(profile);
 
@@ -141,6 +161,12 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final unitSystem = context.watch<SettingsProvider>().unitSystem;
+    final weightLabel = unitSystem == UnitSystem.imperial ? l10n.weightLb : l10n.weightKg;
+    final heightLabel = unitSystem == UnitSystem.imperial ? l10n.heightIn : l10n.heightCm;
+    final targetWeightLabel = unitSystem == UnitSystem.imperial ? l10n.targetWeightLb : l10n.targetWeight;
+    final weightUnit = UnitConverter.weightUnit(unitSystem);
+    final heightUnit = UnitConverter.heightUnit(unitSystem);
 
     return Scaffold(
       body: CustomScrollView(
@@ -245,16 +271,18 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
                                   Expanded(
                                     child: _buildInputField(
                                       controller: _weightController,
-                                      label: l10n.weightKg,
+                                      label: weightLabel,
                                       icon: Icons.monitor_weight_outlined,
+                                      suffix: weightUnit,
                                     ),
                                   ),
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: _buildInputField(
                                       controller: _heightController,
-                                      label: l10n.heightCm,
+                                      label: heightLabel,
                                       icon: Icons.height_outlined,
+                                      suffix: heightUnit,
                                     ),
                                   ),
                                 ],
@@ -389,9 +417,9 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
                           padding: const EdgeInsets.all(20),
                           child: _buildInputField(
                             controller: _targetWeightController,
-                            label: l10n.targetWeight,
+                            label: targetWeightLabel,
                             icon: Icons.emoji_events_outlined,
-                            suffix: 'kg',
+                            suffix: weightUnit,
                           ),
                         ),
                       ),

@@ -162,6 +162,15 @@
   "waterSizeLarge": "Large",
   "waterSizeExtraLarge": "Extra Large",
 
+  "units": "Units",
+  "metric": "Metric",
+  "imperial": "Imperial",
+  "metricSubtitle": "kg, cm, ml",
+  "imperialSubtitle": "lb, in, fl oz",
+  "weightLb": "Weight (lb)",
+  "heightIn": "Height (in)",
+  "targetWeightLb": "Target Weight (lb)",
+
   "mealPlanner": "Meal Planner",
   "shoppingList": "Shopping List",
   "addMeal": "Add Meal",
@@ -363,5 +372,11 @@
   "editEntry": "Edit Entry",
   "editEntrySubtitle": "Change name and nutritional values",
   "entrySaved": "Entry saved",
-  "pressEnterToAdd": "Press Done to add"
+  "pressEnterToAdd": "Press Done to add",
+
+  "workout": "Workout",
+  "logWorkout": "Log Workout",
+  "editWorkout": "Edit Workout",
+  "caloriesBurned": "Calories burned",
+  "noWorkouts": "No workouts yet"
 }

@@ -44,6 +44,10 @@ class SettingsProvider extends ChangeNotifier {
   // Health sync
   bool get healthSyncEnabled => _settings.healthSyncEnabled;
 
+  // Unit system
+  UnitSystem get unitSystem => _settings.unitSystem;
+  bool get isImperial => _settings.unitSystem == UnitSystem.imperial;
+
   Locale? get locale {
     if (_settings.localeOverride == null) return null;
     return Locale(_settings.localeOverride!);
@@ -78,6 +82,12 @@ class SettingsProvider extends ChangeNotifier {
 
   Future<void> setWaterGoal(double ml) async {
     _settings = _settings.copyWith(waterGoalMl: ml);
+    await _storage.saveSettings(_settings);
+    notifyListeners();
+  }
+
+  Future<void> setUnitSystem(UnitSystem system) async {
+    _settings = _settings.copyWith(unitSystem: system);
     await _storage.saveSettings(_settings);
     notifyListeners();
   }

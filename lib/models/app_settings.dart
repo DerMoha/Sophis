@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 enum AIMode { offlineBasic, offlinePro, cloud }
 
+enum UnitSystem { metric, imperial }
+
 /// Preset accent colors
 class AccentColors {
   static const List<Color> presets = [
@@ -35,6 +37,8 @@ class AppSettings {
   final int waterSize2;
   final int waterSize3;
   final int waterSize4;
+  // Unit system preference
+  final UnitSystem unitSystem;
 
   const AppSettings({
     this.aiMode = AIMode.offlineBasic,
@@ -51,6 +55,7 @@ class AppSettings {
     this.waterSize2 = 250,
     this.waterSize3 = 500,
     this.waterSize4 = 1000,
+    this.unitSystem = UnitSystem.metric,
   });
 
   Color get accentColor => Color(accentColorValue);
@@ -70,6 +75,7 @@ class AppSettings {
     'waterSize2': waterSize2,
     'waterSize3': waterSize3,
     'waterSize4': waterSize4,
+    'unitSystem': unitSystem.index,
   };
 
   factory AppSettings.fromJson(Map<String, dynamic> json) => AppSettings(
@@ -91,6 +97,9 @@ class AppSettings {
     waterSize2: json['waterSize2'] ?? 250,
     waterSize3: json['waterSize3'] ?? 500,
     waterSize4: json['waterSize4'] ?? 1000,
+    unitSystem: json['unitSystem'] != null
+        ? UnitSystem.values[json['unitSystem']]
+        : UnitSystem.metric,
   );
 
   AppSettings copyWith({
@@ -108,6 +117,7 @@ class AppSettings {
     int? waterSize2,
     int? waterSize3,
     int? waterSize4,
+    UnitSystem? unitSystem,
     bool clearLocale = false,
     bool clearBreakfast = false,
     bool clearLunch = false,
@@ -127,6 +137,7 @@ class AppSettings {
     waterSize2: waterSize2 ?? this.waterSize2,
     waterSize3: waterSize3 ?? this.waterSize3,
     waterSize4: waterSize4 ?? this.waterSize4,
+    unitSystem: unitSystem ?? this.unitSystem,
   );
 }
 

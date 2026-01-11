@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../l10n/generated/app_localizations.dart';
+import '../models/app_settings.dart';
 import '../services/nutrition_provider.dart';
+import '../services/settings_provider.dart';
 import '../theme/app_theme.dart';
 import '../theme/animations.dart';
+import '../utils/unit_converter.dart';
 import '../widgets/organic_components.dart';
 
 class WeightTrackerScreen extends StatefulWidget {
@@ -26,11 +29,15 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
   }
 
   void _addWeight() {
-    final weight = double.tryParse(_weightController.text);
-    if (weight == null || weight <= 0) return;
+    final inputValue = double.tryParse(_weightController.text);
+    if (inputValue == null || inputValue <= 0) return;
+
+    // Convert from display unit to kg for storage
+    final unitSystem = context.read<SettingsProvider>().unitSystem;
+    final weightKg = UnitConverter.inputToKg(inputValue, unitSystem);
 
     context.read<NutritionProvider>().addWeight(
-          weight,
+          weightKg,
           note: _noteController.text.isEmpty ? null : _noteController.text,
         );
 
@@ -65,11 +72,16 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
           // Content
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-            sliver: Consumer<NutritionProvider>(
-              builder: (context, nutrition, _) {
+            sliver: Consumer2<NutritionProvider, SettingsProvider>(
+              builder: (context, nutrition, settings, _) {
                 final entries = nutrition.weightEntries;
                 final latest = nutrition.latestWeight;
                 final profile = nutrition.profile;
+                final unitSystem = settings.unitSystem;
+                final weightLabel = unitSystem == UnitSystem.imperial
+                    ? l10n.weightLb
+                    : l10n.weightKg;
+                final weightUnit = UnitConverter.weightUnit(unitSystem);
 
                 return SliverList(
                   delegate: SliverChildListDelegate([
@@ -130,8 +142,8 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
                                     controller: _weightController,
                                     keyboardType: TextInputType.number,
                                     decoration: InputDecoration(
-                                      labelText: l10n.weightKg,
-                                      suffixText: 'kg',
+                                      labelText: weightLabel,
+                                      suffixText: weightUnit,
                                       prefixIcon: const Icon(
                                           Icons.scale_outlined,
                                           size: 20),
@@ -181,8 +193,9 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
                               if (latest != null)
                                 _WeightStat(
                                   label: l10n.current,
-                                  value: latest.weightKg,
+                                  valueKg: latest.weightKg,
                                   color: theme.colorScheme.primary,
+                                  unitSystem: unitSystem,
                                 ),
                               if (profile?.targetWeight != null) ...[
                                 Container(
@@ -193,8 +206,9 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
                                 ),
                                 _WeightStat(
                                   label: l10n.goal,
-                                  value: profile!.targetWeight!,
+                                  valueKg: profile!.targetWeight!,
                                   color: AppTheme.success,
+                                  unitSystem: unitSystem,
                                 ),
                               ],
                               if (latest != null &&
@@ -207,10 +221,11 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
                                 ),
                                 _WeightStat(
                                   label: l10n.toGo,
-                                  value: (latest.weightKg -
+                                  valueKg: (latest.weightKg -
                                           profile!.targetWeight!)
                                       .abs(),
                                   color: AppTheme.warning,
+                                  unitSystem: unitSystem,
                                 ),
                               ],
                             ],
@@ -244,7 +259,7 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
                               SizedBox(
                                 height: 200,
                                 child:
-                                    _buildChart(entries.reversed.take(30).toList()),
+                                    _buildChart(entries.reversed.take(30).toList(), unitSystem),
                               ),
                             ],
                           ),
@@ -273,9 +288,10 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
                       ...entries.asMap().entries.map((entry) => FadeInSlide(
                             index: 4 + entry.key,
                             child: _WeightEntryTile(
-                              weight: entry.value.weightKg,
+                              weightKg: entry.value.weightKg,
                               date: entry.value.timestamp,
                               note: entry.value.note,
+                              unitSystem: unitSystem,
                               onDelete: () => _confirmDelete(entry.value.id),
                             ),
                           )),
@@ -289,13 +305,15 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
     );
   }
 
-  Widget _buildChart(List entries) {
+  Widget _buildChart(List entries, UnitSystem unitSystem) {
     if (entries.isEmpty) return const SizedBox();
     final theme = Theme.of(context);
 
     final spots = <FlSpot>[];
     for (var i = 0; i < entries.length; i++) {
-      spots.add(FlSpot(i.toDouble(), entries[i].weightKg));
+      // Convert to display unit for chart
+      final displayWeight = UnitConverter.displayWeight(entries[i].weightKg, unitSystem);
+      spots.add(FlSpot(i.toDouble(), displayWeight));
     }
 
     final minY = spots.map((s) => s.y).reduce((a, b) => a < b ? a : b) - 2;
@@ -351,7 +369,7 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
             tooltipRoundedRadius: 12,
             getTooltipItems: (spots) => spots
                 .map((spot) => LineTooltipItem(
-                      '${spot.y.toStringAsFixed(1)} kg',
+                      '${spot.y.toStringAsFixed(1)} ${UnitConverter.weightUnit(unitSystem)}',
                       TextStyle(
                         color: theme.colorScheme.primary,
                         fontWeight: FontWeight.bold,
@@ -394,25 +412,29 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
 
 class _WeightStat extends StatelessWidget {
   final String label;
-  final double value;
+  final double valueKg;
   final Color color;
+  final UnitSystem unitSystem;
 
   const _WeightStat({
     required this.label,
-    required this.value,
+    required this.valueKg,
     required this.color,
+    required this.unitSystem,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final displayValue = UnitConverter.displayWeight(valueKg, unitSystem);
+    final unit = UnitConverter.weightUnit(unitSystem);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         AnimatedNumber(
-          value: value,
-          suffix: 'kg',
+          value: displayValue,
+          suffix: unit,
           style: theme.textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.bold,
             color: color,
@@ -434,15 +456,17 @@ class _WeightStat extends StatelessWidget {
 }
 
 class _WeightEntryTile extends StatelessWidget {
-  final double weight;
+  final double weightKg;
   final DateTime date;
   final String? note;
+  final UnitSystem unitSystem;
   final VoidCallback onDelete;
 
   const _WeightEntryTile({
-    required this.weight,
+    required this.weightKg,
     required this.date,
     required this.note,
+    required this.unitSystem,
     required this.onDelete,
   });
 
@@ -450,6 +474,8 @@ class _WeightEntryTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final displayWeight = UnitConverter.displayWeight(weightKg, unitSystem);
+    final unit = UnitConverter.weightUnit(unitSystem);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -484,7 +510,7 @@ class _WeightEntryTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${weight.toStringAsFixed(1)} kg',
+                  '${displayWeight.toStringAsFixed(1)} $unit',
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),

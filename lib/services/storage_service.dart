@@ -11,6 +11,7 @@ import '../models/app_settings.dart';
 import '../models/meal_plan.dart';
 import '../models/custom_portion.dart';
 import '../models/food_item.dart';
+import '../models/workout_entry.dart';
 
 /// Local storage service using SharedPreferences
 class StorageService {
@@ -26,6 +27,7 @@ class StorageService {
   static const _shoppingListKey = 'shopping_list_checked';
   static const _customPortionsKey = 'custom_portions';
   static const _recentFoodsKey = 'recent_foods';
+  static const _workoutEntriesKey = 'workout_entries';
 
   final SharedPreferences _prefs;
   final FlutterSecureStorage _secureStorage;
@@ -97,6 +99,19 @@ class StorageService {
     if (json == null) return [];
     final list = jsonDecode(json) as List;
     return list.map((e) => WeightEntry.fromJson(e)).toList();
+  }
+
+  // Workout Entries
+  Future<void> saveWorkoutEntries(List<WorkoutEntry> entries) async {
+    final list = entries.map((e) => e.toJson()).toList();
+    await _prefs.setString(_workoutEntriesKey, jsonEncode(list));
+  }
+
+  List<WorkoutEntry> loadWorkoutEntries() {
+    final json = _prefs.getString(_workoutEntriesKey);
+    if (json == null) return [];
+    final list = jsonDecode(json) as List;
+    return list.map((e) => WorkoutEntry.fromJson(e)).toList();
   }
 
   // Recipes

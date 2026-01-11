@@ -135,6 +135,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(height: 16),
 
+                    // Units Section
+                    FadeInSlide(
+                      index: 3,
+                      child: _buildSectionCard(
+                        context,
+                        title: l10n.units,
+                        icon: Icons.straighten_outlined,
+                        children: [
+                          _buildUnitSelector(context, settings, l10n),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
                     // Meal Reminders Section
                     FadeInSlide(
                       index: 3,
@@ -578,6 +592,92 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                     const Spacer(),
+                    if (isSelected)
+                      Icon(
+                        Icons.check_circle,
+                        size: 20,
+                        color: theme.colorScheme.primary,
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildUnitSelector(
+    BuildContext context,
+    SettingsProvider settings,
+    AppLocalizations l10n,
+  ) {
+    final theme = Theme.of(context);
+    final options = [
+      (UnitSystem.metric, l10n.metric, l10n.metricSubtitle),
+      (UnitSystem.imperial, l10n.imperial, l10n.imperialSubtitle),
+    ];
+
+    return Column(
+      children: options.map((option) {
+        final isSelected = settings.unitSystem == option.$1;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => settings.setUnitSystem(option.$1),
+              borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? theme.colorScheme.primary.withOpacity(0.1)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                  border: Border.all(
+                    color: isSelected
+                        ? theme.colorScheme.primary.withOpacity(0.3)
+                        : theme.colorScheme.outline.withOpacity(0.1),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      option.$1 == UnitSystem.metric
+                          ? Icons.balance_outlined
+                          : Icons.scale_outlined,
+                      size: 20,
+                      color: isSelected
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            option.$2,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: isSelected
+                                  ? theme.colorScheme.primary
+                                  : theme.colorScheme.onSurface,
+                              fontWeight:
+                                  isSelected ? FontWeight.w600 : FontWeight.normal,
+                            ),
+                          ),
+                          Text(
+                            option.$3,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                     if (isSelected)
                       Icon(
                         Icons.check_circle,

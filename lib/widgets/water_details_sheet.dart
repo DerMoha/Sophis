@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../models/app_settings.dart';
 import '../services/nutrition_provider.dart';
 import '../services/settings_provider.dart';
 import '../theme/app_theme.dart';
 import '../theme/animations.dart';
+import '../utils/unit_converter.dart';
 import '../l10n/generated/app_localizations.dart';
 
 class WaterDetailsSheet extends StatefulWidget {
@@ -26,7 +28,11 @@ class _WaterDetailsSheetState extends State<WaterDetailsSheet> {
     final amount = double.tryParse(_customController.text);
     if (amount == null || amount <= 0) return;
 
-    context.read<NutritionProvider>().addWater(amount);
+    // Convert from display unit to ml for storage
+    final unitSystem = context.read<SettingsProvider>().unitSystem;
+    final amountMl = UnitConverter.inputToMl(amount, unitSystem);
+
+    context.read<NutritionProvider>().addWater(amountMl);
     _customController.clear();
     Navigator.pop(context);
   }
@@ -113,10 +119,12 @@ class _WaterDetailsSheetState extends State<WaterDetailsSheet> {
             child: Consumer<SettingsProvider>(
               builder: (context, settings, _) {
                 final sizes = settings.waterSizes;
+                final unitSystem = settings.unitSystem;
                 return Row(
                   children: [
                     _QuickAddButton(
-                      amount: sizes[0],
+                      amountMl: sizes[0],
+                      unitSystem: unitSystem,
                       icon: Icons.local_cafe_outlined,
                       onTap: () {
                         context.read<NutritionProvider>().addWater(sizes[0].toDouble());
@@ -124,7 +132,8 @@ class _WaterDetailsSheetState extends State<WaterDetailsSheet> {
                     ),
                     const SizedBox(width: 12),
                     _QuickAddButton(
-                      amount: sizes[1],
+                      amountMl: sizes[1],
+                      unitSystem: unitSystem,
                       icon: Icons.coffee_outlined,
                       onTap: () {
                         context.read<NutritionProvider>().addWater(sizes[1].toDouble());
@@ -132,7 +141,8 @@ class _WaterDetailsSheetState extends State<WaterDetailsSheet> {
                     ),
                     const SizedBox(width: 12),
                     _QuickAddButton(
-                      amount: sizes[2],
+                      amountMl: sizes[2],
+                      unitSystem: unitSystem,
                       icon: Icons.water_drop_outlined,
                       onTap: () {
                         context.read<NutritionProvider>().addWater(sizes[2].toDouble());
@@ -140,7 +150,8 @@ class _WaterDetailsSheetState extends State<WaterDetailsSheet> {
                     ),
                     const SizedBox(width: 12),
                     _QuickAddButton(
-                      amount: sizes[3],
+                      amountMl: sizes[3],
+                      unitSystem: unitSystem,
                       icon: Icons.local_drink_outlined,
                       onTap: () {
                         context.read<NutritionProvider>().addWater(sizes[3].toDouble());
@@ -154,38 +165,44 @@ class _WaterDetailsSheetState extends State<WaterDetailsSheet> {
           const SizedBox(height: 20),
 
           // Custom Entry
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _customController,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      hintText: 'ml',
-                      prefixIcon: const Icon(Icons.edit_outlined, size: 20),
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 14),
+          Consumer<SettingsProvider>(
+            builder: (context, settings, _) {
+              final unitSystem = settings.unitSystem;
+              final waterUnit = UnitConverter.waterUnitShort(unitSystem);
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _customController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          hintText: waterUnit,
+                          prefixIcon: const Icon(Icons.edit_outlined, size: 20),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 14),
+                        ),
+                        onSubmitted: (_) => _addCustomWater(),
+                      ),
                     ),
-                    onSubmitted: (_) => _addCustomWater(),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                SizedBox(
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: _addCustomWater,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.water,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                    const SizedBox(width: 12),
+                    SizedBox(
+                      height: 52,
+                      child: ElevatedButton(
+                        onPressed: _addCustomWater,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.water,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                        ),
+                        child: Text(l10n.add),
+                      ),
                     ),
-                    child: Text(l10n.add),
-                  ),
+                  ],
                 ),
-              ],
-            ),
+              );
+            },
           ),
           const SizedBox(height: 24),
 
@@ -206,9 +223,10 @@ class _WaterDetailsSheetState extends State<WaterDetailsSheet> {
           const SizedBox(height: 8),
 
           Flexible(
-            child: Consumer<NutritionProvider>(
-              builder: (context, nutrition, _) {
+            child: Consumer2<NutritionProvider, SettingsProvider>(
+              builder: (context, nutrition, settings, _) {
                 final entries = nutrition.getTodayWaterEntries();
+                final unitSystem = settings.unitSystem;
 
                 if (entries.isEmpty) {
                   return Padding(
@@ -283,7 +301,7 @@ class _WaterDetailsSheetState extends State<WaterDetailsSheet> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      '${entry.amountMl.toStringAsFixed(0)} ml',
+                                      UnitConverter.formatWaterShort(entry.amountMl, unitSystem),
                                       style:
                                           theme.textTheme.titleSmall?.copyWith(
                                         fontWeight: FontWeight.w600,
@@ -334,12 +352,14 @@ class _WaterDetailsSheetState extends State<WaterDetailsSheet> {
 }
 
 class _QuickAddButton extends StatelessWidget {
-  final int amount;
+  final int amountMl;
+  final UnitSystem unitSystem;
   final IconData icon;
   final VoidCallback onTap;
 
   const _QuickAddButton({
-    required this.amount,
+    required this.amountMl,
+    required this.unitSystem,
     required this.icon,
     required this.onTap,
   });
@@ -347,6 +367,7 @@ class _QuickAddButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final displayText = UnitConverter.formatWaterShort(amountMl.toDouble(), unitSystem);
 
     return Expanded(
       child: Material(
@@ -373,7 +394,7 @@ class _QuickAddButton extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '${amount}ml',
+                  displayText,
                   style: theme.textTheme.labelMedium?.copyWith(
                     color: AppTheme.water,
                     fontWeight: FontWeight.w600,
