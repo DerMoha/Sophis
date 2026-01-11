@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../l10n/generated/app_localizations.dart';
+import '../models/app_settings.dart';
 import '../models/food_entry.dart';
 import '../models/shareable_meal.dart';
 import '../services/nutrition_provider.dart';
 import '../services/settings_provider.dart';
 import '../theme/app_theme.dart';
 import '../theme/animations.dart';
+import '../utils/unit_converter.dart';
 import '../widgets/organic_components.dart';
 import 'goals_setup_screen.dart';
 import 'settings_screen.dart';
@@ -22,6 +24,7 @@ import 'share_meal_screen.dart';
 import 'food_diary_screen.dart';
 import 'meal_detail_screen.dart';
 import '../widgets/water_details_sheet.dart';
+import '../widgets/workout_bottom_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -303,7 +306,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               // Water Tracker
               FadeInSlide(
                 index: 2,
-                child: _buildWaterCard(context, l10n, theme, waterTotal, waterGoal),
+                child: _buildWaterCard(context, l10n, theme, waterTotal, waterGoal, settings.unitSystem),
               ),
               const SizedBox(height: 24),
 
@@ -378,7 +381,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        const Expanded(child: SizedBox()), // Placeholder for future
+                        Expanded(
+                          child: QuickActionCard(
+                            icon: Icons.local_fire_department_rounded,
+                            label: l10n.workout,
+                            color: AppTheme.fire,
+                            onTap: () {
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                backgroundColor: Colors.transparent,
+                                builder: (_) => const WorkoutBottomSheet(),
+                              );
+                            },
+                          ),
+                        )
                       ],
                     ),
                   ],
@@ -499,8 +516,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   label: isOver ? l10n.over : l10n.remaining,
                   color: statusColor,
                 ),
-                // Burned calories
-                if (healthSyncEnabled && burnedCalories > 0) ...[
+                // Burned calories (from workouts + health sync)
+                if (burnedCalories > 0) ...[
                   const SizedBox(height: 8),
                   _CompactStatRow(
                     icon: Icons.local_fire_department_rounded,
@@ -558,8 +575,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     ThemeData theme,
     double waterTotal,
     double waterGoal,
+    UnitSystem unitSystem,
   ) {
     final progress = (waterTotal / waterGoal).clamp(0.0, 1.0);
+    final totalDisplay = UnitConverter.formatWater(waterTotal, unitSystem);
+    final goalDisplay = UnitConverter.formatWater(waterGoal, unitSystem);
 
     return GlassCard(
       onTap: () {
@@ -597,7 +617,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ],
               ),
               Text(
-                '${(waterTotal / 1000).toStringAsFixed(1)} / ${(waterGoal / 1000).toStringAsFixed(1)} L',
+                '$totalDisplay / $goalDisplay',
                 style: theme.textTheme.titleSmall?.copyWith(
                   color: AppTheme.water,
                   fontWeight: FontWeight.w600,

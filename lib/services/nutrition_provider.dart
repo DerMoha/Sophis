@@ -8,6 +8,7 @@ import '../models/recipe.dart';
 import '../models/meal_plan.dart';
 import '../models/custom_portion.dart';
 import '../models/food_item.dart';
+import '../models/workout_entry.dart';
 import 'storage_service.dart';
 import 'health_service.dart';
 
@@ -25,9 +26,10 @@ class NutritionProvider extends ChangeNotifier {
   Set<String> _shoppingListChecked = {};
   List<CustomPortion> _customPortions = [];
   List<FoodItem> _recentFoods = [];
+  List<WorkoutEntry> _workoutEntries = [];
 
-  // Burned calories from health apps
-  double _burnedCalories = 0.0;
+  // Burned calories from health apps (synced from HealthKit/Health Connect)
+  double _healthSyncBurnedCalories = 0.0;
   final HealthService _healthService = HealthService();
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -69,7 +71,9 @@ class NutritionProvider extends ChangeNotifier {
   Set<String> get shoppingListChecked => _shoppingListChecked;
   List<CustomPortion> get customPortions => _customPortions;
   List<FoodItem> get recentFoods => _recentFoods;
-  double get burnedCalories => _burnedCalories;
+  List<WorkoutEntry> get workoutEntries => _workoutEntries;
+  /// Total burned calories = manual workouts + health sync
+  double get burnedCalories => getTodayWorkoutCalories() + _healthSyncBurnedCalories;
   StorageService get storage => _storage;
 
   /// Reload all data from storage (used after import)
@@ -88,6 +92,7 @@ class NutritionProvider extends ChangeNotifier {
     _shoppingListChecked = _storage.loadShoppingListChecked();
     _customPortions = _storage.loadCustomPortions();
     _recentFoods = _storage.loadRecentFoods();
+    _workoutEntries = _storage.loadWorkoutEntries();
     _invalidateCache(); // Clear cache when loading fresh data
     notifyListeners();
   }
@@ -224,24 +229,81 @@ class NutritionProvider extends ChangeNotifier {
   double getRemainingCalories() {
     if (_goals == null) return 0;
     // Net remaining = goal - eaten + burned
-    return _goals!.calories - getTodayTotals()['calories']! + _burnedCalories;
+    return _goals!.calories - getTodayTotals()['calories']! + burnedCalories;
   }
   
   /// Refresh burned calories from health service (call on app open/resume)
   Future<void> refreshBurnedCalories({bool enabled = true}) async {
     if (!enabled) {
-      _burnedCalories = 0.0;
+      _healthSyncBurnedCalories = 0.0;
       notifyListeners();
       return;
     }
-    
+
     try {
-      _burnedCalories = await _healthService.getTodayBurnedCalories();
+      _healthSyncBurnedCalories = await _healthService.getTodayBurnedCalories();
       notifyListeners();
     } catch (e) {
       // Silently fail, keep previous value or 0
       debugPrint('Failed to fetch burned calories: $e');
     }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // WORKOUT ENTRIES
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Add a new workout entry
+  Future<void> addWorkoutEntry(double calories, {String? note}) async {
+    final entry = WorkoutEntry(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      caloriesBurned: calories,
+      timestamp: DateTime.now(),
+      note: note,
+    );
+    _workoutEntries.add(entry);
+    await _storage.saveWorkoutEntries(_workoutEntries);
+    notifyListeners();
+  }
+
+  /// Update an existing workout entry
+  Future<void> updateWorkoutEntry(WorkoutEntry entry) async {
+    final index = _workoutEntries.indexWhere((e) => e.id == entry.id);
+    if (index != -1) {
+      _workoutEntries[index] = entry;
+      await _storage.saveWorkoutEntries(_workoutEntries);
+      notifyListeners();
+    }
+  }
+
+  /// Remove a workout entry
+  Future<void> removeWorkoutEntry(String id) async {
+    _workoutEntries.removeWhere((e) => e.id == id);
+    await _storage.saveWorkoutEntries(_workoutEntries);
+    notifyListeners();
+  }
+
+  /// Get total burned calories from today's manual workout entries
+  double getTodayWorkoutCalories() {
+    final now = DateTime.now();
+    return _workoutEntries
+        .where((e) =>
+            e.timestamp.year == now.year &&
+            e.timestamp.month == now.month &&
+            e.timestamp.day == now.day)
+        .fold(0.0, (sum, e) => sum + e.caloriesBurned);
+  }
+
+  /// Get today's workout entries sorted by most recent first
+  List<WorkoutEntry> getTodayWorkoutEntries() {
+    final now = DateTime.now();
+    return _workoutEntries
+        .where((e) =>
+            e.timestamp.year == now.year &&
+            e.timestamp.month == now.month &&
+            e.timestamp.day == now.day)
+        .toList()
+      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
   }
 
   // Water
@@ -561,6 +623,7 @@ class NutritionProvider extends ChangeNotifier {
     _shoppingListChecked = {};
     _customPortions = [];
     _recentFoods = [];
+    _workoutEntries = [];
     await _storage.clear();
     notifyListeners();
   }

@@ -11,6 +11,7 @@ import '../models/recipe.dart';
 import '../models/meal_plan.dart';
 import '../models/nutrition_goals.dart';
 import '../models/user_profile.dart';
+import '../models/workout_entry.dart';
 import 'storage_service.dart';
 
 /// Service for exporting and importing all app data as JSON
@@ -31,6 +32,7 @@ class DataExportService {
         'weightEntries': storage.loadWeightEntries().map((e) => e.toJson()).toList(),
         'recipes': storage.loadRecipes().map((e) => e.toJson()).toList(),
         'plannedMeals': storage.loadPlannedMeals().map((e) => e.toJson()).toList(),
+        'workoutEntries': storage.loadWorkoutEntries().map((e) => e.toJson()).toList(),
       };
 
       // Convert to formatted JSON
@@ -139,6 +141,15 @@ class DataExportService {
             .toList();
         await storage.savePlannedMeals(meals);
         itemsImported += meals.length;
+      }
+
+      // Workout entries
+      if (data['workoutEntries'] != null) {
+        final entries = (data['workoutEntries'] as List)
+            .map((e) => WorkoutEntry.fromJson(e as Map<String, dynamic>))
+            .toList();
+        await storage.saveWorkoutEntries(entries);
+        itemsImported += entries.length;
       }
 
       return ImportResult(
