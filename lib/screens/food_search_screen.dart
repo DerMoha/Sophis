@@ -130,6 +130,33 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
     Navigator.pop(context); // Close search screen
   }
 
+  void _showDeleteCustomFoodDialog(FoodItem item) {
+    final l10n = AppLocalizations.of(context)!;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.deleteCustomFood),
+        content: Text(l10n.deleteCustomFoodConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () {
+              context.read<NutritionProvider>().removeCustomFood(item.id);
+              Navigator.pop(ctx);
+            },
+            child: Text(
+              l10n.delete,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildMyFoodsAndRecent(AppLocalizations l10n) {
     final provider = context.watch<NutritionProvider>();
     final customFoods = provider.customFoods;
@@ -172,6 +199,8 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
           ...customFoods.map((item) => FoodSearchResultTile(
                 item: item,
                 onTap: () => _showPortionPicker(item),
+                isCustomFood: true,
+                onLongPress: () => _showDeleteCustomFoodDialog(item),
               )),
         ],
         // Recently Used section

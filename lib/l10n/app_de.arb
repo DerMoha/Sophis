@@ -280,5 +280,9 @@
   "myFoods": "Meine Lebensmittel",
   "saveAsCustomFood": "Für später speichern",
   "saveAsCustomFoodHint": "Zu Meine Lebensmittel für schnellen Zugriff hinzufügen",
-  "customFoodSaved": "Zu Meine Lebensmittel gespeichert"
+  "customFoodSaved": "Zu Meine Lebensmittel gespeichert",
+  "deleteCustomFood": "Aus Meine Lebensmittel entfernen?",
+  "deleteCustomFoodConfirm": "Dieses Lebensmittel wird aus deiner gespeicherten Liste entfernt.",
+  "saveToMyFoods": "Zu Meine Lebensmittel hinzufügen",
+  "saveToMyFoodsSubtitle": "Diesen Artikel später schnell wieder hinzufügen"
 }

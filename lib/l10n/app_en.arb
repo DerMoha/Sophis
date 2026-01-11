@@ -391,5 +391,9 @@
   "myFoods": "My Foods",
   "saveAsCustomFood": "Save for later",
   "saveAsCustomFoodHint": "Add to My Foods for quick access",
-  "customFoodSaved": "Saved to My Foods"
+  "customFoodSaved": "Saved to My Foods",
+  "deleteCustomFood": "Remove from My Foods?",
+  "deleteCustomFoodConfirm": "This food will be removed from your saved list.",
+  "saveToMyFoods": "Save to My Foods",
+  "saveToMyFoodsSubtitle": "Quickly add this item again later"
 }

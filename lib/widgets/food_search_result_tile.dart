@@ -6,11 +6,15 @@ import 'organic_components.dart';
 class FoodSearchResultTile extends StatelessWidget {
   final FoodItem item;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
+  final bool isCustomFood;
 
   const FoodSearchResultTile({
     super.key,
     required this.item,
     required this.onTap,
+    this.onLongPress,
+    this.isCustomFood = false,
   });
 
   @override
@@ -21,10 +25,14 @@ class FoodSearchResultTile extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       padding: const EdgeInsets.all(12),
       onTap: onTap,
+      onLongPress: onLongPress,
       child: Row(
         children: [
-          // Product Image
-          _ProductImage(imageUrl: item.imageUrl),
+          // Custom food indicator or product image
+          if (isCustomFood)
+            _CustomFoodIcon()
+          else
+            _ProductImage(imageUrl: item.imageUrl),
           const SizedBox(width: 12),
 
           // Product Info
@@ -32,8 +40,17 @@ class FoodSearchResultTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Brand (if available)
-                if (item.brand != null && item.brand!.isNotEmpty)
+                // Brand (if available) or "My Food" label
+                if (isCustomFood)
+                  Text(
+                    'My Foods',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.secondary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  )
+                else if (item.brand != null && item.brand!.isNotEmpty)
                   Text(
                     item.brand!,
                     style: theme.textTheme.labelSmall?.copyWith(
@@ -63,6 +80,30 @@ class FoodSearchResultTile extends StatelessWidget {
           // Calories badge
           _CalorieBadge(calories: item.caloriesPer100g),
         ],
+      ),
+    );
+  }
+}
+
+class _CustomFoodIcon extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.secondary.withOpacity(isDark ? 0.2 : 0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Center(
+        child: Icon(
+          Icons.bookmark,
+          color: theme.colorScheme.secondary,
+          size: 28,
+        ),
       ),
     );
   }

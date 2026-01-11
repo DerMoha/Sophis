@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../models/food_entry.dart';
+import '../models/food_item.dart';
 import '../models/shareable_meal.dart';
 import '../services/nutrition_provider.dart';
 import '../theme/app_theme.dart';
@@ -448,6 +449,15 @@ class _MealEntryCard extends StatelessWidget {
               },
             ),
             ListTile(
+              leading: Icon(Icons.bookmark_add_outlined, color: theme.colorScheme.primary),
+              title: Text(l10n.saveToMyFoods),
+              subtitle: Text(l10n.saveToMyFoodsSubtitle),
+              onTap: () {
+                Navigator.pop(ctx);
+                _saveToMyFoods(context, l10n);
+              },
+            ),
+            ListTile(
               leading: Icon(Icons.share_outlined, color: theme.colorScheme.primary),
               title: Text(l10n.share),
               onTap: () {
@@ -619,6 +629,22 @@ class _MealEntryCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  void _saveToMyFoods(BuildContext context, AppLocalizations l10n) {
+    final customFood = FoodItem(
+      id: 'custom_${DateTime.now().millisecondsSinceEpoch}',
+      name: entry.name,
+      category: 'custom',
+      caloriesPer100g: entry.calories,
+      proteinPer100g: entry.protein,
+      carbsPer100g: entry.carbs,
+      fatPer100g: entry.fat,
+    );
+    context.read<NutritionProvider>().addCustomFood(customFood);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.customFoodSaved)),
     );
   }
 

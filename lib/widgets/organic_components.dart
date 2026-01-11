@@ -40,6 +40,7 @@ class GlassCard extends StatelessWidget {
   final Color? tint;
   final BorderRadius? borderRadius;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
   final bool showBorder;
 
   const GlassCard({
@@ -50,6 +51,7 @@ class GlassCard extends StatelessWidget {
     this.tint,
     this.borderRadius,
     this.onTap,
+    this.onLongPress,
     this.showBorder = true,
   });
 
@@ -88,11 +90,12 @@ class GlassCard extends StatelessWidget {
       ),
     );
 
-    if (onTap != null) {
+    if (onTap != null || onLongPress != null) {
       return Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
+          onLongPress: onLongPress,
           borderRadius: borderRadius ?? BorderRadius.circular(AppTheme.radiusLG),
           child: content,
         ),
