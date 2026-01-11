@@ -173,9 +173,11 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
 
               Expanded(
                 child: NotificationListener<ScrollNotification>(
-                  // Dismiss keyboard when scrolling
+                  // Only dismiss keyboard on user-initiated drag scrolls
+                  // (not on programmatic scrolls caused by layout changes)
                   onNotification: (notification) {
-                    if (notification is ScrollStartNotification) {
+                    if (notification is ScrollStartNotification &&
+                        notification.dragDetails != null) {
                       _dismissKeyboard();
                     }
                     return false;
