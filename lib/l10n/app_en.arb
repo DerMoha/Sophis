@@ -386,5 +386,10 @@
   "logWorkout": "Log Workout",
   "editWorkout": "Edit Workout",
   "caloriesBurned": "Calories burned",
-  "noWorkouts": "No workouts yet"
+  "noWorkouts": "No workouts yet",
+
+  "myFoods": "My Foods",
+  "saveAsCustomFood": "Save for later",
+  "saveAsCustomFoodHint": "Add to My Foods for quick access",
+  "customFoodSaved": "Saved to My Foods"
 }

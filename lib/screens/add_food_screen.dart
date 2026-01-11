@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../models/food_entry.dart';
+import '../models/food_item.dart';
 import '../services/nutrition_provider.dart';
 import '../theme/app_theme.dart';
 import '../theme/animations.dart';
@@ -23,6 +24,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
   final _proteinController = TextEditingController();
   final _carbsController = TextEditingController();
   final _fatController = TextEditingController();
+  bool _saveAsCustomFood = false;
 
   @override
   void dispose() {
@@ -67,18 +69,46 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final provider = context.read<NutritionProvider>();
+    final l10n = AppLocalizations.of(context)!;
+    final name = _nameController.text.trim();
+    final calories = double.tryParse(_caloriesController.text) ?? 0;
+    final protein = double.tryParse(_proteinController.text) ?? 0;
+    final carbs = double.tryParse(_carbsController.text) ?? 0;
+    final fat = double.tryParse(_fatController.text) ?? 0;
+
     final entry = FoodEntry(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      name: _nameController.text.trim(),
-      calories: double.tryParse(_caloriesController.text) ?? 0,
-      protein: double.tryParse(_proteinController.text) ?? 0,
-      carbs: double.tryParse(_carbsController.text) ?? 0,
-      fat: double.tryParse(_fatController.text) ?? 0,
+      name: name,
+      calories: calories,
+      protein: protein,
+      carbs: carbs,
+      fat: fat,
       timestamp: DateTime.now(),
       meal: widget.meal,
     );
 
-    await context.read<NutritionProvider>().addFoodEntry(entry);
+    await provider.addFoodEntry(entry);
+
+    // Also save as custom food if checkbox is checked
+    if (_saveAsCustomFood) {
+      final customFood = FoodItem(
+        id: 'custom_${DateTime.now().millisecondsSinceEpoch}',
+        name: name,
+        category: 'custom',
+        caloriesPer100g: calories,
+        proteinPer100g: protein,
+        carbsPer100g: carbs,
+        fatPer100g: fat,
+      );
+      await provider.addCustomFood(customFood);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.customFoodSaved)),
+        );
+      }
+    }
+
     if (mounted) Navigator.pop(context);
   }
 
@@ -258,11 +288,43 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                           ),
                         ),
                       ),
+                      const SizedBox(height: 20),
+
+                      // Save as custom food checkbox
+                      FadeInSlide(
+                        index: 3,
+                        child: GlassCard(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          child: CheckboxListTile(
+                            value: _saveAsCustomFood,
+                            onChanged: (v) => setState(() => _saveAsCustomFood = v ?? false),
+                            title: Text(
+                              l10n.saveAsCustomFood,
+                              style: theme.textTheme.bodyMedium,
+                            ),
+                            subtitle: Text(
+                              l10n.saveAsCustomFoodHint,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            secondary: Icon(
+                              Icons.bookmark_add_outlined,
+                              color: theme.colorScheme.primary,
+                            ),
+                            contentPadding: EdgeInsets.zero,
+                            controlAffinity: ListTileControlAffinity.trailing,
+                          ),
+                        ),
+                      ),
                       const SizedBox(height: 32),
 
                       // Save button
                       FadeInSlide(
-                        index: 3,
+                        index: 4,
                         child: SizedBox(
                           width: double.infinity,
                           child: ElevatedButton.icon(

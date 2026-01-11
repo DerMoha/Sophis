@@ -28,6 +28,7 @@ class StorageService {
   static const _customPortionsKey = 'custom_portions';
   static const _recentFoodsKey = 'recent_foods';
   static const _workoutEntriesKey = 'workout_entries';
+  static const _customFoodsKey = 'custom_foods';
 
   final SharedPreferences _prefs;
   final FlutterSecureStorage _secureStorage;
@@ -184,6 +185,19 @@ class StorageService {
 
   List<FoodItem> loadRecentFoods() {
     final json = _prefs.getString(_recentFoodsKey);
+    if (json == null) return [];
+    final list = jsonDecode(json) as List;
+    return list.map((f) => FoodItem.fromJson(f)).toList();
+  }
+
+  // Custom Foods (user-created foods for re-use)
+  Future<void> saveCustomFoods(List<FoodItem> foods) async {
+    final list = foods.map((f) => f.toJson()).toList();
+    await _prefs.setString(_customFoodsKey, jsonEncode(list));
+  }
+
+  List<FoodItem> loadCustomFoods() {
+    final json = _prefs.getString(_customFoodsKey);
     if (json == null) return [];
     final list = jsonDecode(json) as List;
     return list.map((f) => FoodItem.fromJson(f)).toList();

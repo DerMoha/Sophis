@@ -275,5 +275,10 @@
   "logWorkout": "Training erfassen",
   "editWorkout": "Training bearbeiten",
   "caloriesBurned": "Verbrannte Kalorien",
-  "noWorkouts": "Noch keine Trainings"
+  "noWorkouts": "Noch keine Trainings",
+
+  "myFoods": "Meine Lebensmittel",
+  "saveAsCustomFood": "Für später speichern",
+  "saveAsCustomFoodHint": "Zu Meine Lebensmittel für schnellen Zugriff hinzufügen",
+  "customFoodSaved": "Zu Meine Lebensmittel gespeichert"
 }

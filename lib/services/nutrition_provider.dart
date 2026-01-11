@@ -27,6 +27,7 @@ class NutritionProvider extends ChangeNotifier {
   List<CustomPortion> _customPortions = [];
   List<FoodItem> _recentFoods = [];
   List<WorkoutEntry> _workoutEntries = [];
+  List<FoodItem> _customFoods = [];
 
   // Burned calories from health apps (synced from HealthKit/Health Connect)
   double _healthSyncBurnedCalories = 0.0;
@@ -72,6 +73,7 @@ class NutritionProvider extends ChangeNotifier {
   List<CustomPortion> get customPortions => _customPortions;
   List<FoodItem> get recentFoods => _recentFoods;
   List<WorkoutEntry> get workoutEntries => _workoutEntries;
+  List<FoodItem> get customFoods => _customFoods;
   /// Total burned calories = manual workouts + health sync
   double get burnedCalories => getTodayWorkoutCalories() + _healthSyncBurnedCalories;
   StorageService get storage => _storage;
@@ -93,6 +95,7 @@ class NutritionProvider extends ChangeNotifier {
     _customPortions = _storage.loadCustomPortions();
     _recentFoods = _storage.loadRecentFoods();
     _workoutEntries = _storage.loadWorkoutEntries();
+    _customFoods = _storage.loadCustomFoods();
     _invalidateCache(); // Clear cache when loading fresh data
     notifyListeners();
   }
@@ -611,6 +614,35 @@ class NutritionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CUSTOM FOODS (user-created foods for re-use)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Add a food to custom foods list
+  Future<void> addCustomFood(FoodItem food) async {
+    // Don't add duplicates by id
+    if (_customFoods.any((f) => f.id == food.id)) return;
+    _customFoods.insert(0, food);
+    await _storage.saveCustomFoods(_customFoods);
+    notifyListeners();
+  }
+
+  /// Remove a custom food by id
+  Future<void> removeCustomFood(String id) async {
+    _customFoods.removeWhere((f) => f.id == id);
+    await _storage.saveCustomFoods(_customFoods);
+    notifyListeners();
+  }
+
+  /// Search custom foods by name (case-insensitive)
+  List<FoodItem> searchCustomFoods(String query) {
+    if (query.isEmpty) return _customFoods;
+    final lowerQuery = query.toLowerCase();
+    return _customFoods
+        .where((f) => f.name.toLowerCase().contains(lowerQuery))
+        .toList();
+  }
+
   // Clear all
   Future<void> clearAllData() async {
     _goals = null;
@@ -624,6 +656,7 @@ class NutritionProvider extends ChangeNotifier {
     _customPortions = [];
     _recentFoods = [];
     _workoutEntries = [];
+    _customFoods = [];
     await _storage.clear();
     notifyListeners();
   }

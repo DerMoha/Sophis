@@ -70,11 +70,17 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
     });
 
     try {
-      final results = await _service.search(query);
+      // Search in both API and custom foods
+      final apiResults = await _service.search(query);
+      final customMatches = context
+          .read<NutritionProvider>()
+          .searchCustomFoods(query);
+      
       // Only update if query hasn't changed and widget is still mounted
       if (mounted && _searchController.text.trim() == query) {
         setState(() {
-          _results = results;
+          // Custom foods first, then API results
+          _results = [...customMatches, ...apiResults];
           _isLoading = false;
         });
       }
@@ -124,10 +130,12 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
     Navigator.pop(context); // Close search screen
   }
 
-  Widget _buildRecentFoods(AppLocalizations l10n) {
-    final recentFoods = context.watch<NutritionProvider>().recentFoods;
+  Widget _buildMyFoodsAndRecent(AppLocalizations l10n) {
+    final provider = context.watch<NutritionProvider>();
+    final customFoods = provider.customFoods;
+    final recentFoods = provider.recentFoods;
 
-    if (recentFoods.isEmpty) {
+    if (customFoods.isEmpty && recentFoods.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -150,19 +158,38 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
     return ListView(
       padding: const EdgeInsets.only(top: 8, bottom: 16),
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-          child: Text(
-            l10n.recentlyUsed,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+        // My Foods section
+        if (customFoods.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            child: Text(
+              l10n.myFoods,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
           ),
-        ),
-        ...recentFoods.map((item) => FoodSearchResultTile(
-              item: item,
-              onTap: () => _showPortionPicker(item),
-            )),
+          ...customFoods.map((item) => FoodSearchResultTile(
+                item: item,
+                onTap: () => _showPortionPicker(item),
+              )),
+        ],
+        // Recently Used section
+        if (recentFoods.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            child: Text(
+              l10n.recentlyUsed,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+          ),
+          ...recentFoods.map((item) => FoodSearchResultTile(
+                item: item,
+                onTap: () => _showPortionPicker(item),
+              )),
+        ],
       ],
     );
   }
@@ -216,8 +243,8 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
               ),
             )
           else if (_results.isEmpty && _searchController.text.trim().isEmpty)
-            // Show recent foods when search is empty
-            Expanded(child: _buildRecentFoods(l10n))
+            // Show my foods and recent when search is empty
+            Expanded(child: _buildMyFoodsAndRecent(l10n))
           else if (_results.isEmpty)
             Expanded(
               child: Center(
