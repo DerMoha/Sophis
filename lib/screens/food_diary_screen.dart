@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../models/food_entry.dart';
 import '../services/nutrition_provider.dart';
+import '../services/settings_provider.dart';
 import '../theme/app_theme.dart';
 import '../theme/animations.dart';
 import '../widgets/organic_components.dart';
@@ -242,26 +243,19 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
         if (entries.isNotEmpty)
           const SizedBox(height: 24),
 
-        // Meal sections
-        _buildMealSection(
-          context, theme, isDark, l10n, entries,
-          'breakfast', l10n.breakfast, Icons.wb_twilight_rounded,
-        ),
-        const SizedBox(height: 12),
-        _buildMealSection(
-          context, theme, isDark, l10n, entries,
-          'lunch', l10n.lunch, Icons.wb_sunny_rounded,
-        ),
-        const SizedBox(height: 12),
-        _buildMealSection(
-          context, theme, isDark, l10n, entries,
-          'dinner', l10n.dinner, Icons.nights_stay_rounded,
-        ),
-        const SizedBox(height: 12),
-        _buildMealSection(
-          context, theme, isDark, l10n, entries,
-          'snack', l10n.snacks, Icons.cookie_outlined,
-        ),
+        // Meal sections - dynamic from settings
+        ...context.read<SettingsProvider>().mealTypes.asMap().entries.expand((entry) {
+          final index = entry.key;
+          final mealType = entry.value;
+          return [
+            _buildMealSection(
+              context, theme, isDark, l10n, entries,
+              mealType.id, mealType.name, mealType.icon, mealType.color,
+            ),
+            if (index < context.read<SettingsProvider>().mealTypes.length - 1)
+              const SizedBox(height: 12),
+          ];
+        }),
 
         // Helpful hint when empty
         if (entries.isEmpty) ...[
@@ -441,10 +435,12 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
     List<FoodEntry> entries,
     String mealType,
     String title,
-    IconData icon,
-  ) {
+    IconData icon, [
+    Color? color,
+  ]) {
     final mealEntries = entries.where((e) => e.meal == mealType).toList();
     final totalCal = mealEntries.fold(0.0, (double sum, FoodEntry e) => sum + e.calories);
+    final mealColor = color ?? theme.colorScheme.primary;
 
     return Container(
       decoration: BoxDecoration(
@@ -467,12 +463,12 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withOpacity(0.1),
+                    color: mealColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     icon,
-                    color: theme.colorScheme.primary,
+                    color: mealColor,
                     size: 20,
                   ),
                 ),
@@ -486,7 +482,7 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
                         Text(
                           '${totalCal.toStringAsFixed(0)} kcal',
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.primary,
+                            color: mealColor,
                             fontWeight: FontWeight.w600,
                           ),
                         )

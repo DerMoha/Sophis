@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../models/shareable_meal.dart';
 import '../services/nutrition_provider.dart';
+import '../services/settings_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/organic_components.dart';
 
@@ -18,36 +19,6 @@ class ImportMealScreen extends StatefulWidget {
 
 class _ImportMealScreenState extends State<ImportMealScreen> {
   String _selectedMeal = 'lunch';
-
-  String _getMealLabel(AppLocalizations l10n, String meal) {
-    switch (meal) {
-      case 'breakfast':
-        return l10n.breakfast;
-      case 'lunch':
-        return l10n.lunch;
-      case 'dinner':
-        return l10n.dinner;
-      case 'snack':
-        return l10n.snacks;
-      default:
-        return meal;
-    }
-  }
-
-  IconData _getMealIcon(String meal) {
-    switch (meal) {
-      case 'breakfast':
-        return Icons.wb_twilight_rounded;
-      case 'lunch':
-        return Icons.wb_sunny_rounded;
-      case 'dinner':
-        return Icons.nights_stay_rounded;
-      case 'snack':
-        return Icons.cookie_outlined;
-      default:
-        return Icons.restaurant_outlined;
-    }
-  }
 
   void _importMeal() {
     final entries = widget.meal.toFoodEntries(_selectedMeal);
@@ -210,26 +181,26 @@ class _ImportMealScreenState extends State<ImportMealScreen> {
                         const SizedBox(height: AppTheme.spaceSM),
                         Wrap(
                           spacing: AppTheme.spaceSM,
-                          children: ['breakfast', 'lunch', 'dinner', 'snack']
+                          children: context.read<SettingsProvider>().mealTypes
                               .map((mealType) => ChoiceChip(
                                     label: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Icon(
-                                          _getMealIcon(mealType),
+                                          mealType.icon,
                                           size: 18,
-                                          color: _selectedMeal == mealType
+                                          color: _selectedMeal == mealType.id
                                               ? Colors.white
                                               : theme.colorScheme.onSurface,
                                         ),
                                         const SizedBox(width: 6),
-                                        Text(_getMealLabel(l10n, mealType)),
+                                        Text(mealType.name),
                                       ],
                                     ),
-                                    selected: _selectedMeal == mealType,
+                                    selected: _selectedMeal == mealType.id,
                                     onSelected: (selected) {
                                       if (selected) {
-                                        setState(() => _selectedMeal = mealType);
+                                        setState(() => _selectedMeal = mealType.id);
                                       }
                                     },
                                   ))

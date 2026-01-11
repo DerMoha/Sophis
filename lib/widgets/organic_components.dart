@@ -594,6 +594,7 @@ class MealCard extends StatelessWidget {
   final VoidCallback? onAddPressed;
   final VoidCallback? onHeaderTap;
   final Widget? addMenu;
+  final Color? color;
 
   const MealCard({
     super.key,
@@ -604,12 +605,14 @@ class MealCard extends StatelessWidget {
     this.onAddPressed,
     this.onHeaderTap,
     this.addMenu,
+    this.color,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final mealColor = color ?? theme.colorScheme.primary;
 
     return Container(
       decoration: BoxDecoration(
@@ -633,12 +636,12 @@ class MealCard extends StatelessWidget {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                      color: mealColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
                       icon,
-                      color: theme.colorScheme.primary,
+                      color: mealColor,
                       size: 20,
                     ),
                   ),
@@ -667,7 +670,7 @@ class MealCard extends StatelessWidget {
                           Text(
                             '${calories.toStringAsFixed(0)} kcal',
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.primary,
+                              color: mealColor,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -677,7 +680,7 @@ class MealCard extends StatelessWidget {
                   addMenu ?? IconButton(
                     icon: Icon(
                       Icons.add_circle_outline,
-                      color: theme.colorScheme.primary,
+                      color: mealColor,
                     ),
                     onPressed: onAddPressed,
                   ),

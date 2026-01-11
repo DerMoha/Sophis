@@ -4,6 +4,7 @@ import '../l10n/generated/app_localizations.dart';
 import '../models/food_entry.dart';
 import '../models/food_item.dart';
 import '../services/nutrition_provider.dart';
+import '../services/settings_provider.dart';
 import '../theme/app_theme.dart';
 import '../theme/animations.dart';
 import '../widgets/organic_components.dart';
@@ -36,34 +37,22 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
     super.dispose();
   }
 
-  String _getMealTitle(AppLocalizations l10n) {
-    switch (widget.meal) {
-      case 'breakfast':
-        return l10n.breakfast;
-      case 'lunch':
-        return l10n.lunch;
-      case 'dinner':
-        return l10n.dinner;
-      case 'snack':
-        return l10n.snacks;
-      default:
-        return l10n.add;
-    }
+  String _getMealTitle(BuildContext context, AppLocalizations l10n) {
+    final settings = context.read<SettingsProvider>();
+    final mealType = settings.getMealType(widget.meal);
+    return mealType?.name ?? l10n.add;
   }
 
-  IconData _getMealIcon() {
-    switch (widget.meal) {
-      case 'breakfast':
-        return Icons.wb_twilight_rounded;
-      case 'lunch':
-        return Icons.wb_sunny_rounded;
-      case 'dinner':
-        return Icons.nights_stay_rounded;
-      case 'snack':
-        return Icons.cookie_outlined;
-      default:
-        return Icons.restaurant_outlined;
-    }
+  IconData _getMealIcon(BuildContext context) {
+    final settings = context.read<SettingsProvider>();
+    final mealType = settings.getMealType(widget.meal);
+    return mealType?.icon ?? Icons.restaurant_outlined;
+  }
+
+  Color? _getMealColor(BuildContext context) {
+    final settings = context.read<SettingsProvider>();
+    final mealType = settings.getMealType(widget.meal);
+    return mealType?.color;
   }
 
   Future<void> _save() async {
@@ -174,22 +163,27 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                             borderRadius:
                                 BorderRadius.circular(AppTheme.radiusFull),
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                _getMealIcon(),
-                                size: 18,
-                                color: theme.colorScheme.primary,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                _getMealTitle(l10n),
-                                style: theme.textTheme.labelLarge?.copyWith(
-                                  color: theme.colorScheme.primary,
-                                ),
-                              ),
-                            ],
+                          child: Builder(
+                            builder: (context) {
+                              final mealColor = _getMealColor(context) ?? theme.colorScheme.primary;
+                              return Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    _getMealIcon(context),
+                                    size: 18,
+                                    color: mealColor,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    _getMealTitle(context, l10n),
+                                    style: theme.textTheme.labelLarge?.copyWith(
+                                      color: mealColor,
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
                           ),
                         ),
                       ),

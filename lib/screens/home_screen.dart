@@ -333,17 +333,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ),
               ),
 
-              _buildMealSection(context, l10n, 'breakfast', l10n.breakfast,
-                  Icons.wb_twilight_rounded, 5),
-              const SizedBox(height: 12),
-              _buildMealSection(context, l10n, 'lunch', l10n.lunch,
-                  Icons.wb_sunny_rounded, 6),
-              const SizedBox(height: 12),
-              _buildMealSection(context, l10n, 'dinner', l10n.dinner,
-                  Icons.nights_stay_rounded, 7),
-              const SizedBox(height: 12),
-              _buildMealSection(context, l10n, 'snack', l10n.snacks,
-                  Icons.cookie_outlined, 8),
+              // Dynamic meal types from settings
+              ...settings.mealTypes.asMap().entries.expand((entry) {
+                final index = entry.key;
+                final mealType = entry.value;
+                return [
+                  _buildMealSection(
+                    context,
+                    l10n,
+                    mealType.id,
+                    mealType.name,
+                    mealType.icon,
+                    5 + index,
+                    mealType.color,
+                  ),
+                  if (index < settings.mealTypes.length - 1)
+                    const SizedBox(height: 12),
+                ];
+              }),
             ]),
           ),
         ),
@@ -698,8 +705,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     String mealType,
     String title,
     IconData icon,
-    int animationIndex,
-  ) {
+    int animationIndex, [
+    Color? color,
+  ]) {
     final entries =
         context.watch<NutritionProvider>().getEntriesByMeal(mealType);
     final total = entries.fold(0.0, (sum, e) => sum + e.calories);
@@ -711,6 +719,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         title: title,
         icon: icon,
         calories: total,
+        color: color,
         onHeaderTap: () => Navigator.push(
           context,
           AppTheme.slideRoute(MealDetailScreen(

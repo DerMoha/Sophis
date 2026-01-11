@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'custom_meal_type.dart';
 
 enum AIMode { offlineBasic, offlinePro, cloud }
 
@@ -83,6 +84,8 @@ class AppSettings {
   final UnitSystem unitSystem;
   // Dashboard card configuration
   final List<DashboardCard> dashboardCards;
+  // Custom meal types
+  final List<CustomMealType> customMealTypes;
 
   const AppSettings({
     this.aiMode = AIMode.offlineBasic,
@@ -101,6 +104,7 @@ class AppSettings {
     this.waterSize4 = 1000,
     this.unitSystem = UnitSystem.metric,
     this.dashboardCards = const [],
+    this.customMealTypes = const [],
   });
 
   Color get accentColor => Color(accentColorValue);
@@ -122,6 +126,7 @@ class AppSettings {
     'waterSize4': waterSize4,
     'unitSystem': unitSystem.index,
     'dashboardCards': dashboardCards.map((c) => c.toJson()).toList(),
+    'customMealTypes': customMealTypes.map((m) => m.toJson()).toList(),
   };
 
   factory AppSettings.fromJson(Map<String, dynamic> json) => AppSettings(
@@ -149,6 +154,9 @@ class AppSettings {
     dashboardCards: (json['dashboardCards'] as List<dynamic>?)
         ?.map((c) => DashboardCard.fromJson(c as Map<String, dynamic>))
         .toList() ?? const [],
+    customMealTypes: (json['customMealTypes'] as List<dynamic>?)
+        ?.map((m) => CustomMealType.fromJson(m as Map<String, dynamic>))
+        .toList() ?? const [],
   );
 
   AppSettings copyWith({
@@ -168,6 +176,7 @@ class AppSettings {
     int? waterSize4,
     UnitSystem? unitSystem,
     List<DashboardCard>? dashboardCards,
+    List<CustomMealType>? customMealTypes,
     bool clearLocale = false,
     bool clearBreakfast = false,
     bool clearLunch = false,
@@ -189,6 +198,7 @@ class AppSettings {
     waterSize4: waterSize4 ?? this.waterSize4,
     unitSystem: unitSystem ?? this.unitSystem,
     dashboardCards: dashboardCards ?? this.dashboardCards,
+    customMealTypes: customMealTypes ?? this.customMealTypes,
   );
 }
 

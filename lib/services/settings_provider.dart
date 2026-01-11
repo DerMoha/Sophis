@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/app_settings.dart';
+import '../models/custom_meal_type.dart';
 import 'storage_service.dart';
 import 'notification_service.dart';
 import 'health_service.dart';
@@ -228,5 +229,122 @@ class SettingsProvider extends ChangeNotifier {
 
   Future<void> resetDashboardCards() async {
     await setDashboardCards([]); // Empty list triggers defaults
+  }
+
+  // Custom meal types
+  List<CustomMealType> get mealTypes {
+    if (_settings.customMealTypes.isEmpty) {
+      // Return defaults if not customized, with migrated reminder times
+      return _migrateDefaultMealTypes();
+    }
+    return List.from(_settings.customMealTypes)
+      ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+  }
+
+  /// Migrate old reminder times to default meal types
+  List<CustomMealType> _migrateDefaultMealTypes() {
+    return CustomMealType.defaults.map((m) {
+      String? reminder;
+      if (m.id == 'breakfast') reminder = _settings.breakfastReminderTime;
+      if (m.id == 'lunch') reminder = _settings.lunchReminderTime;
+      if (m.id == 'dinner') reminder = _settings.dinnerReminderTime;
+      if (reminder != null) {
+        return m.copyWith(reminderTime: reminder);
+      }
+      return m;
+    }).toList();
+  }
+
+  CustomMealType? getMealType(String id) {
+    try {
+      return mealTypes.firstWhere((m) => m.id == id);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<void> setMealTypes(List<CustomMealType> types) async {
+    _settings = _settings.copyWith(customMealTypes: types);
+    await _storage.saveSettings(_settings);
+    await _updateNotificationsFromMealTypes();
+    notifyListeners();
+  }
+
+  Future<void> addMealType(CustomMealType mealType) async {
+    final types = List<CustomMealType>.from(
+      _settings.customMealTypes.isEmpty
+        ? CustomMealType.defaults
+        : _settings.customMealTypes
+    );
+    types.add(mealType);
+    await setMealTypes(types);
+  }
+
+  Future<void> updateMealType(CustomMealType mealType) async {
+    final types = List<CustomMealType>.from(
+      _settings.customMealTypes.isEmpty
+        ? CustomMealType.defaults
+        : _settings.customMealTypes
+    );
+    final index = types.indexWhere((m) => m.id == mealType.id);
+    if (index != -1) {
+      types[index] = mealType;
+      await setMealTypes(types);
+    }
+  }
+
+  Future<void> removeMealType(String id) async {
+    final types = List<CustomMealType>.from(
+      _settings.customMealTypes.isEmpty
+        ? CustomMealType.defaults
+        : _settings.customMealTypes
+    );
+    // Only remove if not a default meal
+    types.removeWhere((m) => m.id == id && !m.isDefault);
+    await setMealTypes(types);
+  }
+
+  Future<void> reorderMealTypes(int oldIndex, int newIndex) async {
+    final types = List<CustomMealType>.from(mealTypes);
+    if (newIndex > oldIndex) newIndex--;
+    final type = types.removeAt(oldIndex);
+    types.insert(newIndex, type);
+
+    // Update sort orders
+    final updatedTypes = <CustomMealType>[];
+    for (var i = 0; i < types.length; i++) {
+      updatedTypes.add(types[i].copyWith(sortOrder: i));
+    }
+
+    await setMealTypes(updatedTypes);
+  }
+
+  /// Update notifications based on meal type reminders
+  Future<void> _updateNotificationsFromMealTypes() async {
+    if (!_settings.remindersEnabled) {
+      await _notifications.cancelAllReminders();
+      return;
+    }
+
+    // Cancel existing reminders
+    await _notifications.cancelAllReminders();
+
+    // Schedule new reminders based on meal types
+    final types = mealTypes;
+    for (var i = 0; i < types.length; i++) {
+      final meal = types[i];
+      if (meal.reminderTime != null) {
+        final parts = meal.reminderTime!.split(':');
+        if (parts.length == 2) {
+          await _notifications.scheduleMealReminder(
+            id: i,
+            title: 'Time for ${meal.name}!',
+            body: 'Don\'t forget to log your ${meal.name.toLowerCase()}',
+            hour: int.parse(parts[0]),
+            minute: int.parse(parts[1]),
+          );
+        }
+      }
+    }
   }
 }

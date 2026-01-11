@@ -10,6 +10,7 @@ import '../theme/animations.dart';
 import '../widgets/organic_components.dart';
 import 'dashboard_settings_screen.dart';
 import 'goals_setup_screen.dart';
+import 'meal_types_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -166,6 +167,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             onTap: () => Navigator.push(
                               context,
                               AppTheme.slideRoute(const DashboardSettingsScreen()),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          _buildNavigationTile(
+                            context,
+                            title: l10n.customizeMealTypes,
+                            subtitle: l10n.customizeMealTypesSubtitle,
+                            icon: Icons.restaurant_menu_outlined,
+                            onTap: () => Navigator.push(
+                              context,
+                              AppTheme.slideRoute(const MealTypesScreen()),
                             ),
                           ),
                         ],
