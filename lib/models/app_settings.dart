@@ -4,6 +4,48 @@ enum AIMode { offlineBasic, offlinePro, cloud }
 
 enum UnitSystem { metric, imperial }
 
+/// Dashboard card configuration
+class DashboardCard {
+  final String id;
+  final bool visible;
+
+  const DashboardCard({required this.id, this.visible = true});
+
+  Map<String, dynamic> toJson() => {'id': id, 'visible': visible};
+
+  factory DashboardCard.fromJson(Map<String, dynamic> json) => DashboardCard(
+    id: json['id'] as String,
+    visible: json['visible'] as bool? ?? true,
+  );
+
+  DashboardCard copyWith({bool? visible}) => DashboardCard(
+    id: id,
+    visible: visible ?? this.visible,
+  );
+}
+
+/// Dashboard card IDs and default order
+class DashboardCardIds {
+  static const foodDiary = 'food_diary';
+  static const mealPlanner = 'meal_planner';
+  static const weight = 'weight';
+  static const recipes = 'recipes';
+  static const activity = 'activity';
+  static const workout = 'workout';
+
+  static const List<String> defaultOrder = [
+    foodDiary,
+    mealPlanner,
+    weight,
+    recipes,
+    activity,
+    workout,
+  ];
+
+  static List<DashboardCard> get defaultCards =>
+      defaultOrder.map((id) => DashboardCard(id: id)).toList();
+}
+
 /// Preset accent colors
 class AccentColors {
   static const List<Color> presets = [
@@ -39,6 +81,8 @@ class AppSettings {
   final int waterSize4;
   // Unit system preference
   final UnitSystem unitSystem;
+  // Dashboard card configuration
+  final List<DashboardCard> dashboardCards;
 
   const AppSettings({
     this.aiMode = AIMode.offlineBasic,
@@ -56,6 +100,7 @@ class AppSettings {
     this.waterSize3 = 500,
     this.waterSize4 = 1000,
     this.unitSystem = UnitSystem.metric,
+    this.dashboardCards = const [],
   });
 
   Color get accentColor => Color(accentColorValue);
@@ -76,6 +121,7 @@ class AppSettings {
     'waterSize3': waterSize3,
     'waterSize4': waterSize4,
     'unitSystem': unitSystem.index,
+    'dashboardCards': dashboardCards.map((c) => c.toJson()).toList(),
   };
 
   factory AppSettings.fromJson(Map<String, dynamic> json) => AppSettings(
@@ -100,6 +146,9 @@ class AppSettings {
     unitSystem: json['unitSystem'] != null
         ? UnitSystem.values[json['unitSystem']]
         : UnitSystem.metric,
+    dashboardCards: (json['dashboardCards'] as List<dynamic>?)
+        ?.map((c) => DashboardCard.fromJson(c as Map<String, dynamic>))
+        .toList() ?? const [],
   );
 
   AppSettings copyWith({
@@ -118,6 +167,7 @@ class AppSettings {
     int? waterSize3,
     int? waterSize4,
     UnitSystem? unitSystem,
+    List<DashboardCard>? dashboardCards,
     bool clearLocale = false,
     bool clearBreakfast = false,
     bool clearLunch = false,
@@ -138,6 +188,7 @@ class AppSettings {
     waterSize3: waterSize3 ?? this.waterSize3,
     waterSize4: waterSize4 ?? this.waterSize4,
     unitSystem: unitSystem ?? this.unitSystem,
+    dashboardCards: dashboardCards ?? this.dashboardCards,
   );
 }
 

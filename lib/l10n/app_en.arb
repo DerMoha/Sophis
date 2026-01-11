@@ -171,6 +171,14 @@
   "heightIn": "Height (in)",
   "targetWeightLb": "Target Weight (lb)",
 
+  "customizeDashboard": "Customize Dashboard",
+  "customizeDashboardSubtitle": "Reorder and hide quick actions",
+  "resetToDefault": "Reset to Default",
+  "dragToReorder": "Drag to reorder",
+  "quickActions": "Quick Actions",
+  "visible": "Visible",
+  "hidden": "Hidden",
+
   "mealPlanner": "Meal Planner",
   "shoppingList": "Shopping List",
   "addMeal": "Add Meal",

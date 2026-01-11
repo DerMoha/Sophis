@@ -310,96 +310,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
               const SizedBox(height: 24),
 
-              // Quick Actions - 2x3 Grid
+              // Quick Actions - Dynamic Grid
               FadeInSlide(
                 index: 3,
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: QuickActionCard(
-                            icon: Icons.history_rounded,
-                            label: l10n.foodDiary,
-                            color: theme.colorScheme.primary,
-                            onTap: () => Navigator.push(
-                              context,
-                              AppTheme.slideRoute(const FoodDiaryScreen()),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: QuickActionCard(
-                            icon: Icons.calendar_month_outlined,
-                            label: l10n.mealPlanner,
-                            onTap: () => Navigator.push(
-                              context,
-                              AppTheme.slideRoute(const MealPlannerScreen()),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: QuickActionCard(
-                            icon: Icons.monitor_weight_outlined,
-                            label: l10n.weight,
-                            onTap: () => Navigator.push(
-                              context,
-                              AppTheme.slideRoute(const WeightTrackerScreen()),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: QuickActionCard(
-                            icon: Icons.menu_book_outlined,
-                            label: l10n.recipes,
-                            onTap: () => Navigator.push(
-                              context,
-                              AppTheme.slideRoute(const RecipesScreen()),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: QuickActionCard(
-                            icon: Icons.insights_outlined,
-                            label: l10n.activity,
-                            onTap: () => Navigator.push(
-                              context,
-                              AppTheme.slideRoute(const ActivityGraphScreen()),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: QuickActionCard(
-                            icon: Icons.local_fire_department_rounded,
-                            label: l10n.workout,
-                            color: AppTheme.fire,
-                            onTap: () {
-                              showModalBottomSheet(
-                                context: context,
-                                isScrollControlled: true,
-                                backgroundColor: Colors.transparent,
-                                builder: (_) => const WorkoutBottomSheet(),
-                              );
-                            },
-                          ),
-                        )
-                      ],
-                    ),
-                  ],
-                ),
+                child: _buildQuickActionsGrid(context, l10n, theme, settings),
               ),
               const SizedBox(height: 32),
 
@@ -654,6 +568,121 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ],
       ),
     );
+  }
+
+  Widget _buildQuickActionsGrid(
+    BuildContext context,
+    AppLocalizations l10n,
+    ThemeData theme,
+    SettingsProvider settings,
+  ) {
+    final visibleCards = settings.visibleDashboardCards;
+
+    if (visibleCards.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    // Build rows of 2 cards each
+    final rows = <Widget>[];
+    for (var i = 0; i < visibleCards.length; i += 2) {
+      final firstCard = _buildQuickActionCardForId(
+        context, l10n, theme, visibleCards[i].id,
+      );
+      final secondCard = i + 1 < visibleCards.length
+          ? _buildQuickActionCardForId(
+              context, l10n, theme, visibleCards[i + 1].id,
+            )
+          : null;
+
+      rows.add(Row(
+        children: [
+          Expanded(child: firstCard),
+          const SizedBox(width: 12),
+          if (secondCard != null)
+            Expanded(child: secondCard)
+          else
+            const Expanded(child: SizedBox()),
+        ],
+      ));
+
+      if (i + 2 < visibleCards.length) {
+        rows.add(const SizedBox(height: 12));
+      }
+    }
+
+    return Column(children: rows);
+  }
+
+  Widget _buildQuickActionCardForId(
+    BuildContext context,
+    AppLocalizations l10n,
+    ThemeData theme,
+    String id,
+  ) {
+    switch (id) {
+      case DashboardCardIds.foodDiary:
+        return QuickActionCard(
+          icon: Icons.history_rounded,
+          label: l10n.foodDiary,
+          color: theme.colorScheme.primary,
+          onTap: () => Navigator.push(
+            context,
+            AppTheme.slideRoute(const FoodDiaryScreen()),
+          ),
+        );
+      case DashboardCardIds.mealPlanner:
+        return QuickActionCard(
+          icon: Icons.calendar_month_outlined,
+          label: l10n.mealPlanner,
+          onTap: () => Navigator.push(
+            context,
+            AppTheme.slideRoute(const MealPlannerScreen()),
+          ),
+        );
+      case DashboardCardIds.weight:
+        return QuickActionCard(
+          icon: Icons.monitor_weight_outlined,
+          label: l10n.weight,
+          onTap: () => Navigator.push(
+            context,
+            AppTheme.slideRoute(const WeightTrackerScreen()),
+          ),
+        );
+      case DashboardCardIds.recipes:
+        return QuickActionCard(
+          icon: Icons.menu_book_outlined,
+          label: l10n.recipes,
+          onTap: () => Navigator.push(
+            context,
+            AppTheme.slideRoute(const RecipesScreen()),
+          ),
+        );
+      case DashboardCardIds.activity:
+        return QuickActionCard(
+          icon: Icons.insights_outlined,
+          label: l10n.activity,
+          onTap: () => Navigator.push(
+            context,
+            AppTheme.slideRoute(const ActivityGraphScreen()),
+          ),
+        );
+      case DashboardCardIds.workout:
+        return QuickActionCard(
+          icon: Icons.local_fire_department_rounded,
+          label: l10n.workout,
+          color: AppTheme.fire,
+          onTap: () {
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (_) => const WorkoutBottomSheet(),
+            );
+          },
+        );
+      default:
+        return const SizedBox.shrink();
+    }
   }
 
   Widget _buildMealSection(

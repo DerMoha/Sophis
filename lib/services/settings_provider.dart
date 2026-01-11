@@ -190,4 +190,43 @@ class SettingsProvider extends ChangeNotifier {
     await _storage.saveSettings(_settings);
     notifyListeners();
   }
+
+  // Dashboard card customization
+  List<DashboardCard> get dashboardCards {
+    if (_settings.dashboardCards.isEmpty) {
+      // Return defaults if not customized
+      return DashboardCardIds.defaultCards;
+    }
+    return _settings.dashboardCards;
+  }
+
+  List<DashboardCard> get visibleDashboardCards =>
+      dashboardCards.where((c) => c.visible).toList();
+
+  Future<void> setDashboardCards(List<DashboardCard> cards) async {
+    _settings = _settings.copyWith(dashboardCards: cards);
+    await _storage.saveSettings(_settings);
+    notifyListeners();
+  }
+
+  Future<void> toggleDashboardCardVisibility(String id) async {
+    final cards = List<DashboardCard>.from(dashboardCards);
+    final index = cards.indexWhere((c) => c.id == id);
+    if (index != -1) {
+      cards[index] = cards[index].copyWith(visible: !cards[index].visible);
+      await setDashboardCards(cards);
+    }
+  }
+
+  Future<void> reorderDashboardCards(int oldIndex, int newIndex) async {
+    final cards = List<DashboardCard>.from(dashboardCards);
+    if (newIndex > oldIndex) newIndex--;
+    final card = cards.removeAt(oldIndex);
+    cards.insert(newIndex, card);
+    await setDashboardCards(cards);
+  }
+
+  Future<void> resetDashboardCards() async {
+    await setDashboardCards([]); // Empty list triggers defaults
+  }
 }

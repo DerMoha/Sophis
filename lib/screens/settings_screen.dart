@@ -8,6 +8,7 @@ import '../services/settings_provider.dart';
 import '../theme/app_theme.dart';
 import '../theme/animations.dart';
 import '../widgets/organic_components.dart';
+import 'dashboard_settings_screen.dart';
 import 'goals_setup_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -144,6 +145,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         icon: Icons.straighten_outlined,
                         children: [
                           _buildUnitSelector(context, settings, l10n),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Dashboard Customization Section
+                    FadeInSlide(
+                      index: 4,
+                      child: _buildSectionCard(
+                        context,
+                        title: l10n.quickActions,
+                        icon: Icons.dashboard_customize_outlined,
+                        children: [
+                          _buildNavigationTile(
+                            context,
+                            title: l10n.customizeDashboard,
+                            subtitle: l10n.customizeDashboardSubtitle,
+                            icon: Icons.grid_view_outlined,
+                            onTap: () => Navigator.push(
+                              context,
+                              AppTheme.slideRoute(const DashboardSettingsScreen()),
+                            ),
+                          ),
                         ],
                       ),
                     ),

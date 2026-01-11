@@ -122,6 +122,14 @@
   "heightIn": "Größe (in)",
   "targetWeightLb": "Zielgewicht (lb)",
 
+  "customizeDashboard": "Dashboard anpassen",
+  "customizeDashboardSubtitle": "Schnellaktionen neu ordnen und ausblenden",
+  "resetToDefault": "Zurücksetzen",
+  "dragToReorder": "Ziehen zum Neuordnen",
+  "quickActions": "Schnellaktionen",
+  "visible": "Sichtbar",
+  "hidden": "Versteckt",
+
   "mealPlanner": "Essensplaner",
   "shoppingList": "Einkaufsliste",
   "addMeal": "Mahlzeit hinzufügen",
