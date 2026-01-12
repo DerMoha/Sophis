@@ -353,38 +353,73 @@ class MacroRing extends StatelessWidget {
     required this.value,
     required this.goal,
     required this.color,
+
     this.unit = 'g',
     this.size = 80,
+    this.positiveExcess = false,
+    this.excessColor,
   });
+
+  final bool positiveExcess;
+  final Color? excessColor;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final progress = goal > 0 ? (value / goal).clamp(0.0, 1.0) : 0.0;
-
+    // Unclamped progress for calculation
+    final rawProgress = goal > 0 ? (value / goal) : 0.0;
+    final isOver = rawProgress > 1.0;
+    
+    final finalExcessColor = excessColor ?? AppTheme.error;
+    // If over, use the excess color (Green/Red) and show full ring
+    final displayColor = isOver && (positiveExcess || !positiveExcess) ? finalExcessColor : color; // Logic simplifies to: if over, use excess color.
+    
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        RadialProgress(
-          value: progress,
-          size: size,
-          strokeWidth: 6,
-          color: color,
-          showGlow: false,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+        SizedBox(
+          width: size + 14,
+          height: size + 14,
+          child: Stack(
+            alignment: Alignment.center,
             children: [
-              Text(
-                value.toStringAsFixed(0),
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                ),
+              // Main Progress
+              RadialProgress(
+                value: rawProgress.clamp(0.0, 1.0),
+                size: size,
+                strokeWidth: 6,
+                color: color,
+                showGlow: false,
               ),
-              Text(
-                unit,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+              // Excess Progress (Outer Ring)
+              if (isOver)
+                RadialProgress(
+                  value: (rawProgress - 1.0).clamp(0.0, 1.0),
+                  size: size + 12, // Slightly larger
+                  strokeWidth: 4,  // Thinner
+                  color: finalExcessColor,
+                  backgroundColor: Colors.transparent,
+                  showGlow: false,
+                ),
+              // Content
+              Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      value.toStringAsFixed(0),
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: displayColor,
+                      ),
+                    ),
+                    Text(
+                      unit,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

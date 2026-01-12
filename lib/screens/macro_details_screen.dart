@@ -141,9 +141,10 @@ class MacroDetailsScreen extends StatelessWidget {
               const Spacer(),
               const Spacer(),
               SizedBox(
-                width: 60,
-                height: 60,
+                width: 74,
+                height: 74,
                 child: Stack(
+                  alignment: Alignment.center,
                   children: [
                     // Main Progress
                     RadialProgress(
@@ -153,12 +154,12 @@ class MacroDetailsScreen extends StatelessWidget {
                       color: color,
                       showGlow: false,
                     ),
-                    // Excess Progress (Red Overlay)
+                    // Excess Progress (Outer Ring)
                     if (isOver)
                       RadialProgress(
                         value: (progress - 1.0).clamp(0.0, 1.0),
-                        size: 60,
-                        strokeWidth: 6,
+                        size: 72,
+                        strokeWidth: 4,
                         color: finalExcessColor,
                         backgroundColor: Colors.transparent,
                         showGlow: false,

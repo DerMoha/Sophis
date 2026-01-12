@@ -487,6 +487,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             value: totals['protein']!,
             goal: goals.protein,
             color: AppTheme.protein,
+            positiveExcess: true,
+            excessColor: AppTheme.success,
           ),
           MacroRing(
             label: l10n.carbs,
