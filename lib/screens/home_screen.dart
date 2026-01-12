@@ -25,6 +25,7 @@ import 'food_diary_screen.dart';
 import 'meal_detail_screen.dart';
 import '../widgets/water_details_sheet.dart';
 import '../widgets/workout_bottom_sheet.dart';
+import 'macro_details_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -470,6 +471,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     goals,
   ) {
     return GlassCard(
+      onTap: () => Navigator.push(
+        context,
+        AppTheme.slideRoute(MacroDetailsScreen(
+          totals: totals,
+          goals: goals,
+        )),
+      ),
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
