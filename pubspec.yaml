@@ -43,7 +43,10 @@ dependencies:
 
   # Phase 8: Data Export/Import
   file_picker: ^8.0.0+1
-  path_provider: ^2.1.2
+  path_provider: ^2.1.5
+  drift: ^2.30.1
+  sqlite3_flutter_libs: ^0.5.41
+  path: ^1.9.1
   
   # Phase 6: Health Integration (Google Health Connect + Apple HealthKit)
   # DISABLED: iOS crashes without HealthKit entitlement (requires paid Apple Developer)
@@ -55,6 +58,8 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
+  drift_dev: ^2.30.1
+  build_runner: ^2.10.5
 
 flutter:
   uses-material-design: true

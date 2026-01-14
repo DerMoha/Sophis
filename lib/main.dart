@@ -12,6 +12,7 @@ import 'services/settings_provider.dart';
 import 'services/nutrition_provider.dart';
 import 'services/notification_service.dart';
 import 'services/meal_sharing_service.dart';
+import 'services/database_service.dart';
 import 'theme/app_theme.dart';
 import 'screens/home_screen.dart';
 import 'screens/import_meal_screen.dart';
@@ -28,6 +29,8 @@ void main() async {
   final notificationService = NotificationService();
   await notificationService.initialize();
 
+  final databaseService = DatabaseService();
+
   runApp(
     MultiProvider(
       providers: [
@@ -35,7 +38,7 @@ void main() async {
           create: (_) => SettingsProvider(storageService),
         ),
         ChangeNotifierProvider(
-          create: (_) => NutritionProvider(storageService),
+          create: (_) => NutritionProvider(storageService, databaseService),
         ),
       ],
       child: const SophisApp(),

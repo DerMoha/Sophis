@@ -11,10 +11,12 @@ import '../models/food_item.dart';
 import '../models/workout_entry.dart';
 import 'storage_service.dart';
 import 'health_service.dart';
+import 'database_service.dart';
 
 /// Central state management for nutrition tracking
 class NutritionProvider extends ChangeNotifier {
   final StorageService _storage;
+  final DatabaseService _db; // Database service
 
   NutritionGoals? _goals;
   UserProfile? _profile;
@@ -57,7 +59,7 @@ class NutritionProvider extends ChangeNotifier {
         _cacheDate!.day == now.day;
   }
 
-  NutritionProvider(this._storage) {
+  NutritionProvider(this._storage, this._db) {
     _loadData();
   }
 
@@ -83,21 +85,48 @@ class NutritionProvider extends ChangeNotifier {
     _loadData();
   }
 
-  void _loadData() {
+  Future<void> _loadData() async {
+    // 1. Check for migration
+    await _migrateToDbIfNeeded();
+
+    // 2. Load from DB
+    _entries = await _db.getAllFoods();
+    _waterEntries = await _db.getAllWater();
+    _weightEntries = await _db.getAllWeights();
+    _workoutEntries = await _db.getAllWorkouts();
+
+    // 3. Load non-DB data from SharedPreferences
     _goals = _storage.loadGoals();
     _profile = _storage.loadProfile();
-    _entries = _storage.loadFoodEntries();
-    _waterEntries = _storage.loadWaterEntries();
-    _weightEntries = _storage.loadWeightEntries();
     _recipes = _storage.loadRecipes();
     _plannedMeals = _storage.loadPlannedMeals();
     _shoppingListChecked = _storage.loadShoppingListChecked();
     _customPortions = _storage.loadCustomPortions();
     _recentFoods = _storage.loadRecentFoods();
-    _workoutEntries = _storage.loadWorkoutEntries();
     _customFoods = _storage.loadCustomFoods();
-    _invalidateCache(); // Clear cache when loading fresh data
+    
+    _invalidateCache(); 
     notifyListeners();
+  }
+
+  Future<void> _migrateToDbIfNeeded() async {
+    if (_storage.isMigrationComplete()) return;
+    
+    debugPrint('Starting DB Migration...');
+    
+    // Load legacy data
+    final legacyFoods = _storage.loadFoodEntries();
+    final legacyWater = _storage.loadWaterEntries();
+    final legacyWeights = _storage.loadWeightEntries();
+    final legacyWorkouts = _storage.loadWorkoutEntries();
+    
+    if (legacyFoods.isNotEmpty) await _db.insertFoods(legacyFoods);
+    if (legacyWater.isNotEmpty) await _db.insertWaterList(legacyWater);
+    if (legacyWeights.isNotEmpty) await _db.insertWeightList(legacyWeights);
+    if (legacyWorkouts.isNotEmpty) await _db.insertWorkoutList(legacyWorkouts);
+    
+    await _storage.setMigrationComplete();
+    debugPrint('DB Migration Complete');
   }
 
   // Goals
@@ -117,15 +146,15 @@ class NutritionProvider extends ChangeNotifier {
   // Food Entries
   Future<void> addFoodEntry(FoodEntry entry) async {
     _entries.add(entry);
-    _invalidateCache(); // Clear cache when entries change
-    await _storage.saveFoodEntries(_entries);
+    _invalidateCache();
+    await _db.insertFood(entry); // DB
     notifyListeners();
   }
 
   Future<void> removeFoodEntry(String id) async {
     _entries.removeWhere((e) => e.id == id);
-    _invalidateCache(); // Clear cache when entries change
-    await _storage.saveFoodEntries(_entries);
+    _invalidateCache(); 
+    await _db.deleteFood(id); // DB
     notifyListeners();
   }
 
@@ -134,8 +163,8 @@ class NutritionProvider extends ChangeNotifier {
     final index = _entries.indexWhere((e) => e.id == entry.id);
     if (index != -1) {
       _entries[index] = entry;
-      _invalidateCache(); // Clear cache when entries change
-      await _storage.saveFoodEntries(_entries);
+      _invalidateCache(); 
+      await _db.updateFood(entry); // DB
       notifyListeners();
     }
   }
@@ -265,7 +294,7 @@ class NutritionProvider extends ChangeNotifier {
       note: note,
     );
     _workoutEntries.add(entry);
-    await _storage.saveWorkoutEntries(_workoutEntries);
+    await _db.insertWorkout(entry); // DB
     notifyListeners();
   }
 
@@ -274,7 +303,7 @@ class NutritionProvider extends ChangeNotifier {
     final index = _workoutEntries.indexWhere((e) => e.id == entry.id);
     if (index != -1) {
       _workoutEntries[index] = entry;
-      await _storage.saveWorkoutEntries(_workoutEntries);
+      await _db.updateWorkout(entry); // DB
       notifyListeners();
     }
   }
@@ -282,7 +311,7 @@ class NutritionProvider extends ChangeNotifier {
   /// Remove a workout entry
   Future<void> removeWorkoutEntry(String id) async {
     _workoutEntries.removeWhere((e) => e.id == id);
-    await _storage.saveWorkoutEntries(_workoutEntries);
+    await _db.deleteWorkout(id); // DB
     notifyListeners();
   }
 
@@ -317,13 +346,13 @@ class NutritionProvider extends ChangeNotifier {
       timestamp: DateTime.now(),
     );
     _waterEntries.add(entry);
-    await _storage.saveWaterEntries(_waterEntries);
+    await _db.insertWater(entry); // DB
     notifyListeners();
   }
 
   Future<void> removeWaterEntry(String id) async {
     _waterEntries.removeWhere((e) => e.id == id);
-    await _storage.saveWaterEntries(_waterEntries);
+    await _db.deleteWater(id); // DB
     notifyListeners();
   }
 
@@ -358,13 +387,13 @@ class NutritionProvider extends ChangeNotifier {
     );
     _weightEntries.add(entry);
     _weightEntries.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-    await _storage.saveWeightEntries(_weightEntries);
+    await _db.insertWeight(entry); // DB
     notifyListeners();
   }
 
   Future<void> removeWeightEntry(String id) async {
     _weightEntries.removeWhere((e) => e.id == id);
-    await _storage.saveWeightEntries(_weightEntries);
+    await _db.deleteWeight(id); // DB
     notifyListeners();
   }
 
@@ -657,6 +686,9 @@ class NutritionProvider extends ChangeNotifier {
     _recentFoods = [];
     _workoutEntries = [];
     _customFoods = [];
+    
+    // Clear both DB and SharedPreferences
+    await _db.deleteAllData();
     await _storage.clear();
     notifyListeners();
   }

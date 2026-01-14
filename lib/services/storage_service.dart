@@ -23,6 +23,7 @@ class StorageService {
   static const _recipesKey = 'recipes';
   static const _settingsKey = 'app_settings';
   static const _apiKeyStorageKey = 'gemini_api_key';
+  static const _dbMigrationKey = 'db_migration_v1_complete';
   static const _plannedMealsKey = 'planned_meals';
   static const _shoppingListKey = 'shopping_list_checked';
   static const _customPortionsKey = 'custom_portions';
@@ -220,5 +221,14 @@ class StorageService {
 
   Future<String?> loadApiKey() async {
     return await _secureStorage.read(key: _apiKeyStorageKey);
+  }
+
+  // Migration Flags
+  Future<void> setMigrationComplete({bool complete = true}) async {
+    await _prefs.setBool(_dbMigrationKey, complete);
+  }
+
+  bool isMigrationComplete() {
+    return _prefs.getBool(_dbMigrationKey) ?? false;
   }
 }
