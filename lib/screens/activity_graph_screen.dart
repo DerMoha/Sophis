@@ -264,7 +264,7 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
                       barRods: [
                         BarChartRodData(
                           toY: value,
-                          color: isGoalMet ? color : color.withAlpha(150),
+                          color: isGoalMet ? color : color.withValues(alpha: 0.6), // 150/255
                           width: _selectedDays == 7 ? 24 : 8,
                           borderRadius: const BorderRadius.only(
                             topLeft: Radius.circular(4),
@@ -279,7 +279,7 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
                           horizontalLines: [
                             HorizontalLine(
                               y: goalValue,
-                              color: color.withAlpha(100),
+                              color: color.withValues(alpha: 0.4), // 100/255
                               strokeWidth: 2,
                               dashArray: [5, 5],
                               label: HorizontalLineLabel(
@@ -388,7 +388,7 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withAlpha(20),
+        color: color.withValues(alpha: 0.08), // 20/255
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
