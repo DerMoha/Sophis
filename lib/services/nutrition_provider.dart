@@ -293,6 +293,11 @@ class NutritionProvider extends ChangeNotifier {
       timestamp: DateTime.now(),
       note: note,
     );
+    await restoreWorkoutEntry(entry);
+  }
+
+  /// Restore specific workout entry (for import)
+  Future<void> restoreWorkoutEntry(WorkoutEntry entry) async {
     _workoutEntries.add(entry);
     await _db.insertWorkout(entry); // DB
     notifyListeners();
@@ -345,6 +350,11 @@ class NutritionProvider extends ChangeNotifier {
       amountMl: ml,
       timestamp: DateTime.now(),
     );
+    await restoreWaterEntry(entry);
+  }
+
+  /// Restore manual water entry (for import)
+  Future<void> restoreWaterEntry(WaterEntry entry) async {
     _waterEntries.add(entry);
     await _db.insertWater(entry); // DB
     notifyListeners();
@@ -385,6 +395,11 @@ class NutritionProvider extends ChangeNotifier {
       timestamp: DateTime.now(),
       note: note,
     );
+    await restoreWeightEntry(entry);
+  }
+
+  /// Restore manual weight entry (for import)
+  Future<void> restoreWeightEntry(WeightEntry entry) async {
     _weightEntries.add(entry);
     _weightEntries.sort((a, b) => b.timestamp.compareTo(a.timestamp));
     await _db.insertWeight(entry); // DB

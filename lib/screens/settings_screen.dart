@@ -880,7 +880,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       final nutritionProvider = context.read<NutritionProvider>();
       final messenger = ScaffoldMessenger.of(context);
-      final success = await DataExportService.exportData(nutritionProvider.storage);
+      final success = await DataExportService.exportData(nutritionProvider);
 
       if (!mounted) return;
 
@@ -926,7 +926,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() => _isImporting = true);
 
     try {
-      final result = await DataExportService.importData(nutritionProvider.storage);
+      final result = await DataExportService.importData(nutritionProvider);
 
       if (!mounted) return;
 
