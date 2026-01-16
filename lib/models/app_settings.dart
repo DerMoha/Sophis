@@ -86,6 +86,8 @@ class AppSettings {
   final List<DashboardCard> dashboardCards;
   // Custom meal types
   final List<CustomMealType> customMealTypes;
+  // Meal display settings
+  final bool showMealMacros;
 
   const AppSettings({
     this.aiMode = AIMode.offlineBasic,
@@ -105,6 +107,7 @@ class AppSettings {
     this.unitSystem = UnitSystem.metric,
     this.dashboardCards = const [],
     this.customMealTypes = const [],
+    this.showMealMacros = false,
   });
 
   Color get accentColor => Color(accentColorValue);
@@ -127,6 +130,7 @@ class AppSettings {
     'unitSystem': unitSystem.index,
     'dashboardCards': dashboardCards.map((c) => c.toJson()).toList(),
     'customMealTypes': customMealTypes.map((m) => m.toJson()).toList(),
+    'showMealMacros': showMealMacros,
   };
 
   factory AppSettings.fromJson(Map<String, dynamic> json) => AppSettings(
@@ -157,6 +161,7 @@ class AppSettings {
     customMealTypes: (json['customMealTypes'] as List<dynamic>?)
         ?.map((m) => CustomMealType.fromJson(m as Map<String, dynamic>))
         .toList() ?? const [],
+    showMealMacros: json['showMealMacros'] as bool? ?? false,
   );
 
   AppSettings copyWith({
@@ -177,6 +182,7 @@ class AppSettings {
     UnitSystem? unitSystem,
     List<DashboardCard>? dashboardCards,
     List<CustomMealType>? customMealTypes,
+    bool? showMealMacros,
     bool clearLocale = false,
     bool clearBreakfast = false,
     bool clearLunch = false,
@@ -199,6 +205,7 @@ class AppSettings {
     unitSystem: unitSystem ?? this.unitSystem,
     dashboardCards: dashboardCards ?? this.dashboardCards,
     customMealTypes: customMealTypes ?? this.customMealTypes,
+    showMealMacros: showMealMacros ?? this.showMealMacros,
   );
 }
 

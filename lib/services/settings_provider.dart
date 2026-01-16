@@ -99,6 +99,14 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  bool get showMealMacros => _settings.showMealMacros;
+
+  Future<void> setShowMealMacros(bool enabled) async {
+    _settings = _settings.copyWith(showMealMacros: enabled);
+    await _storage.saveSettings(_settings);
+    notifyListeners();
+  }
+
   Future<void> setRemindersEnabled(bool enabled) async {
     if (enabled) {
       // Request permission when user enables reminders

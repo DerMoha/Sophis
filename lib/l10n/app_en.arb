@@ -411,5 +411,10 @@
   "deleteCustomFood": "Remove from My Foods?",
   "deleteCustomFoodConfirm": "This food will be removed from your saved list.",
   "saveToMyFoods": "Save to My Foods",
-  "saveToMyFoodsSubtitle": "Quickly add this item again later"
+  "saveToMyFoodsSubtitle": "Quickly add this item again later",
+  "showMealMacros": "Show Meal Macros",
+  "showMealMacrosSubtitle": "Display protein, carbs, and fat in meal headers",
+  "preview": "Preview",
+  "macrosHidden": "Macros Hidden",
+  "macrosVisible": "Macros Visible"
 }

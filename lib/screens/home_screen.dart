@@ -721,6 +721,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final entries =
         context.watch<NutritionProvider>().getEntriesByMeal(mealType);
     final total = entries.fold(0.0, (sum, e) => sum + e.calories);
+    final totalProtein = entries.fold(0.0, (sum, e) => sum + e.protein);
+    final totalCarbs = entries.fold(0.0, (sum, e) => sum + e.carbs);
+    final totalFat = entries.fold(0.0, (sum, e) => sum + e.fat);
+    final showMacros = context.select<SettingsProvider, bool>((s) => s.showMealMacros);
     final theme = Theme.of(context);
 
     return FadeInSlide(
@@ -730,6 +734,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         icon: icon,
         calories: total,
         color: color,
+        showMacros: showMacros,
+        protein: totalProtein,
+        carbs: totalCarbs,
+        fat: totalFat,
         onHeaderTap: () => Navigator.push(
           context,
           AppTheme.slideRoute(MealDetailScreen(

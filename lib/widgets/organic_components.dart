@@ -641,7 +641,16 @@ class MealCard extends StatelessWidget {
     this.onHeaderTap,
     this.addMenu,
     this.color,
+    this.showMacros = false,
+    this.protein = 0,
+    this.carbs = 0,
+    this.fat = 0,
   });
+
+  final bool showMacros;
+  final double protein;
+  final double carbs;
+  final double fat;
 
   @override
   Widget build(BuildContext context) {
@@ -709,6 +718,18 @@ class MealCard extends StatelessWidget {
                               fontWeight: FontWeight.w600,
                             ),
                           ),
+                        if (calories > 0 && showMacros) ...[
+                          const SizedBox(height: 2),
+                          Row(
+                            children: [
+                              _buildMiniMacro('P', protein, AppTheme.protein, theme),
+                              const SizedBox(width: 8),
+                              _buildMiniMacro('C', carbs, AppTheme.carbs, theme),
+                              const SizedBox(width: 8),
+                              _buildMiniMacro('F', fat, AppTheme.fat, theme),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -733,6 +754,29 @@ class MealCard extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+
+  Widget _buildMiniMacro(String label, double value, Color color, ThemeData theme) {
+    return Row(
+      children: [
+        Container(
+          width: 2,
+          height: 8,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(1),
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          '$label ${value.toStringAsFixed(0)}',
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            fontSize: 10,
+          ),
+        ),
+      ],
     );
   }
 }

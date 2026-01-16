@@ -10,6 +10,7 @@ import '../theme/animations.dart';
 import '../widgets/organic_components.dart';
 import 'dashboard_settings_screen.dart';
 import 'goals_setup_screen.dart';
+import 'meal_macros_settings_screen.dart';
 import 'meal_types_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -117,6 +118,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             subtitle: l10n.waterSizesSubtitle,
                             icon: Icons.water_drop_outlined,
                             onTap: () => _showWaterSizesDialog(context, settings, l10n),
+                          ),
+                          const SizedBox(height: 12),
+                          // Meal Macros
+                          _buildNavigationTile(
+                            context,
+                            title: l10n.showMealMacros,
+                            subtitle: l10n.showMealMacrosSubtitle,
+                            icon: Icons.pie_chart_outline,
+                            onTap: () => Navigator.push(
+                              context,
+                              AppTheme.slideRoute(const MealMacrosSettingsScreen()),
+                            ),
                           ),
                         ],
                       ),
@@ -459,6 +472,65 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildSwitchNavigationTile(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required bool value,
+    required void Function(bool) onChanged,
+  }) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+        border: Border.all(
+          color: theme.colorScheme.outline.withOpacity(0.1),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              icon,
+              size: 18,
+              color: theme.colorScheme.primary,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: theme.textTheme.titleSmall),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+          ),
+        ],
       ),
     );
   }
