@@ -23,7 +23,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
   final _service = OpenFoodFactsService();
   
   List<FoodItem> _results = [];
-  bool _isLoading = false;
+  bool _isSearchingApi = false;
   String? _error;
   Timer? _debounce;
 
@@ -57,38 +57,48 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
       setState(() {
         _results = [];
         _error = null;
+        _isSearchingApi = false;
       });
     }
   }
 
   Future<void> _search(String query) async {
     if (query.isEmpty) return;
-
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-
+    
+    // 1. Instant Local Search
     try {
-      // Search in both API and custom foods
-      final apiResults = await _service.search(query);
       final customMatches = context
           .read<NutritionProvider>()
           .searchCustomFoods(query);
       
+      setState(() {
+        _results = customMatches; // Show local results immediately
+        _isSearchingApi = true;   // Start showing API loading indicator
+        _error = null;
+      });
+    } catch (e) {
+      debugPrint('Local search error: $e');
+    }
+
+    // 2. Background API Search
+    try {
+      final apiResults = await _service.search(query);
+      
       // Only update if query hasn't changed and widget is still mounted
       if (mounted && _searchController.text.trim() == query) {
         setState(() {
-          // Custom foods first, then API results
+          // Re-fetch local to be safe (in case user added something while waiting
+          // technically unlikely in this flow, but good practice to keep consistent)
+          final customMatches = context.read<NutritionProvider>().searchCustomFoods(query);
           _results = [...customMatches, ...apiResults];
-          _isLoading = false;
+          _isSearchingApi = false;
         });
       }
     } catch (e) {
       if (mounted && _searchController.text.trim() == query) {
         setState(() {
           _error = e.toString();
-          _isLoading = false;
+          _isSearchingApi = false;
         });
       }
     }
@@ -235,13 +245,14 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.all(16),
+            // Search Input
             child: TextField(
               controller: _searchController,
               autofocus: true,
               decoration: InputDecoration(
                 hintText: l10n.searchFoodHint,
                 prefixIcon: const Icon(Icons.search),
-                suffixIcon: _isLoading 
+                suffixIcon: _isSearchingApi 
                     ? const Padding(
                         padding: EdgeInsets.all(12),
                         child: SizedBox(
@@ -261,44 +272,56 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
               ),
             ),
           ),
-          if (_isLoading)
-            const Expanded(
-              child: Center(child: CircularProgressIndicator()),
-            )
-          else if (_error != null)
-            Expanded(
-              child: Center(
-                child: Text(_error!, style: const TextStyle(color: Colors.red)),
-              ),
-            )
-          else if (_results.isEmpty && _searchController.text.trim().isEmpty)
-            // Show my foods and recent when search is empty
-            Expanded(child: _buildMyFoodsAndRecent(l10n))
-          else if (_results.isEmpty)
-            Expanded(
-              child: Center(
-                child: Text(
-                  l10n.noEntries,
-                  style: TextStyle(color: Theme.of(context).disabledColor),
-                ),
-              ),
-            )
-          else
-            Expanded(
-              child: ListView.builder(
-                itemCount: _results.length,
-                padding: const EdgeInsets.only(top: 8, bottom: 16),
-                itemBuilder: (context, index) {
-                  final item = _results[index];
-                  return FoodSearchResultTile(
-                    item: item,
-                    onTap: () => _showPortionPicker(item),
-                  );
-                },
-              ),
-            ),
+          
+          // Progress Indicator (Optional visibility boost)
+          if (_isSearchingApi && _results.isNotEmpty)
+             const LinearProgressIndicator(minHeight: 2),
+
+          // Content Area
+          Expanded(
+            child: _buildContent(context, l10n),
+          ),
         ],
       ),
+    );
+  }
+
+  Widget _buildContent(BuildContext context, AppLocalizations l10n) {
+    final hasQuery = _searchController.text.trim().isNotEmpty;
+
+    if (!hasQuery) {
+      return _buildMyFoodsAndRecent(l10n);
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Text(_error!, style: const TextStyle(color: Colors.red)),
+      );
+    }
+
+    if (_results.isEmpty) {
+      if (_isSearchingApi) {
+         // Still searching API, no local results found yet
+         return const Center(child: CircularProgressIndicator());
+      }
+      return Center(
+        child: Text(
+          l10n.noEntries,
+          style: TextStyle(color: Theme.of(context).disabledColor),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      itemCount: _results.length,
+      padding: const EdgeInsets.only(top: 8, bottom: 16),
+      itemBuilder: (context, index) {
+        final item = _results[index];
+        return FoodSearchResultTile(
+          item: item,
+          onTap: () => _showPortionPicker(item),
+        );
+      },
     );
   }
 }

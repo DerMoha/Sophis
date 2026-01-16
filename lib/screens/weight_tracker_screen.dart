@@ -366,7 +366,6 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
         lineTouchData: LineTouchData(
           touchTooltipData: LineTouchTooltipData(
             getTooltipColor: (_) => theme.colorScheme.surface,
-            tooltipRoundedRadius: 12,
             getTooltipItems: (spots) => spots
                 .map((spot) => LineTooltipItem(
                       '${spot.y.toStringAsFixed(1)} ${UnitConverter.weightUnit(unitSystem)}',
