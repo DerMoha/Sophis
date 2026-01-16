@@ -307,14 +307,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
               // Streak Card (only shows when streak >= 2)
               const StreakCard(),
-              const SizedBox(height: 20),
 
               // Macro Rings Row
               FadeInSlide(
                 index: 1,
                 child: _buildMacroRingsCard(context, l10n, theme, totals, goals),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
 
               // Water Tracker
               FadeInSlide(
@@ -323,16 +322,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
               const SizedBox(height: 24),
 
-              // Quick Actions - Dynamic Grid
+              // Meals Section - moved up for easier access
               FadeInSlide(
                 index: 3,
-                child: _buildQuickActionsGrid(context, l10n, theme, settings),
-              ),
-              const SizedBox(height: 32),
-
-              // Meals Section
-              FadeInSlide(
-                index: 4,
                 child: SectionHeader(
                   title: l10n.today,
                   icon: Icons.restaurant_outlined,
@@ -350,13 +342,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     mealType.id,
                     mealType.name,
                     mealType.icon,
-                    5 + index,
+                    4 + index,
                     mealType.color,
                   ),
                   if (index < settings.mealTypes.length - 1)
                     const SizedBox(height: 12),
                 ];
               }),
+
+              const SizedBox(height: 24),
+
+              // Quick Actions - Horizontal Scroll (moved to bottom)
+              if (settings.visibleDashboardCards.isNotEmpty)
+                FadeInSlide(
+                  index: 8,
+                  child: _buildQuickActionsRow(context, l10n, theme, settings),
+                ),
             ]),
           ),
         ),
@@ -640,6 +641,148 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
 
     return Column(children: rows);
+  }
+
+  /// Horizontal scrolling quick actions row (compact version)
+  Widget _buildQuickActionsRow(
+    BuildContext context,
+    AppLocalizations l10n,
+    ThemeData theme,
+    SettingsProvider settings,
+  ) {
+    final visibleCards = settings.visibleDashboardCards;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 12),
+          child: Text(
+            l10n.quickActions,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        SizedBox(
+          height: 44,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: visibleCards.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            itemBuilder: (context, index) {
+              return _buildQuickActionChip(
+                context, l10n, theme, visibleCards[index].id,
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Compact chip-style quick action button
+  Widget _buildQuickActionChip(
+    BuildContext context,
+    AppLocalizations l10n,
+    ThemeData theme,
+    String id,
+  ) {
+    final (icon, label, color, onTap) = _getQuickActionData(context, l10n, theme, id);
+    if (label.isEmpty) return const SizedBox.shrink();
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(22),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: (color ?? theme.colorScheme.primary).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(
+              color: (color ?? theme.colorScheme.primary).withOpacity(0.2),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 18, color: color ?? theme.colorScheme.primary),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: color ?? theme.colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Get quick action data for both chip and card variants
+  (IconData, String, Color?, VoidCallback) _getQuickActionData(
+    BuildContext context,
+    AppLocalizations l10n,
+    ThemeData theme,
+    String id,
+  ) {
+    switch (id) {
+      case DashboardCardIds.foodDiary:
+        return (
+          Icons.history_rounded,
+          l10n.foodDiary,
+          theme.colorScheme.primary,
+          () => Navigator.push(context, AppTheme.slideRoute(const FoodDiaryScreen())),
+        );
+      case DashboardCardIds.mealPlanner:
+        return (
+          Icons.calendar_month_outlined,
+          l10n.mealPlanner,
+          null,
+          () => Navigator.push(context, AppTheme.slideRoute(const MealPlannerScreen())),
+        );
+      case DashboardCardIds.weight:
+        return (
+          Icons.monitor_weight_outlined,
+          l10n.weight,
+          null,
+          () => Navigator.push(context, AppTheme.slideRoute(const WeightTrackerScreen())),
+        );
+      case DashboardCardIds.recipes:
+        return (
+          Icons.menu_book_outlined,
+          l10n.recipes,
+          null,
+          () => Navigator.push(context, AppTheme.slideRoute(const RecipesScreen())),
+        );
+      case DashboardCardIds.activity:
+        return (
+          Icons.insights_outlined,
+          l10n.activity,
+          null,
+          () => Navigator.push(context, AppTheme.slideRoute(const ActivityGraphScreen())),
+        );
+      case DashboardCardIds.workout:
+        return (
+          Icons.local_fire_department_rounded,
+          l10n.workout,
+          AppTheme.fire,
+          () => showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (_) => const WorkoutBottomSheet(),
+          ),
+        );
+      default:
+        return (Icons.circle, '', null, () {});
+    }
   }
 
   Widget _buildQuickActionCardForId(
