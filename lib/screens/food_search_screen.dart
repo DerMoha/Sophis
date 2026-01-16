@@ -169,10 +169,11 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
 
   Widget _buildMyFoodsAndRecent(AppLocalizations l10n) {
     final provider = context.watch<NutritionProvider>();
+    final favoriteFoods = provider.favoriteFoods;
     final customFoods = provider.customFoods;
     final recentFoods = provider.recentFoods;
 
-    if (customFoods.isEmpty && recentFoods.isEmpty) {
+    if (favoriteFoods.isEmpty && customFoods.isEmpty && recentFoods.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -195,6 +196,30 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
     return ListView(
       padding: const EdgeInsets.only(top: 8, bottom: 16),
       children: [
+        // Favorites section
+        if (favoriteFoods.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            child: Row(
+              children: [
+                Icon(Icons.star_rounded, size: 18, color: Colors.amber),
+                const SizedBox(width: 6),
+                Text(
+                  l10n.favorites,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ],
+            ),
+          ),
+          ...favoriteFoods.map((item) => FoodSearchResultTile(
+                item: item,
+                onTap: () => _showPortionPicker(item),
+                isFavorite: true,
+                onFavoriteToggle: () => provider.toggleFavorite(item),
+              )),
+        ],
         // My Foods section
         if (customFoods.isNotEmpty) ...[
           Padding(
@@ -211,6 +236,8 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
                 onTap: () => _showPortionPicker(item),
                 isCustomFood: true,
                 onLongPress: () => _showDeleteCustomFoodDialog(item),
+                isFavorite: provider.isFavorite(item.id),
+                onFavoriteToggle: () => provider.toggleFavorite(item),
               )),
         ],
         // Recently Used section
@@ -227,6 +254,8 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
           ...recentFoods.map((item) => FoodSearchResultTile(
                 item: item,
                 onTap: () => _showPortionPicker(item),
+                isFavorite: provider.isFavorite(item.id),
+                onFavoriteToggle: () => provider.toggleFavorite(item),
               )),
         ],
       ],
@@ -312,6 +341,8 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
       );
     }
 
+    final provider = context.watch<NutritionProvider>();
+
     return ListView.builder(
       itemCount: _results.length,
       padding: const EdgeInsets.only(top: 8, bottom: 16),
@@ -320,6 +351,8 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
         return FoodSearchResultTile(
           item: item,
           onTap: () => _showPortionPicker(item),
+          isFavorite: provider.isFavorite(item.id),
+          onFavoriteToggle: () => provider.toggleFavorite(item),
         );
       },
     );

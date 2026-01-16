@@ -9,6 +9,7 @@ import '../models/meal_plan.dart';
 import '../models/custom_portion.dart';
 import '../models/food_item.dart';
 import '../models/workout_entry.dart';
+import '../models/user_stats.dart';
 import 'storage_service.dart';
 import 'health_service.dart';
 import 'database_service.dart';
@@ -30,6 +31,8 @@ class NutritionProvider extends ChangeNotifier {
   List<FoodItem> _recentFoods = [];
   List<WorkoutEntry> _workoutEntries = [];
   List<FoodItem> _customFoods = [];
+  List<FoodItem> _favoriteFoods = [];
+  UserStats _userStats = const UserStats();
 
   // Burned calories from health apps (synced from HealthKit/Health Connect)
   double _healthSyncBurnedCalories = 0.0;
@@ -76,6 +79,8 @@ class NutritionProvider extends ChangeNotifier {
   List<FoodItem> get recentFoods => _recentFoods;
   List<WorkoutEntry> get workoutEntries => _workoutEntries;
   List<FoodItem> get customFoods => _customFoods;
+  List<FoodItem> get favoriteFoods => _favoriteFoods;
+  UserStats get userStats => _userStats;
   /// Total burned calories = manual workouts + health sync
   double get burnedCalories => getTodayWorkoutCalories() + _healthSyncBurnedCalories;
   StorageService get storage => _storage;
@@ -104,6 +109,8 @@ class NutritionProvider extends ChangeNotifier {
     _customPortions = _storage.loadCustomPortions();
     _recentFoods = _storage.loadRecentFoods();
     _customFoods = _storage.loadCustomFoods();
+    _favoriteFoods = _storage.loadFavoriteFoods();
+    _userStats = _storage.loadUserStats();
     
     _invalidateCache(); 
     notifyListeners();
@@ -148,6 +155,7 @@ class NutritionProvider extends ChangeNotifier {
     _entries.add(entry);
     _invalidateCache();
     await _db.insertFood(entry); // DB
+    await _updateStreak(); // Update streak when food is logged
     notifyListeners();
   }
 
@@ -687,6 +695,141 @@ class NutritionProvider extends ChangeNotifier {
         .toList();
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // FAVORITE FOODS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Check if a food is in favorites
+  bool isFavorite(String id) {
+    return _favoriteFoods.any((f) => f.id == id);
+  }
+
+  /// Add a food to favorites
+  Future<void> addFavorite(FoodItem food) async {
+    if (isFavorite(food.id)) return;
+    _favoriteFoods.insert(0, food.copyWith(isFavorite: true));
+    await _storage.saveFavoriteFoods(_favoriteFoods);
+    notifyListeners();
+  }
+
+  /// Remove a food from favorites
+  Future<void> removeFavorite(String id) async {
+    _favoriteFoods.removeWhere((f) => f.id == id);
+    await _storage.saveFavoriteFoods(_favoriteFoods);
+    notifyListeners();
+  }
+
+  /// Toggle favorite status for a food
+  Future<void> toggleFavorite(FoodItem food) async {
+    if (isFavorite(food.id)) {
+      await removeFavorite(food.id);
+    } else {
+      await addFavorite(food);
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // USER STATS & STREAKS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Update streak when food is logged
+  Future<void> _updateStreak() async {
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+    final lastLog = _userStats.lastLogDate;
+
+    if (lastLog != null) {
+      final lastLogDate = DateTime(lastLog.year, lastLog.month, lastLog.day);
+      final daysDifference = todayDate.difference(lastLogDate).inDays;
+
+      if (daysDifference == 0) {
+        // Already logged today, no change needed
+        return;
+      } else if (daysDifference == 1) {
+        // Consecutive day - increment streak
+        _userStats = _userStats.copyWith(
+          currentStreak: _userStats.currentStreak + 1,
+          longestStreak: _userStats.currentStreak + 1 > _userStats.longestStreak
+              ? _userStats.currentStreak + 1
+              : _userStats.longestStreak,
+          lastLogDate: today,
+          totalDaysLogged: _userStats.totalDaysLogged + 1,
+        );
+      } else {
+        // Streak broken - reset to 1
+        _userStats = _userStats.copyWith(
+          currentStreak: 1,
+          lastLogDate: today,
+          totalDaysLogged: _userStats.totalDaysLogged + 1,
+        );
+      }
+    } else {
+      // First ever log
+      _userStats = _userStats.copyWith(
+        currentStreak: 1,
+        longestStreak: 1,
+        lastLogDate: today,
+        totalDaysLogged: 1,
+      );
+    }
+
+    // Check for new achievements
+    await _checkAchievements();
+    await _storage.saveUserStats(_userStats);
+  }
+
+  /// Check and award achievements based on current stats
+  Future<void> _checkAchievements() async {
+    final currentAchievements = List<String>.from(_userStats.achievements);
+    var newAchievements = false;
+
+    // First Log
+    if (!currentAchievements.contains(Achievements.firstLog) &&
+        _userStats.totalDaysLogged >= 1) {
+      currentAchievements.add(Achievements.firstLog);
+      newAchievements = true;
+    }
+
+    // 3 Day Streak
+    if (!currentAchievements.contains(Achievements.threeDayStreak) &&
+        _userStats.currentStreak >= 3) {
+      currentAchievements.add(Achievements.threeDayStreak);
+      newAchievements = true;
+    }
+
+    // Week Warrior (7 days)
+    if (!currentAchievements.contains(Achievements.weekWarrior) &&
+        _userStats.currentStreak >= 7) {
+      currentAchievements.add(Achievements.weekWarrior);
+      newAchievements = true;
+    }
+
+    // Two Week Streak (14 days)
+    if (!currentAchievements.contains(Achievements.twoWeekStreak) &&
+        _userStats.currentStreak >= 14) {
+      currentAchievements.add(Achievements.twoWeekStreak);
+      newAchievements = true;
+    }
+
+    // Monthly Master (30 days)
+    if (!currentAchievements.contains(Achievements.monthlyMaster) &&
+        _userStats.currentStreak >= 30) {
+      currentAchievements.add(Achievements.monthlyMaster);
+      newAchievements = true;
+    }
+
+    // Centurion (100 total days)
+    if (!currentAchievements.contains(Achievements.centurion) &&
+        _userStats.totalDaysLogged >= 100) {
+      currentAchievements.add(Achievements.centurion);
+      newAchievements = true;
+    }
+
+    if (newAchievements) {
+      _userStats = _userStats.copyWith(achievements: currentAchievements);
+    }
+  }
+
   // Clear all
   Future<void> clearAllData() async {
     _goals = null;
@@ -701,6 +844,8 @@ class NutritionProvider extends ChangeNotifier {
     _recentFoods = [];
     _workoutEntries = [];
     _customFoods = [];
+    _favoriteFoods = [];
+    _userStats = const UserStats();
     
     // Clear both DB and SharedPreferences
     await _db.deleteAllData();

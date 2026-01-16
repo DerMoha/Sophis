@@ -416,5 +416,34 @@
   "showMealMacrosSubtitle": "Display protein, carbs, and fat in meal headers",
   "preview": "Preview",
   "macrosHidden": "Macros Hidden",
-  "macrosVisible": "Macros Visible"
+  "macrosVisible": "Macros Visible",
+  "favorites": "Favorites",
+  "addToFavorites": "Add to Favorites",
+  "removeFromFavorites": "Remove from Favorites",
+  "streak": "Streak",
+  "dayStreak": "{count} day streak",
+  "@dayStreak": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "longestStreak": "Longest: {count} days",
+  "@longestStreak": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "achievements": "Achievements",
+  "totalDaysLogged": "{count} total days logged",
+  "@totalDaysLogged": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "achievementFirstLog": "First Log!",
+  "achievement3Days": "3 Day Streak",
+  "achievement7Days": "Week Warrior",
+  "achievement14Days": "Two Weeks",
+  "achievement30Days": "Monthly Master",
+  "achievement100Days": "Centurion"
 }

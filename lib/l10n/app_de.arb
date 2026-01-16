@@ -305,5 +305,34 @@
   "showMealMacrosSubtitle": "Protein, Kohlenhydrate und Fett in Mahlzeiten anzeigen",
   "preview": "Vorschau",
   "macrosHidden": "Makros ausgeblendet",
-  "macrosVisible": "Makros sichtbar"
+  "macrosVisible": "Makros sichtbar",
+  "favorites": "Favoriten",
+  "addToFavorites": "Zu Favoriten hinzufügen",
+  "removeFromFavorites": "Aus Favoriten entfernen",
+  "streak": "Serie",
+  "dayStreak": "{count} Tage Serie",
+  "@dayStreak": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "longestStreak": "Längste: {count} Tage",
+  "@longestStreak": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "achievements": "Erfolge",
+  "totalDaysLogged": "{count} Tage insgesamt",
+  "@totalDaysLogged": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "achievementFirstLog": "Erster Eintrag!",
+  "achievement3Days": "3-Tage-Serie",
+  "achievement7Days": "Wochenkämpfer",
+  "achievement14Days": "Zwei Wochen",
+  "achievement30Days": "Monatsmeister",
+  "achievement100Days": "Zenturio"
 }

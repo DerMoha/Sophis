@@ -8,6 +8,8 @@ class FoodSearchResultTile extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
   final bool isCustomFood;
+  final bool isFavorite;
+  final VoidCallback? onFavoriteToggle;
 
   const FoodSearchResultTile({
     super.key,
@@ -15,6 +17,8 @@ class FoodSearchResultTile extends StatelessWidget {
     required this.onTap,
     this.onLongPress,
     this.isCustomFood = false,
+    this.isFavorite = false,
+    this.onFavoriteToggle,
   });
 
   @override
@@ -77,9 +81,42 @@ class FoodSearchResultTile extends StatelessWidget {
 
           const SizedBox(width: 8),
 
+          // Favorite button
+          if (onFavoriteToggle != null)
+            _FavoriteButton(
+              isFavorite: isFavorite,
+              onTap: onFavoriteToggle!,
+            ),
+
           // Calories badge
           _CalorieBadge(calories: item.caloriesPer100g),
         ],
+      ),
+    );
+  }
+}
+
+class _FavoriteButton extends StatelessWidget {
+  final bool isFavorite;
+  final VoidCallback onTap;
+
+  const _FavoriteButton({
+    required this.isFavorite,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Icon(
+          isFavorite ? Icons.star_rounded : Icons.star_outline_rounded,
+          color: isFavorite ? Colors.amber : Theme.of(context).disabledColor,
+          size: 28,
+        ),
       ),
     );
   }

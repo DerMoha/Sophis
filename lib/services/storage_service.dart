@@ -12,6 +12,7 @@ import '../models/meal_plan.dart';
 import '../models/custom_portion.dart';
 import '../models/food_item.dart';
 import '../models/workout_entry.dart';
+import '../models/user_stats.dart';
 
 /// Local storage service using SharedPreferences
 class StorageService {
@@ -30,6 +31,8 @@ class StorageService {
   static const _recentFoodsKey = 'recent_foods';
   static const _workoutEntriesKey = 'workout_entries';
   static const _customFoodsKey = 'custom_foods';
+  static const _favoriteFoodsKey = 'favorite_foods';
+  static const _userStatsKey = 'user_stats';
 
   final SharedPreferences _prefs;
   final FlutterSecureStorage _secureStorage;
@@ -202,6 +205,30 @@ class StorageService {
     if (json == null) return [];
     final list = jsonDecode(json) as List;
     return list.map((f) => FoodItem.fromJson(f)).toList();
+  }
+
+  // Favorite Foods
+  Future<void> saveFavoriteFoods(List<FoodItem> foods) async {
+    final list = foods.map((f) => f.toJson()).toList();
+    await _prefs.setString(_favoriteFoodsKey, jsonEncode(list));
+  }
+
+  List<FoodItem> loadFavoriteFoods() {
+    final json = _prefs.getString(_favoriteFoodsKey);
+    if (json == null) return [];
+    final list = jsonDecode(json) as List;
+    return list.map((f) => FoodItem.fromJson(f)).toList();
+  }
+
+  // User Stats
+  Future<void> saveUserStats(UserStats stats) async {
+    await _prefs.setString(_userStatsKey, jsonEncode(stats.toJson()));
+  }
+
+  UserStats loadUserStats() {
+    final json = _prefs.getString(_userStatsKey);
+    if (json == null) return const UserStats();
+    return UserStats.fromJson(jsonDecode(json));
   }
 
   // Clear all data

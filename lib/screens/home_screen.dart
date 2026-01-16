@@ -25,6 +25,7 @@ import 'food_diary_screen.dart';
 import 'meal_detail_screen.dart';
 import '../widgets/water_details_sheet.dart';
 import '../widgets/workout_bottom_sheet.dart';
+import '../widgets/streak_card.dart';
 import 'macro_details_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -302,6 +303,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   settings.healthSyncEnabled,
                 ),
               ),
+              const SizedBox(height: 12),
+
+              // Streak Card (only shows when streak >= 2)
+              const StreakCard(),
               const SizedBox(height: 20),
 
               // Macro Rings Row

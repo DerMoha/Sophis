@@ -13,6 +13,7 @@ class FoodItem {
   final String? brand;
   final String? imageUrl;
   final List<ServingSize> servings;
+  final bool isFavorite;
 
   const FoodItem({
     required this.id,
@@ -26,6 +27,7 @@ class FoodItem {
     this.brand,
     this.imageUrl,
     this.servings = const [],
+    this.isFavorite = false,
   });
 
   Map<String, dynamic> toJson() => {
@@ -40,6 +42,7 @@ class FoodItem {
         'brand': brand,
         'imageUrl': imageUrl,
         'servings': servings.map((s) => s.toJson()).toList(),
+        'isFavorite': isFavorite,
       };
 
   factory FoodItem.fromJson(Map<String, dynamic> json) => FoodItem(
@@ -57,6 +60,7 @@ class FoodItem {
                 ?.map((s) => ServingSize.fromJson(s as Map<String, dynamic>))
                 .toList() ??
             const [],
+        isFavorite: json['isFavorite'] as bool? ?? false,
       );
 
   /// Calculate nutrition for a specific amount
@@ -69,4 +73,35 @@ class FoodItem {
       'fat': fatPer100g * factor,
     };
   }
+
+  /// Create a copy with optional field overrides
+  FoodItem copyWith({
+    String? id,
+    String? name,
+    String? category,
+    double? caloriesPer100g,
+    double? proteinPer100g,
+    double? carbsPer100g,
+    double? fatPer100g,
+    String? barcode,
+    String? brand,
+    String? imageUrl,
+    List<ServingSize>? servings,
+    bool? isFavorite,
+  }) =>
+      FoodItem(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        category: category ?? this.category,
+        caloriesPer100g: caloriesPer100g ?? this.caloriesPer100g,
+        proteinPer100g: proteinPer100g ?? this.proteinPer100g,
+        carbsPer100g: carbsPer100g ?? this.carbsPer100g,
+        fatPer100g: fatPer100g ?? this.fatPer100g,
+        barcode: barcode ?? this.barcode,
+        brand: brand ?? this.brand,
+        imageUrl: imageUrl ?? this.imageUrl,
+        servings: servings ?? this.servings,
+        isFavorite: isFavorite ?? this.isFavorite,
+      );
 }
+
