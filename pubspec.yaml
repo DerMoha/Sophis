@@ -40,6 +40,7 @@ dependencies:
   # Meal Sharing
   qr_flutter: ^4.1.0
   app_links: ^6.0.0
+  home_widget: ^0.7.0
 
   # Phase 8: Data Export/Import
   file_picker: ^10.3.8

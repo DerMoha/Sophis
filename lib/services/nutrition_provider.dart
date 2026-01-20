@@ -13,6 +13,7 @@ import '../models/user_stats.dart';
 import 'storage_service.dart';
 import 'health_service.dart';
 import 'database_service.dart';
+import 'home_widget_service.dart';
 
 /// Central state management for nutrition tracking
 class NutritionProvider extends ChangeNotifier {
@@ -81,8 +82,10 @@ class NutritionProvider extends ChangeNotifier {
   List<FoodItem> get customFoods => _customFoods;
   List<FoodItem> get favoriteFoods => _favoriteFoods;
   UserStats get userStats => _userStats;
+
   /// Total burned calories = manual workouts + health sync
-  double get burnedCalories => getTodayWorkoutCalories() + _healthSyncBurnedCalories;
+  double get burnedCalories =>
+      getTodayWorkoutCalories() + _healthSyncBurnedCalories;
   StorageService get storage => _storage;
 
   /// Reload all data from storage (used after import)
@@ -111,27 +114,28 @@ class NutritionProvider extends ChangeNotifier {
     _customFoods = _storage.loadCustomFoods();
     _favoriteFoods = _storage.loadFavoriteFoods();
     _userStats = _storage.loadUserStats();
-    
-    _invalidateCache(); 
+
+    _invalidateCache();
+    HomeWidgetService.updateWidgetData(this);
     notifyListeners();
   }
 
   Future<void> _migrateToDbIfNeeded() async {
     if (_storage.isMigrationComplete()) return;
-    
+
     debugPrint('Starting DB Migration...');
-    
+
     // Load legacy data
     final legacyFoods = _storage.loadFoodEntries();
     final legacyWater = _storage.loadWaterEntries();
     final legacyWeights = _storage.loadWeightEntries();
     final legacyWorkouts = _storage.loadWorkoutEntries();
-    
+
     if (legacyFoods.isNotEmpty) await _db.insertFoods(legacyFoods);
     if (legacyWater.isNotEmpty) await _db.insertWaterList(legacyWater);
     if (legacyWeights.isNotEmpty) await _db.insertWeightList(legacyWeights);
     if (legacyWorkouts.isNotEmpty) await _db.insertWorkoutList(legacyWorkouts);
-    
+
     await _storage.setMigrationComplete();
     debugPrint('DB Migration Complete');
   }
@@ -156,13 +160,15 @@ class NutritionProvider extends ChangeNotifier {
     _invalidateCache();
     await _db.insertFood(entry); // DB
     await _updateStreak(); // Update streak when food is logged
+    HomeWidgetService.updateWidgetData(this);
     notifyListeners();
   }
 
   Future<void> removeFoodEntry(String id) async {
     _entries.removeWhere((e) => e.id == id);
-    _invalidateCache(); 
+    _invalidateCache();
     await _db.deleteFood(id); // DB
+    HomeWidgetService.updateWidgetData(this);
     notifyListeners();
   }
 
@@ -171,8 +177,9 @@ class NutritionProvider extends ChangeNotifier {
     final index = _entries.indexWhere((e) => e.id == entry.id);
     if (index != -1) {
       _entries[index] = entry;
-      _invalidateCache(); 
+      _invalidateCache();
       await _db.updateFood(entry); // DB
+      HomeWidgetService.updateWidgetData(this);
       notifyListeners();
     }
   }
@@ -196,11 +203,12 @@ class NutritionProvider extends ChangeNotifier {
     // Rebuild cache
     final now = DateTime.now();
     _cacheDate = now;
-    _cachedTodayEntries = _entries.where((e) =>
-      e.timestamp.year == now.year &&
-      e.timestamp.month == now.month &&
-      e.timestamp.day == now.day
-    ).toList();
+    _cachedTodayEntries = _entries
+        .where((e) =>
+            e.timestamp.year == now.year &&
+            e.timestamp.month == now.month &&
+            e.timestamp.day == now.day)
+        .toList();
 
     // Also pre-compute meal entries while we're at it
     _cachedMealEntries = {};
@@ -214,14 +222,17 @@ class NutritionProvider extends ChangeNotifier {
   List<FoodEntry> getEntriesForDate(DateTime date) {
     // For non-today dates, don't use cache
     final now = DateTime.now();
-    if (date.year == now.year && date.month == now.month && date.day == now.day) {
+    if (date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day) {
       return getTodayEntries();
     }
-    return _entries.where((e) =>
-      e.timestamp.year == date.year &&
-      e.timestamp.month == date.month &&
-      e.timestamp.day == date.day
-    ).toList();
+    return _entries
+        .where((e) =>
+            e.timestamp.year == date.year &&
+            e.timestamp.month == date.month &&
+            e.timestamp.day == date.day)
+        .toList();
   }
 
   List<FoodEntry> getEntriesByMeal(String meal) {
@@ -250,7 +261,12 @@ class NutritionProvider extends ChangeNotifier {
       carb += e.carbs;
       fat += e.fat;
     }
-    _cachedTodayTotals = {'calories': cal, 'protein': prot, 'carbs': carb, 'fat': fat};
+    _cachedTodayTotals = {
+      'calories': cal,
+      'protein': prot,
+      'carbs': carb,
+      'fat': fat
+    };
     return _cachedTodayTotals!;
   }
 
@@ -271,7 +287,7 @@ class NutritionProvider extends ChangeNotifier {
     // Net remaining = goal - eaten + burned
     return _goals!.calories - getTodayTotals()['calories']! + burnedCalories;
   }
-  
+
   /// Refresh burned calories from health service (call on app open/resume)
   Future<void> refreshBurnedCalories({bool enabled = true}) async {
     if (!enabled) {
@@ -365,12 +381,14 @@ class NutritionProvider extends ChangeNotifier {
   Future<void> restoreWaterEntry(WaterEntry entry) async {
     _waterEntries.add(entry);
     await _db.insertWater(entry); // DB
+    HomeWidgetService.updateWidgetData(this);
     notifyListeners();
   }
 
   Future<void> removeWaterEntry(String id) async {
     _waterEntries.removeWhere((e) => e.id == id);
     await _db.deleteWater(id); // DB
+    HomeWidgetService.updateWidgetData(this);
     notifyListeners();
   }
 
@@ -846,7 +864,7 @@ class NutritionProvider extends ChangeNotifier {
     _customFoods = [];
     _favoriteFoods = [];
     _userStats = const UserStats();
-    
+
     // Clear both DB and SharedPreferences
     await _db.deleteAllData();
     await _storage.clear();

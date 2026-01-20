@@ -1,0 +1,185 @@
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/white"
+    android:padding="16dp"
+    android:theme="@style/Theme.DeviceDefault.Light">
+
+    <!-- Circle Progress Section (Left or Center) -->
+    <RelativeLayout
+        android:id="@+id/layout_circle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_alignParentStart="true"
+        android:layout_marginEnd="16dp">
+
+        <ProgressBar
+            android:id="@+id/progress_calories"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:indeterminate="false"
+            android:max="100"
+            android:progress="60"
+            android:progressDrawable="@drawable/circular_progress"
+            android:background="@drawable/circular_track" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tv_calories_remaining"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="--"
+                android:textColor="#6366F1"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="left"
+                android:textColor="#999999"
+                android:textSize="10sp" />
+        </LinearLayout>
+    </RelativeLayout>
+
+    <!-- Details Section (Right) - Visible in wider layouts logic -->
+    <!-- Ideally, we would have separate layouts for sizes, but for now we put it to the right -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_toEndOf="@id/layout_circle"
+        android:layout_centerVertical="true"
+        android:orientation="vertical"
+        android:gravity="center_vertical">
+
+        <!-- Protein -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:paddingVertical="2dp">
+            <View
+                android:layout_width="4dp"
+                android:layout_height="12dp"
+                android:background="@drawable/capsule_protein" />
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="Protein"
+                android:textColor="#666666"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+            <TextView
+                android:id="@+id/tv_protein"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="--g"
+                android:textColor="#333333"
+                android:textStyle="bold"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <!-- Carbs -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:paddingVertical="2dp">
+            <View
+                android:layout_width="4dp"
+                android:layout_height="12dp"
+                android:background="@drawable/capsule_carbs" />
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="Carbs"
+                android:textColor="#666666"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+            <TextView
+                android:id="@+id/tv_carbs"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="--g"
+                android:textColor="#333333"
+                android:textStyle="bold"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <!-- Fat -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:paddingVertical="2dp">
+            <View
+                android:layout_width="4dp"
+                android:layout_height="12dp"
+                android:background="@drawable/capsule_fat" />
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="Fat"
+                android:textColor="#666666"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+            <TextView
+                android:id="@+id/tv_fat"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="--g"
+                android:textColor="#333333"
+                android:textStyle="bold"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#EEEEEE"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="4dp" />
+
+        <!-- Water -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="0dp"
+                android:text="Water"
+                android:textColor="#666666"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+            <TextView
+                android:id="@+id/tv_water"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="-- ml"
+                android:textColor="#0891B2"
+                android:textStyle="bold"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</RelativeLayout>

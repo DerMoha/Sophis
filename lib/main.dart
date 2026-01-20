@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:home_widget/home_widget.dart';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -22,6 +23,7 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  HomeWidget.setAppGroupId('group.sophis.sophis');
 
   final storageService = await StorageService.create();
 
