@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -20,9 +22,28 @@
 	<string>$(FLUTTER_BUILD_NAME)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.sophis.share</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>sophis</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Sophis uses the camera to scan food barcodes and take photos of meals for AI analysis.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Sophis uses Face ID to securely authenticate you.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Sophis accesses your photo library to let you select food photos for AI analysis.</string>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
@@ -31,48 +52,6 @@
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>UISupportedInterfaceOrientations~ipad</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>CADisableMinimumFrameDurationOnPhone</key>
-	<true/>
-	<key>UIApplicationSupportsIndirectInputEvents</key>
-	<true/>
-	<!-- iOS 26 UIScene lifecycle support -->
-
-	<!-- Camera and Photo Library permissions (required for barcode scanner and food photo) -->
-	<key>NSFaceIDUsageDescription</key>
-	<string>Sophis uses Face ID to securely authenticate you.</string>
-	<key>NSCameraUsageDescription</key>
-	<string>Sophis uses the camera to scan food barcodes and take photos of meals for AI analysis.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Sophis accesses your photo library to let you select food photos for AI analysis.</string>
-	<!--
-	HealthKit Usage Descriptions - DISABLED (requires paid Apple Developer account)
-	To re-enable: uncomment these and add HealthKit entitlement
-	<key>NSHealthShareUsageDescription</key>
-	<string>Sophis reads your burned calories to calculate your net calorie balance.</string>
-	<key>NSHealthUpdateUsageDescription</key>
-	<string>Sophis may write workout data in future updates.</string>
-	-->
-	<!-- Deep linking for meal sharing -->
-	<key>CFBundleURLTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>sophis</string>
-			</array>
-			<key>CFBundleURLName</key>
-			<string>com.sophis.share</string>
-		</dict>
 	</array>
 </dict>
 </plist>
