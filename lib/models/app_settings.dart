@@ -5,6 +5,10 @@ enum AIMode { offlineBasic, offlinePro, cloud }
 
 enum UnitSystem { metric, imperial }
 
+enum HomeLayoutMode { modern, legacy }
+
+enum QuickActionSize { small, large }
+
 /// Dashboard card configuration
 class DashboardCard {
   final String id;
@@ -15,15 +19,19 @@ class DashboardCard {
   Map<String, dynamic> toJson() => {'id': id, 'visible': visible};
 
   factory DashboardCard.fromJson(Map<String, dynamic> json) => DashboardCard(
-    id: json['id'] as String,
-    visible: json['visible'] as bool? ?? true,
-  );
+        id: json['id'] as String,
+        visible: json['visible'] as bool? ?? true,
+      );
 
   DashboardCard copyWith({bool? visible}) => DashboardCard(
-    id: id,
-    visible: visible ?? this.visible,
-  );
+        id: id,
+        visible: visible ?? this.visible,
+      );
 }
+// ... (omitting DashboardCardIds and AccentColors to stay concise, or I just target the spot)
+// Actually better to just insert the enum at top and field in AppSettings.
+
+// Let's do partial replacements.
 
 /// Dashboard card IDs and default order
 class DashboardCardIds {
@@ -59,7 +67,7 @@ class AccentColors {
     Color(0xFF06B6D4), // Cyan
     Color(0xFF6366F1), // Indigo
   ];
-  
+
   static const int defaultColorValue = 0xFF3B82F6;
 }
 
@@ -88,6 +96,10 @@ class AppSettings {
   final List<CustomMealType> customMealTypes;
   // Meal display settings
   final bool showMealMacros;
+  // Home Screen Layout
+  final HomeLayoutMode homeLayout;
+  // Quick Action Button Size
+  final QuickActionSize quickActionSize;
 
   const AppSettings({
     this.aiMode = AIMode.offlineBasic,
@@ -108,61 +120,66 @@ class AppSettings {
     this.dashboardCards = const [],
     this.customMealTypes = const [],
     this.showMealMacros = false,
+    this.homeLayout = HomeLayoutMode.modern,
+    this.quickActionSize = QuickActionSize.small,
   });
 
   Color get accentColor => Color(accentColorValue);
 
   Map<String, dynamic> toJson() => {
-    'aiMode': aiMode.index,
-    'themeMode': themeMode.index,
-    'localeOverride': localeOverride,
-    'waterGoalMl': waterGoalMl,
-    'accentColorValue': accentColorValue,
-    'breakfastReminderTime': breakfastReminderTime,
-    'lunchReminderTime': lunchReminderTime,
-    'dinnerReminderTime': dinnerReminderTime,
-    'remindersEnabled': remindersEnabled,
-    'healthSyncEnabled': healthSyncEnabled,
-    'waterSize1': waterSize1,
-    'waterSize2': waterSize2,
-    'waterSize3': waterSize3,
-    'waterSize4': waterSize4,
-    'unitSystem': unitSystem.index,
-    'dashboardCards': dashboardCards.map((c) => c.toJson()).toList(),
-    'customMealTypes': customMealTypes.map((m) => m.toJson()).toList(),
-    'showMealMacros': showMealMacros,
-  };
+        'aiMode': aiMode.index,
+        'themeMode': themeMode.index,
+        'localeOverride': localeOverride,
+        'waterGoalMl': waterGoalMl,
+        'accentColorValue': accentColorValue,
+        'breakfastReminderTime': breakfastReminderTime,
+        'lunchReminderTime': lunchReminderTime,
+        'dinnerReminderTime': dinnerReminderTime,
+        'remindersEnabled': remindersEnabled,
+        'healthSyncEnabled': healthSyncEnabled,
+        'waterSize1': waterSize1,
+        'waterSize2': waterSize2,
+        'waterSize3': waterSize3,
+        'waterSize4': waterSize4,
+        'unitSystem': unitSystem.index,
+        'dashboardCards': dashboardCards.map((c) => c.toJson()).toList(),
+        'customMealTypes': customMealTypes.map((m) => m.toJson()).toList(),
+        'showMealMacros': showMealMacros,
+      };
 
   factory AppSettings.fromJson(Map<String, dynamic> json) => AppSettings(
-    aiMode: json['aiMode'] != null 
-        ? AIMode.values[json['aiMode']] 
-        : AIMode.offlineBasic,
-    themeMode: json['themeMode'] != null 
-        ? ThemeMode.values[json['themeMode']] 
-        : ThemeMode.system,
-    localeOverride: json['localeOverride'],
-    waterGoalMl: (json['waterGoalMl'] as num?)?.toDouble() ?? 2000,
-    accentColorValue: json['accentColorValue'] ?? AccentColors.defaultColorValue,
-    breakfastReminderTime: json['breakfastReminderTime'],
-    lunchReminderTime: json['lunchReminderTime'],
-    dinnerReminderTime: json['dinnerReminderTime'],
-    remindersEnabled: json['remindersEnabled'] ?? false,
-    healthSyncEnabled: json['healthSyncEnabled'] ?? false,
-    waterSize1: json['waterSize1'] ?? 150,
-    waterSize2: json['waterSize2'] ?? 250,
-    waterSize3: json['waterSize3'] ?? 500,
-    waterSize4: json['waterSize4'] ?? 1000,
-    unitSystem: json['unitSystem'] != null
-        ? UnitSystem.values[json['unitSystem']]
-        : UnitSystem.metric,
-    dashboardCards: (json['dashboardCards'] as List<dynamic>?)
-        ?.map((c) => DashboardCard.fromJson(c as Map<String, dynamic>))
-        .toList() ?? const [],
-    customMealTypes: (json['customMealTypes'] as List<dynamic>?)
-        ?.map((m) => CustomMealType.fromJson(m as Map<String, dynamic>))
-        .toList() ?? const [],
-    showMealMacros: json['showMealMacros'] as bool? ?? false,
-  );
+        aiMode: json['aiMode'] != null
+            ? AIMode.values[json['aiMode']]
+            : AIMode.offlineBasic,
+        themeMode: json['themeMode'] != null
+            ? ThemeMode.values[json['themeMode']]
+            : ThemeMode.system,
+        localeOverride: json['localeOverride'],
+        waterGoalMl: (json['waterGoalMl'] as num?)?.toDouble() ?? 2000,
+        accentColorValue:
+            json['accentColorValue'] ?? AccentColors.defaultColorValue,
+        breakfastReminderTime: json['breakfastReminderTime'],
+        lunchReminderTime: json['lunchReminderTime'],
+        dinnerReminderTime: json['dinnerReminderTime'],
+        remindersEnabled: json['remindersEnabled'] ?? false,
+        healthSyncEnabled: json['healthSyncEnabled'] ?? false,
+        waterSize1: json['waterSize1'] ?? 150,
+        waterSize2: json['waterSize2'] ?? 250,
+        waterSize3: json['waterSize3'] ?? 500,
+        waterSize4: json['waterSize4'] ?? 1000,
+        unitSystem: json['unitSystem'] != null
+            ? UnitSystem.values[json['unitSystem']]
+            : UnitSystem.metric,
+        dashboardCards: (json['dashboardCards'] as List<dynamic>?)
+                ?.map((c) => DashboardCard.fromJson(c as Map<String, dynamic>))
+                .toList() ??
+            const [],
+        customMealTypes: (json['customMealTypes'] as List<dynamic>?)
+                ?.map((m) => CustomMealType.fromJson(m as Map<String, dynamic>))
+                .toList() ??
+            const [],
+        showMealMacros: json['showMealMacros'] as bool? ?? false,
+      );
 
   AppSettings copyWith({
     AIMode? aiMode,
@@ -183,29 +200,39 @@ class AppSettings {
     List<DashboardCard>? dashboardCards,
     List<CustomMealType>? customMealTypes,
     bool? showMealMacros,
+    HomeLayoutMode? homeLayout,
+    QuickActionSize? quickActionSize,
     bool clearLocale = false,
     bool clearBreakfast = false,
     bool clearLunch = false,
     bool clearDinner = false,
-  }) => AppSettings(
-    aiMode: aiMode ?? this.aiMode,
-    themeMode: themeMode ?? this.themeMode,
-    localeOverride: clearLocale ? null : (localeOverride ?? this.localeOverride),
-    waterGoalMl: waterGoalMl ?? this.waterGoalMl,
-    accentColorValue: accentColorValue ?? this.accentColorValue,
-    breakfastReminderTime: clearBreakfast ? null : (breakfastReminderTime ?? this.breakfastReminderTime),
-    lunchReminderTime: clearLunch ? null : (lunchReminderTime ?? this.lunchReminderTime),
-    dinnerReminderTime: clearDinner ? null : (dinnerReminderTime ?? this.dinnerReminderTime),
-    remindersEnabled: remindersEnabled ?? this.remindersEnabled,
-    healthSyncEnabled: healthSyncEnabled ?? this.healthSyncEnabled,
-    waterSize1: waterSize1 ?? this.waterSize1,
-    waterSize2: waterSize2 ?? this.waterSize2,
-    waterSize3: waterSize3 ?? this.waterSize3,
-    waterSize4: waterSize4 ?? this.waterSize4,
-    unitSystem: unitSystem ?? this.unitSystem,
-    dashboardCards: dashboardCards ?? this.dashboardCards,
-    customMealTypes: customMealTypes ?? this.customMealTypes,
-    showMealMacros: showMealMacros ?? this.showMealMacros,
-  );
+  }) =>
+      AppSettings(
+        aiMode: aiMode ?? this.aiMode,
+        themeMode: themeMode ?? this.themeMode,
+        localeOverride:
+            clearLocale ? null : (localeOverride ?? this.localeOverride),
+        waterGoalMl: waterGoalMl ?? this.waterGoalMl,
+        accentColorValue: accentColorValue ?? this.accentColorValue,
+        breakfastReminderTime: clearBreakfast
+            ? null
+            : (breakfastReminderTime ?? this.breakfastReminderTime),
+        lunchReminderTime:
+            clearLunch ? null : (lunchReminderTime ?? this.lunchReminderTime),
+        dinnerReminderTime: clearDinner
+            ? null
+            : (dinnerReminderTime ?? this.dinnerReminderTime),
+        remindersEnabled: remindersEnabled ?? this.remindersEnabled,
+        healthSyncEnabled: healthSyncEnabled ?? this.healthSyncEnabled,
+        waterSize1: waterSize1 ?? this.waterSize1,
+        waterSize2: waterSize2 ?? this.waterSize2,
+        waterSize3: waterSize3 ?? this.waterSize3,
+        waterSize4: waterSize4 ?? this.waterSize4,
+        unitSystem: unitSystem ?? this.unitSystem,
+        dashboardCards: dashboardCards ?? this.dashboardCards,
+        customMealTypes: customMealTypes ?? this.customMealTypes,
+        showMealMacros: showMealMacros ?? this.showMealMacros,
+        homeLayout: homeLayout ?? this.homeLayout,
+        quickActionSize: quickActionSize ?? this.quickActionSize,
+      );
 }
-

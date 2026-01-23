@@ -78,6 +78,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                           ),
                           const SizedBox(height: 20),
+                          _buildSettingRow(
+                            context,
+                            title: 'Home Layout', // TODO: Add to l10n
+                            child: _buildSegmentedControl<HomeLayoutMode>(
+                              context,
+                              value: settings.homeLayout,
+                              options: [
+                                (
+                                  HomeLayoutMode.modern,
+                                  Icons.grid_view_rounded
+                                ),
+                                (HomeLayoutMode.legacy, Icons.list_alt_rounded),
+                              ],
+                              onChanged: settings.setHomeLayout,
+                            ),
+                          ),
+                          if (settings.homeLayout == HomeLayoutMode.modern) ...[
+                            const SizedBox(height: 20),
+                            _buildSettingRow(
+                              context,
+                              title: 'Quick Actions Size', // TODO: Add to l10n
+                              child: _buildSegmentedControl<QuickActionSize>(
+                                context,
+                                value: settings.quickActionSize,
+                                options: [
+                                  (
+                                    QuickActionSize.small,
+                                    Icons.view_column_rounded
+                                  ), // Chips
+                                  (
+                                    QuickActionSize.large,
+                                    Icons.grid_view_rounded
+                                  ), // Cards
+                                ],
+                                onChanged: settings.setQuickActionSize,
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 20),
                           Text(
                             l10n.accentColor,
                             style: theme.textTheme.titleSmall,
@@ -117,7 +156,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             title: l10n.waterSizes,
                             subtitle: l10n.waterSizesSubtitle,
                             icon: Icons.water_drop_outlined,
-                            onTap: () => _showWaterSizesDialog(context, settings, l10n),
+                            onTap: () =>
+                                _showWaterSizesDialog(context, settings, l10n),
                           ),
                           const SizedBox(height: 12),
                           // Meal Macros
@@ -128,7 +168,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             icon: Icons.pie_chart_outline,
                             onTap: () => Navigator.push(
                               context,
-                              AppTheme.slideRoute(const MealMacrosSettingsScreen()),
+                              AppTheme.slideRoute(
+                                  const MealMacrosSettingsScreen()),
                             ),
                           ),
                         ],
@@ -179,7 +220,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             icon: Icons.grid_view_outlined,
                             onTap: () => Navigator.push(
                               context,
-                              AppTheme.slideRoute(const DashboardSettingsScreen()),
+                              AppTheme.slideRoute(
+                                  const DashboardSettingsScreen()),
                             ),
                           ),
                           const SizedBox(height: 12),
@@ -227,7 +269,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               icon: Icons.wb_sunny_rounded,
                               title: l10n.lunch,
                               time: settings.lunchReminderTime,
-                              defaultTime: const TimeOfDay(hour: 12, minute: 30),
+                              defaultTime:
+                                  const TimeOfDay(hour: 12, minute: 30),
                               onChanged: settings.setLunchReminder,
                             ),
                             const SizedBox(height: 8),
@@ -235,7 +278,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               icon: Icons.nights_stay_rounded,
                               title: l10n.dinner,
                               time: settings.dinnerReminderTime,
-                              defaultTime: const TimeOfDay(hour: 18, minute: 30),
+                              defaultTime:
+                                  const TimeOfDay(hour: 18, minute: 30),
                               onChanged: settings.setDinnerReminder,
                             ),
                           ],
@@ -629,8 +673,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   : null,
             ),
             child: isSelected
-                ? Icon(Icons.check,
-                    color: _contrastColor(color), size: 20)
+                ? Icon(Icons.check, color: _contrastColor(color), size: 20)
                 : null,
           ),
         );
@@ -773,8 +816,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               color: isSelected
                                   ? theme.colorScheme.primary
                                   : theme.colorScheme.onSurface,
-                              fontWeight:
-                                  isSelected ? FontWeight.w600 : FontWeight.normal,
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
                             ),
                           ),
                           Text(
@@ -857,8 +901,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 : null,
           ),
           obscureText: true,
-          controller:
-              TextEditingController(text: settings.geminiApiKey ?? ''),
+          controller: TextEditingController(text: settings.geminiApiKey ?? ''),
           onChanged: settings.setGeminiApiKey,
         ),
         const SizedBox(height: 8),
@@ -946,7 +989,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Future<void> _handleExport(BuildContext context, AppLocalizations l10n) async {
+  Future<void> _handleExport(
+      BuildContext context, AppLocalizations l10n) async {
     setState(() => _isExporting = true);
 
     try {
@@ -969,7 +1013,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Future<void> _handleImport(BuildContext context, AppLocalizations l10n) async {
+  Future<void> _handleImport(
+      BuildContext context, AppLocalizations l10n) async {
     // Capture context-dependent values before any async operations
     final nutritionProvider = context.read<NutritionProvider>();
     final messenger = ScaffoldMessenger.of(context);
@@ -1218,9 +1263,8 @@ class _WaterSizesDialogState extends State<_WaterSizesDialog> {
         ),
         ElevatedButton(
           onPressed: () {
-            final newSizes = _controllers
-                .map((c) => int.tryParse(c.text) ?? 250)
-                .toList();
+            final newSizes =
+                _controllers.map((c) => int.tryParse(c.text) ?? 250).toList();
             widget.settings.setWaterSizes(
               newSizes[0],
               newSizes[1],

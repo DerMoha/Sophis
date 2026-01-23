@@ -29,19 +29,20 @@ class SettingsProvider extends ChangeNotifier {
   AIMode get aiMode => _settings.aiMode;
 
   String? get geminiApiKey => _geminiApiKey;
-  bool get hasGeminiApiKey => _geminiApiKey != null && _geminiApiKey!.isNotEmpty;
+  bool get hasGeminiApiKey =>
+      _geminiApiKey != null && _geminiApiKey!.isNotEmpty;
   double get waterGoalMl => _settings.waterGoalMl;
-  
+
   // Accent color
   Color get accentColor => _settings.accentColor;
   int get accentColorValue => _settings.accentColorValue;
-  
+
   // Meal reminders
   bool get remindersEnabled => _settings.remindersEnabled;
   String? get breakfastReminderTime => _settings.breakfastReminderTime;
   String? get lunchReminderTime => _settings.lunchReminderTime;
   String? get dinnerReminderTime => _settings.dinnerReminderTime;
-  
+
   // Health sync
   bool get healthSyncEnabled => _settings.healthSyncEnabled;
 
@@ -107,6 +108,23 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  HomeLayoutMode get homeLayout => _settings.homeLayout;
+  bool get isLegacyLayout => _settings.homeLayout == HomeLayoutMode.legacy;
+
+  Future<void> setHomeLayout(HomeLayoutMode mode) async {
+    _settings = _settings.copyWith(homeLayout: mode);
+    await _storage.saveSettings(_settings);
+    notifyListeners();
+  }
+
+  QuickActionSize get quickActionSize => _settings.quickActionSize;
+
+  Future<void> setQuickActionSize(QuickActionSize size) async {
+    _settings = _settings.copyWith(quickActionSize: size);
+    await _storage.saveSettings(_settings);
+    notifyListeners();
+  }
+
   Future<void> setRemindersEnabled(bool enabled) async {
     if (enabled) {
       // Request permission when user enables reminders
@@ -116,7 +134,7 @@ class SettingsProvider extends ChangeNotifier {
         return;
       }
     }
-    
+
     _settings = _settings.copyWith(remindersEnabled: enabled);
     await _storage.saveSettings(_settings);
     await _updateNotifications();
@@ -174,7 +192,7 @@ class SettingsProvider extends ChangeNotifier {
         return false;
       }
     }
-    
+
     _settings = _settings.copyWith(healthSyncEnabled: enabled);
     await _storage.saveSettings(_settings);
     notifyListeners();
@@ -183,11 +201,11 @@ class SettingsProvider extends ChangeNotifier {
 
   // Water quick-add sizes
   List<int> get waterSizes => [
-    _settings.waterSize1,
-    _settings.waterSize2,
-    _settings.waterSize3,
-    _settings.waterSize4,
-  ];
+        _settings.waterSize1,
+        _settings.waterSize2,
+        _settings.waterSize3,
+        _settings.waterSize4,
+      ];
 
   Future<void> setWaterSizes(int size1, int size2, int size3, int size4) async {
     _settings = _settings.copyWith(
@@ -279,21 +297,17 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   Future<void> addMealType(CustomMealType mealType) async {
-    final types = List<CustomMealType>.from(
-      _settings.customMealTypes.isEmpty
+    final types = List<CustomMealType>.from(_settings.customMealTypes.isEmpty
         ? CustomMealType.defaults
-        : _settings.customMealTypes
-    );
+        : _settings.customMealTypes);
     types.add(mealType);
     await setMealTypes(types);
   }
 
   Future<void> updateMealType(CustomMealType mealType) async {
-    final types = List<CustomMealType>.from(
-      _settings.customMealTypes.isEmpty
+    final types = List<CustomMealType>.from(_settings.customMealTypes.isEmpty
         ? CustomMealType.defaults
-        : _settings.customMealTypes
-    );
+        : _settings.customMealTypes);
     final index = types.indexWhere((m) => m.id == mealType.id);
     if (index != -1) {
       types[index] = mealType;
@@ -302,11 +316,9 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   Future<void> removeMealType(String id) async {
-    final types = List<CustomMealType>.from(
-      _settings.customMealTypes.isEmpty
+    final types = List<CustomMealType>.from(_settings.customMealTypes.isEmpty
         ? CustomMealType.defaults
-        : _settings.customMealTypes
-    );
+        : _settings.customMealTypes);
     // Only remove if not a default meal
     types.removeWhere((m) => m.id == id && !m.isDefault);
     await setMealTypes(types);

@@ -72,19 +72,21 @@ class DatabaseService extends _$DatabaseService {
   // ---------------------------------------------------------------------------
   // FOODS
   // ---------------------------------------------------------------------------
-  
+
   Future<List<FoodEntry>> getAllFoods() async {
     final rows = await select(foods).get();
-    return rows.map((row) => FoodEntry(
-      id: row.id,
-      name: row.name,
-      calories: row.calories,
-      protein: row.protein,
-      carbs: row.carbs,
-      fat: row.fat,
-      timestamp: row.timestamp,
-      meal: row.meal,
-    )).toList();
+    return rows
+        .map((row) => FoodEntry(
+              id: row.id,
+              name: row.name,
+              calories: row.calories,
+              protein: row.protein,
+              carbs: row.carbs,
+              fat: row.fat,
+              timestamp: row.timestamp,
+              meal: row.meal,
+            ))
+        .toList();
   }
 
   Future<int> insertFood(FoodEntry entry) {
@@ -99,19 +101,23 @@ class DatabaseService extends _$DatabaseService {
       meal: Value(entry.meal),
     ));
   }
-  
+
   Future<void> insertFoods(List<FoodEntry> entries) async {
     await batch((batch) {
-      batch.insertAll(foods, entries.map((entry) => FoodsCompanion(
-        id: Value(entry.id),
-        name: Value(entry.name),
-        calories: Value(entry.calories),
-        protein: Value(entry.protein),
-        carbs: Value(entry.carbs),
-        fat: Value(entry.fat),
-        timestamp: Value(entry.timestamp),
-        meal: Value(entry.meal),
-      )));
+      batch.insertAll(
+        foods,
+        entries.map((entry) => FoodsCompanion(
+              id: Value(entry.id),
+              name: Value(entry.name),
+              calories: Value(entry.calories),
+              protein: Value(entry.protein),
+              carbs: Value(entry.carbs),
+              fat: Value(entry.fat),
+              timestamp: Value(entry.timestamp),
+              meal: Value(entry.meal),
+            )),
+        mode: InsertMode.insertOrReplace,
+      );
     });
   }
 
@@ -138,11 +144,13 @@ class DatabaseService extends _$DatabaseService {
 
   Future<List<WaterEntry>> getAllWater() async {
     final rows = await select(waterLogs).get();
-    return rows.map((row) => WaterEntry(
-      id: row.id,
-      amountMl: row.amountMl,
-      timestamp: row.timestamp,
-    )).toList();
+    return rows
+        .map((row) => WaterEntry(
+              id: row.id,
+              amountMl: row.amountMl,
+              timestamp: row.timestamp,
+            ))
+        .toList();
   }
 
   Future<int> insertWater(WaterEntry entry) {
@@ -152,17 +160,20 @@ class DatabaseService extends _$DatabaseService {
       timestamp: Value(entry.timestamp),
     ));
   }
-  
-   Future<void> insertWaterList(List<WaterEntry> entries) async {
+
+  Future<void> insertWaterList(List<WaterEntry> entries) async {
     await batch((batch) {
-      batch.insertAll(waterLogs, entries.map((entry) => WaterLogsCompanion(
-        id: Value(entry.id),
-        amountMl: Value(entry.amountMl),
-        timestamp: Value(entry.timestamp),
-      )));
+      batch.insertAll(
+        waterLogs,
+        entries.map((entry) => WaterLogsCompanion(
+              id: Value(entry.id),
+              amountMl: Value(entry.amountMl),
+              timestamp: Value(entry.timestamp),
+            )),
+        mode: InsertMode.insertOrReplace,
+      );
     });
   }
-
 
   Future<int> deleteWater(String id) {
     return (delete(waterLogs)..where((t) => t.id.equals(id))).go();
@@ -174,12 +185,14 @@ class DatabaseService extends _$DatabaseService {
 
   Future<List<WeightEntry>> getAllWeights() async {
     final rows = await select(weightLogs).get();
-    return rows.map((row) => WeightEntry(
-      id: row.id,
-      weightKg: row.weightKg,
-      timestamp: row.timestamp,
-      note: row.note,
-    )).toList();
+    return rows
+        .map((row) => WeightEntry(
+              id: row.id,
+              weightKg: row.weightKg,
+              timestamp: row.timestamp,
+              note: row.note,
+            ))
+        .toList();
   }
 
   Future<int> insertWeight(WeightEntry entry) {
@@ -190,15 +203,19 @@ class DatabaseService extends _$DatabaseService {
       note: Value(entry.note),
     ));
   }
-  
+
   Future<void> insertWeightList(List<WeightEntry> entries) async {
     await batch((batch) {
-      batch.insertAll(weightLogs, entries.map((entry) => WeightLogsCompanion(
-        id: Value(entry.id),
-        weightKg: Value(entry.weightKg),
-        timestamp: Value(entry.timestamp),
-        note: Value(entry.note),
-      )));
+      batch.insertAll(
+        weightLogs,
+        entries.map((entry) => WeightLogsCompanion(
+              id: Value(entry.id),
+              weightKg: Value(entry.weightKg),
+              timestamp: Value(entry.timestamp),
+              note: Value(entry.note),
+            )),
+        mode: InsertMode.insertOrReplace,
+      );
     });
   }
 
@@ -212,12 +229,14 @@ class DatabaseService extends _$DatabaseService {
 
   Future<List<WorkoutEntry>> getAllWorkouts() async {
     final rows = await select(workoutLogs).get();
-    return rows.map((row) => WorkoutEntry(
-      id: row.id,
-      caloriesBurned: row.caloriesBurned,
-      timestamp: row.timestamp,
-      note: row.note,
-    )).toList();
+    return rows
+        .map((row) => WorkoutEntry(
+              id: row.id,
+              caloriesBurned: row.caloriesBurned,
+              timestamp: row.timestamp,
+              note: row.note,
+            ))
+        .toList();
   }
 
   Future<int> insertWorkout(WorkoutEntry entry) {
@@ -228,15 +247,19 @@ class DatabaseService extends _$DatabaseService {
       note: Value(entry.note),
     ));
   }
-  
-   Future<void> insertWorkoutList(List<WorkoutEntry> entries) async {
+
+  Future<void> insertWorkoutList(List<WorkoutEntry> entries) async {
     await batch((batch) {
-      batch.insertAll(workoutLogs, entries.map((entry) => WorkoutLogsCompanion(
-        id: Value(entry.id),
-        caloriesBurned: Value(entry.caloriesBurned),
-        timestamp: Value(entry.timestamp),
-        note: Value(entry.note),
-      )));
+      batch.insertAll(
+        workoutLogs,
+        entries.map((entry) => WorkoutLogsCompanion(
+              id: Value(entry.id),
+              caloriesBurned: Value(entry.caloriesBurned),
+              timestamp: Value(entry.timestamp),
+              note: Value(entry.note),
+            )),
+        mode: InsertMode.insertOrReplace,
+      );
     });
   }
 
@@ -252,11 +275,11 @@ class DatabaseService extends _$DatabaseService {
   Future<int> deleteWorkout(String id) {
     return (delete(workoutLogs)..where((t) => t.id.equals(id))).go();
   }
-  
+
   // ---------------------------------------------------------------------------
   // UTILS
   // ---------------------------------------------------------------------------
-  
+
   Future<void> deleteAllData() async {
     await delete(foods).go();
     await delete(waterLogs).go();

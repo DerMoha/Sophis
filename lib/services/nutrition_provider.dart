@@ -39,6 +39,9 @@ class NutritionProvider extends ChangeNotifier {
   double _healthSyncBurnedCalories = 0.0;
   final HealthService _healthService = HealthService();
 
+  bool _isLoading = true;
+  bool get isLoading => _isLoading;
+
   // ═══════════════════════════════════════════════════════════════════════════
   // CACHING - Avoid repeated filtering on every build
   // ═══════════════════════════════════════════════════════════════════════════
@@ -94,6 +97,9 @@ class NutritionProvider extends ChangeNotifier {
   }
 
   Future<void> _loadData() async {
+    _isLoading = true;
+    notifyListeners();
+
     // 1. Check for migration
     await _migrateToDbIfNeeded();
 
@@ -117,6 +123,8 @@ class NutritionProvider extends ChangeNotifier {
 
     _invalidateCache();
     HomeWidgetService.updateWidgetData(this);
+
+    _isLoading = false;
     notifyListeners();
   }
 
@@ -131,13 +139,19 @@ class NutritionProvider extends ChangeNotifier {
     final legacyWeights = _storage.loadWeightEntries();
     final legacyWorkouts = _storage.loadWorkoutEntries();
 
-    if (legacyFoods.isNotEmpty) await _db.insertFoods(legacyFoods);
-    if (legacyWater.isNotEmpty) await _db.insertWaterList(legacyWater);
-    if (legacyWeights.isNotEmpty) await _db.insertWeightList(legacyWeights);
-    if (legacyWorkouts.isNotEmpty) await _db.insertWorkoutList(legacyWorkouts);
+    try {
+      if (legacyFoods.isNotEmpty) await _db.insertFoods(legacyFoods);
+      if (legacyWater.isNotEmpty) await _db.insertWaterList(legacyWater);
+      if (legacyWeights.isNotEmpty) await _db.insertWeightList(legacyWeights);
+      if (legacyWorkouts.isNotEmpty)
+        await _db.insertWorkoutList(legacyWorkouts);
 
-    await _storage.setMigrationComplete();
-    debugPrint('DB Migration Complete');
+      await _storage.setMigrationComplete();
+      debugPrint('DB Migration Complete');
+    } catch (e) {
+      debugPrint('DB Migration Failed: $e');
+      // Optionally rethrow or handle, but catching prevents app crash loop
+    }
   }
 
   // Goals
