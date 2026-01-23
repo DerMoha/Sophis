@@ -1190,6 +1190,595 @@ class WorkoutLogsCompanion extends UpdateCompanion<WorkoutLog> {
   }
 }
 
+class $SupplementDefinitionsTable extends SupplementDefinitions
+    with TableInfo<$SupplementDefinitionsTable, SupplementDefinition> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SupplementDefinitionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+      'name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _reminderTimeMeta =
+      const VerificationMeta('reminderTime');
+  @override
+  late final GeneratedColumn<String> reminderTime = GeneratedColumn<String>(
+      'reminder_time', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _enabledMeta =
+      const VerificationMeta('enabled');
+  @override
+  late final GeneratedColumn<bool> enabled = GeneratedColumn<bool>(
+      'enabled', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("enabled" IN (0, 1))'),
+      defaultValue: const Constant(true));
+  static const VerificationMeta _sortOrderMeta =
+      const VerificationMeta('sortOrder');
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+      'sort_order', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [id, name, reminderTime, enabled, sortOrder, createdAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'supplement_definitions';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<SupplementDefinition> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('reminder_time')) {
+      context.handle(
+          _reminderTimeMeta,
+          reminderTime.isAcceptableOrUnknown(
+              data['reminder_time']!, _reminderTimeMeta));
+    }
+    if (data.containsKey('enabled')) {
+      context.handle(_enabledMeta,
+          enabled.isAcceptableOrUnknown(data['enabled']!, _enabledMeta));
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(_sortOrderMeta,
+          sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SupplementDefinition map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SupplementDefinition(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      name: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      reminderTime: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}reminder_time']),
+      enabled: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}enabled'])!,
+      sortOrder: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}sort_order'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+    );
+  }
+
+  @override
+  $SupplementDefinitionsTable createAlias(String alias) {
+    return $SupplementDefinitionsTable(attachedDatabase, alias);
+  }
+}
+
+class SupplementDefinition extends DataClass
+    implements Insertable<SupplementDefinition> {
+  final String id;
+  final String name;
+  final String? reminderTime;
+  final bool enabled;
+  final int sortOrder;
+  final DateTime createdAt;
+  const SupplementDefinition(
+      {required this.id,
+      required this.name,
+      this.reminderTime,
+      required this.enabled,
+      required this.sortOrder,
+      required this.createdAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || reminderTime != null) {
+      map['reminder_time'] = Variable<String>(reminderTime);
+    }
+    map['enabled'] = Variable<bool>(enabled);
+    map['sort_order'] = Variable<int>(sortOrder);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  SupplementDefinitionsCompanion toCompanion(bool nullToAbsent) {
+    return SupplementDefinitionsCompanion(
+      id: Value(id),
+      name: Value(name),
+      reminderTime: reminderTime == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reminderTime),
+      enabled: Value(enabled),
+      sortOrder: Value(sortOrder),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory SupplementDefinition.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SupplementDefinition(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      reminderTime: serializer.fromJson<String?>(json['reminderTime']),
+      enabled: serializer.fromJson<bool>(json['enabled']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'reminderTime': serializer.toJson<String?>(reminderTime),
+      'enabled': serializer.toJson<bool>(enabled),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  SupplementDefinition copyWith(
+          {String? id,
+          String? name,
+          Value<String?> reminderTime = const Value.absent(),
+          bool? enabled,
+          int? sortOrder,
+          DateTime? createdAt}) =>
+      SupplementDefinition(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        reminderTime:
+            reminderTime.present ? reminderTime.value : this.reminderTime,
+        enabled: enabled ?? this.enabled,
+        sortOrder: sortOrder ?? this.sortOrder,
+        createdAt: createdAt ?? this.createdAt,
+      );
+  SupplementDefinition copyWithCompanion(SupplementDefinitionsCompanion data) {
+    return SupplementDefinition(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      reminderTime: data.reminderTime.present
+          ? data.reminderTime.value
+          : this.reminderTime,
+      enabled: data.enabled.present ? data.enabled.value : this.enabled,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SupplementDefinition(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('reminderTime: $reminderTime, ')
+          ..write('enabled: $enabled, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, name, reminderTime, enabled, sortOrder, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SupplementDefinition &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.reminderTime == this.reminderTime &&
+          other.enabled == this.enabled &&
+          other.sortOrder == this.sortOrder &&
+          other.createdAt == this.createdAt);
+}
+
+class SupplementDefinitionsCompanion
+    extends UpdateCompanion<SupplementDefinition> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String?> reminderTime;
+  final Value<bool> enabled;
+  final Value<int> sortOrder;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const SupplementDefinitionsCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.reminderTime = const Value.absent(),
+    this.enabled = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SupplementDefinitionsCompanion.insert({
+    required String id,
+    required String name,
+    this.reminderTime = const Value.absent(),
+    this.enabled = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    required DateTime createdAt,
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        name = Value(name),
+        createdAt = Value(createdAt);
+  static Insertable<SupplementDefinition> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? reminderTime,
+    Expression<bool>? enabled,
+    Expression<int>? sortOrder,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (reminderTime != null) 'reminder_time': reminderTime,
+      if (enabled != null) 'enabled': enabled,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SupplementDefinitionsCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? name,
+      Value<String?>? reminderTime,
+      Value<bool>? enabled,
+      Value<int>? sortOrder,
+      Value<DateTime>? createdAt,
+      Value<int>? rowid}) {
+    return SupplementDefinitionsCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      reminderTime: reminderTime ?? this.reminderTime,
+      enabled: enabled ?? this.enabled,
+      sortOrder: sortOrder ?? this.sortOrder,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (reminderTime.present) {
+      map['reminder_time'] = Variable<String>(reminderTime.value);
+    }
+    if (enabled.present) {
+      map['enabled'] = Variable<bool>(enabled.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SupplementDefinitionsCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('reminderTime: $reminderTime, ')
+          ..write('enabled: $enabled, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SupplementLogsTable extends SupplementLogs
+    with TableInfo<$SupplementLogsTable, SupplementLog> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SupplementLogsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _supplementIdMeta =
+      const VerificationMeta('supplementId');
+  @override
+  late final GeneratedColumn<String> supplementId = GeneratedColumn<String>(
+      'supplement_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _timestampMeta =
+      const VerificationMeta('timestamp');
+  @override
+  late final GeneratedColumn<DateTime> timestamp = GeneratedColumn<DateTime>(
+      'timestamp', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [id, supplementId, timestamp];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'supplement_logs';
+  @override
+  VerificationContext validateIntegrity(Insertable<SupplementLog> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('supplement_id')) {
+      context.handle(
+          _supplementIdMeta,
+          supplementId.isAcceptableOrUnknown(
+              data['supplement_id']!, _supplementIdMeta));
+    } else if (isInserting) {
+      context.missing(_supplementIdMeta);
+    }
+    if (data.containsKey('timestamp')) {
+      context.handle(_timestampMeta,
+          timestamp.isAcceptableOrUnknown(data['timestamp']!, _timestampMeta));
+    } else if (isInserting) {
+      context.missing(_timestampMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SupplementLog map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SupplementLog(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      supplementId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}supplement_id'])!,
+      timestamp: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}timestamp'])!,
+    );
+  }
+
+  @override
+  $SupplementLogsTable createAlias(String alias) {
+    return $SupplementLogsTable(attachedDatabase, alias);
+  }
+}
+
+class SupplementLog extends DataClass implements Insertable<SupplementLog> {
+  final String id;
+  final String supplementId;
+  final DateTime timestamp;
+  const SupplementLog(
+      {required this.id, required this.supplementId, required this.timestamp});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['supplement_id'] = Variable<String>(supplementId);
+    map['timestamp'] = Variable<DateTime>(timestamp);
+    return map;
+  }
+
+  SupplementLogsCompanion toCompanion(bool nullToAbsent) {
+    return SupplementLogsCompanion(
+      id: Value(id),
+      supplementId: Value(supplementId),
+      timestamp: Value(timestamp),
+    );
+  }
+
+  factory SupplementLog.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SupplementLog(
+      id: serializer.fromJson<String>(json['id']),
+      supplementId: serializer.fromJson<String>(json['supplementId']),
+      timestamp: serializer.fromJson<DateTime>(json['timestamp']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'supplementId': serializer.toJson<String>(supplementId),
+      'timestamp': serializer.toJson<DateTime>(timestamp),
+    };
+  }
+
+  SupplementLog copyWith(
+          {String? id, String? supplementId, DateTime? timestamp}) =>
+      SupplementLog(
+        id: id ?? this.id,
+        supplementId: supplementId ?? this.supplementId,
+        timestamp: timestamp ?? this.timestamp,
+      );
+  SupplementLog copyWithCompanion(SupplementLogsCompanion data) {
+    return SupplementLog(
+      id: data.id.present ? data.id.value : this.id,
+      supplementId: data.supplementId.present
+          ? data.supplementId.value
+          : this.supplementId,
+      timestamp: data.timestamp.present ? data.timestamp.value : this.timestamp,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SupplementLog(')
+          ..write('id: $id, ')
+          ..write('supplementId: $supplementId, ')
+          ..write('timestamp: $timestamp')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, supplementId, timestamp);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SupplementLog &&
+          other.id == this.id &&
+          other.supplementId == this.supplementId &&
+          other.timestamp == this.timestamp);
+}
+
+class SupplementLogsCompanion extends UpdateCompanion<SupplementLog> {
+  final Value<String> id;
+  final Value<String> supplementId;
+  final Value<DateTime> timestamp;
+  final Value<int> rowid;
+  const SupplementLogsCompanion({
+    this.id = const Value.absent(),
+    this.supplementId = const Value.absent(),
+    this.timestamp = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SupplementLogsCompanion.insert({
+    required String id,
+    required String supplementId,
+    required DateTime timestamp,
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        supplementId = Value(supplementId),
+        timestamp = Value(timestamp);
+  static Insertable<SupplementLog> custom({
+    Expression<String>? id,
+    Expression<String>? supplementId,
+    Expression<DateTime>? timestamp,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (supplementId != null) 'supplement_id': supplementId,
+      if (timestamp != null) 'timestamp': timestamp,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SupplementLogsCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? supplementId,
+      Value<DateTime>? timestamp,
+      Value<int>? rowid}) {
+    return SupplementLogsCompanion(
+      id: id ?? this.id,
+      supplementId: supplementId ?? this.supplementId,
+      timestamp: timestamp ?? this.timestamp,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (supplementId.present) {
+      map['supplement_id'] = Variable<String>(supplementId.value);
+    }
+    if (timestamp.present) {
+      map['timestamp'] = Variable<DateTime>(timestamp.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SupplementLogsCompanion(')
+          ..write('id: $id, ')
+          ..write('supplementId: $supplementId, ')
+          ..write('timestamp: $timestamp, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$DatabaseService extends GeneratedDatabase {
   _$DatabaseService(QueryExecutor e) : super(e);
   $DatabaseServiceManager get managers => $DatabaseServiceManager(this);
@@ -1197,12 +1786,21 @@ abstract class _$DatabaseService extends GeneratedDatabase {
   late final $WaterLogsTable waterLogs = $WaterLogsTable(this);
   late final $WeightLogsTable weightLogs = $WeightLogsTable(this);
   late final $WorkoutLogsTable workoutLogs = $WorkoutLogsTable(this);
+  late final $SupplementDefinitionsTable supplementDefinitions =
+      $SupplementDefinitionsTable(this);
+  late final $SupplementLogsTable supplementLogs = $SupplementLogsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities =>
-      [foods, waterLogs, weightLogs, workoutLogs];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [
+        foods,
+        waterLogs,
+        weightLogs,
+        workoutLogs,
+        supplementDefinitions,
+        supplementLogs
+      ];
 }
 
 typedef $$FoodsTableCreateCompanionBuilder = FoodsCompanion Function({
@@ -1860,6 +2458,347 @@ typedef $$WorkoutLogsTableProcessedTableManager = ProcessedTableManager<
     ),
     WorkoutLog,
     PrefetchHooks Function()>;
+typedef $$SupplementDefinitionsTableCreateCompanionBuilder
+    = SupplementDefinitionsCompanion Function({
+  required String id,
+  required String name,
+  Value<String?> reminderTime,
+  Value<bool> enabled,
+  Value<int> sortOrder,
+  required DateTime createdAt,
+  Value<int> rowid,
+});
+typedef $$SupplementDefinitionsTableUpdateCompanionBuilder
+    = SupplementDefinitionsCompanion Function({
+  Value<String> id,
+  Value<String> name,
+  Value<String?> reminderTime,
+  Value<bool> enabled,
+  Value<int> sortOrder,
+  Value<DateTime> createdAt,
+  Value<int> rowid,
+});
+
+class $$SupplementDefinitionsTableFilterComposer
+    extends Composer<_$DatabaseService, $SupplementDefinitionsTable> {
+  $$SupplementDefinitionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get reminderTime => $composableBuilder(
+      column: $table.reminderTime, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get enabled => $composableBuilder(
+      column: $table.enabled, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+      column: $table.sortOrder, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$SupplementDefinitionsTableOrderingComposer
+    extends Composer<_$DatabaseService, $SupplementDefinitionsTable> {
+  $$SupplementDefinitionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get reminderTime => $composableBuilder(
+      column: $table.reminderTime,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get enabled => $composableBuilder(
+      column: $table.enabled, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+      column: $table.sortOrder, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$SupplementDefinitionsTableAnnotationComposer
+    extends Composer<_$DatabaseService, $SupplementDefinitionsTable> {
+  $$SupplementDefinitionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get reminderTime => $composableBuilder(
+      column: $table.reminderTime, builder: (column) => column);
+
+  GeneratedColumn<bool> get enabled =>
+      $composableBuilder(column: $table.enabled, builder: (column) => column);
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$SupplementDefinitionsTableTableManager extends RootTableManager<
+    _$DatabaseService,
+    $SupplementDefinitionsTable,
+    SupplementDefinition,
+    $$SupplementDefinitionsTableFilterComposer,
+    $$SupplementDefinitionsTableOrderingComposer,
+    $$SupplementDefinitionsTableAnnotationComposer,
+    $$SupplementDefinitionsTableCreateCompanionBuilder,
+    $$SupplementDefinitionsTableUpdateCompanionBuilder,
+    (
+      SupplementDefinition,
+      BaseReferences<_$DatabaseService, $SupplementDefinitionsTable,
+          SupplementDefinition>
+    ),
+    SupplementDefinition,
+    PrefetchHooks Function()> {
+  $$SupplementDefinitionsTableTableManager(
+      _$DatabaseService db, $SupplementDefinitionsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SupplementDefinitionsTableFilterComposer(
+                  $db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SupplementDefinitionsTableOrderingComposer(
+                  $db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SupplementDefinitionsTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> name = const Value.absent(),
+            Value<String?> reminderTime = const Value.absent(),
+            Value<bool> enabled = const Value.absent(),
+            Value<int> sortOrder = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SupplementDefinitionsCompanion(
+            id: id,
+            name: name,
+            reminderTime: reminderTime,
+            enabled: enabled,
+            sortOrder: sortOrder,
+            createdAt: createdAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String name,
+            Value<String?> reminderTime = const Value.absent(),
+            Value<bool> enabled = const Value.absent(),
+            Value<int> sortOrder = const Value.absent(),
+            required DateTime createdAt,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SupplementDefinitionsCompanion.insert(
+            id: id,
+            name: name,
+            reminderTime: reminderTime,
+            enabled: enabled,
+            sortOrder: sortOrder,
+            createdAt: createdAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$SupplementDefinitionsTableProcessedTableManager
+    = ProcessedTableManager<
+        _$DatabaseService,
+        $SupplementDefinitionsTable,
+        SupplementDefinition,
+        $$SupplementDefinitionsTableFilterComposer,
+        $$SupplementDefinitionsTableOrderingComposer,
+        $$SupplementDefinitionsTableAnnotationComposer,
+        $$SupplementDefinitionsTableCreateCompanionBuilder,
+        $$SupplementDefinitionsTableUpdateCompanionBuilder,
+        (
+          SupplementDefinition,
+          BaseReferences<_$DatabaseService, $SupplementDefinitionsTable,
+              SupplementDefinition>
+        ),
+        SupplementDefinition,
+        PrefetchHooks Function()>;
+typedef $$SupplementLogsTableCreateCompanionBuilder = SupplementLogsCompanion
+    Function({
+  required String id,
+  required String supplementId,
+  required DateTime timestamp,
+  Value<int> rowid,
+});
+typedef $$SupplementLogsTableUpdateCompanionBuilder = SupplementLogsCompanion
+    Function({
+  Value<String> id,
+  Value<String> supplementId,
+  Value<DateTime> timestamp,
+  Value<int> rowid,
+});
+
+class $$SupplementLogsTableFilterComposer
+    extends Composer<_$DatabaseService, $SupplementLogsTable> {
+  $$SupplementLogsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get supplementId => $composableBuilder(
+      column: $table.supplementId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get timestamp => $composableBuilder(
+      column: $table.timestamp, builder: (column) => ColumnFilters(column));
+}
+
+class $$SupplementLogsTableOrderingComposer
+    extends Composer<_$DatabaseService, $SupplementLogsTable> {
+  $$SupplementLogsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get supplementId => $composableBuilder(
+      column: $table.supplementId,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get timestamp => $composableBuilder(
+      column: $table.timestamp, builder: (column) => ColumnOrderings(column));
+}
+
+class $$SupplementLogsTableAnnotationComposer
+    extends Composer<_$DatabaseService, $SupplementLogsTable> {
+  $$SupplementLogsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get supplementId => $composableBuilder(
+      column: $table.supplementId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get timestamp =>
+      $composableBuilder(column: $table.timestamp, builder: (column) => column);
+}
+
+class $$SupplementLogsTableTableManager extends RootTableManager<
+    _$DatabaseService,
+    $SupplementLogsTable,
+    SupplementLog,
+    $$SupplementLogsTableFilterComposer,
+    $$SupplementLogsTableOrderingComposer,
+    $$SupplementLogsTableAnnotationComposer,
+    $$SupplementLogsTableCreateCompanionBuilder,
+    $$SupplementLogsTableUpdateCompanionBuilder,
+    (
+      SupplementLog,
+      BaseReferences<_$DatabaseService, $SupplementLogsTable, SupplementLog>
+    ),
+    SupplementLog,
+    PrefetchHooks Function()> {
+  $$SupplementLogsTableTableManager(
+      _$DatabaseService db, $SupplementLogsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SupplementLogsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SupplementLogsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SupplementLogsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> supplementId = const Value.absent(),
+            Value<DateTime> timestamp = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SupplementLogsCompanion(
+            id: id,
+            supplementId: supplementId,
+            timestamp: timestamp,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String supplementId,
+            required DateTime timestamp,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SupplementLogsCompanion.insert(
+            id: id,
+            supplementId: supplementId,
+            timestamp: timestamp,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$SupplementLogsTableProcessedTableManager = ProcessedTableManager<
+    _$DatabaseService,
+    $SupplementLogsTable,
+    SupplementLog,
+    $$SupplementLogsTableFilterComposer,
+    $$SupplementLogsTableOrderingComposer,
+    $$SupplementLogsTableAnnotationComposer,
+    $$SupplementLogsTableCreateCompanionBuilder,
+    $$SupplementLogsTableUpdateCompanionBuilder,
+    (
+      SupplementLog,
+      BaseReferences<_$DatabaseService, $SupplementLogsTable, SupplementLog>
+    ),
+    SupplementLog,
+    PrefetchHooks Function()>;
 
 class $DatabaseServiceManager {
   final _$DatabaseService _db;
@@ -1872,4 +2811,8 @@ class $DatabaseServiceManager {
       $$WeightLogsTableTableManager(_db, _db.weightLogs);
   $$WorkoutLogsTableTableManager get workoutLogs =>
       $$WorkoutLogsTableTableManager(_db, _db.workoutLogs);
+  $$SupplementDefinitionsTableTableManager get supplementDefinitions =>
+      $$SupplementDefinitionsTableTableManager(_db, _db.supplementDefinitions);
+  $$SupplementLogsTableTableManager get supplementLogs =>
+      $$SupplementLogsTableTableManager(_db, _db.supplementLogs);
 }

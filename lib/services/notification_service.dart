@@ -14,6 +14,11 @@ class NotificationService {
 
   bool _initialized = false;
 
+  // Notification ID Ranges:
+  // 0-99: Meal reminders (breakfast, lunch, dinner, custom meals)
+  // 100-199: Supplement reminders
+  // 200+: Reserved for future features
+
   /// Initialize the notification service
   Future<void> initialize() async {
     if (_initialized) return;

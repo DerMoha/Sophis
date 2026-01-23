@@ -26,6 +26,7 @@ import 'meal_detail_screen.dart';
 import '../widgets/water_details_sheet.dart';
 import '../widgets/workout_bottom_sheet.dart';
 import '../widgets/streak_card.dart';
+import '../widgets/supplements_today_card.dart';
 import 'macro_details_screen.dart';
 
 class HomeScreenModern extends StatefulWidget {
@@ -324,11 +325,18 @@ class _HomeScreenModernState extends State<HomeScreenModern>
                 child: _buildWaterCard(context, l10n, theme, waterTotal,
                     waterGoal, settings.unitSystem),
               ),
+              const SizedBox(height: 16),
+
+              // Supplements Today
+              const FadeInSlide(
+                index: 3,
+                child: SupplementsTodayCard(),
+              ),
               const SizedBox(height: 24),
 
               // Meals Section - moved up for easier access
               FadeInSlide(
-                index: 3,
+                index: 4,
                 child: SectionHeader(
                   title: l10n.today,
                   icon: Icons.restaurant_outlined,

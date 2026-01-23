@@ -8,6 +8,8 @@ import '../models/food_entry.dart';
 import '../models/water_entry.dart';
 import '../models/weight_entry.dart';
 import '../models/workout_entry.dart';
+import '../models/supplement.dart';
+import '../models/supplement_log.dart';
 
 part 'database_service.g.dart';
 
@@ -58,16 +60,47 @@ class WorkoutLogs extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+class SupplementDefinitions extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text()();
+  TextColumn get reminderTime => text().nullable()(); // "HH:mm" format
+  BoolColumn get enabled => boolean().withDefault(const Constant(true))();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+  DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class SupplementLogs extends Table {
+  TextColumn get id => text()();
+  TextColumn get supplementId => text()();
+  DateTimeColumn get timestamp => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 // -----------------------------------------------------------------------------
 // DATABASE CLASS
 // -----------------------------------------------------------------------------
 
-@DriftDatabase(tables: [Foods, WaterLogs, WeightLogs, WorkoutLogs])
+@DriftDatabase(tables: [Foods, WaterLogs, WeightLogs, WorkoutLogs, SupplementDefinitions, SupplementLogs])
 class DatabaseService extends _$DatabaseService {
   DatabaseService() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onUpgrade: (migrator, from, to) async {
+      if (from == 1 && to == 2) {
+        await migrator.createTable(supplementDefinitions);
+        await migrator.createTable(supplementLogs);
+      }
+    },
+  );
 
   // ---------------------------------------------------------------------------
   // FOODS
@@ -277,6 +310,97 @@ class DatabaseService extends _$DatabaseService {
   }
 
   // ---------------------------------------------------------------------------
+  // SUPPLEMENTS
+  // ---------------------------------------------------------------------------
+
+  Future<List<Supplement>> getAllSupplements() async {
+    final rows = await (select(supplementDefinitions)
+          ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
+        .get();
+    return rows
+        .map((row) => Supplement(
+              id: row.id,
+              name: row.name,
+              reminderTime: row.reminderTime,
+              enabled: row.enabled,
+              sortOrder: row.sortOrder,
+              createdAt: row.createdAt,
+            ))
+        .toList();
+  }
+
+  Future<int> insertSupplement(Supplement supplement) {
+    return into(supplementDefinitions).insert(SupplementDefinitionsCompanion(
+      id: Value(supplement.id),
+      name: Value(supplement.name),
+      reminderTime: Value(supplement.reminderTime),
+      enabled: Value(supplement.enabled),
+      sortOrder: Value(supplement.sortOrder),
+      createdAt: Value(supplement.createdAt),
+    ));
+  }
+
+  Future<bool> updateSupplement(Supplement supplement) {
+    return update(supplementDefinitions).replace(SupplementDefinitionsCompanion(
+      id: Value(supplement.id),
+      name: Value(supplement.name),
+      reminderTime: Value(supplement.reminderTime),
+      enabled: Value(supplement.enabled),
+      sortOrder: Value(supplement.sortOrder),
+      createdAt: Value(supplement.createdAt),
+    ));
+  }
+
+  Future<int> deleteSupplement(String id) {
+    return (delete(supplementDefinitions)..where((t) => t.id.equals(id))).go();
+  }
+
+  // ---------------------------------------------------------------------------
+  // SUPPLEMENT LOGS
+  // ---------------------------------------------------------------------------
+
+  Future<List<SupplementLogEntry>> getAllSupplementLogs() async {
+    final rows = await select(supplementLogs).get();
+    return rows
+        .map((row) => SupplementLogEntry(
+              id: row.id,
+              supplementId: row.supplementId,
+              timestamp: row.timestamp,
+            ))
+        .toList();
+  }
+
+  Future<int> insertSupplementLog(SupplementLogEntry log) {
+    return into(supplementLogs).insert(SupplementLogsCompanion(
+      id: Value(log.id),
+      supplementId: Value(log.supplementId),
+      timestamp: Value(log.timestamp),
+    ));
+  }
+
+  Future<int> deleteSupplementLog(String id) {
+    return (delete(supplementLogs)..where((t) => t.id.equals(id))).go();
+  }
+
+  Future<List<SupplementLogEntry>> getSupplementLogsByDate(DateTime date) async {
+    final startOfDay = DateTime(date.year, date.month, date.day);
+    final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
+
+    final rows = await (select(supplementLogs)
+          ..where((t) => t.timestamp.isBiggerOrEqualValue(startOfDay) &
+                         t.timestamp.isSmallerOrEqualValue(endOfDay)))
+        .get();
+
+    return rows
+        .map((row) => SupplementLogEntry(
+              id: row.id,
+              supplementId: row.supplementId,
+              timestamp: row.timestamp,
+            ))
+        .toList();
+  }
+
+  // ---------------------------------------------------------------------------
   // UTILS
   // ---------------------------------------------------------------------------
 
@@ -285,6 +409,8 @@ class DatabaseService extends _$DatabaseService {
     await delete(waterLogs).go();
     await delete(weightLogs).go();
     await delete(workoutLogs).go();
+    await delete(supplementDefinitions).go();
+    await delete(supplementLogs).go();
   }
 }
 

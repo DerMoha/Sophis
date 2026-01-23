@@ -12,6 +12,7 @@ import 'dashboard_settings_screen.dart';
 import 'goals_setup_screen.dart';
 import 'meal_macros_settings_screen.dart';
 import 'meal_types_screen.dart';
+import 'supplements_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -170,6 +171,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               context,
                               AppTheme.slideRoute(
                                   const MealMacrosSettingsScreen()),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          // Supplements
+                          _buildNavigationTile(
+                            context,
+                            title: 'Supplements',
+                            subtitle: 'Manage your daily supplements',
+                            icon: Icons.medication_liquid_rounded,
+                            onTap: () => Navigator.push(
+                              context,
+                              AppTheme.slideRoute(const SupplementsScreen()),
                             ),
                           ),
                         ],
