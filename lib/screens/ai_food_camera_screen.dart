@@ -9,6 +9,7 @@ import '../services/settings_provider.dart';
 import '../models/food_entry.dart';
 import '../models/shareable_meal.dart';
 import '../theme/app_theme.dart';
+import '../widgets/edit_food_analysis_sheet.dart';
 import 'share_meal_screen.dart';
 
 class AIFoodCameraScreen extends StatefulWidget {
@@ -78,6 +79,11 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
   @override
   void dispose() {
     _geminiService.dispose();
+    if (_results != null) {
+      for (final result in _results!) {
+        result.dispose();
+      }
+    }
     super.dispose();
   }
 
@@ -150,23 +156,68 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     }
   }
 
-  Future<void> _reAnalyzeWithCorrection(EditableFoodResult result) async {
-    final correctedName = result.controller.text.trim();
-    if (correctedName.isEmpty || correctedName == result.analysis.name) return;
+  void _showEditSheet(EditableFoodResult result) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => EditFoodAnalysisSheet(
+        result: result,
+        remainingRequests: _remainingRequests,
+        onSaveEdits: () {
+          setState(() {
+            result.currentAnalysis = result.getEditedAnalysis();
+            result.isModified = true;
+          });
+          Navigator.pop(ctx);
+        },
+        onReAnalyze: (correctionHint) async {
+          Navigator.pop(ctx);
+          await _analyzeSpecificFood(result, correctionHint);
+        },
+      ),
+    );
+  }
 
+  Future<void> _analyzeSpecificFood(
+    EditableFoodResult result,
+    String correctionHint,
+  ) async {
     setState(() => _isLoading = true);
 
     try {
       final updatedResults = await _geminiService.analyzeFoodMultiple(
         _images,
-        correctionHint: 'The food "${result.analysis.name}" is actually "$correctedName". Please update the nutrition estimate.',
+        correctionHint: correctionHint,
       );
-      
-      if (mounted) {
+
+      // Find best match in new results (use first result for simplicity)
+      final updatedAnalysis = updatedResults.isNotEmpty ? updatedResults.first : null;
+
+      // Update remaining requests count
+      final remaining = await GeminiFoodService.getRemainingRequests();
+
+      if (mounted && updatedAnalysis != null) {
         setState(() {
-          _results = updatedResults.map((r) => EditableFoodResult(analysis: r)).toList();
+          result.originalAnalysis = updatedAnalysis;
+          result.currentAnalysis = updatedAnalysis;
+          result.isModified = false;
+
+          // Update all controllers with new values
+          result.nameController.text = updatedAnalysis.name;
+          result.portionController.text = updatedAnalysis.portionGrams.toStringAsFixed(0);
+          result.caloriesController.text = updatedAnalysis.calories.toStringAsFixed(0);
+          result.proteinController.text = updatedAnalysis.protein.toStringAsFixed(1);
+          result.carbsController.text = updatedAnalysis.carbs.toStringAsFixed(1);
+          result.fatController.text = updatedAnalysis.fat.toStringAsFixed(1);
+
+          _remainingRequests = remaining;
           _isLoading = false;
         });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Food re-analyzed successfully')),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -178,13 +229,13 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     }
   }
 
+
   void _addFood(EditableFoodResult result) {
-    final food = result.analysis;
-    final customName = result.controller.text.trim();
-    
+    final food = result.currentAnalysis; // Use edited values!
+
     final entry = FoodEntry(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      name: customName.isNotEmpty ? customName : '${food.name} (${food.portionDisplay})',
+      name: '${food.name} (${food.portionDisplay})',
       calories: food.calories,
       protein: food.protein,
       carbs: food.carbs,
@@ -192,13 +243,13 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       timestamp: DateTime.now(),
       meal: widget.meal,
     );
-    
+
     context.read<NutritionProvider>().addFoodEntry(entry);
-    
+
     setState(() {
       result.isAdded = true;
     });
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(AppLocalizations.of(context)!.addedSnack(entry.name))),
     );
@@ -510,8 +561,8 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
   }
 
   Widget _buildFoodResultCard(EditableFoodResult result, ThemeData theme) {
-    final food = result.analysis;
-    
+    final food = result.currentAnalysis;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
@@ -519,27 +570,54 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Food name with edit button
             Row(
               children: [
                 Expanded(
-                  child: TextField(
-                    controller: result.controller,
-                    decoration: InputDecoration(
-                      labelText: AppLocalizations.of(context)!.foodName,
-                      hintText: food.name,
-                      isDense: true,
-                      suffixIcon: result.controller.text != food.name
-                          ? IconButton(
-                              icon: const Icon(Icons.refresh, size: 20),
-                              onPressed: () => _reAnalyzeWithCorrection(result),
-                              tooltip: 'Re-analyze with this name',
-                            )
-                          : null,
-                    ),
+                  child: Text(
+                    food.name,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
+                ),
+                IconButton(
+                  icon: Icon(
+                    result.isModified ? Icons.edit : Icons.edit_outlined,
+                    size: 20,
+                    color: result.isModified
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.onSurfaceVariant,
+                  ),
+                  onPressed: () => _showEditSheet(result),
+                  tooltip: 'Edit values',
                 ),
               ],
             ),
+
+            // Modified badge
+            if (result.isModified)
+              Container(
+                margin: const EdgeInsets.only(top: 4, bottom: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withAlpha(26),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.edit, size: 12, color: theme.colorScheme.primary),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Modified',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             const SizedBox(height: 12),
             
             Row(
@@ -606,10 +684,77 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
 }
 
 class EditableFoodResult {
-  final FoodAnalysis analysis;
-  final TextEditingController controller;
-  bool isAdded = false;
+  FoodAnalysis originalAnalysis; // Keep for reset functionality
+  FoodAnalysis currentAnalysis; // Current (possibly edited) values
 
-  EditableFoodResult({required this.analysis})
-      : controller = TextEditingController(text: analysis.name);
+  // Controllers for all editable fields
+  final TextEditingController nameController;
+  final TextEditingController portionController;
+  final TextEditingController caloriesController;
+  final TextEditingController proteinController;
+  final TextEditingController carbsController;
+  final TextEditingController fatController;
+
+  bool isAdded = false;
+  bool isModified = false; // Track if user made edits
+
+  EditableFoodResult({required FoodAnalysis analysis})
+      : originalAnalysis = analysis,
+        currentAnalysis = analysis,
+        nameController = TextEditingController(text: analysis.name),
+        portionController =
+            TextEditingController(text: analysis.portionGrams.toStringAsFixed(0)),
+        caloriesController =
+            TextEditingController(text: analysis.calories.toStringAsFixed(0)),
+        proteinController =
+            TextEditingController(text: analysis.protein.toStringAsFixed(1)),
+        carbsController =
+            TextEditingController(text: analysis.carbs.toStringAsFixed(1)),
+        fatController = TextEditingController(text: analysis.fat.toStringAsFixed(1));
+
+  // Backward compatibility - map to nameController
+  TextEditingController get controller => nameController;
+  FoodAnalysis get analysis => currentAnalysis;
+
+  /// Apply controller values to create edited analysis
+  FoodAnalysis getEditedAnalysis() {
+    return FoodAnalysis(
+      name: nameController.text.trim(),
+      portionGrams: double.tryParse(portionController.text) ?? currentAnalysis.portionGrams,
+      calories: double.tryParse(caloriesController.text) ?? currentAnalysis.calories,
+      protein: double.tryParse(proteinController.text) ?? currentAnalysis.protein,
+      carbs: double.tryParse(carbsController.text) ?? currentAnalysis.carbs,
+      fat: double.tryParse(fatController.text) ?? currentAnalysis.fat,
+    );
+  }
+
+  /// Generate correction hint for AI re-analysis
+  String generateCorrectionHint() {
+    final parts = <String>[];
+
+    if (nameController.text.trim() != originalAnalysis.name) {
+      parts.add('The food is actually "${nameController.text.trim()}"');
+    }
+
+    final portion = double.tryParse(portionController.text);
+    if (portion != null && (portion - originalAnalysis.portionGrams).abs() > 5) {
+      parts.add('portion should be ${portion.toStringAsFixed(0)}g');
+    }
+
+    if (parts.isEmpty) {
+      parts.add('Re-evaluate the nutrition values for "${nameController.text.trim()}"');
+    }
+
+    return '${parts.join(', ')}.';
+  }
+
+  /// Dispose all controllers
+  void dispose() {
+    nameController.dispose();
+    portionController.dispose();
+    caloriesController.dispose();
+    proteinController.dispose();
+    carbsController.dispose();
+    fatController.dispose();
+  }
 }
