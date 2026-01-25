@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+import 'log_service.dart';
 
 /// Service for handling local push notifications
 class NotificationService {
@@ -99,19 +100,19 @@ class NotificationService {
       matchDateTimeComponents: DateTimeComponents.time, // Repeat daily
     );
 
-    debugPrint('Scheduled reminder $id at $hour:$minute');
+    Log.info('Scheduled notification $id at $hour:${minute.toString().padLeft(2, '0')}');
   }
 
   /// Cancel a specific reminder
   Future<void> cancelReminder(int id) async {
     await _notifications.cancel(id);
-    debugPrint('Cancelled reminder $id');
+    Log.debug('Cancelled notification $id');
   }
 
   /// Cancel all reminders
   Future<void> cancelAllReminders() async {
     await _notifications.cancelAll();
-    debugPrint('Cancelled all reminders');
+    Log.debug('Cancelled all notifications');
   }
 
   /// Schedule all meal reminders based on settings

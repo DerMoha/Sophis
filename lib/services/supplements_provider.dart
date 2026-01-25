@@ -4,6 +4,7 @@ import '../models/supplement.dart';
 import '../models/supplement_log.dart';
 import 'database_service.dart';
 import 'notification_service.dart';
+import 'log_service.dart';
 
 /// Provider for managing supplement tracking, including completion logging
 /// and daily reminder notifications.
@@ -80,10 +81,12 @@ class SupplementsProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      Log.debug('Loading supplements from database');
       _supplements = await _db.getAllSupplements();
       _logs = await _db.getAllSupplementLogs();
-    } catch (e) {
-      debugPrint('Error loading supplements: $e');
+      Log.info('Loaded ${_supplements.length} supplements with ${_logs.length} logs');
+    } catch (e, stackTrace) {
+      Log.error('Failed to load supplements', error: e, stackTrace: stackTrace);
     }
 
     _isLoading = false;
@@ -114,8 +117,9 @@ class SupplementsProvider extends ChangeNotifier {
 
         await _db.deleteSupplementLog(todayLog.id);
         _logs.removeWhere((log) => log.id == todayLog.id);
-      } catch (e) {
-        debugPrint('Error removing supplement log: $e');
+        Log.debug('Unchecked supplement $supplementId for today');
+      } catch (e, stackTrace) {
+        Log.error('Failed to remove supplement log for $supplementId', error: e, stackTrace: stackTrace);
         return; // Skip notification if log not found
       }
     } else {
@@ -127,6 +131,7 @@ class SupplementsProvider extends ChangeNotifier {
       );
       await _db.insertSupplementLog(log);
       _logs.add(log);
+      Log.debug('Checked supplement $supplementId for today');
     }
 
     notifyListeners();
@@ -137,7 +142,17 @@ class SupplementsProvider extends ChangeNotifier {
   // ---------------------------------------------------------------------------
 
   /// Add a new supplement
+  ///
+  /// Throws an exception if adding would exceed the maximum supplement limit.
   Future<void> addSupplement(Supplement supplement) async {
+    // Validate max supplements limit (notification ID constraint)
+    if (_supplements.length >= _maxSupplements) {
+      throw Exception(
+        'Cannot add more than $_maxSupplements supplements. '
+        'This limit exists to prevent notification ID conflicts.',
+      );
+    }
+
     await _db.insertSupplement(supplement);
     _supplements.add(supplement);
     _supplements.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
@@ -169,18 +184,25 @@ class SupplementsProvider extends ChangeNotifier {
 
   /// Delete a supplement
   Future<void> deleteSupplement(String id) async {
-    final supplement = _supplements.firstWhere((s) => s.id == id);
+    try {
+      final supplement = _supplements.firstWhere((s) => s.id == id);
 
-    await _db.deleteSupplement(id);
-    _supplements.removeWhere((s) => s.id == id);
+      Log.debug('Deleting supplement: ${supplement.name}');
+      await _db.deleteSupplement(id);
+      _supplements.removeWhere((s) => s.id == id);
 
-    // Delete associated logs
-    _logs.removeWhere((log) => log.supplementId == id);
+      // Delete associated logs
+      _logs.removeWhere((log) => log.supplementId == id);
 
-    // Cancel notification
-    await _cancelNotification(supplement);
+      // Cancel notification
+      await _cancelNotification(supplement);
 
-    notifyListeners();
+      Log.info('Deleted supplement: ${supplement.name}');
+      notifyListeners();
+    } catch (e, stackTrace) {
+      Log.error('Failed to delete supplement $id', error: e, stackTrace: stackTrace);
+      throw Exception('Supplement not found');
+    }
   }
 
   /// Reorder supplements by moving from oldIndex to newIndex
@@ -214,7 +236,7 @@ class SupplementsProvider extends ChangeNotifier {
   int _getNotificationId(String supplementId) {
     final index = _supplements.indexWhere((s) => s.id == supplementId);
     if (index == -1 || index >= _maxSupplements) {
-      debugPrint('Warning: Supplement index $index exceeds max allowed ($_maxSupplements)');
+      Log.warning('Supplement index $index exceeds max allowed ($_maxSupplements)');
       return _notificationIdStart; // Fallback to first ID
     }
     return _notificationIdStart + index;
@@ -235,6 +257,7 @@ class SupplementsProvider extends ChangeNotifier {
       hour: hour,
       minute: minute,
     );
+    Log.info('Scheduled notification for ${supplement.name} at ${supplement.reminderTime}');
   }
 
   /// Cancel notification for a supplement

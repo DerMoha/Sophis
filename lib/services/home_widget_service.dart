@@ -1,6 +1,7 @@
 import 'package:home_widget/home_widget.dart';
 import 'package:flutter/foundation.dart';
 import '../services/nutrition_provider.dart';
+import 'log_service.dart';
 
 class HomeWidgetService {
   static const String appGroupId = 'group.sophis.sophis';
@@ -12,12 +13,15 @@ class HomeWidgetService {
       final totals = provider.getTodayTotals();
       final remaining = provider.getRemainingCalories();
       final water = provider.getTodayWaterTotal();
+      final goal = provider.goals?.calories ?? 0;
+
+      Log.debug('Updating widget: cal=${totals['calories']?.toInt()}/$goal, protein=${totals['protein']?.toInt()}g');
 
       // Save data
       await HomeWidget.saveWidgetData<double>(
           'calories_eaten', totals['calories']);
       await HomeWidget.saveWidgetData<double>(
-          'calories_goal', provider.goals?.calories ?? 0);
+          'calories_goal', goal);
       await HomeWidget.saveWidgetData<double>('calories_remaining', remaining);
 
       // Save Macro Totals
@@ -44,9 +48,9 @@ class HomeWidgetService {
         iOSName: iOSWidgetName,
       );
 
-      debugPrint('HomeWidget updated successfully');
-    } catch (e) {
-      debugPrint('Error updating HomeWidget: $e');
+      Log.info('Widget sync completed');
+    } catch (e, stackTrace) {
+      Log.error('Widget sync failed', error: e, stackTrace: stackTrace);
     }
   }
 }

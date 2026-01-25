@@ -10,6 +10,7 @@ import '../models/weight_entry.dart';
 import '../models/workout_entry.dart';
 import '../models/supplement.dart';
 import '../models/supplement_log.dart';
+import 'log_service.dart';
 
 part 'database_service.g.dart';
 
@@ -95,9 +96,11 @@ class DatabaseService extends _$DatabaseService {
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onUpgrade: (migrator, from, to) async {
+      Log.info('DB migration v$from → v$to started');
       if (from == 1 && to == 2) {
         await migrator.createTable(supplementDefinitions);
         await migrator.createTable(supplementLogs);
+        Log.info('DB migration v$from → v$to completed: Added supplement tables');
       }
     },
   );
@@ -135,23 +138,34 @@ class DatabaseService extends _$DatabaseService {
     ));
   }
 
+  /// Batch insert multiple food entries
+  ///
+  /// Uses insertOrReplace mode to handle data migration and imports gracefully.
+  /// If a record with the same ID exists, it will be replaced with the new data.
   Future<void> insertFoods(List<FoodEntry> entries) async {
-    await batch((batch) {
-      batch.insertAll(
-        foods,
-        entries.map((entry) => FoodsCompanion(
-              id: Value(entry.id),
-              name: Value(entry.name),
-              calories: Value(entry.calories),
-              protein: Value(entry.protein),
-              carbs: Value(entry.carbs),
-              fat: Value(entry.fat),
-              timestamp: Value(entry.timestamp),
-              meal: Value(entry.meal),
-            )),
-        mode: InsertMode.insertOrReplace,
-      );
-    });
+    try {
+      Log.debug('Batch inserting ${entries.length} food entries');
+      await batch((batch) {
+        batch.insertAll(
+          foods,
+          entries.map((entry) => FoodsCompanion(
+                id: Value(entry.id),
+                name: Value(entry.name),
+                calories: Value(entry.calories),
+                protein: Value(entry.protein),
+                carbs: Value(entry.carbs),
+                fat: Value(entry.fat),
+                timestamp: Value(entry.timestamp),
+                meal: Value(entry.meal),
+              )),
+          mode: InsertMode.insertOrReplace,
+        );
+      });
+      Log.info('Successfully inserted ${entries.length} food entries');
+    } catch (e, stackTrace) {
+      Log.error('Failed to batch insert food entries', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
   }
 
   Future<bool> updateFood(FoodEntry entry) {
@@ -194,6 +208,9 @@ class DatabaseService extends _$DatabaseService {
     ));
   }
 
+  /// Batch insert multiple water entries
+  ///
+  /// Uses insertOrReplace mode for data migration compatibility.
   Future<void> insertWaterList(List<WaterEntry> entries) async {
     await batch((batch) {
       batch.insertAll(
@@ -428,12 +445,19 @@ class DatabaseService extends _$DatabaseService {
   // ---------------------------------------------------------------------------
 
   Future<void> deleteAllData() async {
-    await delete(foods).go();
-    await delete(waterLogs).go();
-    await delete(weightLogs).go();
-    await delete(workoutLogs).go();
-    await delete(supplementDefinitions).go();
-    await delete(supplementLogs).go();
+    try {
+      Log.warning('Deleting all database data');
+      await delete(foods).go();
+      await delete(waterLogs).go();
+      await delete(weightLogs).go();
+      await delete(workoutLogs).go();
+      await delete(supplementDefinitions).go();
+      await delete(supplementLogs).go();
+      Log.info('All database data deleted');
+    } catch (e, stackTrace) {
+      Log.error('Failed to delete all data', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
   }
 }
 

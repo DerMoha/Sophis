@@ -47,10 +47,30 @@ target 'SophisWidgetExtension' do
 end
 
 post_install do |installer|
+  # Map deployment targets from the main project to sync with Pods
+  target_versions = {}
+  installer.aggregate_targets.each do |target|
+    target.user_project.targets.each do |t|
+      t.build_configurations.each do |config|
+        target_versions[t.name] ||= {}
+        target_versions[t.name][config.name] = config.build_settings['IPHONEOS_DEPLOYMENT_TARGET']
+      end
+    end
+  end
+
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
+    
+    # Match Pod target (e.g., Pods-SophisWidgetExtension) to User target (SophisWidgetExtension)
+    user_target_name = target.name.sub('Pods-', '')
+    
     target.build_configurations.each do |config|
-      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '14.0'
+      if target_versions[user_target_name] && target_versions[user_target_name][config.name]
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = target_versions[user_target_name][config.name]
+      else
+        # Default fallback for pods that aren't target-specific
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '14.0'
+      end
       config.build_settings['CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER'] = 'NO'
     end
   end

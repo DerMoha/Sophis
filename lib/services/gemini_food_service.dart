@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'log_service.dart';
 
 /// Gemini AI service for accurate food recognition and nutrition estimation
 class GeminiFoodService {
@@ -95,9 +96,13 @@ class GeminiFoodService {
     }
 
     // Check rate limit
+    final requestsToday = await getRequestsToday();
     if (!await canMakeRequest()) {
+      Log.warning('Gemini API rate limit reached: $requestsToday/$dailyLimit today');
       throw Exception('Daily limit reached (20 requests/day). Try again tomorrow.');
     }
+
+    Log.info('Gemini API food analysis request (${requestsToday + 1}/$dailyLimit today)');
 
     // Build image parts
     final imageParts = <DataPart>[];
@@ -153,11 +158,15 @@ If no food is visible, return: {"foods": []}
 
       final text = response.text;
       if (text == null || text.isEmpty) {
+        Log.warning('Gemini API returned empty response');
         return [];
       }
 
-      return _parseResponse(text);
-    } catch (e) {
+      final results = _parseResponse(text);
+      Log.info('Gemini API analyzed ${results.length} food items');
+      return results;
+    } catch (e, stackTrace) {
+      Log.error('Gemini API food analysis failed', error: e, stackTrace: stackTrace);
       throw Exception('Failed to analyze image: $e');
     }
   }
@@ -201,9 +210,13 @@ If no food is visible, return: {"foods": []}
     }
 
     // Check rate limit
+    final requestsToday = await getRequestsToday();
     if (!await canMakeRequest()) {
+      Log.warning('Gemini API rate limit reached: $requestsToday/$dailyLimit today');
       throw Exception('Daily limit reached (20 requests/day). Try again tomorrow.');
     }
+
+    Log.info('Gemini API recipe extraction request (${requestsToday + 1}/$dailyLimit today)');
 
     final bytes = await imageFile.readAsBytes();
     final imagePart = DataPart('image/jpeg', bytes);
@@ -273,11 +286,15 @@ If no recipe is visible or readable, return:
 
       final text = response.text;
       if (text == null || text.isEmpty) {
+        Log.warning('Gemini API returned empty response for recipe extraction');
         return RecipeExtraction.empty();
       }
 
-      return _parseRecipeResponse(text);
-    } catch (e) {
+      final result = _parseRecipeResponse(text);
+      Log.info('Gemini API extracted recipe with ${result.ingredients.length} ingredients');
+      return result;
+    } catch (e, stackTrace) {
+      Log.error('Gemini API recipe extraction failed', error: e, stackTrace: stackTrace);
       throw Exception('Failed to extract recipe: $e');
     }
   }

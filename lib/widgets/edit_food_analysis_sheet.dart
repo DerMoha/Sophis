@@ -26,6 +26,10 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
   bool _isValid = true;
   final _formKey = GlobalKey<FormState>();
 
+  // Store listeners for proper cleanup
+  late final VoidCallback _portionListener;
+  late final VoidCallback _validationListener;
+
   @override
   void initState() {
     super.initState();
@@ -33,8 +37,29 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
     _setupValidationListeners();
   }
 
+  @override
+  void dispose() {
+    // Remove listeners to prevent memory leaks
+    widget.result.portionController.removeListener(_portionListener);
+
+    final controllers = [
+      widget.result.nameController,
+      widget.result.portionController,
+      widget.result.caloriesController,
+      widget.result.proteinController,
+      widget.result.carbsController,
+      widget.result.fatController,
+    ];
+
+    for (final controller in controllers) {
+      controller.removeListener(_validationListener);
+    }
+
+    super.dispose();
+  }
+
   void _setupPortionListener() {
-    widget.result.portionController.addListener(() {
+    _portionListener = () {
       if (!_autoScaleEnabled) return;
 
       final newPortion = double.tryParse(widget.result.portionController.text);
@@ -47,10 +72,18 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
       widget.result.proteinController.text = scaled.protein.toStringAsFixed(1);
       widget.result.carbsController.text = scaled.carbs.toStringAsFixed(1);
       widget.result.fatController.text = scaled.fat.toStringAsFixed(1);
-    });
+    };
+
+    widget.result.portionController.addListener(_portionListener);
   }
 
   void _setupValidationListeners() {
+    _validationListener = () {
+      setState(() {
+        _isValid = _formKey.currentState?.validate() ?? false;
+      });
+    };
+
     final controllers = [
       widget.result.nameController,
       widget.result.portionController,
@@ -61,11 +94,7 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
     ];
 
     for (final controller in controllers) {
-      controller.addListener(() {
-        setState(() {
-          _isValid = _formKey.currentState?.validate() ?? false;
-        });
-      });
+      controller.addListener(_validationListener);
     }
   }
 

@@ -5,6 +5,8 @@ import '../models/app_settings.dart';
 import '../services/data_export_service.dart';
 import '../services/nutrition_provider.dart';
 import '../services/settings_provider.dart';
+import '../services/log_service.dart';
+import 'log_viewer_screen.dart';
 import '../theme/app_theme.dart';
 import '../theme/animations.dart';
 import '../widgets/organic_components.dart';
@@ -382,9 +384,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(height: 32),
 
-                    // Version info
+                    // Developer & Debugging
                     FadeInSlide(
                       index: 7,
+                      child: _buildSectionCard(
+                        context,
+                        title: 'Developer & Debugging',
+                        icon: Icons.bug_report_outlined,
+                        children: [
+                          SwitchListTile(
+                            title: const Text('Enable Debug Logging'),
+                            subtitle: const Text(
+                              'Help diagnose issues by recording app activity',
+                            ),
+                            value: settings.debugLoggingEnabled,
+                            onChanged: settings.setDebugLoggingEnabled,
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                          const Divider(height: 32),
+                          _buildNavigationTile(
+                            context,
+                            title: 'View Debug Logs',
+                            subtitle: 'Export logs for troubleshooting',
+                            icon: Icons.list_alt_outlined,
+                            onTap: () {
+                              Navigator.of(context).push(
+                                AppTheme.slideRoute(const LogViewerScreen()),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          _buildNavigationTile(
+                            context,
+                            title: 'Clear Debug Logs',
+                            subtitle: 'Delete all diagnostic logs',
+                            icon: Icons.delete_outline,
+                            onTap: () => _handleClearLogs(context),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Version info
+                    FadeInSlide(
+                      index: 8,
                       child: Center(
                         child: Column(
                           children: [
@@ -1077,6 +1121,57 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (mounted) {
         setState(() => _isImporting = false);
       }
+    }
+  }
+
+  Future<void> _handleClearLogs(BuildContext context) async {
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear Debug Logs'),
+        content: const Text(
+          'Are you sure you want to delete all diagnostic logs? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await LogService.instance.clearLogs();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Debug logs cleared'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to clear logs: $e'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 }

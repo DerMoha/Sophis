@@ -50,6 +50,9 @@ class SettingsProvider extends ChangeNotifier {
   UnitSystem get unitSystem => _settings.unitSystem;
   bool get isImperial => _settings.unitSystem == UnitSystem.imperial;
 
+  // Debug logging
+  bool get debugLoggingEnabled => _settings.debugLoggingEnabled;
+
   Locale? get locale {
     if (_settings.localeOverride == null) return null;
     return Locale(_settings.localeOverride!);
@@ -121,6 +124,12 @@ class SettingsProvider extends ChangeNotifier {
 
   Future<void> setQuickActionSize(QuickActionSize size) async {
     _settings = _settings.copyWith(quickActionSize: size);
+    await _storage.saveSettings(_settings);
+    notifyListeners();
+  }
+
+  Future<void> setDebugLoggingEnabled(bool enabled) async {
+    _settings = _settings.copyWith(debugLoggingEnabled: enabled);
     await _storage.saveSettings(_settings);
     notifyListeners();
   }

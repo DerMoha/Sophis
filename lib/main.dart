@@ -15,6 +15,7 @@ import 'services/notification_service.dart';
 import 'services/meal_sharing_service.dart';
 import 'services/database_service.dart';
 import 'services/supplements_provider.dart';
+import 'services/log_service.dart';
 import 'theme/app_theme.dart';
 import 'screens/home_screen.dart';
 import 'screens/import_meal_screen.dart';
@@ -28,6 +29,12 @@ void main() async {
 
   final storageService = await StorageService.create();
 
+  // Initialize settings provider
+  final settingsProvider = SettingsProvider(storageService);
+
+  // Initialize log service
+  await LogService.initialize(settingsProvider);
+
   // Initialize notification service (without requesting permission yet)
   final notificationService = NotificationService();
   await notificationService.initialize();
@@ -37,8 +44,8 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(
-          create: (_) => SettingsProvider(storageService),
+        ChangeNotifierProvider.value(
+          value: settingsProvider,
         ),
         ChangeNotifierProvider(
           create: (_) => NutritionProvider(storageService, databaseService),

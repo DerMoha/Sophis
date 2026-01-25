@@ -59,7 +59,9 @@ struct Provider: TimelineProvider {
             waterGoal: waterGoal
         )
 
-        let timeline = Timeline(entries: [entry], policy: .after(Date().addingTimeInterval(15 * 60)))
+        // Refresh every 30 minutes to balance data freshness with battery life
+        // The app triggers immediate updates via HomeWidget.updateWidget() when data changes
+        let timeline = Timeline(entries: [entry], policy: .after(Date().addingTimeInterval(30 * 60)))
         completion(timeline)
     }
 }

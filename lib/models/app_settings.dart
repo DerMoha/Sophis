@@ -100,6 +100,8 @@ class AppSettings {
   final HomeLayoutMode homeLayout;
   // Quick Action Button Size
   final QuickActionSize quickActionSize;
+  // Debug logging
+  final bool debugLoggingEnabled;
 
   const AppSettings({
     this.aiMode = AIMode.offlineBasic,
@@ -122,6 +124,7 @@ class AppSettings {
     this.showMealMacros = false,
     this.homeLayout = HomeLayoutMode.modern,
     this.quickActionSize = QuickActionSize.small,
+    this.debugLoggingEnabled = false,
   });
 
   Color get accentColor => Color(accentColorValue);
@@ -145,6 +148,7 @@ class AppSettings {
         'dashboardCards': dashboardCards.map((c) => c.toJson()).toList(),
         'customMealTypes': customMealTypes.map((m) => m.toJson()).toList(),
         'showMealMacros': showMealMacros,
+        'debugLoggingEnabled': debugLoggingEnabled,
       };
 
   factory AppSettings.fromJson(Map<String, dynamic> json) => AppSettings(
@@ -179,6 +183,7 @@ class AppSettings {
                 .toList() ??
             const [],
         showMealMacros: json['showMealMacros'] as bool? ?? false,
+        debugLoggingEnabled: json['debugLoggingEnabled'] as bool? ?? false,
       );
 
   AppSettings copyWith({
@@ -202,6 +207,7 @@ class AppSettings {
     bool? showMealMacros,
     HomeLayoutMode? homeLayout,
     QuickActionSize? quickActionSize,
+    bool? debugLoggingEnabled,
     bool clearLocale = false,
     bool clearBreakfast = false,
     bool clearLunch = false,
@@ -234,5 +240,6 @@ class AppSettings {
         showMealMacros: showMealMacros ?? this.showMealMacros,
         homeLayout: homeLayout ?? this.homeLayout,
         quickActionSize: quickActionSize ?? this.quickActionSize,
+        debugLoggingEnabled: debugLoggingEnabled ?? this.debugLoggingEnabled,
       );
 }

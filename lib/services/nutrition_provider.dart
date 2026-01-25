@@ -14,6 +14,7 @@ import 'storage_service.dart';
 import 'health_service.dart';
 import 'database_service.dart';
 import 'home_widget_service.dart';
+import 'log_service.dart';
 
 /// Central state management for nutrition tracking
 class NutritionProvider extends ChangeNotifier {
@@ -131,7 +132,7 @@ class NutritionProvider extends ChangeNotifier {
   Future<void> _migrateToDbIfNeeded() async {
     if (_storage.isMigrationComplete()) return;
 
-    debugPrint('Starting DB Migration...');
+    Log.info('Starting SharedPreferences to database migration');
 
     // Load legacy data
     final legacyFoods = _storage.loadFoodEntries();
@@ -147,9 +148,9 @@ class NutritionProvider extends ChangeNotifier {
         await _db.insertWorkoutList(legacyWorkouts);
 
       await _storage.setMigrationComplete();
-      debugPrint('DB Migration Complete');
-    } catch (e) {
-      debugPrint('DB Migration Failed: $e');
+      Log.info('Migration completed: ${legacyFoods.length} foods, ${legacyWater.length} water, ${legacyWeights.length} weights, ${legacyWorkouts.length} workouts');
+    } catch (e, stackTrace) {
+      Log.error('Migration failed', error: e, stackTrace: stackTrace);
       // Optionally rethrow or handle, but catching prevents app crash loop
     }
   }
@@ -314,9 +315,9 @@ class NutritionProvider extends ChangeNotifier {
     try {
       _healthSyncBurnedCalories = await _healthService.getTodayBurnedCalories();
       notifyListeners();
-    } catch (e) {
+    } catch (e, stackTrace) {
       // Silently fail, keep previous value or 0
-      debugPrint('Failed to fetch burned calories: $e');
+      Log.warning('Failed to fetch burned calories from health service', error: e, stackTrace: stackTrace);
     }
   }
 
