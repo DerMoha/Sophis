@@ -5,6 +5,12 @@ import '../models/supplement_log.dart';
 import 'database_service.dart';
 import 'notification_service.dart';
 
+/// Provider for managing supplement tracking, including completion logging
+/// and daily reminder notifications.
+///
+/// Supplements use notification IDs in the range 100-199, allowing a maximum
+/// of 100 supplements with reminders. This range prevents conflicts with other
+/// notification types (e.g., meal reminders use IDs 0-99).
 class SupplementsProvider extends ChangeNotifier {
   final DatabaseService _db;
   final NotificationService _notifications;
@@ -34,16 +40,22 @@ class SupplementsProvider extends ChangeNotifier {
   List<Supplement> get enabledSupplements =>
       _supplements.where((s) => s.enabled).toList();
 
-  /// Returns set of supplement IDs completed today
-  Set<String> getTodayCompletedIds() {
+  /// Get today's date range (midnight to midnight)
+  ({DateTime start, DateTime end}) get _todayRange {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final tomorrow = today.add(const Duration(days: 1));
+    return (start: today, end: tomorrow);
+  }
+
+  /// Returns set of supplement IDs completed today
+  Set<String> getTodayCompletedIds() {
+    final range = _todayRange;
 
     return _logs
         .where((log) =>
-            log.timestamp.isAfter(today) &&
-            log.timestamp.isBefore(tomorrow))
+            log.timestamp.isAfter(range.start) &&
+            log.timestamp.isBefore(range.end))
         .map((log) => log.supplementId)
         .toSet();
   }
@@ -91,15 +103,13 @@ class SupplementsProvider extends ChangeNotifier {
     if (isCompletedToday(supplementId)) {
       // Find and remove today's log
       try {
-        final now = DateTime.now();
-        final today = DateTime(now.year, now.month, now.day);
-        final tomorrow = today.add(const Duration(days: 1));
+        final range = _todayRange;
 
         final todayLog = _logs.firstWhere(
           (log) =>
               log.supplementId == supplementId &&
-              log.timestamp.isAfter(today) &&
-              log.timestamp.isBefore(tomorrow),
+              log.timestamp.isAfter(range.start) &&
+              log.timestamp.isBefore(range.end),
         );
 
         await _db.deleteSupplementLog(todayLog.id);
@@ -173,7 +183,10 @@ class SupplementsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Reorder supplements
+  /// Reorder supplements by moving from oldIndex to newIndex
+  ///
+  /// Updates sortOrder for all supplements and performs a batch database update
+  /// for optimal performance (single transaction instead of N individual updates).
   Future<void> reorderSupplements(int oldIndex, int newIndex) async {
     if (oldIndex < newIndex) {
       newIndex -= 1;

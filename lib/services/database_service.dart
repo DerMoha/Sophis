@@ -351,6 +351,10 @@ class DatabaseService extends _$DatabaseService {
     ));
   }
 
+  /// Batch update multiple supplements in a single transaction
+  ///
+  /// More efficient than calling updateSupplement() multiple times, especially
+  /// for bulk operations like reordering. All updates succeed or fail together.
   Future<void> batchUpdateSupplements(List<Supplement> supplements) async {
     await batch((batch) {
       for (final supplement in supplements) {

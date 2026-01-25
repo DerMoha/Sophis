@@ -44,6 +44,27 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     });
   }
 
+  /// Convert technical exceptions to user-friendly error messages
+  String _getUserFriendlyError(dynamic error) {
+    final errorStr = error.toString().toLowerCase();
+
+    if (errorStr.contains('network') || errorStr.contains('connection') || errorStr.contains('timeout')) {
+      return 'Network error. Please check your internet connection and try again.';
+    }
+    if (errorStr.contains('quota') || errorStr.contains('limit') || errorStr.contains('429')) {
+      return 'Daily AI limit reached. Please try again tomorrow.';
+    }
+    if (errorStr.contains('api key') || errorStr.contains('apikey') || errorStr.contains('unauthorized') || errorStr.contains('401')) {
+      return 'Invalid API key. Please check your settings.';
+    }
+    if (errorStr.contains('image') && errorStr.contains('size')) {
+      return 'Image file is too large. Please use a smaller image.';
+    }
+
+    // Fallback to generic message for unknown errors
+    return 'Unable to analyze food. Please try again.';
+  }
+
   Future<void> _initService() async {
     // Read API key before any async operation
     final apiKey = context.read<SettingsProvider>().geminiApiKey;
@@ -149,7 +170,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = AppLocalizations.of(context)!.errorAnalysis(e.toString());
+          _error = _getUserFriendlyError(e);
           _isLoading = false;
         });
       }
@@ -222,7 +243,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = 'Re-analysis failed: $e';
+          _error = _getUserFriendlyError(e);
           _isLoading = false;
         });
       }
