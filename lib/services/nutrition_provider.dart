@@ -158,6 +158,7 @@ class NutritionProvider extends ChangeNotifier {
   Future<void> setGoals(NutritionGoals goals) async {
     _goals = goals;
     await _storage.saveGoals(goals);
+    HomeWidgetService.updateWidgetData(this);
     notifyListeners();
   }
 
@@ -338,6 +339,7 @@ class NutritionProvider extends ChangeNotifier {
   Future<void> restoreWorkoutEntry(WorkoutEntry entry) async {
     _workoutEntries.add(entry);
     await _db.insertWorkout(entry); // DB
+    HomeWidgetService.updateWidgetData(this);
     notifyListeners();
   }
 
@@ -347,6 +349,7 @@ class NutritionProvider extends ChangeNotifier {
     if (index != -1) {
       _workoutEntries[index] = entry;
       await _db.updateWorkout(entry); // DB
+      HomeWidgetService.updateWidgetData(this);
       notifyListeners();
     }
   }
@@ -355,6 +358,7 @@ class NutritionProvider extends ChangeNotifier {
   Future<void> removeWorkoutEntry(String id) async {
     _workoutEntries.removeWhere((e) => e.id == id);
     await _db.deleteWorkout(id); // DB
+    HomeWidgetService.updateWidgetData(this);
     notifyListeners();
   }
 

@@ -351,6 +351,25 @@ class DatabaseService extends _$DatabaseService {
     ));
   }
 
+  Future<void> batchUpdateSupplements(List<Supplement> supplements) async {
+    await batch((batch) {
+      for (final supplement in supplements) {
+        batch.update(
+          supplementDefinitions,
+          SupplementDefinitionsCompanion(
+            id: Value(supplement.id),
+            name: Value(supplement.name),
+            reminderTime: Value(supplement.reminderTime),
+            enabled: Value(supplement.enabled),
+            sortOrder: Value(supplement.sortOrder),
+            createdAt: Value(supplement.createdAt),
+          ),
+          where: ($SupplementDefinitionsTable t) => t.id.equals(supplement.id),
+        );
+      }
+    });
+  }
+
   Future<int> deleteSupplement(String id) {
     return (delete(supplementDefinitions)..where((t) => t.id.equals(id))).go();
   }

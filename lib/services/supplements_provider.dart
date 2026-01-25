@@ -10,6 +10,11 @@ class SupplementsProvider extends ChangeNotifier {
   final NotificationService _notifications;
   final _uuid = const Uuid();
 
+  // Notification ID range for supplements (100-199, max 100 supplements)
+  static const _notificationIdStart = 100;
+  static const _notificationIdEnd = 200;
+  static const _maxSupplements = 100;
+
   List<Supplement> _supplements = [];
   List<SupplementLogEntry> _logs = [];
   bool _isLoading = true;
@@ -85,18 +90,24 @@ class SupplementsProvider extends ChangeNotifier {
   Future<void> toggleCompletion(String supplementId) async {
     if (isCompletedToday(supplementId)) {
       // Find and remove today's log
-      final todayLog = _logs.firstWhere(
-        (log) {
-          final now = DateTime.now();
-          final today = DateTime(now.year, now.month, now.day);
-          final tomorrow = today.add(const Duration(days: 1));
-          return log.supplementId == supplementId &&
+      try {
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
+        final tomorrow = today.add(const Duration(days: 1));
+
+        final todayLog = _logs.firstWhere(
+          (log) =>
+              log.supplementId == supplementId &&
               log.timestamp.isAfter(today) &&
-              log.timestamp.isBefore(tomorrow);
-        },
-      );
-      await _db.deleteSupplementLog(todayLog.id);
-      _logs.removeWhere((log) => log.id == todayLog.id);
+              log.timestamp.isBefore(tomorrow),
+        );
+
+        await _db.deleteSupplementLog(todayLog.id);
+        _logs.removeWhere((log) => log.id == todayLog.id);
+      } catch (e) {
+        debugPrint('Error removing supplement log: $e');
+        return; // Skip notification if log not found
+      }
     } else {
       // Add new log for today
       final log = SupplementLogEntry(
@@ -171,11 +182,13 @@ class SupplementsProvider extends ChangeNotifier {
     final supplement = _supplements.removeAt(oldIndex);
     _supplements.insert(newIndex, supplement);
 
-    // Update sortOrder for all supplements
+    // Update sortOrder for all supplements in batch
     for (var i = 0; i < _supplements.length; i++) {
       _supplements[i] = _supplements[i].copyWith(sortOrder: i);
-      await _db.updateSupplement(_supplements[i]);
     }
+
+    // Batch update to database for better performance
+    await _db.batchUpdateSupplements(_supplements);
 
     notifyListeners();
   }
@@ -184,11 +197,14 @@ class SupplementsProvider extends ChangeNotifier {
   // NOTIFICATIONS
   // ---------------------------------------------------------------------------
 
-  /// Get notification ID for a supplement (100-199 range)
+  /// Get notification ID for a supplement (100-199 range, max 100 supplements)
   int _getNotificationId(String supplementId) {
     final index = _supplements.indexWhere((s) => s.id == supplementId);
-    if (index == -1) return 100;
-    return 100 + index; // Start at 100, max 199
+    if (index == -1 || index >= _maxSupplements) {
+      debugPrint('Warning: Supplement index $index exceeds max allowed ($_maxSupplements)');
+      return _notificationIdStart; // Fallback to first ID
+    }
+    return _notificationIdStart + index;
   }
 
   /// Schedule notification for a supplement
@@ -216,12 +232,13 @@ class SupplementsProvider extends ChangeNotifier {
   /// Update all notifications (reschedule all enabled supplements)
   Future<void> updateAllNotifications() async {
     // Cancel all supplement notifications (100-199)
-    for (var i = 100; i < 200; i++) {
+    for (var i = _notificationIdStart; i < _notificationIdEnd; i++) {
       await _notifications.cancelReminder(i);
     }
 
-    // Schedule notifications for all enabled supplements
-    for (final supplement in _supplements) {
+    // Schedule notifications for all enabled supplements (up to max)
+    for (var i = 0; i < _supplements.length && i < _maxSupplements; i++) {
+      final supplement = _supplements[i];
       if (supplement.enabled && supplement.reminderTime != null) {
         await _scheduleNotification(supplement);
       }
