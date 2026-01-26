@@ -16,13 +16,13 @@ class SophisWidgetProvider : HomeWidgetProvider() {
     ) {
         appWidgetIds.forEach { widgetId ->
             val views = RemoteViews(context.packageName, R.layout.widget_layout).apply {
-                val caloriesGoal = widgetData.getDouble("calories_goal", 2500.0)
-                val caloriesRemaining = widgetData.getDouble("calories_remaining", 0.0)
+                val caloriesGoal = widgetData.getFloat("calories_goal", 2500.0f).toDouble()
+                val caloriesRemaining = widgetData.getFloat("calories_remaining", 0.0f).toDouble()
                 
-                val protein = widgetData.getDouble("protein_eaten", 0.0)
-                val carbs = widgetData.getDouble("carbs_eaten", 0.0)
-                val fat = widgetData.getDouble("fat_eaten", 0.0)
-                val water = widgetData.getDouble("water_ml", 0.0)
+                val protein = widgetData.getFloat("protein_eaten", 0.0f).toDouble()
+                val carbs = widgetData.getFloat("carbs_eaten", 0.0f).toDouble()
+                val fat = widgetData.getFloat("fat_eaten", 0.0f).toDouble()
+                val water = widgetData.getFloat("water_ml", 0.0f).toDouble()
 
                 // Calculate progress (0-100)
                 // Goal - Remaining = Eaten. Progress = Eaten / Goal.
