@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 import '../models/app_settings.dart';
 import '../services/settings_provider.dart';
 import '../services/nutrition_provider.dart';
-import 'home_screen_modern.dart';
-import 'home_screen_legacy.dart';
+import 'home/modern/home_modern_screen.dart';
+import 'home/legacy/home_legacy_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
