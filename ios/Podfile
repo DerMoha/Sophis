@@ -38,13 +38,7 @@ target 'Runner' do
 end
 
 # Widget extension target - separate to avoid linking unnecessary frameworks
-target 'SophisWidgetExtension' do
-  use_frameworks!
-  use_modular_headers!
 
-  # Only include the minimal dependencies needed for widgets
-  pod 'home_widget', :path => '.symlinks/plugins/home_widget/ios'
-end
 
 post_install do |installer|
   # Map deployment targets from the main project to sync with Pods

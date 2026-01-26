@@ -13,7 +13,7 @@ import '../models/custom_portion.dart';
 import '../models/food_item.dart';
 import '../models/workout_entry.dart';
 import '../models/user_stats.dart';
-import 'log_service.dart';
+import 'package:flutter/foundation.dart';
 
 /// Local storage service using SharedPreferences
 class StorageService {
@@ -42,13 +42,13 @@ class StorageService {
 
   static Future<StorageService> create() async {
     try {
-      Log.debug('Initializing StorageService');
+      debugPrint('Initializing StorageService');
       final prefs = await SharedPreferences.getInstance();
       const secureStorage = FlutterSecureStorage();
-      Log.info('StorageService initialized');
+      debugPrint('StorageService initialized');
       return StorageService(prefs, secureStorage);
     } catch (e, stackTrace) {
-      Log.error('Failed to initialize StorageService', error: e, stackTrace: stackTrace);
+      debugPrint('Failed to initialize StorageService: $e\n$stackTrace');
       rethrow;
     }
   }
