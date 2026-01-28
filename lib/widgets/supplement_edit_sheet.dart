@@ -73,7 +73,7 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: theme.colorScheme.onSurface.withOpacity(0.2),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -89,7 +89,7 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: _emerald.withOpacity(0.1),
+                    color: _emerald.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: const Icon(
@@ -304,7 +304,7 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
               hourMinuteTextColor: _emerald,
               dayPeriodTextColor: _emerald,
               dialHandColor: _emerald,
-              dialBackgroundColor: _emerald.withOpacity(0.1),
+              dialBackgroundColor: _emerald.withValues(alpha: 0.1),
             ),
           ),
           child: child!,

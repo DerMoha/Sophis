@@ -84,7 +84,8 @@ class SupplementsProvider extends ChangeNotifier {
       Log.debug('Loading supplements from database');
       _supplements = await _db.getAllSupplements();
       _logs = await _db.getAllSupplementLogs();
-      Log.info('Loaded ${_supplements.length} supplements with ${_logs.length} logs');
+      Log.info(
+          'Loaded ${_supplements.length} supplements with ${_logs.length} logs');
     } catch (e, stackTrace) {
       Log.error('Failed to load supplements', error: e, stackTrace: stackTrace);
     }
@@ -103,6 +104,15 @@ class SupplementsProvider extends ChangeNotifier {
 
   /// Toggle supplement completion for today
   Future<void> toggleCompletion(String supplementId) async {
+    final supplementIndex =
+        _supplements.indexWhere((s) => s.id == supplementId);
+    if (supplementIndex == -1) {
+      Log.warning('Supplement not found for completion toggle: $supplementId');
+      return;
+    }
+    final supplement = _supplements[supplementIndex];
+
+    bool isNowCompleted;
     if (isCompletedToday(supplementId)) {
       // Find and remove today's log
       try {
@@ -118,8 +128,10 @@ class SupplementsProvider extends ChangeNotifier {
         await _db.deleteSupplementLog(todayLog.id);
         _logs.removeWhere((log) => log.id == todayLog.id);
         Log.debug('Unchecked supplement $supplementId for today');
+        isNowCompleted = false;
       } catch (e, stackTrace) {
-        Log.error('Failed to remove supplement log for $supplementId', error: e, stackTrace: stackTrace);
+        Log.error('Failed to remove supplement log for $supplementId',
+            error: e, stackTrace: stackTrace);
         return; // Skip notification if log not found
       }
     } else {
@@ -132,8 +144,13 @@ class SupplementsProvider extends ChangeNotifier {
       await _db.insertSupplementLog(log);
       _logs.add(log);
       Log.debug('Checked supplement $supplementId for today');
+      isNowCompleted = true;
     }
 
+    await _rescheduleNotificationForCompletion(
+      supplement,
+      completed: isNowCompleted,
+    );
     notifyListeners();
   }
 
@@ -158,7 +175,10 @@ class SupplementsProvider extends ChangeNotifier {
     _supplements.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
 
     if (supplement.enabled && supplement.reminderTime != null) {
-      await _scheduleNotification(supplement);
+      await _scheduleNotification(
+        supplement,
+        skipToday: isCompletedToday(supplement.id),
+      );
     }
 
     notifyListeners();
@@ -176,7 +196,10 @@ class SupplementsProvider extends ChangeNotifier {
     // Reschedule notification
     await _cancelNotification(supplement);
     if (supplement.enabled && supplement.reminderTime != null) {
-      await _scheduleNotification(supplement);
+      await _scheduleNotification(
+        supplement,
+        skipToday: isCompletedToday(supplement.id),
+      );
     }
 
     notifyListeners();
@@ -200,7 +223,8 @@ class SupplementsProvider extends ChangeNotifier {
       Log.info('Deleted supplement: ${supplement.name}');
       notifyListeners();
     } catch (e, stackTrace) {
-      Log.error('Failed to delete supplement $id', error: e, stackTrace: stackTrace);
+      Log.error('Failed to delete supplement $id',
+          error: e, stackTrace: stackTrace);
       throw Exception('Supplement not found');
     }
   }
@@ -236,15 +260,19 @@ class SupplementsProvider extends ChangeNotifier {
   int _getNotificationId(String supplementId) {
     final index = _supplements.indexWhere((s) => s.id == supplementId);
     if (index == -1 || index >= _maxSupplements) {
-      Log.warning('Supplement index $index exceeds max allowed ($_maxSupplements)');
+      Log.warning(
+          'Supplement index $index exceeds max allowed ($_maxSupplements)');
       return _notificationIdStart; // Fallback to first ID
     }
     return _notificationIdStart + index;
   }
 
   /// Schedule notification for a supplement
-  Future<void> _scheduleNotification(Supplement supplement) async {
-    if (supplement.reminderTime == null) return;
+  Future<void> _scheduleNotification(
+    Supplement supplement, {
+    bool skipToday = false,
+  }) async {
+    if (!supplement.enabled || supplement.reminderTime == null) return;
 
     final parts = supplement.reminderTime!.split(':');
     final hour = int.parse(parts[0]);
@@ -256,13 +284,36 @@ class SupplementsProvider extends ChangeNotifier {
       body: 'Don\'t forget to take your ${supplement.name}',
       hour: hour,
       minute: minute,
+      startTomorrow: skipToday,
     );
-    Log.info('Scheduled notification for ${supplement.name} at ${supplement.reminderTime}');
+    Log.info(
+        'Scheduled notification for ${supplement.name} at ${supplement.reminderTime}');
   }
 
   /// Cancel notification for a supplement
   Future<void> _cancelNotification(Supplement supplement) async {
     await _notifications.cancelReminder(_getNotificationId(supplement.id));
+  }
+
+  Future<void> _rescheduleNotificationForCompletion(
+    Supplement supplement, {
+    required bool completed,
+  }) async {
+    if (!supplement.enabled || supplement.reminderTime == null) return;
+
+    try {
+      await _cancelNotification(supplement);
+      await _scheduleNotification(
+        supplement,
+        skipToday: completed,
+      );
+    } catch (e, stackTrace) {
+      Log.error(
+        'Failed to reschedule notification for ${supplement.name}',
+        error: e,
+        stackTrace: stackTrace,
+      );
+    }
   }
 
   /// Update all notifications (reschedule all enabled supplements)
@@ -276,7 +327,10 @@ class SupplementsProvider extends ChangeNotifier {
     for (var i = 0; i < _supplements.length && i < _maxSupplements; i++) {
       final supplement = _supplements[i];
       if (supplement.enabled && supplement.reminderTime != null) {
-        await _scheduleNotification(supplement);
+        await _scheduleNotification(
+          supplement,
+          skipToday: isCompletedToday(supplement.id),
+        );
       }
     }
   }

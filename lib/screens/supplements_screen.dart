@@ -185,7 +185,7 @@ class SupplementsScreen extends StatelessWidget {
                               alignment: Alignment.centerRight,
                               padding: const EdgeInsets.only(right: 20),
                               decoration: BoxDecoration(
-                                color: Colors.red.withOpacity(0.1),
+                                color: Colors.red.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(
                                     AppTheme.radiusLG),
                               ),
@@ -301,7 +301,7 @@ class SupplementsScreen extends StatelessWidget {
                 border: Border.all(
                   color: isCompleted
                       ? _emerald
-                      : theme.colorScheme.outline.withOpacity(0.3),
+                      : theme.colorScheme.outline.withValues(alpha: 0.3),
                   width: 2,
                 ),
                 borderRadius: BorderRadius.circular(8),
@@ -382,7 +382,7 @@ class SupplementsScreen extends StatelessWidget {
             Icon(
               Icons.medication_liquid_rounded,
               size: 80,
-              color: theme.textTheme.bodySmall?.color?.withOpacity(0.5),
+              color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 24),
             Text(
@@ -435,7 +435,7 @@ class SupplementsScreen extends StatelessWidget {
             context.read<SupplementsProvider>().addSupplement(supplement);
           },
           style: OutlinedButton.styleFrom(
-            side: BorderSide(color: _emerald.withOpacity(0.3)),
+            side: BorderSide(color: _emerald.withValues(alpha: 0.3)),
             foregroundColor: _emerald,
           ),
           child: Text(name),

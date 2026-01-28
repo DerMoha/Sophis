@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
@@ -26,7 +25,8 @@ class NotificationService {
 
     tz.initializeTimeZones();
 
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
@@ -60,6 +60,7 @@ class NotificationService {
     required String body,
     required int hour,
     required int minute,
+    bool startTomorrow = false,
   }) async {
     final now = tz.TZDateTime.now(tz.local);
     var scheduledDate = tz.TZDateTime(
@@ -71,8 +72,10 @@ class NotificationService {
       minute,
     );
 
-    // If the time has passed today, schedule for tomorrow
-    if (scheduledDate.isBefore(now)) {
+    if (startTomorrow) {
+      scheduledDate = scheduledDate.add(const Duration(days: 1));
+    } else if (scheduledDate.isBefore(now)) {
+      // If the time has passed today, schedule for tomorrow
       scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
 
@@ -100,7 +103,8 @@ class NotificationService {
       matchDateTimeComponents: DateTimeComponents.time, // Repeat daily
     );
 
-    Log.info('Scheduled notification $id at $hour:${minute.toString().padLeft(2, '0')}');
+    Log.info(
+        'Scheduled notification $id at $hour:${minute.toString().padLeft(2, '0')}');
   }
 
   /// Cancel a specific reminder
