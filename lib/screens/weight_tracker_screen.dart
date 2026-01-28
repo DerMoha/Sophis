@@ -102,7 +102,7 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
                                       colors: [
                                         theme.colorScheme.primary,
                                         theme.colorScheme.primary
-                                            .withOpacity(0.7),
+                                            .withValues(alpha: 0.7),
                                       ],
                                     ),
                                     borderRadius: BorderRadius.circular(14),
@@ -202,7 +202,7 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
                                   width: 1,
                                   height: 40,
                                   color: theme.colorScheme.outline
-                                      .withOpacity(0.2),
+                                      .withValues(alpha: 0.2),
                                 ),
                                 _WeightStat(
                                   label: l10n.goal,
@@ -217,7 +217,7 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
                                   width: 1,
                                   height: 40,
                                   color: theme.colorScheme.outline
-                                      .withOpacity(0.2),
+                                      .withValues(alpha: 0.2),
                                 ),
                                 _WeightStat(
                                   label: l10n.toGo,
@@ -326,7 +326,7 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
           drawVerticalLine: false,
           horizontalInterval: 2,
           getDrawingHorizontalLine: (value) => FlLine(
-            color: theme.colorScheme.outline.withOpacity(0.1),
+            color: theme.colorScheme.outline.withValues(alpha: 0.1),
             strokeWidth: 1,
           ),
         ),
@@ -354,8 +354,8 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
               show: true,
               gradient: LinearGradient(
                 colors: [
-                  theme.colorScheme.primary.withOpacity(0.2),
-                  theme.colorScheme.primary.withOpacity(0.0),
+                  theme.colorScheme.primary.withValues(alpha: 0.2),
+                  theme.colorScheme.primary.withValues(alpha: 0.0),
                 ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
@@ -439,7 +439,7 @@ class _WeightStat extends StatelessWidget {
             color: color,
           ),
           suffixStyle: theme.textTheme.bodyMedium?.copyWith(
-            color: color.withOpacity(0.7),
+            color: color.withValues(alpha: 0.7),
           ),
         ),
         const SizedBox(height: 4),
@@ -484,8 +484,8 @@ class _WeightEntryTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppTheme.radiusMD),
         border: Border.all(
           color: isDark
-              ? Colors.white.withOpacity(0.06)
-              : Colors.black.withOpacity(0.04),
+              ? Colors.white.withValues(alpha: 0.06)
+              : Colors.black.withValues(alpha: 0.04),
         ),
       ),
       child: Row(
@@ -494,7 +494,7 @@ class _WeightEntryTile extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.1),
+              color: theme.colorScheme.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -526,7 +526,7 @@ class _WeightEntryTile extends StatelessWidget {
           IconButton(
             icon: Icon(
               Icons.delete_outline,
-              color: AppTheme.error.withOpacity(0.7),
+              color: AppTheme.error.withValues(alpha: 0.7),
               size: 20,
             ),
             onPressed: onDelete,

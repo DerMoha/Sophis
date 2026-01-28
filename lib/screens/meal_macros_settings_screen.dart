@@ -34,7 +34,7 @@ class MealMacrosSettingsScreen extends StatelessWidget {
                         width: 48,
                         height: 48,
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.primary.withOpacity(0.1),
+                          color: theme.colorScheme.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -115,13 +115,13 @@ class MealMacrosSettingsScreen extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isActive
-            ? theme.colorScheme.primary.withOpacity(0.05)
+            ? theme.colorScheme.primary.withValues(alpha: 0.05)
             : theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radiusLG),
         border: Border.all(
           color: isActive
-              ? theme.colorScheme.primary.withOpacity(0.3)
-              : theme.colorScheme.outline.withOpacity(0.1),
+              ? theme.colorScheme.primary.withValues(alpha: 0.3)
+              : theme.colorScheme.outline.withValues(alpha: 0.1),
           width: isActive ? 2 : 1,
         ),
       ),
@@ -164,7 +164,7 @@ class MealMacrosSettingsScreen extends StatelessWidget {
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radiusMD),
         border: Border.all(
-          color: theme.colorScheme.outline.withOpacity(0.1),
+          color: theme.colorScheme.outline.withValues(alpha: 0.1),
         ),
       ),
       child: Row(
@@ -173,7 +173,7 @@ class MealMacrosSettingsScreen extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.1),
+              color: theme.colorScheme.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(

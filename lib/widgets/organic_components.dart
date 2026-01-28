@@ -202,7 +202,7 @@ class RadialProgress extends StatelessWidget {
     final theme = Theme.of(context);
     final progressColor = color ?? theme.colorScheme.primary;
     final bgColor =
-        backgroundColor ?? progressColor.withOpacity(0.1);
+        backgroundColor ?? progressColor.withValues(alpha: 0.1);
 
     return SizedBox(
       width: size,
@@ -221,7 +221,7 @@ class RadialProgress extends StatelessWidget {
                   size: Size(size, size),
                   painter: _RadialGlowPainter(
                     value: animatedValue,
-                    color: progressColor.withOpacity(0.3),
+                    color: progressColor.withValues(alpha: 0.3),
                     strokeWidth: strokeWidth + 8,
                   ),
                 );
@@ -468,7 +468,7 @@ class StatBadge extends StatelessWidget {
         vertical: compact ? 6 : 10,
       ),
       decoration: BoxDecoration(
-        color: badgeColor.withOpacity(0.1),
+        color: badgeColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppTheme.radiusFull),
       ),
       child: Row(
@@ -495,7 +495,7 @@ class StatBadge extends StatelessWidget {
             Text(
               label!,
               style: theme.textTheme.labelSmall?.copyWith(
-                color: badgeColor.withOpacity(0.7),
+                color: badgeColor.withValues(alpha: 0.7),
               ),
             ),
           ],
@@ -540,14 +540,14 @@ class GradientIconButton extends StatelessWidget {
           height: size,
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [buttonColor, buttonColor.withOpacity(0.8)],
+              colors: [buttonColor, buttonColor.withValues(alpha: 0.8)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(size / 2),
             boxShadow: [
               BoxShadow(
-                color: buttonColor.withOpacity(0.3),
+                color: buttonColor.withValues(alpha: 0.3),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -705,7 +705,7 @@ class MealCard extends StatelessWidget {
                               Icon(
                                 Icons.chevron_right,
                                 size: 18,
-                                color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
+                                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                               ),
                             ],
                           ],
@@ -1080,7 +1080,7 @@ class EmptyState extends StatelessWidget {
               child: Icon(
                 icon,
                 size: 36,
-                color: theme.colorScheme.primary.withOpacity(0.5),
+                color: theme.colorScheme.primary.withValues(alpha: 0.5),
               ),
             ),
             const SizedBox(height: 20),

@@ -115,7 +115,7 @@ class MacroDetailsScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Icon(icon, color: color, size: 24),
@@ -206,7 +206,7 @@ class MacroDetailsScreen extends StatelessWidget {
                 height: 12,
                 alignment: Alignment.centerLeft,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Stack(
@@ -247,7 +247,7 @@ class MacroDetailsScreen extends StatelessWidget {
                              ),
                              boxShadow: [
                                BoxShadow(
-                                 color: finalExcessColor.withOpacity(0.4),
+                                 color: finalExcessColor.withValues(alpha: 0.4),
                                  blurRadius: 8,
                                  offset: const Offset(0, 2),
                                ),

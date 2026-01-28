@@ -303,7 +303,7 @@ class _DragHandle extends StatelessWidget {
       width: 40,
       height: 4,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(2),
       ),
     );
@@ -331,7 +331,7 @@ class _ProductHeader extends StatelessWidget {
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: theme.dividerColor.withOpacity(0.5),
+            color: theme.dividerColor.withValues(alpha: 0.5),
           ),
         ),
       ),
@@ -342,7 +342,7 @@ class _ProductHeader extends StatelessWidget {
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05),
+              color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(12),
             ),
             clipBehavior: Clip.antiAlias,
@@ -396,7 +396,7 @@ class _ProductHeader extends StatelessWidget {
     return Center(
       child: Icon(
         Icons.restaurant_outlined,
-        color: theme.colorScheme.onSurface.withOpacity(0.3),
+        color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
         size: 24,
       ),
     );

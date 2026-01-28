@@ -156,13 +156,13 @@ class MealDetailScreen extends StatelessWidget {
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.1),
+              color: theme.colorScheme.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
               mealIcon,
               size: 36,
-              color: theme.colorScheme.primary.withOpacity(0.5),
+              color: theme.colorScheme.primary.withValues(alpha: 0.5),
             ),
           ),
           const SizedBox(height: 20),
@@ -263,8 +263,8 @@ class _MealEntryCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppTheme.radiusMD),
         border: Border.all(
           color: isDark
-              ? Colors.white.withOpacity(0.06)
-              : Colors.black.withOpacity(0.04),
+              ? Colors.white.withValues(alpha: 0.06)
+              : Colors.black.withValues(alpha: 0.04),
         ),
       ),
       child: Column(
@@ -313,7 +313,7 @@ class _MealEntryCard extends StatelessWidget {
                       Icon(
                         Icons.touch_app_outlined,
                         size: 16,
-                        color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
+                        color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                       ),
                     ],
                   ),
@@ -324,7 +324,7 @@ class _MealEntryCard extends StatelessWidget {
           // Quick portion adjustment bar
           Container(
             decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
               borderRadius: const BorderRadius.vertical(bottom: Radius.circular(AppTheme.radiusMD)),
             ),
             child: Padding(
@@ -706,7 +706,7 @@ class _PortionButton extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: (isIncrease ? AppTheme.success : AppTheme.warning).withOpacity(0.1),
+            color: (isIncrease ? AppTheme.success : AppTheme.warning).withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(

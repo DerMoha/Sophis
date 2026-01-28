@@ -51,6 +51,7 @@ dependencies:
 
   # Logging
   logger: ^2.0.0
+  uuid: ^4.5.2
   
   # Phase 6: Health Integration (Google Health Connect + Apple HealthKit)
   # DISABLED: iOS crashes without HealthKit entitlement (requires paid Apple Developer)

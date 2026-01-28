@@ -111,7 +111,7 @@ class _LogViewerScreenState extends State<LogViewerScreen> {
             Icon(
               Icons.article_outlined,
               size: 64,
-              color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 16),
             Text(
@@ -124,7 +124,7 @@ class _LogViewerScreenState extends State<LogViewerScreen> {
             Text(
               'Enable logging in Settings to start recording app activity',
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant.withOpacity(0.7),
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
               ),
               textAlign: TextAlign.center,
             ),
@@ -166,7 +166,7 @@ class _LogViewerScreenState extends State<LogViewerScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer.withOpacity(0.3),
+                  color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(

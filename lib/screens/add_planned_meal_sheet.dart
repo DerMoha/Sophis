@@ -111,7 +111,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withOpacity(0.1),
+                    color: theme.colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(AppTheme.radiusFull),
                   ),
                   child: DropdownButtonHideUnderline(
@@ -189,7 +189,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
               Icon(
                 Icons.menu_book_outlined,
                 size: 48,
-                color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
               ),
               const SizedBox(height: 16),
               Text(
@@ -236,8 +236,8 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
         borderRadius: BorderRadius.circular(AppTheme.radiusLG),
         border: Border.all(
           color: isDark
-              ? Colors.white.withOpacity(0.06)
-              : Colors.black.withOpacity(0.04),
+              ? Colors.white.withValues(alpha: 0.06)
+              : Colors.black.withValues(alpha: 0.04),
         ),
       ),
       child: InkWell(
@@ -251,7 +251,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withOpacity(0.1),
+                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -381,7 +381,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
               Icon(
                 Icons.key_outlined,
                 size: 48,
-                color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
               ),
               const SizedBox(height: 16),
               Text(
@@ -466,10 +466,10 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.1),
+              color: theme.colorScheme.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(AppTheme.radiusLG),
               border: Border.all(
-                color: theme.colorScheme.primary.withOpacity(0.2),
+                color: theme.colorScheme.primary.withValues(alpha: 0.2),
               ),
             ),
             child: Row(
@@ -510,8 +510,8 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
                   borderRadius: BorderRadius.circular(AppTheme.radiusLG),
                   border: Border.all(
                     color: isDark
-                        ? Colors.white.withOpacity(0.1)
-                        : Colors.black.withOpacity(0.05),
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : Colors.black.withValues(alpha: 0.05),
                     width: 2,
                   ),
                 ),
@@ -522,7 +522,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
                       Icon(
                         Icons.menu_book_outlined,
                         size: 64,
-                        color: theme.colorScheme.onSurfaceVariant.withOpacity(0.3),
+                        color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
                       ),
                       const SizedBox(height: 16),
                       Text(
@@ -599,8 +599,8 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                theme.colorScheme.primary.withOpacity(0.15),
-                theme.colorScheme.primary.withOpacity(0.05),
+                theme.colorScheme.primary.withValues(alpha: 0.15),
+                theme.colorScheme.primary.withValues(alpha: 0.05),
               ],
             ),
             borderRadius: BorderRadius.circular(AppTheme.radiusLG),
@@ -671,8 +671,8 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
             borderRadius: BorderRadius.circular(AppTheme.radiusMD),
             border: Border.all(
               color: isDark
-                  ? Colors.white.withOpacity(0.06)
-                  : Colors.black.withOpacity(0.04),
+                  ? Colors.white.withValues(alpha: 0.06)
+                  : Colors.black.withValues(alpha: 0.04),
             ),
           ),
           child: Column(
@@ -693,7 +693,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withOpacity(0.1),
+                        color: theme.colorScheme.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(AppTheme.radiusFull),
                       ),
                       child: Text(
@@ -732,7 +732,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppTheme.radiusFull),
       ),
       child: Row(
@@ -847,8 +847,8 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
         borderRadius: BorderRadius.circular(AppTheme.radiusMD),
         border: Border.all(
           color: isDark
-              ? Colors.white.withOpacity(0.06)
-              : Colors.black.withOpacity(0.04),
+              ? Colors.white.withValues(alpha: 0.06)
+              : Colors.black.withValues(alpha: 0.04),
         ),
       ),
       child: InkWell(
@@ -956,7 +956,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
                         vertical: 8,
                       ),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                       ),
                       child: Text(

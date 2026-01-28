@@ -78,7 +78,7 @@ class DashboardSettingsScreen extends StatelessWidget {
                           color: theme.colorScheme.surface,
                           borderRadius: BorderRadius.circular(AppTheme.radiusLG),
                           border: Border.all(
-                            color: theme.colorScheme.outline.withOpacity(0.1),
+                            color: theme.colorScheme.outline.withValues(alpha: 0.1),
                           ),
                         ),
                         clipBehavior: Clip.antiAlias,
@@ -139,14 +139,14 @@ class _DashboardCardTile extends StatelessWidget {
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: theme.colorScheme.outline.withOpacity(0.1),
+            color: theme.colorScheme.outline.withValues(alpha: 0.1),
           ),
         ),
       ),
       child: Material(
         color: card.visible
             ? Colors.transparent
-            : (isDark ? Colors.white.withOpacity(0.02) : Colors.black.withOpacity(0.02)),
+            : (isDark ? Colors.white.withValues(alpha: 0.02) : Colors.black.withValues(alpha: 0.02)),
         child: ListTile(
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           leading: Container(
@@ -154,8 +154,8 @@ class _DashboardCardTile extends StatelessWidget {
             height: 40,
             decoration: BoxDecoration(
               color: card.visible
-                  ? cardInfo.color.withOpacity(0.1)
-                  : theme.colorScheme.outline.withOpacity(0.1),
+                  ? cardInfo.color.withValues(alpha: 0.1)
+                  : theme.colorScheme.outline.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
@@ -199,8 +199,8 @@ class _DashboardCardTile extends StatelessWidget {
                   height: 32,
                   decoration: BoxDecoration(
                     color: isDark
-                        ? Colors.white.withOpacity(0.05)
-                        : Colors.black.withOpacity(0.03),
+                        ? Colors.white.withValues(alpha: 0.05)
+                        : Colors.black.withValues(alpha: 0.03),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(

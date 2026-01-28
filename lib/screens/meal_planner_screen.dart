@@ -202,7 +202,7 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
               },
               tooltip: l10n.today,
               style: IconButton.styleFrom(
-                backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+                backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
                 foregroundColor: theme.colorScheme.primary,
               ),
             ),
@@ -261,14 +261,14 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
                       : isToday
                           ? theme.colorScheme.primary
                           : isDark
-                              ? Colors.white.withOpacity(0.08)
-                              : Colors.black.withOpacity(0.06),
+                              ? Colors.white.withValues(alpha: 0.08)
+                              : Colors.black.withValues(alpha: 0.06),
                   width: isToday && !isSelected ? 2 : 1,
                 ),
                 boxShadow: isSelected
                     ? [
                         BoxShadow(
-                          color: theme.colorScheme.primary.withOpacity(0.3),
+                          color: theme.colorScheme.primary.withValues(alpha: 0.3),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
@@ -283,7 +283,7 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
                     _getDayName(date),
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: isSelected
-                          ? Colors.white.withOpacity(0.8)
+                          ? Colors.white.withValues(alpha: 0.8)
                           : theme.colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w500,
                       letterSpacing: 0.5,
@@ -386,13 +386,13 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.1),
+              color: theme.colorScheme.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.restaurant_menu_outlined,
               size: 28,
-              color: theme.colorScheme.primary.withOpacity(0.5),
+              color: theme.colorScheme.primary.withValues(alpha: 0.5),
             ),
           ),
           const SizedBox(height: 16),
@@ -428,15 +428,15 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            theme.colorScheme.primary.withOpacity(0.1),
-            theme.colorScheme.primary.withOpacity(0.05),
+            theme.colorScheme.primary.withValues(alpha: 0.1),
+            theme.colorScheme.primary.withValues(alpha: 0.05),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(AppTheme.radiusLG),
         border: Border.all(
-          color: theme.colorScheme.primary.withOpacity(0.2),
+          color: theme.colorScheme.primary.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -514,7 +514,7 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: AppTheme.error.withOpacity(0.1),
+                color: AppTheme.error.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(AppTheme.radiusFull),
               ),
               child: Row(
@@ -596,8 +596,8 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
         borderRadius: BorderRadius.circular(AppTheme.radiusLG),
         border: Border.all(
           color: isDark
-              ? Colors.white.withOpacity(0.06)
-              : Colors.black.withOpacity(0.04),
+              ? Colors.white.withValues(alpha: 0.06)
+              : Colors.black.withValues(alpha: 0.04),
         ),
       ),
       child: Column(
@@ -614,7 +614,7 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withOpacity(0.1),
+                      color: theme.colorScheme.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
@@ -660,8 +660,8 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
             Divider(
               height: 1,
               color: isDark
-                  ? Colors.white.withOpacity(0.06)
-                  : Colors.black.withOpacity(0.04),
+                  ? Colors.white.withValues(alpha: 0.06)
+                  : Colors.black.withValues(alpha: 0.04),
             ),
             ...meals.map((meal) => _buildPlannedMealTile(
               context, theme, isDark, l10n, nutrition, meal,

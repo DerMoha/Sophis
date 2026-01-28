@@ -179,7 +179,7 @@ class AppTheme {
         brightness: Brightness.light,
       ).copyWith(
         primary: accentColor,
-        secondary: accentColor.withOpacity(0.8),
+        secondary: accentColor.withValues(alpha: 0.8),
         surface: _lightSurface,
         surfaceContainerHighest: _lightSurfaceAlt,
         error: error,
@@ -199,7 +199,7 @@ class AppTheme {
           fontSize: 24,
           fontWeight: FontWeight.w400,
         ),
-        iconTheme: IconThemeData(color: _lightText.withOpacity(0.8)),
+        iconTheme: IconThemeData(color: _lightText.withValues(alpha: 0.8)),
       ),
       cardTheme: CardThemeData(
         color: _lightSurface,
@@ -210,7 +210,7 @@ class AppTheme {
         margin: EdgeInsets.zero,
       ),
       dividerTheme: DividerThemeData(
-        color: _lightBorder.withOpacity(0.5),
+        color: _lightBorder.withValues(alpha: 0.5),
         thickness: 1,
         space: 1,
       ),
@@ -257,7 +257,7 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: accentColor,
-          side: BorderSide(color: accentColor.withOpacity(0.3), width: 1.5),
+          side: BorderSide(color: accentColor.withValues(alpha: 0.3), width: 1.5),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(radiusFull),
@@ -333,7 +333,7 @@ class AppTheme {
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(
         color: accentColor,
-        linearTrackColor: accentColor.withOpacity(0.1),
+        linearTrackColor: accentColor.withValues(alpha: 0.1),
       ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
@@ -342,16 +342,16 @@ class AppTheme {
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return accentColor.withOpacity(0.3);
+            return accentColor.withValues(alpha: 0.3);
           }
           return _lightSurfaceAlt;
         }),
       ),
       sliderTheme: SliderThemeData(
         activeTrackColor: accentColor,
-        inactiveTrackColor: accentColor.withOpacity(0.1),
+        inactiveTrackColor: accentColor.withValues(alpha: 0.1),
         thumbColor: accentColor,
-        overlayColor: accentColor.withOpacity(0.1),
+        overlayColor: accentColor.withValues(alpha: 0.1),
         trackHeight: 6,
       ),
     );
@@ -368,7 +368,7 @@ class AppTheme {
         brightness: Brightness.dark,
       ).copyWith(
         primary: accentColor,
-        secondary: accentColor.withOpacity(0.8),
+        secondary: accentColor.withValues(alpha: 0.8),
         surface: _darkSurface,
         surfaceContainerHighest: _darkSurfaceAlt,
         error: error,
@@ -388,7 +388,7 @@ class AppTheme {
           fontSize: 24,
           fontWeight: FontWeight.w400,
         ),
-        iconTheme: IconThemeData(color: _darkText.withOpacity(0.8)),
+        iconTheme: IconThemeData(color: _darkText.withValues(alpha: 0.8)),
       ),
       cardTheme: CardThemeData(
         color: _darkSurface,
@@ -399,7 +399,7 @@ class AppTheme {
         margin: EdgeInsets.zero,
       ),
       dividerTheme: DividerThemeData(
-        color: _darkBorder.withOpacity(0.5),
+        color: _darkBorder.withValues(alpha: 0.5),
         thickness: 1,
         space: 1,
       ),
@@ -446,7 +446,7 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: accentColor,
-          side: BorderSide(color: accentColor.withOpacity(0.3), width: 1.5),
+          side: BorderSide(color: accentColor.withValues(alpha: 0.3), width: 1.5),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(radiusFull),
@@ -522,7 +522,7 @@ class AppTheme {
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(
         color: accentColor,
-        linearTrackColor: accentColor.withOpacity(0.1),
+        linearTrackColor: accentColor.withValues(alpha: 0.1),
       ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
@@ -531,16 +531,16 @@ class AppTheme {
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return accentColor.withOpacity(0.3);
+            return accentColor.withValues(alpha: 0.3);
           }
           return _darkSurfaceAlt;
         }),
       ),
       sliderTheme: SliderThemeData(
         activeTrackColor: accentColor,
-        inactiveTrackColor: accentColor.withOpacity(0.1),
+        inactiveTrackColor: accentColor.withValues(alpha: 0.1),
         thumbColor: accentColor,
-        overlayColor: accentColor.withOpacity(0.1),
+        overlayColor: accentColor.withValues(alpha: 0.1),
         trackHeight: 6,
       ),
     );
@@ -655,25 +655,25 @@ class AppTheme {
     switch (macro.toLowerCase()) {
       case 'protein':
         return LinearGradient(
-          colors: [protein, protein.withOpacity(0.7)],
+          colors: [protein, protein.withValues(alpha: 0.7)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         );
       case 'carbs':
         return LinearGradient(
-          colors: [carbs, carbs.withOpacity(0.7)],
+          colors: [carbs, carbs.withValues(alpha: 0.7)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         );
       case 'fat':
         return LinearGradient(
-          colors: [fat, fat.withOpacity(0.7)],
+          colors: [fat, fat.withValues(alpha: 0.7)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         );
       default:
         return LinearGradient(
-          colors: [accent, accent.withOpacity(0.7)],
+          colors: [accent, accent.withValues(alpha: 0.7)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         );
@@ -701,7 +701,7 @@ class AppTheme {
 
     return BoxDecoration(
       gradient: LinearGradient(
-        colors: [colors[0], colors[1].withOpacity(0.5)],
+        colors: [colors[0], colors[1].withValues(alpha: 0.5)],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),
@@ -714,15 +714,15 @@ class AppTheme {
     final baseColor = tint ?? (isDark ? _darkSurface : _lightSurface);
 
     return BoxDecoration(
-      color: baseColor.withOpacity(isDark ? 0.8 : 0.9),
+      color: baseColor.withValues(alpha: isDark ? 0.8 : 0.9),
       borderRadius: BorderRadius.circular(radiusLG),
       border: Border.all(
-        color: (isDark ? _darkBorder : _lightBorder).withOpacity(0.3),
+        color: (isDark ? _darkBorder : _lightBorder).withValues(alpha: 0.3),
         width: 1,
       ),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+          color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
           blurRadius: 20,
           offset: const Offset(0, 8),
         ),
@@ -734,14 +734,14 @@ class AppTheme {
   static BoxDecoration accentGradientDecoration(Color accentColor) {
     return BoxDecoration(
       gradient: LinearGradient(
-        colors: [accentColor, accentColor.withOpacity(0.8)],
+        colors: [accentColor, accentColor.withValues(alpha: 0.8)],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),
       borderRadius: BorderRadius.circular(radiusLG),
       boxShadow: [
         BoxShadow(
-          color: accentColor.withOpacity(0.3),
+          color: accentColor.withValues(alpha: 0.3),
           blurRadius: 16,
           offset: const Offset(0, 6),
         ),
@@ -814,8 +814,8 @@ class GradientMeshPainter extends CustomPainter {
         ),
         radius: 1.2,
         colors: [
-          colors[i].withOpacity(0.4),
-          colors[i].withOpacity(0.0),
+          colors[i].withValues(alpha: 0.4),
+          colors[i].withValues(alpha: 0.0),
         ],
       );
 

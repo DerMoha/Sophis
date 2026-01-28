@@ -85,7 +85,7 @@ class _WorkoutBottomSheetState extends State<WorkoutBottomSheet> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: theme.colorScheme.outline.withOpacity(0.3),
+              color: theme.colorScheme.outline.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -102,7 +102,7 @@ class _WorkoutBottomSheetState extends State<WorkoutBottomSheet> {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: AppTheme.fire.withOpacity(0.1),
+                        color: AppTheme.fire.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
@@ -124,8 +124,8 @@ class _WorkoutBottomSheetState extends State<WorkoutBottomSheet> {
                     height: 32,
                     decoration: BoxDecoration(
                       color: isDark
-                          ? Colors.white.withOpacity(0.1)
-                          : Colors.black.withOpacity(0.05),
+                          ? Colors.white.withValues(alpha: 0.1)
+                          : Colors.black.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(Icons.close, size: 18),
@@ -265,12 +265,12 @@ class _WorkoutBottomSheetState extends State<WorkoutBottomSheet> {
                             width: 56,
                             height: 56,
                             decoration: BoxDecoration(
-                              color: AppTheme.fire.withOpacity(0.1),
+                              color: AppTheme.fire.withValues(alpha: 0.1),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
                               Icons.fitness_center_outlined,
-                              color: AppTheme.fire.withOpacity(0.5),
+                              color: AppTheme.fire.withValues(alpha: 0.5),
                               size: 24,
                             ),
                           ),
@@ -302,8 +302,8 @@ class _WorkoutBottomSheetState extends State<WorkoutBottomSheet> {
                                 horizontal: 16, vertical: 12),
                             decoration: BoxDecoration(
                               color: isDark
-                                  ? Colors.white.withOpacity(0.05)
-                                  : Colors.black.withOpacity(0.02),
+                                  ? Colors.white.withValues(alpha: 0.05)
+                                  : Colors.black.withValues(alpha: 0.02),
                               borderRadius:
                                   BorderRadius.circular(AppTheme.radiusMD),
                             ),
@@ -313,7 +313,7 @@ class _WorkoutBottomSheetState extends State<WorkoutBottomSheet> {
                                   width: 32,
                                   height: 32,
                                   decoration: BoxDecoration(
-                                    color: AppTheme.fire.withOpacity(0.1),
+                                    color: AppTheme.fire.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: const Icon(
@@ -367,7 +367,7 @@ class _WorkoutBottomSheetState extends State<WorkoutBottomSheet> {
                                 IconButton(
                                   icon: Icon(
                                     Icons.delete_outline,
-                                    color: AppTheme.error.withOpacity(0.7),
+                                    color: AppTheme.error.withValues(alpha: 0.7),
                                     size: 20,
                                   ),
                                   onPressed: () => _deleteEntry(entry.id),
@@ -421,10 +421,10 @@ class _QuickAddButton extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 16),
             decoration: BoxDecoration(
-              color: AppTheme.fire.withOpacity(0.08),
+              color: AppTheme.fire.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(AppTheme.radiusMD),
               border: Border.all(
-                color: AppTheme.fire.withOpacity(0.15),
+                color: AppTheme.fire.withValues(alpha: 0.15),
               ),
             ),
             child: Column(

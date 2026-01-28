@@ -229,7 +229,7 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
                                         colors: [
                                           theme.colorScheme.primary,
                                           theme.colorScheme.primary
-                                              .withOpacity(0.7),
+                                              .withValues(alpha: 0.7),
                                         ],
                                       ),
                                       borderRadius: BorderRadius.circular(14),
@@ -576,7 +576,7 @@ class _MacroInput extends StatelessWidget {
                 const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-              borderSide: BorderSide(color: color.withOpacity(0.3)),
+              borderSide: BorderSide(color: color.withValues(alpha: 0.3)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppTheme.radiusMD),

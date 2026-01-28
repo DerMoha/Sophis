@@ -32,7 +32,7 @@ class StreakCard extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: Colors.orange.withOpacity(0.15),
+              color: Colors.orange.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Center(
@@ -59,7 +59,7 @@ class StreakCard extends StatelessWidget {
                   Text(
                     l10n.longestStreak(stats.longestStreak),
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
               ],
@@ -71,7 +71,7 @@ class StreakCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.1),
+                color: theme.colorScheme.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -151,7 +151,7 @@ class _AchievementsSheet extends StatelessWidget {
             Text(
               l10n.totalDaysLogged(stats.totalDaysLogged),
               style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
             const SizedBox(height: 20),
@@ -229,13 +229,13 @@ class _AchievementBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
       decoration: BoxDecoration(
         color: unlocked
-            ? theme.colorScheme.primary.withOpacity(0.1)
-            : theme.disabledColor.withOpacity(0.05),
+            ? theme.colorScheme.primary.withValues(alpha: 0.1)
+            : theme.disabledColor.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: unlocked
-              ? theme.colorScheme.primary.withOpacity(0.3)
-              : theme.disabledColor.withOpacity(0.1),
+              ? theme.colorScheme.primary.withValues(alpha: 0.3)
+              : theme.disabledColor.withValues(alpha: 0.1),
         ),
       ),
       child: Column(

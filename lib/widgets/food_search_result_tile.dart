@@ -132,7 +132,7 @@ class _CustomFoodIcon extends StatelessWidget {
       width: 56,
       height: 56,
       decoration: BoxDecoration(
-        color: theme.colorScheme.secondary.withOpacity(isDark ? 0.2 : 0.1),
+        color: theme.colorScheme.secondary.withValues(alpha: isDark ? 0.2 : 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Center(
@@ -160,7 +160,7 @@ class _ProductImage extends StatelessWidget {
       width: 56,
       height: 56,
       decoration: BoxDecoration(
-        color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05),
+        color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
       ),
       clipBehavior: Clip.antiAlias,
@@ -198,7 +198,7 @@ class _PlaceholderIcon extends StatelessWidget {
     return Center(
       child: Icon(
         Icons.restaurant_outlined,
-        color: theme.colorScheme.onSurface.withOpacity(0.3),
+        color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
         size: 24,
       ),
     );
@@ -255,13 +255,13 @@ class _MacroChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withOpacity(isDark ? 0.2 : 0.1),
+        color: color.withValues(alpha: isDark ? 0.2 : 0.1),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
         '$label: ${value.toStringAsFixed(0)}g',
         style: theme.textTheme.labelSmall?.copyWith(
-          color: isDark ? color.withOpacity(0.9) : color.withOpacity(0.8),
+          color: isDark ? color.withValues(alpha: 0.9) : color.withValues(alpha: 0.8),
           fontWeight: FontWeight.w500,
           fontSize: 10,
         ),
@@ -283,7 +283,7 @@ class _CalorieBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
-        color: theme.colorScheme.primary.withOpacity(isDark ? 0.2 : 0.1),
+        color: theme.colorScheme.primary.withValues(alpha: isDark ? 0.2 : 0.1),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
@@ -299,7 +299,7 @@ class _CalorieBadge extends StatelessWidget {
           Text(
             'kcal',
             style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.primary.withOpacity(0.7),
+              color: theme.colorScheme.primary.withValues(alpha: 0.7),
               fontSize: 9,
             ),
           ),

@@ -159,7 +159,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                             vertical: 10,
                           ),
                           decoration: BoxDecoration(
-                            color: theme.colorScheme.primary.withOpacity(0.1),
+                            color: theme.colorScheme.primary.withValues(alpha: 0.1),
                             borderRadius:
                                 BorderRadius.circular(AppTheme.radiusFull),
                           ),
@@ -396,7 +396,7 @@ class _MacroField extends StatelessWidget {
                 const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-              borderSide: BorderSide(color: color.withOpacity(0.3)),
+              borderSide: BorderSide(color: color.withValues(alpha: 0.3)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppTheme.radiusMD),

@@ -161,6 +161,8 @@
   "waterSizeMedium": "Medium",
   "waterSizeLarge": "Large",
   "waterSizeExtraLarge": "Extra Large",
+  "homeLayout": "Home Layout",
+  "quickActionsSize": "Quick Actions Size",
 
   "units": "Units",
   "metric": "Metric",

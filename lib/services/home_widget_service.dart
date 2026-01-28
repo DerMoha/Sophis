@@ -1,5 +1,5 @@
 import 'package:home_widget/home_widget.dart';
-import 'package:flutter/foundation.dart';
+
 import '../services/nutrition_provider.dart';
 import 'log_service.dart';
 
@@ -15,13 +15,13 @@ class HomeWidgetService {
       final water = provider.getTodayWaterTotal();
       final goal = provider.goals?.calories ?? 0;
 
-      Log.debug('Updating widget: cal=${totals['calories']?.toInt()}/$goal, protein=${totals['protein']?.toInt()}g');
+      Log.debug(
+          'Updating widget: cal=${totals['calories']?.toInt()}/$goal, protein=${totals['protein']?.toInt()}g');
 
       // Save data
       await HomeWidget.saveWidgetData<double>(
           'calories_eaten', totals['calories']);
-      await HomeWidget.saveWidgetData<double>(
-          'calories_goal', goal);
+      await HomeWidget.saveWidgetData<double>('calories_goal', goal);
       await HomeWidget.saveWidgetData<double>('calories_remaining', remaining);
 
       // Save Macro Totals

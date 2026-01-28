@@ -116,7 +116,7 @@ class _FluidProgressBarState extends State<FluidProgressBar>
     return Container(
       height: widget.height,
       decoration: BoxDecoration(
-        color: widget.color.withOpacity(0.1),
+        color: widget.color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(widget.height),
       ),
       child: LayoutBuilder(
@@ -131,14 +131,14 @@ class _FluidProgressBarState extends State<FluidProgressBar>
                   gradient: LinearGradient(
                     colors: [
                       widget.color,
-                      widget.color.withOpacity(0.8),
+                      widget.color.withValues(alpha: 0.8),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(widget.height),
                   boxShadow: widget.showGlow
                       ? [
                           BoxShadow(
-                            color: widget.color.withOpacity(0.4),
+                            color: widget.color.withValues(alpha: 0.4),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -151,7 +151,7 @@ class _FluidProgressBarState extends State<FluidProgressBar>
                         builder: (context, child) {
                           return CustomPaint(
                             painter: _WavePainter(
-                              color: Colors.white.withOpacity(0.2),
+                              color: Colors.white.withValues(alpha: 0.2),
                               animationValue: _waveController.value,
                             ),
                           );

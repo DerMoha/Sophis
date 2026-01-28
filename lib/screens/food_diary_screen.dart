@@ -188,7 +188,7 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
           IconButton(
             icon: Icon(
               Icons.chevron_right_rounded,
-              color: canGoForward ? null : theme.colorScheme.onSurfaceVariant.withOpacity(0.3),
+              color: canGoForward ? null : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
             ),
             onPressed: canGoForward ? _goToNextDay : null,
             style: IconButton.styleFrom(
@@ -210,7 +210,7 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
               },
               tooltip: l10n.today,
               style: IconButton.styleFrom(
-                backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+                backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
                 foregroundColor: theme.colorScheme.primary,
               ),
             )
@@ -274,13 +274,13 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.1),
+              color: theme.colorScheme.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.restaurant_menu_outlined,
               size: 28,
-              color: theme.colorScheme.primary.withOpacity(0.5),
+              color: theme.colorScheme.primary.withValues(alpha: 0.5),
             ),
           ),
           const SizedBox(height: 16),
@@ -311,15 +311,15 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            theme.colorScheme.primary.withOpacity(0.1),
-            theme.colorScheme.primary.withOpacity(0.05),
+            theme.colorScheme.primary.withValues(alpha: 0.1),
+            theme.colorScheme.primary.withValues(alpha: 0.05),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(AppTheme.radiusLG),
         border: Border.all(
-          color: theme.colorScheme.primary.withOpacity(0.2),
+          color: theme.colorScheme.primary.withValues(alpha: 0.2),
         ),
       ),
       child: Row(
@@ -448,8 +448,8 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
         borderRadius: BorderRadius.circular(AppTheme.radiusLG),
         border: Border.all(
           color: isDark
-              ? Colors.white.withOpacity(0.06)
-              : Colors.black.withOpacity(0.04),
+              ? Colors.white.withValues(alpha: 0.06)
+              : Colors.black.withValues(alpha: 0.04),
         ),
       ),
       child: Column(
@@ -463,7 +463,7 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: mealColor.withOpacity(0.1),
+                    color: mealColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -504,8 +504,8 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
             Divider(
               height: 1,
               color: isDark
-                  ? Colors.white.withOpacity(0.06)
-                  : Colors.black.withOpacity(0.04),
+                  ? Colors.white.withValues(alpha: 0.06)
+                  : Colors.black.withValues(alpha: 0.04),
             ),
             ...mealEntries.map((entry) => _buildEntryTile(theme, entry)),
           ],
@@ -590,7 +590,7 @@ class _MacroChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Row(

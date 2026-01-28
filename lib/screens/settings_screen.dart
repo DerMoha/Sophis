@@ -83,7 +83,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           const SizedBox(height: 20),
                           _buildSettingRow(
                             context,
-                            title: 'Home Layout', // TODO: Add to l10n
+                            title: l10n.homeLayout,
                             child: _buildSegmentedControl<HomeLayoutMode>(
                               context,
                               value: settings.homeLayout,
@@ -101,7 +101,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             const SizedBox(height: 20),
                             _buildSettingRow(
                               context,
-                              title: 'Quick Actions Size', // TODO: Add to l10n
+                              title: l10n.quickActionsSize,
                               child: _buildSegmentedControl<QuickActionSize>(
                                 context,
                                 value: settings.quickActionSize,
@@ -476,7 +476,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withOpacity(0.1),
+                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
@@ -531,7 +531,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppTheme.radiusMD),
             border: Border.all(
-              color: theme.colorScheme.outline.withOpacity(0.1),
+              color: theme.colorScheme.outline.withValues(alpha: 0.1),
             ),
           ),
           child: Row(
@@ -540,7 +540,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withOpacity(0.1),
+                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -577,65 +577,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildSwitchNavigationTile(
-    BuildContext context, {
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required bool value,
-    required void Function(bool) onChanged,
-  }) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-        border: Border.all(
-          color: theme.colorScheme.outline.withOpacity(0.1),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              icon,
-              size: 18,
-              color: theme.colorScheme.primary,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: theme.textTheme.titleSmall),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-          ),
-        ],
-      ),
-    );
-  }
-
   void _showWaterSizesDialog(
     BuildContext context,
     SettingsProvider settings,
@@ -663,8 +604,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: isDark
-            ? Colors.white.withOpacity(0.05)
-            : Colors.black.withOpacity(0.05),
+            ? Colors.white.withValues(alpha: 0.05)
+            : Colors.black.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(AppTheme.radiusMD),
       ),
       child: Row(
@@ -718,11 +659,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               border: isSelected
                   ? Border.all(color: theme.colorScheme.onSurface, width: 3)
                   : Border.all(
-                      color: theme.colorScheme.outline.withOpacity(0.2)),
+                      color: theme.colorScheme.outline.withValues(alpha: 0.2)),
               boxShadow: isSelected
                   ? [
                       BoxShadow(
-                        color: color.withOpacity(0.4),
+                        color: color.withValues(alpha: 0.4),
                         blurRadius: 12,
                         spreadRadius: 2,
                       ),
@@ -770,13 +711,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? theme.colorScheme.primary.withOpacity(0.1)
+                      ? theme.colorScheme.primary.withValues(alpha: 0.1)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                   border: Border.all(
                     color: isSelected
-                        ? theme.colorScheme.primary.withOpacity(0.3)
-                        : theme.colorScheme.outline.withOpacity(0.1),
+                        ? theme.colorScheme.primary.withValues(alpha: 0.3)
+                        : theme.colorScheme.outline.withValues(alpha: 0.1),
                   ),
                 ),
                 child: Row(
@@ -842,13 +783,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? theme.colorScheme.primary.withOpacity(0.1)
+                      ? theme.colorScheme.primary.withValues(alpha: 0.1)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                   border: Border.all(
                     color: isSelected
-                        ? theme.colorScheme.primary.withOpacity(0.3)
-                        : theme.colorScheme.outline.withOpacity(0.1),
+                        ? theme.colorScheme.primary.withValues(alpha: 0.3)
+                        : theme.colorScheme.outline.withValues(alpha: 0.1),
                   ),
                 ),
                 child: Row(
@@ -992,7 +933,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppTheme.radiusMD),
             border: Border.all(
-              color: theme.colorScheme.outline.withOpacity(0.1),
+              color: theme.colorScheme.outline.withValues(alpha: 0.1),
             ),
           ),
           child: Row(
@@ -1001,7 +942,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withOpacity(0.1),
+                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: isLoading
@@ -1211,11 +1152,11 @@ class _ReminderTimeTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: isEnabled
-            ? theme.colorScheme.primary.withOpacity(0.05)
+            ? theme.colorScheme.primary.withValues(alpha: 0.05)
             : Colors.transparent,
         borderRadius: BorderRadius.circular(AppTheme.radiusMD),
         border: Border.all(
-          color: theme.colorScheme.outline.withOpacity(0.1),
+          color: theme.colorScheme.outline.withValues(alpha: 0.1),
         ),
       ),
       child: Row(
@@ -1225,8 +1166,8 @@ class _ReminderTimeTile extends StatelessWidget {
             height: 32,
             decoration: BoxDecoration(
               color: isEnabled
-                  ? theme.colorScheme.primary.withOpacity(0.1)
-                  : theme.colorScheme.outline.withOpacity(0.1),
+                  ? theme.colorScheme.primary.withValues(alpha: 0.1)
+                  : theme.colorScheme.outline.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
