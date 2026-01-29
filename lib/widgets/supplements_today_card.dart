@@ -31,7 +31,6 @@ class SupplementsTodayCard extends StatelessWidget {
         if (totalCount == 0) {
           return GlassCard(
             padding: const EdgeInsets.all(20),
-            tint: _emerald,
             onTap: () => Navigator.push(
               context,
               AppTheme.slideRoute(const SupplementsScreen()),
@@ -90,7 +89,6 @@ class SupplementsTodayCard extends StatelessWidget {
 
         return GlassCard(
           padding: const EdgeInsets.all(20),
-          tint: _emerald,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -262,9 +260,7 @@ class _SupplementCheckboxState extends State<_SupplementCheckbox>
             width: 24,
             height: 24,
             decoration: BoxDecoration(
-              color: widget.isChecked
-                  ? emerald
-                  : Colors.transparent,
+              color: widget.isChecked ? emerald : Colors.transparent,
               border: Border.all(
                 color: widget.isChecked
                     ? emerald
