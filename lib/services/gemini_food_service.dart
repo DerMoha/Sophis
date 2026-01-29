@@ -23,12 +23,12 @@ class GeminiFoodService {
     final prefs = await SharedPreferences.getInstance();
     final savedDate = prefs.getString(_requestDateKey);
     final today = _getTodayString();
-    
+
     if (savedDate != today) {
       // New day, reset counter
       return 0;
     }
-    
+
     return prefs.getInt(_requestCountKey) ?? 0;
   }
 
@@ -53,12 +53,12 @@ class GeminiFoodService {
     final prefs = await SharedPreferences.getInstance();
     final today = _getTodayString();
     final savedDate = prefs.getString(_requestDateKey);
-    
+
     int count = 0;
     if (savedDate == today) {
       count = prefs.getInt(_requestCountKey) ?? 0;
     }
-    
+
     await prefs.setString(_requestDateKey, today);
     await prefs.setInt(_requestCountKey, count + 1);
   }
@@ -98,11 +98,14 @@ class GeminiFoodService {
     // Check rate limit
     final requestsToday = await getRequestsToday();
     if (!await canMakeRequest()) {
-      Log.warning('Gemini API rate limit reached: $requestsToday/$dailyLimit today');
-      throw Exception('Daily limit reached (20 requests/day). Try again tomorrow.');
+      Log.warning(
+          'Gemini API rate limit reached: $requestsToday/$dailyLimit today');
+      throw Exception(
+          'Daily limit reached (20 requests/day). Try again tomorrow.');
     }
 
-    Log.info('Gemini API food analysis request (${requestsToday + 1}/$dailyLimit today)');
+    Log.info(
+        'Gemini API food analysis request (${requestsToday + 1}/$dailyLimit today)');
 
     // Build image parts
     final imageParts = <DataPart>[];
@@ -166,8 +169,116 @@ If no food is visible, return: {"foods": []}
       Log.info('Gemini API analyzed ${results.length} food items');
       return results;
     } catch (e, stackTrace) {
-      Log.error('Gemini API food analysis failed', error: e, stackTrace: stackTrace);
+      Log.error('Gemini API food analysis failed',
+          error: e, stackTrace: stackTrace);
       throw Exception('Failed to analyze image: $e');
+    }
+  }
+
+  /// Re-analyze a single food item while keeping other items unchanged
+  Future<FoodAnalysis?> reanalyzeSingleFood(
+    List<File> imageFiles, {
+    required FoodAnalysis currentFood,
+    required String correctionHint,
+    List<FoodAnalysis> confirmedFoods = const [],
+  }) async {
+    if (!_isInitialized || _model == null) {
+      throw Exception('Gemini service not initialized');
+    }
+
+    if (imageFiles.isEmpty) {
+      return null;
+    }
+
+    // Check rate limit
+    final requestsToday = await getRequestsToday();
+    if (!await canMakeRequest()) {
+      Log.warning(
+          'Gemini API rate limit reached: $requestsToday/$dailyLimit today');
+      throw Exception(
+          'Daily limit reached (20 requests/day). Try again tomorrow.');
+    }
+
+    Log.info(
+        'Gemini API food correction request (${requestsToday + 1}/$dailyLimit today)');
+
+    // Build image parts
+    final imageParts = <DataPart>[];
+    for (final file in imageFiles) {
+      final bytes = await file.readAsBytes();
+      imageParts.add(DataPart('image/jpeg', bytes));
+    }
+
+    final confirmedList = confirmedFoods.isEmpty
+        ? 'None'
+        : confirmedFoods.map((food) {
+            return '- ${food.name} (${food.portionGrams.toStringAsFixed(0)}g, '
+                '${food.calories.toStringAsFixed(0)} kcal, '
+                'P ${food.protein.toStringAsFixed(1)}g, '
+                'C ${food.carbs.toStringAsFixed(1)}g, '
+                'F ${food.fat.toStringAsFixed(1)}g)';
+          }).join('\n');
+
+    // Build prompt
+    final promptText = '''
+You are re-evaluating a single food item in these images.
+
+Confirmed correct foods (do NOT return these):
+$confirmedList
+
+Food to correct:
+- Name: ${currentFood.name}
+- Portion: ${currentFood.portionGrams.toStringAsFixed(0)} g
+- Calories: ${currentFood.calories.toStringAsFixed(0)}
+- Protein: ${currentFood.protein.toStringAsFixed(1)}
+- Carbs: ${currentFood.carbs.toStringAsFixed(1)}
+- Fat: ${currentFood.fat.toStringAsFixed(1)}
+
+Correction from user: $correctionHint
+
+Return ONLY the corrected version of the single food item in the JSON format below.
+Do NOT include confirmed foods.
+If you cannot identify the target item, return {"foods": []}.
+
+Respond ONLY with valid JSON in this exact format, no other text:
+{
+  "foods": [
+    {
+      "name": "food name",
+      "portion_grams": 100,
+      "calories": 200,
+      "protein": 10,
+      "carbs": 20,
+      "fat": 8
+    }
+  ]
+}
+''';
+
+    final prompt = TextPart(promptText);
+
+    try {
+      final response = await _model!.generateContent([
+        Content.multi([prompt, ...imageParts])
+      ]);
+
+      // Increment counter after successful request
+      await _incrementRequestCount();
+
+      final text = response.text;
+      if (text == null || text.isEmpty) {
+        Log.warning('Gemini API returned empty response for correction');
+        return null;
+      }
+
+      final results = _parseResponse(text);
+      Log.info('Gemini API corrected ${results.length} food items');
+      if (results.isEmpty) return null;
+      return results.first;
+    } catch (e, stackTrace) {
+      Log.error('Gemini API food correction failed',
+          error: e, stackTrace: stackTrace);
+      throw Exception('Failed to re-analyze image: $e');
     }
   }
 
@@ -212,11 +323,14 @@ If no food is visible, return: {"foods": []}
     // Check rate limit
     final requestsToday = await getRequestsToday();
     if (!await canMakeRequest()) {
-      Log.warning('Gemini API rate limit reached: $requestsToday/$dailyLimit today');
-      throw Exception('Daily limit reached (20 requests/day). Try again tomorrow.');
+      Log.warning(
+          'Gemini API rate limit reached: $requestsToday/$dailyLimit today');
+      throw Exception(
+          'Daily limit reached (20 requests/day). Try again tomorrow.');
     }
 
-    Log.info('Gemini API recipe extraction request (${requestsToday + 1}/$dailyLimit today)');
+    Log.info(
+        'Gemini API recipe extraction request (${requestsToday + 1}/$dailyLimit today)');
 
     final bytes = await imageFile.readAsBytes();
     final imagePart = DataPart('image/jpeg', bytes);
@@ -291,10 +405,12 @@ If no recipe is visible or readable, return:
       }
 
       final result = _parseRecipeResponse(text);
-      Log.info('Gemini API extracted recipe with ${result.ingredients.length} ingredients');
+      Log.info(
+          'Gemini API extracted recipe with ${result.ingredients.length} ingredients');
       return result;
     } catch (e, stackTrace) {
-      Log.error('Gemini API recipe extraction failed', error: e, stackTrace: stackTrace);
+      Log.error('Gemini API recipe extraction failed',
+          error: e, stackTrace: stackTrace);
       throw Exception('Failed to extract recipe: $e');
     }
   }
@@ -314,15 +430,18 @@ If no recipe is visible or readable, return:
 
       final json = jsonDecode(cleaned) as Map<String, dynamic>;
 
-      final ingredients = (json['ingredients'] as List<dynamic>? ?? []).map((i) {
-        final ing = i as Map<String, dynamic>;
-        return ExtractedIngredient(
-          name: ing['name']?.toString() ?? '',
-          amount: (ing['amount'] as num?)?.toDouble() ?? 0,
-          unit: ing['unit']?.toString() ?? 'g',
-          category: ing['category']?.toString() ?? 'other',
-        );
-      }).where((i) => i.name.isNotEmpty).toList();
+      final ingredients = (json['ingredients'] as List<dynamic>? ?? [])
+          .map((i) {
+            final ing = i as Map<String, dynamic>;
+            return ExtractedIngredient(
+              name: ing['name']?.toString() ?? '',
+              amount: (ing['amount'] as num?)?.toDouble() ?? 0,
+              unit: ing['unit']?.toString() ?? 'g',
+              category: ing['category']?.toString() ?? 'other',
+            );
+          })
+          .where((i) => i.name.isNotEmpty)
+          .toList();
 
       final nutrition = json['total_nutrition'] as Map<String, dynamic>? ?? {};
 

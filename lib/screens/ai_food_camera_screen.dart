@@ -23,10 +23,10 @@ class AIFoodCameraScreen extends StatefulWidget {
 
 class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
   static const int maxImages = 5;
-  
+
   final _picker = ImagePicker();
   final _geminiService = GeminiFoodService();
-  
+
   final List<File> _images = [];
   List<EditableFoodResult>? _results;
   bool _isLoading = false;
@@ -48,13 +48,20 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
   String _getUserFriendlyError(dynamic error) {
     final errorStr = error.toString().toLowerCase();
 
-    if (errorStr.contains('network') || errorStr.contains('connection') || errorStr.contains('timeout')) {
+    if (errorStr.contains('network') ||
+        errorStr.contains('connection') ||
+        errorStr.contains('timeout')) {
       return 'Network error. Please check your internet connection and try again.';
     }
-    if (errorStr.contains('quota') || errorStr.contains('limit') || errorStr.contains('429')) {
+    if (errorStr.contains('quota') ||
+        errorStr.contains('limit') ||
+        errorStr.contains('429')) {
       return 'Daily AI limit reached. Please try again tomorrow.';
     }
-    if (errorStr.contains('api key') || errorStr.contains('apikey') || errorStr.contains('unauthorized') || errorStr.contains('401')) {
+    if (errorStr.contains('api key') ||
+        errorStr.contains('apikey') ||
+        errorStr.contains('unauthorized') ||
+        errorStr.contains('401')) {
       return 'Invalid API key. Please check your settings.';
     }
     if (errorStr.contains('image') && errorStr.contains('size')) {
@@ -68,13 +75,14 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
   Future<void> _initService() async {
     // Read API key before any async operation
     final apiKey = context.read<SettingsProvider>().geminiApiKey;
-    
+
     // Load remaining requests
     final remaining = await GeminiFoodService.getRemainingRequests();
     if (mounted) setState(() => _remainingRequests = remaining);
-    
+
     if (apiKey == null || apiKey.isEmpty) {
-      if (mounted) setState(() => _error = AppLocalizations.of(context)!.errorApiKey);
+      if (mounted)
+        setState(() => _error = AppLocalizations.of(context)!.errorApiKey);
       return;
     }
 
@@ -91,7 +99,9 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       await _geminiService.initialize(apiKey);
       if (mounted) setState(() => _serviceInitialized = true);
     } catch (e) {
-      if (mounted) setState(() => _error = AppLocalizations.of(context)!.errorInit(e.toString()));
+      if (mounted)
+        setState(() =>
+            _error = AppLocalizations.of(context)!.errorInit(e.toString()));
     } finally {
       if (mounted) setState(() => _isInitializing = false);
     }
@@ -123,16 +133,18 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
         maxHeight: 1024,
         imageQuality: 85,
       );
-      
+
       if (picked == null) return;
-      
+
       setState(() {
         _images.add(File(picked.path));
         _results = null;
         _error = null;
       });
     } catch (e) {
-      if (mounted) setState(() => _error = AppLocalizations.of(context)!.errorPickImage(e.toString()));
+      if (mounted)
+        setState(() => _error =
+            AppLocalizations.of(context)!.errorPickImage(e.toString()));
     }
   }
 
@@ -145,7 +157,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
 
   Future<void> _analyzeFood({String? correctionHint}) async {
     if (_images.isEmpty) return;
-    
+
     setState(() {
       _isLoading = true;
       _error = null;
@@ -156,13 +168,14 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
         _images,
         correctionHint: correctionHint,
       );
-      
+
       // Update remaining requests count
       final remaining = await GeminiFoodService.getRemainingRequests();
-      
+
       if (mounted) {
         setState(() {
-          _results = results.map((r) => EditableFoodResult(analysis: r)).toList();
+          _results =
+              results.map((r) => EditableFoodResult(analysis: r)).toList();
           _remainingRequests = remaining;
           _isLoading = false;
         });
@@ -207,39 +220,55 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final updatedResults = await _geminiService.analyzeFoodMultiple(
-        _images,
-        correctionHint: correctionHint,
-      );
+      final confirmedFoods = (_results ?? [])
+          .where((r) => r != result)
+          .map((r) => r.currentAnalysis)
+          .toList();
 
-      // Find best match in new results (use first result for simplicity)
-      final updatedAnalysis = updatedResults.isNotEmpty ? updatedResults.first : null;
+      final updatedAnalysis = await _geminiService.reanalyzeSingleFood(
+        _images,
+        currentFood: result.getEditedAnalysis(),
+        correctionHint: correctionHint,
+        confirmedFoods: confirmedFoods,
+      );
 
       // Update remaining requests count
       final remaining = await GeminiFoodService.getRemainingRequests();
 
-      if (mounted && updatedAnalysis != null) {
+      if (!mounted) return;
+
+      if (updatedAnalysis == null) {
         setState(() {
-          result.originalAnalysis = updatedAnalysis;
-          result.currentAnalysis = updatedAnalysis;
-          result.isModified = false;
-
-          // Update all controllers with new values
-          result.nameController.text = updatedAnalysis.name;
-          result.portionController.text = updatedAnalysis.portionGrams.toStringAsFixed(0);
-          result.caloriesController.text = updatedAnalysis.calories.toStringAsFixed(0);
-          result.proteinController.text = updatedAnalysis.protein.toStringAsFixed(1);
-          result.carbsController.text = updatedAnalysis.carbs.toStringAsFixed(1);
-          result.fatController.text = updatedAnalysis.fat.toStringAsFixed(1);
-
+          _error = 'Unable to re-analyze this food item. Please try again.';
           _remainingRequests = remaining;
           _isLoading = false;
         });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Food re-analyzed successfully')),
-        );
+        return;
       }
+
+      setState(() {
+        result.originalAnalysis = updatedAnalysis;
+        result.currentAnalysis = updatedAnalysis;
+        result.isModified = false;
+
+        // Update all controllers with new values
+        result.nameController.text = updatedAnalysis.name;
+        result.portionController.text =
+            updatedAnalysis.portionGrams.toStringAsFixed(0);
+        result.caloriesController.text =
+            updatedAnalysis.calories.toStringAsFixed(0);
+        result.proteinController.text =
+            updatedAnalysis.protein.toStringAsFixed(1);
+        result.carbsController.text = updatedAnalysis.carbs.toStringAsFixed(1);
+        result.fatController.text = updatedAnalysis.fat.toStringAsFixed(1);
+
+        _remainingRequests = remaining;
+        _isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Food re-analyzed successfully')),
+      );
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -249,7 +278,6 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       }
     }
   }
-
 
   void _addFood(EditableFoodResult result) {
     final food = result.currentAnalysis; // Use edited values!
@@ -272,7 +300,8 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(AppLocalizations.of(context)!.addedSnack(entry.name))),
+      SnackBar(
+          content: Text(AppLocalizations.of(context)!.addedSnack(entry.name))),
     );
   }
 
@@ -324,7 +353,8 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     final theme = Theme.of(context);
 
     // Watch only for API key changes to avoid unnecessary rebuilds
-    final hasApiKey = context.select<SettingsProvider, bool>((s) => s.hasGeminiApiKey);
+    final hasApiKey =
+        context.select<SettingsProvider, bool>((s) => s.hasGeminiApiKey);
 
     // Retry initialization if key becomes available and we failed previously
     if (hasApiKey && !_serviceInitialized && !_isInitializing) {
@@ -344,7 +374,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: _remainingRequests <= 3 
+                  color: _remainingRequests <= 3
                       ? AppTheme.warning.withAlpha(26)
                       : AppTheme.success.withAlpha(26),
                   borderRadius: BorderRadius.circular(12),
@@ -355,8 +385,8 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                     Icon(
                       Icons.bolt,
                       size: 14,
-                      color: _remainingRequests <= 3 
-                          ? AppTheme.warning 
+                      color: _remainingRequests <= 3
+                          ? AppTheme.warning
                           : AppTheme.success,
                     ),
                     const SizedBox(width: 2),
@@ -365,8 +395,8 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
-                        color: _remainingRequests <= 3 
-                            ? AppTheme.warning 
+                        color: _remainingRequests <= 3
+                            ? AppTheme.warning
                             : AppTheme.success,
                       ),
                     ),
@@ -380,7 +410,8 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
             child: Padding(
               padding: const EdgeInsets.only(right: 8),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.primary.withAlpha(26),
                   borderRadius: BorderRadius.circular(12),
@@ -423,7 +454,6 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                     itemBuilder: (context, index) => _buildImageTile(index),
                   ),
           ),
-          
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Column(
@@ -432,9 +462,10 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                   children: [
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: _serviceInitialized && _images.length < maxImages
-                            ? () => _pickImage(ImageSource.camera)
-                            : null,
+                        onPressed:
+                            _serviceInitialized && _images.length < maxImages
+                                ? () => _pickImage(ImageSource.camera)
+                                : null,
                         icon: const Icon(Icons.camera_alt),
                         label: Text(l10n.camera),
                       ),
@@ -442,9 +473,10 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: _serviceInitialized && _images.length < maxImages
-                            ? () => _pickImage(ImageSource.gallery)
-                            : null,
+                        onPressed:
+                            _serviceInitialized && _images.length < maxImages
+                                ? () => _pickImage(ImageSource.gallery)
+                                : null,
                         icon: const Icon(Icons.photo_library),
                         label: Text(l10n.gallery),
                       ),
@@ -455,9 +487,10 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: _serviceInitialized && _images.isNotEmpty && !_isLoading
-                        ? () => _analyzeFood()
-                        : null,
+                    onPressed:
+                        _serviceInitialized && _images.isNotEmpty && !_isLoading
+                            ? () => _analyzeFood()
+                            : null,
                     icon: const Icon(Icons.auto_awesome),
                     label: Text(l10n.analyzeWithAI),
                   ),
@@ -465,9 +498,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
               ],
             ),
           ),
-          
           const Divider(),
-          
           Expanded(
             child: _buildResultsArea(l10n, theme),
           ),
@@ -533,7 +564,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
         ),
       );
     }
-    
+
     if (_isLoading) {
       return Center(
         child: Column(
@@ -546,18 +577,16 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
         ),
       );
     }
-    
+
     if (_results == null) {
       return Center(
         child: Text(
-          _serviceInitialized 
-              ? l10n.takePhotosAndAnalyze
-              : l10n.initializingAI,
+          _serviceInitialized ? l10n.takePhotosAndAnalyze : l10n.initializingAI,
           style: TextStyle(color: theme.disabledColor),
         ),
       );
     }
-    
+
     if (_results!.isEmpty) {
       return Center(
         child: Column(
@@ -565,12 +594,13 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
           children: [
             Icon(Icons.no_food, size: 48, color: theme.disabledColor),
             const SizedBox(height: 16),
-            Text(l10n.noFoodDetected, style: TextStyle(color: theme.disabledColor)),
+            Text(l10n.noFoodDetected,
+                style: TextStyle(color: theme.disabledColor)),
           ],
         ),
       );
     }
-    
+
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: _results!.length,
@@ -597,7 +627,8 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                 Expanded(
                   child: Text(
                     food.name,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ),
                 IconButton(
@@ -626,7 +657,8 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.edit, size: 12, color: theme.colorScheme.primary),
+                    Icon(Icons.edit,
+                        size: 12, color: theme.colorScheme.primary),
                     const SizedBox(width: 4),
                     Text(
                       'Modified',
@@ -640,7 +672,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                 ),
               ),
             const SizedBox(height: 12),
-            
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -671,7 +703,8 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                     // Add button or Added indicator
                     result.isAdded
                         ? Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 8),
                             decoration: BoxDecoration(
                               color: Colors.green,
                               borderRadius: BorderRadius.circular(20),
@@ -679,9 +712,12 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.check, color: Colors.white, size: 18),
+                                const Icon(Icons.check,
+                                    color: Colors.white, size: 18),
                                 const SizedBox(width: 4),
-                                Text(AppLocalizations.of(context)!.added, style: const TextStyle(color: Colors.white)),
+                                Text(AppLocalizations.of(context)!.added,
+                                    style:
+                                        const TextStyle(color: Colors.white)),
                               ],
                             ),
                           )
@@ -690,7 +726,8 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                             icon: const Icon(Icons.add, size: 18),
                             label: Text(AppLocalizations.of(context)!.add),
                             style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 8),
                             ),
                           ),
                   ],
@@ -723,15 +760,16 @@ class EditableFoodResult {
       : originalAnalysis = analysis,
         currentAnalysis = analysis,
         nameController = TextEditingController(text: analysis.name),
-        portionController =
-            TextEditingController(text: analysis.portionGrams.toStringAsFixed(0)),
+        portionController = TextEditingController(
+            text: analysis.portionGrams.toStringAsFixed(0)),
         caloriesController =
             TextEditingController(text: analysis.calories.toStringAsFixed(0)),
         proteinController =
             TextEditingController(text: analysis.protein.toStringAsFixed(1)),
         carbsController =
             TextEditingController(text: analysis.carbs.toStringAsFixed(1)),
-        fatController = TextEditingController(text: analysis.fat.toStringAsFixed(1));
+        fatController =
+            TextEditingController(text: analysis.fat.toStringAsFixed(1));
 
   // Backward compatibility - map to nameController
   TextEditingController get controller => nameController;
@@ -741,9 +779,12 @@ class EditableFoodResult {
   FoodAnalysis getEditedAnalysis() {
     return FoodAnalysis(
       name: nameController.text.trim(),
-      portionGrams: double.tryParse(portionController.text) ?? currentAnalysis.portionGrams,
-      calories: double.tryParse(caloriesController.text) ?? currentAnalysis.calories,
-      protein: double.tryParse(proteinController.text) ?? currentAnalysis.protein,
+      portionGrams: double.tryParse(portionController.text) ??
+          currentAnalysis.portionGrams,
+      calories:
+          double.tryParse(caloriesController.text) ?? currentAnalysis.calories,
+      protein:
+          double.tryParse(proteinController.text) ?? currentAnalysis.protein,
       carbs: double.tryParse(carbsController.text) ?? currentAnalysis.carbs,
       fat: double.tryParse(fatController.text) ?? currentAnalysis.fat,
     );
@@ -758,12 +799,14 @@ class EditableFoodResult {
     }
 
     final portion = double.tryParse(portionController.text);
-    if (portion != null && (portion - originalAnalysis.portionGrams).abs() > 5) {
+    if (portion != null &&
+        (portion - originalAnalysis.portionGrams).abs() > 5) {
       parts.add('portion should be ${portion.toStringAsFixed(0)}g');
     }
 
     if (parts.isEmpty) {
-      parts.add('Re-evaluate the nutrition values for "${nameController.text.trim()}"');
+      parts.add(
+          'Re-evaluate the nutrition values for "${nameController.text.trim()}"');
     }
 
     return '${parts.join(', ')}.';
