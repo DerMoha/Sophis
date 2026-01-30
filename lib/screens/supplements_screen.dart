@@ -36,13 +36,14 @@ class SupplementsScreen extends StatelessWidget {
                 expandedHeight: 120,
                 backgroundColor: theme.colorScheme.surface,
                 elevation: 0,
+                centerTitle: false,
                 leading: IconButton(
                   icon: const Icon(Icons.arrow_back_rounded),
                   onPressed: () => Navigator.pop(context),
                 ),
                 flexibleSpace: FlexibleSpaceBar(
                   title: const Text('Supplements 💊'),
-                  titlePadding: const EdgeInsets.only(left: 56, bottom: 16),
+                  titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
                   expandedTitleScale: 1.3,
                 ),
                 actions: [

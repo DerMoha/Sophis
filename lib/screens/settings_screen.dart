@@ -42,8 +42,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             floating: true,
             pinned: true,
             backgroundColor: theme.scaffoldBackgroundColor,
+            centerTitle: false,
             flexibleSpace: FlexibleSpaceBar(
-              titlePadding: const EdgeInsets.only(left: 56, bottom: 16),
+              titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
               title: Text(
                 l10n.settings,
                 style: theme.textTheme.headlineMedium,

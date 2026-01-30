@@ -24,8 +24,9 @@ class DashboardSettingsScreen extends StatelessWidget {
             floating: true,
             pinned: true,
             backgroundColor: theme.scaffoldBackgroundColor,
+            centerTitle: false,
             flexibleSpace: FlexibleSpaceBar(
-              titlePadding: const EdgeInsets.only(left: 56, bottom: 16),
+              titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
               title: Text(
                 l10n.customizeDashboard,
                 style: theme.textTheme.headlineMedium,

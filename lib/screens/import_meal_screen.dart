@@ -55,8 +55,9 @@ class _ImportMealScreenState extends State<ImportMealScreen> {
             floating: true,
             pinned: true,
             backgroundColor: theme.scaffoldBackgroundColor,
+            centerTitle: false,
             flexibleSpace: FlexibleSpaceBar(
-              titlePadding: const EdgeInsets.only(left: 52, bottom: 16),
+              titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
               title: Text(
                 l10n.importMeal,
                 style: theme.appBarTheme.titleTextStyle,

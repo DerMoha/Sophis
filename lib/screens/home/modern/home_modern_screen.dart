@@ -165,8 +165,9 @@ class _HomeScreenModernState extends State<HomeScreenModern> {
             (scrollOffset / 100).clamp(0.0, 1.0),
           ),
           elevation: 0,
+          centerTitle: false,
           flexibleSpace: FlexibleSpaceBar(
-            titlePadding: const EdgeInsets.only(left: 24, bottom: 16),
+            titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
             expandedTitleScale: 1.0,
             title: AnimatedOpacity(
               opacity: scrollOffset > 50 ? 1.0 : 0.0,
