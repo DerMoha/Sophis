@@ -9,12 +9,10 @@ import '../screens/supplements_screen.dart';
 class SupplementsTodayCard extends StatelessWidget {
   const SupplementsTodayCard({super.key});
 
-  // Emerald green color scheme for supplements
-  static const _emerald = Color(0xFF10B981);
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final accentColor = theme.colorScheme.primary;
 
     return Consumer<SupplementsProvider>(
       builder: (context, provider, _) {
@@ -44,17 +42,17 @@ class SupplementsTodayCard extends StatelessWidget {
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: _emerald.withValues(alpha: 0.1),
+                        color: accentColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.medication_liquid_rounded,
-                        color: _emerald,
+                        color: accentColor,
                         size: 20,
                       ),
                     ),
                     const SizedBox(width: 12),
-                    Text('Supplements 💊', style: theme.textTheme.titleMedium),
+                    Text('Supplements', style: theme.textTheme.titleMedium),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -70,13 +68,13 @@ class SupplementsTodayCard extends StatelessWidget {
                     Icon(
                       Icons.add_circle_rounded,
                       size: 18,
-                      color: _emerald,
+                      color: accentColor,
                     ),
                     const SizedBox(width: 8),
                     Text(
                       'Tap to add your first supplement',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: _emerald,
+                        color: accentColor,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -99,17 +97,17 @@ class SupplementsTodayCard extends StatelessWidget {
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: _emerald.withValues(alpha: 0.1),
+                      color: accentColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.medication_liquid_rounded,
-                      color: _emerald,
+                      color: accentColor,
                       size: 20,
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Text('Supplements 💊', style: theme.textTheme.titleMedium),
+                  Text('Supplements', style: theme.textTheme.titleMedium),
                   const Spacer(),
                   // Completion badge
                   Container(
@@ -119,7 +117,7 @@ class SupplementsTodayCard extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: completedCount == totalCount
-                          ? _emerald.withValues(alpha: 0.15)
+                          ? accentColor.withValues(alpha: 0.15)
                           : theme.colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -127,7 +125,7 @@ class SupplementsTodayCard extends StatelessWidget {
                       '$completedCount/$totalCount',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: completedCount == totalCount
-                            ? _emerald
+                            ? accentColor
                             : theme.textTheme.bodyMedium?.color,
                         fontWeight: FontWeight.w600,
                       ),
@@ -145,6 +143,7 @@ class SupplementsTodayCard extends StatelessWidget {
                   child: _SupplementCheckbox(
                     label: supplement.name,
                     isChecked: isCompleted,
+                    accentColor: accentColor,
                     onTap: () {
                       HapticFeedback.mediumImpact();
                       provider.toggleCompletion(supplement.id);
@@ -167,13 +166,13 @@ class SupplementsTodayCard extends StatelessWidget {
                     Icon(
                       Icons.settings_rounded,
                       size: 16,
-                      color: _emerald,
+                      color: accentColor,
                     ),
                     const SizedBox(width: 8),
                     Text(
                       'Manage Supplements',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: _emerald,
+                        color: accentColor,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -192,11 +191,13 @@ class _SupplementCheckbox extends StatefulWidget {
   final String label;
   final bool isChecked;
   final VoidCallback onTap;
+  final Color accentColor;
 
   const _SupplementCheckbox({
     required this.label,
     required this.isChecked,
     required this.onTap,
+    required this.accentColor,
   });
 
   @override
@@ -248,7 +249,6 @@ class _SupplementCheckboxState extends State<_SupplementCheckbox>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    const emerald = Color(0xFF10B981);
 
     return GestureDetector(
       onTap: widget.onTap,
@@ -260,10 +260,10 @@ class _SupplementCheckboxState extends State<_SupplementCheckbox>
             width: 24,
             height: 24,
             decoration: BoxDecoration(
-              color: widget.isChecked ? emerald : Colors.transparent,
+              color: widget.isChecked ? widget.accentColor : Colors.transparent,
               border: Border.all(
                 color: widget.isChecked
-                    ? emerald
+                    ? widget.accentColor
                     : theme.colorScheme.outline.withValues(alpha: 0.3),
                 width: 2,
               ),

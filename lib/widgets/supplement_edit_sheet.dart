@@ -15,8 +15,6 @@ class SupplementEditSheet extends StatefulWidget {
 }
 
 class _SupplementEditSheetState extends State<SupplementEditSheet> {
-  static const _emerald = Color(0xFF10B981);
-
   late TextEditingController _nameController;
   late TimeOfDay _reminderTime;
   late bool _enabled;
@@ -55,6 +53,7 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final mediaQuery = MediaQuery.of(context);
+    final accentColor = theme.colorScheme.primary;
 
     return Container(
       decoration: BoxDecoration(
@@ -89,12 +88,12 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: _emerald.withValues(alpha: 0.1),
+                    color: accentColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.medication_liquid_rounded,
-                    color: _emerald,
+                    color: accentColor,
                     size: 24,
                   ),
                 ),
@@ -102,9 +101,7 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
                 // Title
                 Text(
                   isEditing ? 'Edit Supplement' : 'Add Supplement',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: theme.textTheme.headlineSmall,
                 ),
               ],
             ),
@@ -135,25 +132,21 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide(
-                        color: _hasError
-                            ? Colors.red
-                            : Colors.transparent,
+                        color: _hasError ? Colors.red : Colors.transparent,
                         width: 2,
                       ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide(
-                        color: _hasError
-                            ? Colors.red
-                            : Colors.transparent,
+                        color: _hasError ? Colors.red : Colors.transparent,
                         width: 2,
                       ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide(
-                        color: _hasError ? Colors.red : _emerald,
+                        color: _hasError ? Colors.red : accentColor,
                         width: 2,
                       ),
                     ),
@@ -196,7 +189,7 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
                       children: [
                         Icon(
                           Icons.alarm_rounded,
-                          color: _emerald,
+                          color: accentColor,
                           size: 24,
                         ),
                         const SizedBox(width: 12),
@@ -244,7 +237,7 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
                       onChanged: (value) {
                         setState(() => _enabled = value);
                       },
-                      activeColor: _emerald,
+                      activeColor: accentColor,
                     ),
                   ],
                 ),
@@ -256,7 +249,7 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
                   child: FilledButton(
                     onPressed: _save,
                     style: FilledButton.styleFrom(
-                      backgroundColor: _emerald,
+                      backgroundColor: accentColor,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
@@ -293,6 +286,9 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
   }
 
   Future<void> _pickTime() async {
+    final theme = Theme.of(context);
+    final accentColor = theme.colorScheme.primary;
+
     final picked = await showTimePicker(
       context: context,
       initialTime: _reminderTime,
@@ -301,10 +297,10 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
           data: Theme.of(context).copyWith(
             timePickerTheme: TimePickerThemeData(
               backgroundColor: Theme.of(context).colorScheme.surface,
-              hourMinuteTextColor: _emerald,
-              dayPeriodTextColor: _emerald,
-              dialHandColor: _emerald,
-              dialBackgroundColor: _emerald.withValues(alpha: 0.1),
+              hourMinuteTextColor: accentColor,
+              dayPeriodTextColor: accentColor,
+              dialHandColor: accentColor,
+              dialBackgroundColor: accentColor.withValues(alpha: 0.1),
             ),
           ),
           child: child!,

@@ -11,11 +11,10 @@ import '../widgets/supplement_edit_sheet.dart';
 class SupplementsScreen extends StatelessWidget {
   const SupplementsScreen({super.key});
 
-  static const _emerald = Color(0xFF10B981);
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final accentColor = theme.colorScheme.primary;
 
     return Scaffold(
       backgroundColor: theme.colorScheme.background,
@@ -33,7 +32,7 @@ class SupplementsScreen extends StatelessWidget {
               // App Bar
               SliverAppBar(
                 pinned: true,
-                expandedHeight: 120,
+                expandedHeight: 100,
                 backgroundColor: theme.colorScheme.surface,
                 elevation: 0,
                 centerTitle: false,
@@ -42,9 +41,12 @@ class SupplementsScreen extends StatelessWidget {
                   onPressed: () => Navigator.pop(context),
                 ),
                 flexibleSpace: FlexibleSpaceBar(
-                  title: const Text('Supplements 💊'),
+                  title: Text(
+                    'Supplements',
+                    style: theme.textTheme.headlineMedium,
+                  ),
                   titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
-                  expandedTitleScale: 1.3,
+                  expandedTitleScale: 1.0,
                 ),
                 actions: [
                   IconButton(
@@ -61,7 +63,6 @@ class SupplementsScreen extends StatelessWidget {
                     padding: const EdgeInsets.all(20),
                     child: GlassCard(
                       padding: const EdgeInsets.all(20),
-                      tint: _emerald,
                       child: Column(
                         children: [
                           // Circular progress
@@ -75,8 +76,8 @@ class SupplementsScreen extends StatelessWidget {
                                   child: CircularProgressIndicator(
                                     value: 1.0,
                                     strokeWidth: 8,
-                                    backgroundColor: theme.colorScheme
-                                        .surfaceContainerHighest,
+                                    backgroundColor: theme
+                                        .colorScheme.surfaceContainerHighest,
                                     valueColor: AlwaysStoppedAnimation(
                                       theme.colorScheme.surfaceContainerHighest,
                                     ),
@@ -92,7 +93,7 @@ class SupplementsScreen extends StatelessWidget {
                                     strokeWidth: 8,
                                     backgroundColor: Colors.transparent,
                                     valueColor:
-                                        const AlwaysStoppedAnimation(_emerald),
+                                        AlwaysStoppedAnimation(accentColor),
                                   ),
                                 ),
                                 // Center text
@@ -102,10 +103,10 @@ class SupplementsScreen extends StatelessWidget {
                                     children: [
                                       Text(
                                         '${provider.todayCompletedCount}',
-                                        style:
-                                            theme.textTheme.headlineMedium?.copyWith(
+                                        style: theme.textTheme.headlineMedium
+                                            ?.copyWith(
                                           fontWeight: FontWeight.bold,
-                                          color: _emerald,
+                                          color: accentColor,
                                         ),
                                       ),
                                       Text(
@@ -186,13 +187,13 @@ class SupplementsScreen extends StatelessWidget {
                               alignment: Alignment.centerRight,
                               padding: const EdgeInsets.only(right: 20),
                               decoration: BoxDecoration(
-                                color: Colors.red.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(
-                                    AppTheme.radiusLG),
+                                color: AppTheme.error.withValues(alpha: 0.1),
+                                borderRadius:
+                                    BorderRadius.circular(AppTheme.radiusLG),
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.delete_rounded,
-                                color: Colors.red,
+                                color: AppTheme.error,
                               ),
                             ),
                             confirmDismiss: (direction) async {
@@ -212,7 +213,7 @@ class SupplementsScreen extends StatelessWidget {
                                       onPressed: () =>
                                           Navigator.pop(context, true),
                                       style: TextButton.styleFrom(
-                                        foregroundColor: Colors.red,
+                                        foregroundColor: AppTheme.error,
                                       ),
                                       child: const Text('Delete'),
                                     ),
@@ -224,8 +225,7 @@ class SupplementsScreen extends StatelessWidget {
                               provider.deleteSupplement(supplement.id);
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text(
-                                      '${supplement.name} deleted'),
+                                  content: Text('${supplement.name} deleted'),
                                   action: SnackBarAction(
                                     label: 'Undo',
                                     onPressed: () {
@@ -259,7 +259,7 @@ class SupplementsScreen extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddSheet(context),
-        backgroundColor: _emerald,
+        backgroundColor: accentColor,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add_rounded),
         label: const Text('Add Supplement'),
@@ -274,6 +274,7 @@ class SupplementsScreen extends StatelessWidget {
     bool isCompleted,
     SupplementsProvider provider,
   ) {
+    final accentColor = theme.colorScheme.primary;
     return GlassCard(
       padding: const EdgeInsets.all(16),
       child: Row(
@@ -298,10 +299,10 @@ class SupplementsScreen extends StatelessWidget {
               width: 24,
               height: 24,
               decoration: BoxDecoration(
-                color: isCompleted ? _emerald : Colors.transparent,
+                color: isCompleted ? accentColor : Colors.transparent,
                 border: Border.all(
                   color: isCompleted
-                      ? _emerald
+                      ? accentColor
                       : theme.colorScheme.outline.withValues(alpha: 0.3),
                   width: 2,
                 ),
@@ -359,7 +360,7 @@ class SupplementsScreen extends StatelessWidget {
                 supplement.copyWith(enabled: value),
               );
             },
-            activeColor: _emerald,
+            activeColor: accentColor,
           ),
 
           // Edit button
@@ -380,25 +381,10 @@ class SupplementsScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.medication_liquid_rounded,
-              size: 80,
-              color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.5),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'No supplements yet',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Add your first supplement to start tracking',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.textTheme.bodySmall?.color,
-              ),
-              textAlign: TextAlign.center,
+            EmptyState(
+              icon: Icons.medication_liquid_rounded,
+              title: 'No supplements yet',
+              subtitle: 'Add your first supplement to start tracking',
             ),
             const SizedBox(height: 32),
             _buildQuickAddButtons(context),
@@ -409,6 +395,8 @@ class SupplementsScreen extends StatelessWidget {
   }
 
   Widget _buildQuickAddButtons(BuildContext context) {
+    final theme = Theme.of(context);
+    final accentColor = theme.colorScheme.primary;
     final quickSupplements = [
       'Omega-3',
       'Vitamin D',
@@ -419,27 +407,43 @@ class SupplementsScreen extends StatelessWidget {
     ];
 
     return Wrap(
-      spacing: 8,
-      runSpacing: 8,
+      spacing: 12,
+      runSpacing: 12,
       alignment: WrapAlignment.center,
       children: quickSupplements.map((name) {
-        return OutlinedButton(
-          onPressed: () {
-            final supplement = Supplement(
-              id: const Uuid().v4(),
-              name: name,
-              reminderTime: '09:00',
-              enabled: true,
-              sortOrder: 0,
-              createdAt: DateTime.now(),
-            );
-            context.read<SupplementsProvider>().addSupplement(supplement);
-          },
-          style: OutlinedButton.styleFrom(
-            side: BorderSide(color: _emerald.withValues(alpha: 0.3)),
-            foregroundColor: _emerald,
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              final supplement = Supplement(
+                id: const Uuid().v4(),
+                name: name,
+                reminderTime: '09:00',
+                enabled: true,
+                sortOrder: 0,
+                createdAt: DateTime.now(),
+              );
+              context.read<SupplementsProvider>().addSupplement(supplement);
+            },
+            borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: accentColor.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                border: Border.all(
+                  color: accentColor.withValues(alpha: 0.15),
+                ),
+              ),
+              child: Text(
+                name,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: accentColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
           ),
-          child: Text(name),
         );
       }).toList(),
     );
