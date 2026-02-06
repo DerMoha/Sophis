@@ -64,6 +64,8 @@ class NutritionProvider extends ChangeNotifier {
   DateTime? _cacheDate; // Track which day the cache is for
 
   // Planned meal caches (indexed by YYYYMMDD key)
+  Map<int, List<FoodEntry>>? _foodEntriesByDateCache;
+  Map<int, Map<String, double>>? _foodTotalsByDateCache;
   Map<int, List<PlannedMeal>>? _plannedMealsByDateCache;
   Map<int, Map<String, List<PlannedMeal>>>? _plannedMealsByDateAndTypeCache;
   Map<int, Map<String, double>>? _plannedTotalsByDateCache;
@@ -84,6 +86,11 @@ class NutritionProvider extends ChangeNotifier {
     _plannedMealsByDateCache = null;
     _plannedMealsByDateAndTypeCache = null;
     _plannedTotalsByDateCache = null;
+  }
+
+  void _invalidateFoodHistoryCache() {
+    _foodEntriesByDateCache = null;
+    _foodTotalsByDateCache = null;
   }
 
   /// Check if cache is still valid for today
@@ -143,6 +150,38 @@ class NutritionProvider extends ChangeNotifier {
     _plannedTotalsByDateCache = totalsByDate;
   }
 
+  void _ensureFoodHistoryCache() {
+    if (_foodEntriesByDateCache != null && _foodTotalsByDateCache != null) {
+      return;
+    }
+
+    final entriesByDate = <int, List<FoodEntry>>{};
+    final totalsByDate = <int, Map<String, double>>{};
+
+    for (final entry in _entries) {
+      final key = _dayKey(entry.timestamp);
+      entriesByDate.putIfAbsent(key, () => []).add(entry);
+
+      final totals = totalsByDate.putIfAbsent(
+        key,
+        () => Map<String, double>.from(_zeroMacroTotals),
+      );
+      totals['calories'] = totals['calories']! + entry.calories;
+      totals['protein'] = totals['protein']! + entry.protein;
+      totals['carbs'] = totals['carbs']! + entry.carbs;
+      totals['fat'] = totals['fat']! + entry.fat;
+    }
+
+    _foodEntriesByDateCache = {
+      for (final item in entriesByDate.entries)
+        item.key: List<FoodEntry>.unmodifiable(item.value),
+    };
+    _foodTotalsByDateCache = {
+      for (final item in totalsByDate.entries)
+        item.key: Map<String, double>.unmodifiable(item.value),
+    };
+  }
+
   NutritionProvider(this._storage, this._db) {
     _loadData();
   }
@@ -200,6 +239,7 @@ class NutritionProvider extends ChangeNotifier {
     _userStats = _storage.loadUserStats();
 
     _invalidateCache();
+    _invalidateFoodHistoryCache();
     _invalidatePlannedMealsCache();
     HomeWidgetService.updateWidgetData(this);
 
@@ -255,6 +295,7 @@ class NutritionProvider extends ChangeNotifier {
   Future<void> addFoodEntry(FoodEntry entry) async {
     _entries.add(entry);
     _invalidateCache();
+    _invalidateFoodHistoryCache();
     await _db.insertFood(entry); // DB
     await _updateStreak(); // Update streak when food is logged
     HomeWidgetService.updateWidgetData(this);
@@ -264,6 +305,7 @@ class NutritionProvider extends ChangeNotifier {
   Future<void> removeFoodEntry(String id) async {
     _entries.removeWhere((e) => e.id == id);
     _invalidateCache();
+    _invalidateFoodHistoryCache();
     await _db.deleteFood(id); // DB
     HomeWidgetService.updateWidgetData(this);
     notifyListeners();
@@ -275,6 +317,7 @@ class NutritionProvider extends ChangeNotifier {
     if (index != -1) {
       _entries[index] = entry;
       _invalidateCache();
+      _invalidateFoodHistoryCache();
       await _db.updateFood(entry); // DB
       HomeWidgetService.updateWidgetData(this);
       notifyListeners();
@@ -320,21 +363,15 @@ class NutritionProvider extends ChangeNotifier {
   }
 
   List<FoodEntry> getEntriesForDate(DateTime date) {
-    // For non-today dates, don't use cache
     final now = DateTime.now();
     if (date.year == now.year &&
         date.month == now.month &&
         date.day == now.day) {
       return getTodayEntries();
     }
-    return _entries
-        .where(
-          (e) =>
-              e.timestamp.year == date.year &&
-              e.timestamp.month == date.month &&
-              e.timestamp.day == date.day,
-        )
-        .toList();
+
+    _ensureFoodHistoryCache();
+    return _foodEntriesByDateCache![_dayKey(date)] ?? const <FoodEntry>[];
   }
 
   List<FoodEntry> getEntriesByMeal(String meal) {
@@ -375,15 +412,15 @@ class NutritionProvider extends ChangeNotifier {
   }
 
   Map<String, double> getTotalsForDate(DateTime date) {
-    final entries = getEntriesForDate(date);
-    double cal = 0, prot = 0, carb = 0, fat = 0;
-    for (final e in entries) {
-      cal += e.calories;
-      prot += e.protein;
-      carb += e.carbs;
-      fat += e.fat;
+    final now = DateTime.now();
+    if (date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day) {
+      return getTodayTotals();
     }
-    return {'calories': cal, 'protein': prot, 'carbs': carb, 'fat': fat};
+
+    _ensureFoodHistoryCache();
+    return _foodTotalsByDateCache![_dayKey(date)] ?? _zeroMacroTotals;
   }
 
   double getRemainingCalories() {
@@ -1017,6 +1054,7 @@ class NutritionProvider extends ChangeNotifier {
     _favoriteFoodIds = {};
     _userStats = const UserStats();
     _invalidateCache();
+    _invalidateFoodHistoryCache();
     _invalidatePlannedMealsCache();
 
     // Clear both DB and SharedPreferences
