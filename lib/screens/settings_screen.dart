@@ -27,6 +27,27 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _isExporting = false;
   bool _isImporting = false;
+  final Map<String, bool> _expandedSections = {
+    'appearance': false,
+    'nutrition': false,
+    'language': false,
+    'units': false,
+    'dashboard': false,
+    'reminders': false,
+    'fitness': false,
+    'ai': false,
+    'data': false,
+    'developer': false,
+  };
+
+  bool _isSectionExpanded(String sectionId) =>
+      _expandedSections[sectionId] ?? false;
+
+  void _toggleSection(String sectionId) {
+    setState(() {
+      _expandedSections[sectionId] = !_isSectionExpanded(sectionId);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -65,6 +86,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       index: 0,
                       child: _buildSectionCard(
                         context,
+                        sectionId: 'appearance',
                         title: l10n.appearance,
                         icon: Icons.palette_outlined,
                         children: [
@@ -119,6 +141,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       index: 1,
                       child: _buildSectionCard(
                         context,
+                        sectionId: 'nutrition',
                         title: l10n.nutrition,
                         icon: Icons.restaurant_outlined,
                         children: [
@@ -199,6 +222,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       index: 2,
                       child: _buildSectionCard(
                         context,
+                        sectionId: 'language',
                         title: l10n.language,
                         icon: Icons.language_outlined,
                         children: [
@@ -213,6 +237,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       index: 3,
                       child: _buildSectionCard(
                         context,
+                        sectionId: 'units',
                         title: l10n.units,
                         icon: Icons.straighten_outlined,
                         children: [
@@ -227,6 +252,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       index: 4,
                       child: _buildSectionCard(
                         context,
+                        sectionId: 'dashboard',
                         title: l10n.quickActions,
                         icon: Icons.dashboard_customize_outlined,
                         children: [
@@ -263,6 +289,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       index: 3,
                       child: _buildSectionCard(
                         context,
+                        sectionId: 'reminders',
                         title: l10n.mealReminders,
                         icon: Icons.notifications_outlined,
                         children: [
@@ -312,6 +339,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       index: 4,
                       child: _buildSectionCard(
                         context,
+                        sectionId: 'fitness',
                         title: l10n.fitnessSync,
                         icon: Icons.fitness_center_outlined,
                         children: [
@@ -350,6 +378,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       index: 5,
                       child: _buildSectionCard(
                         context,
+                        sectionId: 'ai',
                         title: l10n.aiSection,
                         icon: Icons.auto_awesome_outlined,
                         children: [
@@ -364,6 +393,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       index: 6,
                       child: _buildSectionCard(
                         context,
+                        sectionId: 'data',
                         title: l10n.dataSection,
                         icon: Icons.folder_outlined,
                         children: [
@@ -394,6 +424,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       index: 7,
                       child: _buildSectionCard(
                         context,
+                        sectionId: 'developer',
                         title: 'Developer & Debugging',
                         icon: Icons.bug_report_outlined,
                         children: [
@@ -464,38 +495,71 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildSectionCard(
     BuildContext context, {
+    required String sectionId,
     required String title,
     required IconData icon,
     required List<Widget> children,
   }) {
     final theme = Theme.of(context);
+    final isExpanded = _isSectionExpanded(sectionId);
 
     return GlassCard(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  icon,
-                  color: theme.colorScheme.primary,
-                  size: 20,
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => _toggleSection(sectionId),
+              borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        icon,
+                        color: theme.colorScheme.primary,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(title, style: theme.textTheme.titleMedium),
+                    ),
+                    AnimatedRotation(
+                      turns: isExpanded ? 0.5 : 0,
+                      duration: AppTheme.animFast,
+                      child: Icon(
+                        Icons.expand_more,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 12),
-              Text(title, style: theme.textTheme.titleMedium),
-            ],
+            ),
           ),
-          const SizedBox(height: 20),
-          ...children,
+          AnimatedSize(
+            duration: AppTheme.animFast,
+            curve: Curves.easeOutCubic,
+            child: isExpanded
+                ? Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: children,
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
         ],
       ),
     );
