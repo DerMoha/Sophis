@@ -18,6 +18,13 @@ import 'log_service.dart';
 
 /// Central state management for nutrition tracking
 class NutritionProvider extends ChangeNotifier {
+  static const Map<String, double> _zeroMacroTotals = {
+    'calories': 0.0,
+    'protein': 0.0,
+    'carbs': 0.0,
+    'fat': 0.0,
+  };
+
   final StorageService _storage;
   final DatabaseService _db; // Database service
 
@@ -34,6 +41,7 @@ class NutritionProvider extends ChangeNotifier {
   List<WorkoutEntry> _workoutEntries = [];
   List<FoodItem> _customFoods = [];
   List<FoodItem> _favoriteFoods = [];
+  Set<String> _favoriteFoodIds = {};
   UserStats _userStats = const UserStats();
 
   // Burned calories from health apps (synced from HealthKit/Health Connect)
@@ -49,13 +57,33 @@ class NutritionProvider extends ChangeNotifier {
   List<FoodEntry>? _cachedTodayEntries;
   Map<String, double>? _cachedTodayTotals;
   Map<String, List<FoodEntry>>? _cachedMealEntries;
+  double? _cachedTodayWaterTotal;
+  List<WaterEntry>? _cachedTodayWaterEntries;
+  double? _cachedTodayWorkoutCalories;
+  List<WorkoutEntry>? _cachedTodayWorkoutEntries;
   DateTime? _cacheDate; // Track which day the cache is for
+
+  // Planned meal caches (indexed by YYYYMMDD key)
+  Map<int, List<PlannedMeal>>? _plannedMealsByDateCache;
+  Map<int, Map<String, List<PlannedMeal>>>? _plannedMealsByDateAndTypeCache;
+  Map<int, Map<String, double>>? _plannedTotalsByDateCache;
 
   /// Invalidate cache when entries change or day changes
   void _invalidateCache() {
     _cachedTodayEntries = null;
     _cachedTodayTotals = null;
     _cachedMealEntries = null;
+    _cachedTodayWaterTotal = null;
+    _cachedTodayWaterEntries = null;
+    _cachedTodayWorkoutCalories = null;
+    _cachedTodayWorkoutEntries = null;
+    _cacheDate = null;
+  }
+
+  void _invalidatePlannedMealsCache() {
+    _plannedMealsByDateCache = null;
+    _plannedMealsByDateAndTypeCache = null;
+    _plannedTotalsByDateCache = null;
   }
 
   /// Check if cache is still valid for today
@@ -65,6 +93,54 @@ class NutritionProvider extends ChangeNotifier {
     return _cacheDate!.year == now.year &&
         _cacheDate!.month == now.month &&
         _cacheDate!.day == now.day;
+  }
+
+  void _prepareTodayCache() {
+    if (_isCacheValid()) return;
+    _cachedTodayEntries = null;
+    _cachedTodayTotals = null;
+    _cachedMealEntries = null;
+    _cachedTodayWaterTotal = null;
+    _cachedTodayWaterEntries = null;
+    _cachedTodayWorkoutCalories = null;
+    _cachedTodayWorkoutEntries = null;
+    _cacheDate = DateTime.now();
+  }
+
+  int _dayKey(DateTime date) => date.year * 10000 + date.month * 100 + date.day;
+
+  void _ensurePlannedMealsCache() {
+    if (_plannedMealsByDateCache != null &&
+        _plannedMealsByDateAndTypeCache != null &&
+        _plannedTotalsByDateCache != null) {
+      return;
+    }
+
+    final mealsByDate = <int, List<PlannedMeal>>{};
+    final mealsByDateAndType = <int, Map<String, List<PlannedMeal>>>{};
+    final totalsByDate = <int, Map<String, double>>{};
+
+    for (final meal in _plannedMeals) {
+      final key = _dayKey(meal.date);
+
+      mealsByDate.putIfAbsent(key, () => []).add(meal);
+
+      final byType = mealsByDateAndType.putIfAbsent(key, () => {});
+      byType.putIfAbsent(meal.meal, () => []).add(meal);
+
+      final totals = totalsByDate.putIfAbsent(
+        key,
+        () => Map<String, double>.from(_zeroMacroTotals),
+      );
+      totals['calories'] = totals['calories']! + meal.calories;
+      totals['protein'] = totals['protein']! + meal.protein;
+      totals['carbs'] = totals['carbs']! + meal.carbs;
+      totals['fat'] = totals['fat']! + meal.fat;
+    }
+
+    _plannedMealsByDateCache = mealsByDate;
+    _plannedMealsByDateAndTypeCache = mealsByDateAndType;
+    _plannedTotalsByDateCache = totalsByDate;
   }
 
   NutritionProvider(this._storage, this._db) {
@@ -94,7 +170,7 @@ class NutritionProvider extends ChangeNotifier {
 
   /// Reload all data from storage (used after import)
   Future<void> reloadAll() async {
-    _loadData();
+    await _loadData();
   }
 
   Future<void> _loadData() async {
@@ -120,9 +196,11 @@ class NutritionProvider extends ChangeNotifier {
     _recentFoods = _storage.loadRecentFoods();
     _customFoods = _storage.loadCustomFoods();
     _favoriteFoods = _storage.loadFavoriteFoods();
+    _favoriteFoodIds = _favoriteFoods.map((f) => f.id).toSet();
     _userStats = _storage.loadUserStats();
 
     _invalidateCache();
+    _invalidatePlannedMealsCache();
     HomeWidgetService.updateWidgetData(this);
 
     _isLoading = false;
@@ -149,7 +227,9 @@ class NutritionProvider extends ChangeNotifier {
       }
 
       await _storage.setMigrationComplete();
-      Log.info('Migration completed: ${legacyFoods.length} foods, ${legacyWater.length} water, ${legacyWeights.length} weights, ${legacyWorkouts.length} workouts');
+      Log.info(
+        'Migration completed: ${legacyFoods.length} foods, ${legacyWater.length} water, ${legacyWeights.length} weights, ${legacyWorkouts.length} workouts',
+      );
     } catch (e, stackTrace) {
       Log.error('Migration failed', error: e, stackTrace: stackTrace);
       // Optionally rethrow or handle, but catching prevents app crash loop
@@ -212,19 +292,22 @@ class NutritionProvider extends ChangeNotifier {
   }
 
   List<FoodEntry> getTodayEntries() {
+    _prepareTodayCache();
+
     // Use cached value if valid
-    if (_isCacheValid() && _cachedTodayEntries != null) {
+    if (_cachedTodayEntries != null) {
       return _cachedTodayEntries!;
     }
 
     // Rebuild cache
-    final now = DateTime.now();
-    _cacheDate = now;
+    final now = _cacheDate!;
     _cachedTodayEntries = _entries
-        .where((e) =>
-            e.timestamp.year == now.year &&
-            e.timestamp.month == now.month &&
-            e.timestamp.day == now.day,)
+        .where(
+          (e) =>
+              e.timestamp.year == now.year &&
+              e.timestamp.month == now.month &&
+              e.timestamp.day == now.day,
+        )
         .toList();
 
     // Also pre-compute meal entries while we're at it
@@ -245,10 +328,12 @@ class NutritionProvider extends ChangeNotifier {
       return getTodayEntries();
     }
     return _entries
-        .where((e) =>
-            e.timestamp.year == date.year &&
-            e.timestamp.month == date.month &&
-            e.timestamp.day == date.day,)
+        .where(
+          (e) =>
+              e.timestamp.year == date.year &&
+              e.timestamp.month == date.month &&
+              e.timestamp.day == date.day,
+        )
         .toList();
   }
 
@@ -264,8 +349,10 @@ class NutritionProvider extends ChangeNotifier {
   }
 
   Map<String, double> getTodayTotals() {
+    _prepareTodayCache();
+
     // Use cached value if valid
-    if (_isCacheValid() && _cachedTodayTotals != null) {
+    if (_cachedTodayTotals != null) {
       return _cachedTodayTotals!;
     }
 
@@ -318,7 +405,11 @@ class NutritionProvider extends ChangeNotifier {
       notifyListeners();
     } catch (e, stackTrace) {
       // Silently fail, keep previous value or 0
-      Log.warning('Failed to fetch burned calories from health service', error: e, stackTrace: stackTrace);
+      Log.warning(
+        'Failed to fetch burned calories from health service',
+        error: e,
+        stackTrace: stackTrace,
+      );
     }
   }
 
@@ -340,6 +431,7 @@ class NutritionProvider extends ChangeNotifier {
   /// Restore specific workout entry (for import)
   Future<void> restoreWorkoutEntry(WorkoutEntry entry) async {
     _workoutEntries.add(entry);
+    _invalidateCache();
     await _db.insertWorkout(entry); // DB
     HomeWidgetService.updateWidgetData(this);
     notifyListeners();
@@ -350,6 +442,7 @@ class NutritionProvider extends ChangeNotifier {
     final index = _workoutEntries.indexWhere((e) => e.id == entry.id);
     if (index != -1) {
       _workoutEntries[index] = entry;
+      _invalidateCache();
       await _db.updateWorkout(entry); // DB
       HomeWidgetService.updateWidgetData(this);
       notifyListeners();
@@ -359,6 +452,7 @@ class NutritionProvider extends ChangeNotifier {
   /// Remove a workout entry
   Future<void> removeWorkoutEntry(String id) async {
     _workoutEntries.removeWhere((e) => e.id == id);
+    _invalidateCache();
     await _db.deleteWorkout(id); // DB
     HomeWidgetService.updateWidgetData(this);
     notifyListeners();
@@ -366,25 +460,38 @@ class NutritionProvider extends ChangeNotifier {
 
   /// Get total burned calories from today's manual workout entries
   double getTodayWorkoutCalories() {
-    final now = DateTime.now();
-    return _workoutEntries
-        .where((e) =>
-            e.timestamp.year == now.year &&
-            e.timestamp.month == now.month &&
-            e.timestamp.day == now.day,)
-        .fold(0.0, (sum, e) => sum + e.caloriesBurned);
+    _prepareTodayCache();
+    if (_cachedTodayWorkoutCalories != null) {
+      return _cachedTodayWorkoutCalories!;
+    }
+
+    final now = _cacheDate!;
+    var total = 0.0;
+    final todayEntries = <WorkoutEntry>[];
+
+    for (final entry in _workoutEntries) {
+      if (entry.timestamp.year == now.year &&
+          entry.timestamp.month == now.month &&
+          entry.timestamp.day == now.day) {
+        total += entry.caloriesBurned;
+        todayEntries.add(entry);
+      }
+    }
+
+    todayEntries.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    _cachedTodayWorkoutCalories = total;
+    _cachedTodayWorkoutEntries = todayEntries;
+    return total;
   }
 
   /// Get today's workout entries sorted by most recent first
   List<WorkoutEntry> getTodayWorkoutEntries() {
-    final now = DateTime.now();
-    return _workoutEntries
-        .where((e) =>
-            e.timestamp.year == now.year &&
-            e.timestamp.month == now.month &&
-            e.timestamp.day == now.day,)
-        .toList()
-      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    _prepareTodayCache();
+    if (_cachedTodayWorkoutEntries != null) {
+      return _cachedTodayWorkoutEntries!;
+    }
+    getTodayWorkoutCalories(); // Populates both workout caches
+    return _cachedTodayWorkoutEntries ?? const <WorkoutEntry>[];
   }
 
   // Water
@@ -400,6 +507,7 @@ class NutritionProvider extends ChangeNotifier {
   /// Restore manual water entry (for import)
   Future<void> restoreWaterEntry(WaterEntry entry) async {
     _waterEntries.add(entry);
+    _invalidateCache();
     await _db.insertWater(entry); // DB
     HomeWidgetService.updateWidgetData(this);
     notifyListeners();
@@ -407,30 +515,44 @@ class NutritionProvider extends ChangeNotifier {
 
   Future<void> removeWaterEntry(String id) async {
     _waterEntries.removeWhere((e) => e.id == id);
+    _invalidateCache();
     await _db.deleteWater(id); // DB
     HomeWidgetService.updateWidgetData(this);
     notifyListeners();
   }
 
   double getTodayWaterTotal() {
-    final now = DateTime.now();
-    return _waterEntries
-        .where((e) =>
-            e.timestamp.year == now.year &&
-            e.timestamp.month == now.month &&
-            e.timestamp.day == now.day,)
-        .fold(0.0, (sum, e) => sum + e.amountMl);
+    _prepareTodayCache();
+    if (_cachedTodayWaterTotal != null) {
+      return _cachedTodayWaterTotal!;
+    }
+
+    final now = _cacheDate!;
+    var total = 0.0;
+    final todayEntries = <WaterEntry>[];
+
+    for (final entry in _waterEntries) {
+      if (entry.timestamp.year == now.year &&
+          entry.timestamp.month == now.month &&
+          entry.timestamp.day == now.day) {
+        total += entry.amountMl;
+        todayEntries.add(entry);
+      }
+    }
+
+    todayEntries.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    _cachedTodayWaterTotal = total;
+    _cachedTodayWaterEntries = todayEntries;
+    return total;
   }
 
   List<WaterEntry> getTodayWaterEntries() {
-    final now = DateTime.now();
-    return _waterEntries
-        .where((e) =>
-            e.timestamp.year == now.year &&
-            e.timestamp.month == now.month &&
-            e.timestamp.day == now.day,)
-        .toList()
-      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    _prepareTodayCache();
+    if (_cachedTodayWaterEntries != null) {
+      return _cachedTodayWaterEntries!;
+    }
+    getTodayWaterTotal(); // Populates both water caches
+    return _cachedTodayWaterEntries ?? const <WaterEntry>[];
   }
 
   // Weight
@@ -504,12 +626,14 @@ class NutritionProvider extends ChangeNotifier {
 
   Future<void> addPlannedMeal(PlannedMeal meal) async {
     _plannedMeals.add(meal);
+    _invalidatePlannedMealsCache();
     await _storage.savePlannedMeals(_plannedMeals);
     notifyListeners();
   }
 
   Future<void> removePlannedMeal(String id) async {
     _plannedMeals.removeWhere((m) => m.id == id);
+    _invalidatePlannedMealsCache();
     await _storage.savePlannedMeals(_plannedMeals);
     notifyListeners();
   }
@@ -518,6 +642,7 @@ class NutritionProvider extends ChangeNotifier {
     final i = _plannedMeals.indexWhere((m) => m.id == meal.id);
     if (i != -1) {
       _plannedMeals[i] = meal;
+      _invalidatePlannedMealsCache();
       await _storage.savePlannedMeals(_plannedMeals);
       notifyListeners();
     }
@@ -525,11 +650,16 @@ class NutritionProvider extends ChangeNotifier {
 
   /// Get planned meals for a specific date
   List<PlannedMeal> getPlannedMealsForDate(DateTime date) {
-    final normalized = DateTime(date.year, date.month, date.day);
-    return _plannedMeals.where((m) {
-      final mealDate = DateTime(m.date.year, m.date.month, m.date.day);
-      return mealDate == normalized;
-    }).toList();
+    _ensurePlannedMealsCache();
+    return List.unmodifiable(
+      _plannedMealsByDateCache![_dayKey(date)] ?? const <PlannedMeal>[],
+    );
+  }
+
+  bool hasPlannedMealsForDate(DateTime date) {
+    _ensurePlannedMealsCache();
+    final meals = _plannedMealsByDateCache![_dayKey(date)];
+    return meals != null && meals.isNotEmpty;
   }
 
   /// Get planned meals for a date range (for week view)
@@ -544,20 +674,19 @@ class NutritionProvider extends ChangeNotifier {
 
   /// Get planned meals by meal type for a specific date
   List<PlannedMeal> getPlannedMealsByType(DateTime date, String meal) {
-    return getPlannedMealsForDate(date).where((m) => m.meal == meal).toList();
+    _ensurePlannedMealsCache();
+    return List.unmodifiable(
+      _plannedMealsByDateAndTypeCache![_dayKey(date)]?[meal] ??
+          const <PlannedMeal>[],
+    );
   }
 
   /// Calculate totals for a planned day
   Map<String, double> getPlannedTotalsForDate(DateTime date) {
-    final meals = getPlannedMealsForDate(date);
-    double cal = 0, prot = 0, carb = 0, fat = 0;
-    for (final m in meals) {
-      cal += m.calories;
-      prot += m.protein;
-      carb += m.carbs;
-      fat += m.fat;
-    }
-    return {'calories': cal, 'protein': prot, 'carbs': carb, 'fat': fat};
+    _ensurePlannedMealsCache();
+    final totals = _plannedTotalsByDateCache![_dayKey(date)];
+    if (totals == null) return _zeroMacroTotals;
+    return Map.unmodifiable(totals);
   }
 
   /// Copy a planned meal to another date
@@ -739,13 +868,14 @@ class NutritionProvider extends ChangeNotifier {
 
   /// Check if a food is in favorites
   bool isFavorite(String id) {
-    return _favoriteFoods.any((f) => f.id == id);
+    return _favoriteFoodIds.contains(id);
   }
 
   /// Add a food to favorites
   Future<void> addFavorite(FoodItem food) async {
     if (isFavorite(food.id)) return;
     _favoriteFoods.insert(0, food.copyWith(isFavorite: true));
+    _favoriteFoodIds.add(food.id);
     await _storage.saveFavoriteFoods(_favoriteFoods);
     notifyListeners();
   }
@@ -753,6 +883,7 @@ class NutritionProvider extends ChangeNotifier {
   /// Remove a food from favorites
   Future<void> removeFavorite(String id) async {
     _favoriteFoods.removeWhere((f) => f.id == id);
+    _favoriteFoodIds.remove(id);
     await _storage.saveFavoriteFoods(_favoriteFoods);
     notifyListeners();
   }
@@ -883,7 +1014,10 @@ class NutritionProvider extends ChangeNotifier {
     _workoutEntries = [];
     _customFoods = [];
     _favoriteFoods = [];
+    _favoriteFoodIds = {};
     _userStats = const UserStats();
+    _invalidateCache();
+    _invalidatePlannedMealsCache();
 
     // Clear both DB and SharedPreferences
     await _db.deleteAllData();
