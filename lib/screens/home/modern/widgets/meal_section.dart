@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../models/food_entry.dart';
 import '../../../../models/shareable_meal.dart';
+import '../../../../services/settings_provider.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../widgets/organic_components.dart';
 import '../../../../services/nutrition_provider.dart';
@@ -69,6 +70,10 @@ class _MealSectionContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final settings = context.watch<SettingsProvider>();
+    final mealColor = color ??
+        settings.getMealType(mealType)?.color ??
+        theme.colorScheme.primary;
 
     final total = entries.fold(0.0, (sum, e) => sum + e.calories);
     final totalProtein = entries.fold(0.0, (sum, e) => sum + e.protein);
@@ -79,7 +84,7 @@ class _MealSectionContent extends StatelessWidget {
       title: title,
       icon: icon,
       calories: total,
-      color: color,
+      color: mealColor,
       showMacros: showMacros,
       protein: totalProtein,
       carbs: totalCarbs,
@@ -90,7 +95,7 @@ class _MealSectionContent extends StatelessWidget {
           mealType: mealType,
           mealTitle: title,
           mealIcon: icon,
-        )),
+        ),),
       ),
       addMenu: _buildAddMenu(context, l10n, theme, entries),
       entries: entries.isEmpty
@@ -119,6 +124,7 @@ class _MealSectionContent extends StatelessWidget {
           ),
         PopupMenuButton<String>(
           icon: Icon(Icons.add_circle_outline, color: theme.colorScheme.primary),
+          tooltip: l10n.add,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppTheme.radiusMD),
           ),

@@ -669,79 +669,91 @@ class MealCard extends StatelessWidget {
       child: Column(
         children: [
           // Header - tappable to view meal details
-          InkWell(
-            onTap: onHeaderTap,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(AppTheme.radiusLG)),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: mealColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: InkWell(
+                    onTap: onHeaderTap,
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(AppTheme.radiusLG),
                     ),
-                    child: Icon(
-                      icon,
-                      color: mealColor,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
                       children: [
-                        Row(
-                          children: [
-                            Text(
-                              title,
-                              style: theme.textTheme.titleMedium,
-                            ),
-                            if (onHeaderTap != null) ...[
-                              const SizedBox(width: 4),
-                              Icon(
-                                Icons.chevron_right,
-                                size: 18,
-                                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-                              ),
-                            ],
-                          ],
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: mealColor.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            icon,
+                            color: mealColor,
+                            size: 20,
+                          ),
                         ),
-                        if (calories > 0)
-                          Text(
-                            '${calories.toStringAsFixed(0)} kcal',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: mealColor,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        if (calories > 0 && showMacros) ...[
-                          const SizedBox(height: 2),
-                          Row(
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _buildMiniMacro('P', protein, AppTheme.protein, theme),
-                              const SizedBox(width: 8),
-                              _buildMiniMacro('C', carbs, AppTheme.carbs, theme),
-                              const SizedBox(width: 8),
-                              _buildMiniMacro('F', fat, AppTheme.fat, theme),
+                              Row(
+                                children: [
+                                  Text(
+                                    title,
+                                    style: theme.textTheme.titleMedium,
+                                  ),
+                                  if (onHeaderTap != null) ...[
+                                    const SizedBox(width: 4),
+                                    Icon(
+                                      Icons.chevron_right,
+                                      size: 18,
+                                      color: theme
+                                          .colorScheme
+                                          .onSurfaceVariant
+                                          .withValues(alpha: 0.5),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              if (calories > 0)
+                                Text(
+                                  '${calories.toStringAsFixed(0)} kcal',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: mealColor,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              if (calories > 0 && showMacros) ...[
+                                const SizedBox(height: 2),
+                                Row(
+                                  children: [
+                                    _buildMiniMacro('P', protein, AppTheme.protein, theme),
+                                    const SizedBox(width: 8),
+                                    _buildMiniMacro('C', carbs, AppTheme.carbs, theme),
+                                    const SizedBox(width: 8),
+                                    _buildMiniMacro('F', fat, AppTheme.fat, theme),
+                                  ],
+                                ),
+                              ],
                             ],
                           ),
-                        ],
+                        ),
                       ],
                     ),
                   ),
-                  addMenu ?? IconButton(
-                    icon: Icon(
-                      Icons.add_circle_outline,
-                      color: mealColor,
-                    ),
-                    onPressed: onAddPressed,
+                ),
+                const SizedBox(width: 8),
+                addMenu ?? IconButton(
+                  icon: Icon(
+                    Icons.add_circle_outline,
+                    color: mealColor,
                   ),
-                ],
-              ),
+                  onPressed: onAddPressed,
+                ),
+              ],
             ),
           ),
           // Entries
@@ -854,7 +866,7 @@ class FoodEntryTile extends StatelessWidget {
               ),
             ),
             Text(
-              '${calories.toStringAsFixed(0)}',
+              calories.toStringAsFixed(0),
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),

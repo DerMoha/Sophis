@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../services/nutrition_provider.dart';
+import '../../../services/settings_provider.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/animations.dart';
 import '../../../widgets/organic_components.dart';
@@ -67,12 +68,85 @@ class _HomeScreenModernState extends State<HomeScreenModern> {
     NutritionProvider nutrition,
   ) {
     final vm = buildHomeDashboardVM(context, nutrition);
+    final showSupplements = context.watch<SettingsProvider>().showSupplements;
     final actions = buildHomeActions(
       context,
       l10n,
       theme,
       vm.visibleDashboardCards,
     );
+    final children = <Widget>[];
+    var fadeIndex = 0;
+
+    void addFade(Widget child) {
+      children.add(FadeInSlide(index: fadeIndex, child: child));
+      fadeIndex += 1;
+    }
+
+    void addSpace(double height) {
+      children.add(SizedBox(height: height));
+    }
+
+    addFade(
+      CalorieHeroCard(
+        consumed: vm.totals['calories']!,
+        baseGoal: vm.goals.calories.toDouble(),
+        effectiveGoal: vm.effectiveGoal,
+        remaining: vm.remaining,
+        progress: vm.calorieProgress,
+        burnedCalories: vm.burnedCalories,
+      ),
+    );
+    addSpace(12);
+    children.add(const StreakCard());
+    addFade(MacrosCard(totals: vm.totals, goals: vm.goals));
+    addSpace(16);
+    addFade(
+      WaterCard(
+        waterTotal: vm.waterTotal,
+        waterGoal: vm.waterGoal,
+        unitSystem: vm.unitSystem,
+      ),
+    );
+    if (showSupplements) {
+      addSpace(16);
+      addFade(const SupplementsTodayCard());
+      addSpace(24);
+    } else {
+      addSpace(24);
+    }
+    addFade(
+      SectionHeader(
+        title: l10n.today,
+        icon: Icons.restaurant_outlined,
+      ),
+    );
+
+    for (var i = 0; i < vm.mealTypes.length; i++) {
+      final mealType = vm.mealTypes[i];
+      addFade(
+        MealSection(
+          mealType: mealType.id,
+          title: mealType.name,
+          icon: mealType.icon,
+          color: mealType.color,
+          showMacros: vm.showMealMacros,
+        ),
+      );
+      if (i < vm.mealTypes.length - 1) {
+        addSpace(12);
+      }
+    }
+
+    addSpace(24);
+    if (actions.isNotEmpty) {
+      addFade(
+        QuickActionsSection(
+          actions: actions,
+          size: vm.quickActionSize,
+        ),
+      );
+    }
 
     return CustomScrollView(
       controller: _scrollController,
@@ -82,71 +156,7 @@ class _HomeScreenModernState extends State<HomeScreenModern> {
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
           sliver: SliverList(
-            delegate: SliverChildListDelegate([
-              FadeInSlide(
-                index: 0,
-                child: CalorieHeroCard(
-                  consumed: vm.totals['calories']!,
-                  baseGoal: vm.goals.calories.toDouble(),
-                  effectiveGoal: vm.effectiveGoal,
-                  remaining: vm.remaining,
-                  progress: vm.calorieProgress,
-                  burnedCalories: vm.burnedCalories,
-                ),
-              ),
-              const SizedBox(height: 12),
-              const StreakCard(),
-              FadeInSlide(
-                index: 1,
-                child: MacrosCard(totals: vm.totals, goals: vm.goals),
-              ),
-              const SizedBox(height: 16),
-              FadeInSlide(
-                index: 2,
-                child: WaterCard(
-                  waterTotal: vm.waterTotal,
-                  waterGoal: vm.waterGoal,
-                  unitSystem: vm.unitSystem,
-                ),
-              ),
-              const SizedBox(height: 16),
-              const FadeInSlide(index: 3, child: SupplementsTodayCard()),
-              const SizedBox(height: 24),
-              FadeInSlide(
-                index: 4,
-                child: SectionHeader(
-                  title: l10n.today,
-                  icon: Icons.restaurant_outlined,
-                ),
-              ),
-              ...vm.mealTypes.asMap().entries.expand((entry) {
-                final index = entry.key;
-                final mealType = entry.value;
-                return [
-                  FadeInSlide(
-                    index: 5 + index,
-                    child: MealSection(
-                      mealType: mealType.id,
-                      title: mealType.name,
-                      icon: mealType.icon,
-                      color: mealType.color,
-                      showMacros: vm.showMealMacros,
-                    ),
-                  ),
-                  if (index < vm.mealTypes.length - 1)
-                    const SizedBox(height: 12),
-                ];
-              }),
-              const SizedBox(height: 24),
-              if (actions.isNotEmpty)
-                FadeInSlide(
-                  index: 8,
-                  child: QuickActionsSection(
-                    actions: actions,
-                    size: vm.quickActionSize,
-                  ),
-                ),
-            ]),
+            delegate: SliverChildListDelegate(children),
           ),
         ),
       ],
@@ -161,8 +171,8 @@ class _HomeScreenModernState extends State<HomeScreenModern> {
           expandedHeight: 100,
           floating: true,
           pinned: true,
-          backgroundColor: theme.scaffoldBackgroundColor.withValues(alpha:
-            (scrollOffset / 100).clamp(0.0, 1.0),
+          backgroundColor: theme.scaffoldBackgroundColor.withValues(
+            alpha: (scrollOffset / 100).clamp(0.0, 1.0),
           ),
           elevation: 0,
           centerTitle: false,
@@ -190,7 +200,10 @@ class _HomeScreenModernState extends State<HomeScreenModern> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(l10n.appTitle, style: theme.textTheme.headlineMedium),
+                          Text(
+                            l10n.appTitle,
+                            style: theme.textTheme.headlineMedium,
+                          ),
                           const SizedBox(height: 4),
                           Text(
                             l10n.today,
@@ -224,12 +237,16 @@ class _HomeScreenModernState extends State<HomeScreenModern> {
                 ),
                 tooltip: l10n.settings,
                 onPressed: () async {
+                  final settings = context.read<SettingsProvider>();
+                  final nutrition = context.read<NutritionProvider>();
                   await Navigator.push(
                     context,
                     AppTheme.slideRoute(const SettingsScreen()),
                   );
                   if (!mounted) return;
-                  refreshBurnedCalories(context);
+                  await nutrition.refreshBurnedCalories(
+                    enabled: settings.healthSyncEnabled,
+                  );
                 },
               ),
             ),
@@ -295,7 +312,10 @@ class _WelcomeView extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    Text(l10n.welcomeTitle, style: theme.textTheme.headlineMedium),
+                    Text(
+                      l10n.welcomeTitle,
+                      style: theme.textTheme.headlineMedium,
+                    ),
                     const SizedBox(height: 12),
                     Text(
                       l10n.welcomeSubtitle,

@@ -4,6 +4,7 @@ import '../models/custom_meal_type.dart';
 import 'storage_service.dart';
 import 'notification_service.dart';
 import 'health_service.dart';
+import 'log_service.dart';
 
 /// Settings provider for theme, locale, and AI mode
 class SettingsProvider extends ChangeNotifier {
@@ -118,15 +119,6 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  HomeLayoutMode get homeLayout => _settings.homeLayout;
-  bool get isLegacyLayout => _settings.homeLayout == HomeLayoutMode.legacy;
-
-  Future<void> setHomeLayout(HomeLayoutMode mode) async {
-    _settings = _settings.copyWith(homeLayout: mode);
-    await _storage.saveSettings(_settings);
-    notifyListeners();
-  }
-
   QuickActionSize get quickActionSize => _settings.quickActionSize;
 
   Future<void> setQuickActionSize(QuickActionSize size) async {
@@ -139,6 +131,11 @@ class SettingsProvider extends ChangeNotifier {
     _settings = _settings.copyWith(debugLoggingEnabled: enabled);
     await _storage.saveSettings(_settings);
     notifyListeners();
+
+    // Log the state change (will only write if enabled)
+    if (enabled) {
+      LogService.instance.info('Debug logging enabled by user');
+    }
   }
 
   Future<void> setRemindersEnabled(bool enabled) async {
@@ -315,7 +312,7 @@ class SettingsProvider extends ChangeNotifier {
   Future<void> addMealType(CustomMealType mealType) async {
     final types = List<CustomMealType>.from(_settings.customMealTypes.isEmpty
         ? CustomMealType.defaults
-        : _settings.customMealTypes);
+        : _settings.customMealTypes,);
     types.add(mealType);
     await setMealTypes(types);
   }
@@ -323,7 +320,7 @@ class SettingsProvider extends ChangeNotifier {
   Future<void> updateMealType(CustomMealType mealType) async {
     final types = List<CustomMealType>.from(_settings.customMealTypes.isEmpty
         ? CustomMealType.defaults
-        : _settings.customMealTypes);
+        : _settings.customMealTypes,);
     final index = types.indexWhere((m) => m.id == mealType.id);
     if (index != -1) {
       types[index] = mealType;
@@ -334,7 +331,7 @@ class SettingsProvider extends ChangeNotifier {
   Future<void> removeMealType(String id) async {
     final types = List<CustomMealType>.from(_settings.customMealTypes.isEmpty
         ? CustomMealType.defaults
-        : _settings.customMealTypes);
+        : _settings.customMealTypes,);
     // Only remove if not a default meal
     types.removeWhere((m) => m.id == id && !m.isDefault);
     await setMealTypes(types);

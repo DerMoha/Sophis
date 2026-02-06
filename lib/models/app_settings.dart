@@ -5,8 +5,6 @@ enum AIMode { offlineBasic, offlinePro, cloud }
 
 enum UnitSystem { metric, imperial }
 
-enum HomeLayoutMode { modern, legacy }
-
 enum QuickActionSize { small, large }
 
 /// Dashboard card configuration
@@ -28,10 +26,6 @@ class DashboardCard {
         visible: visible ?? this.visible,
       );
 }
-// ... (omitting DashboardCardIds and AccentColors to stay concise, or I just target the spot)
-// Actually better to just insert the enum at top and field in AppSettings.
-
-// Let's do partial replacements.
 
 /// Dashboard card IDs and default order
 class DashboardCardIds {
@@ -97,8 +91,6 @@ class AppSettings {
   // Meal display settings
   final bool showMealMacros;
   final bool showSupplements;
-  // Home Screen Layout
-  final HomeLayoutMode homeLayout;
   // Quick Action Button Size
   final QuickActionSize quickActionSize;
   // Debug logging
@@ -124,7 +116,6 @@ class AppSettings {
     this.customMealTypes = const [],
     this.showMealMacros = false,
     this.showSupplements = true,
-    this.homeLayout = HomeLayoutMode.modern,
     this.quickActionSize = QuickActionSize.small,
     this.debugLoggingEnabled = false,
   });
@@ -151,6 +142,7 @@ class AppSettings {
         'customMealTypes': customMealTypes.map((m) => m.toJson()).toList(),
         'showMealMacros': showMealMacros,
         'showSupplements': showSupplements,
+        'quickActionSize': quickActionSize.index,
         'debugLoggingEnabled': debugLoggingEnabled,
       };
 
@@ -187,6 +179,9 @@ class AppSettings {
             const [],
         showMealMacros: json['showMealMacros'] as bool? ?? false,
         showSupplements: json['showSupplements'] as bool? ?? true,
+        quickActionSize: json['quickActionSize'] != null
+            ? QuickActionSize.values[json['quickActionSize']]
+            : QuickActionSize.small,
         debugLoggingEnabled: json['debugLoggingEnabled'] as bool? ?? false,
       );
 
@@ -210,7 +205,6 @@ class AppSettings {
     List<CustomMealType>? customMealTypes,
     bool? showMealMacros,
     bool? showSupplements,
-    HomeLayoutMode? homeLayout,
     QuickActionSize? quickActionSize,
     bool? debugLoggingEnabled,
     bool clearLocale = false,
@@ -244,7 +238,6 @@ class AppSettings {
         customMealTypes: customMealTypes ?? this.customMealTypes,
         showMealMacros: showMealMacros ?? this.showMealMacros,
         showSupplements: showSupplements ?? this.showSupplements,
-        homeLayout: homeLayout ?? this.homeLayout,
         quickActionSize: quickActionSize ?? this.quickActionSize,
         debugLoggingEnabled: debugLoggingEnabled ?? this.debugLoggingEnabled,
       );

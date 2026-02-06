@@ -4,7 +4,7 @@ import '../../../services/nutrition_provider.dart';
 import '../../../services/settings_provider.dart';
 
 /// Refreshes burned calories from health data.
-/// Used by both modern and legacy home screens.
+/// Used by the home screen.
 Future<void> refreshBurnedCalories(BuildContext context) async {
   final settings = context.read<SettingsProvider>();
   final nutrition = context.read<NutritionProvider>();

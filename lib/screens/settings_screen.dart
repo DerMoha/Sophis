@@ -85,42 +85,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           const SizedBox(height: 20),
                           _buildSettingRow(
                             context,
-                            title: l10n.homeLayout,
-                            child: _buildSegmentedControl<HomeLayoutMode>(
+                            title: l10n.quickActionsSize,
+                            child: _buildSegmentedControl<QuickActionSize>(
                               context,
-                              value: settings.homeLayout,
+                              value: settings.quickActionSize,
                               options: [
                                 (
-                                  HomeLayoutMode.modern,
+                                  QuickActionSize.small,
+                                  Icons.view_column_rounded
+                                ), // Chips
+                                (
+                                  QuickActionSize.large,
                                   Icons.grid_view_rounded
-                                ),
-                                (HomeLayoutMode.legacy, Icons.list_alt_rounded),
+                                ), // Cards
                               ],
-                              onChanged: settings.setHomeLayout,
+                              onChanged: settings.setQuickActionSize,
                             ),
                           ),
-                          if (settings.homeLayout == HomeLayoutMode.modern) ...[
-                            const SizedBox(height: 20),
-                            _buildSettingRow(
-                              context,
-                              title: l10n.quickActionsSize,
-                              child: _buildSegmentedControl<QuickActionSize>(
-                                context,
-                                value: settings.quickActionSize,
-                                options: [
-                                  (
-                                    QuickActionSize.small,
-                                    Icons.view_column_rounded
-                                  ), // Chips
-                                  (
-                                    QuickActionSize.large,
-                                    Icons.grid_view_rounded
-                                  ), // Cards
-                                ],
-                                onChanged: settings.setQuickActionSize,
-                              ),
-                            ),
-                          ],
                           const SizedBox(height: 20),
                           Text(
                             l10n.accentColor,
@@ -174,7 +155,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             onTap: () => Navigator.push(
                               context,
                               AppTheme.slideRoute(
-                                  const MealMacrosSettingsScreen()),
+                                const MealMacrosSettingsScreen(),
+                              ),
                             ),
                           ),
                           const SizedBox(height: 12),
@@ -257,7 +239,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             onTap: () => Navigator.push(
                               context,
                               AppTheme.slideRoute(
-                                  const DashboardSettingsScreen()),
+                                const DashboardSettingsScreen(),
+                              ),
                             ),
                           ),
                           const SizedBox(height: 12),
@@ -662,7 +645,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildAccentColorPicker(
-      BuildContext context, SettingsProvider settings) {
+    BuildContext context,
+    SettingsProvider settings,
+  ) {
     final theme = Theme.of(context);
 
     return Wrap(
@@ -682,7 +667,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               border: isSelected
                   ? Border.all(color: theme.colorScheme.onSurface, width: 3)
                   : Border.all(
-                      color: theme.colorScheme.outline.withValues(alpha: 0.2)),
+                      color: theme.colorScheme.outline.withValues(alpha: 0.2),
+                    ),
               boxShadow: isSelected
                   ? [
                       BoxShadow(
@@ -1034,7 +1020,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _handleExport(
-      BuildContext context, AppLocalizations l10n) async {
+    BuildContext context,
+    AppLocalizations l10n,
+  ) async {
     setState(() => _isExporting = true);
 
     try {
@@ -1058,7 +1046,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _handleImport(
-      BuildContext context, AppLocalizations l10n) async {
+    BuildContext context,
+    AppLocalizations l10n,
+  ) async {
     // Capture context-dependent values before any async operations
     final nutritionProvider = context.read<NutritionProvider>();
     final messenger = ScaffoldMessenger.of(context);
@@ -1112,6 +1102,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _handleClearLogs(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+
     // Show confirmation dialog
     final confirmed = await showDialog<bool>(
       context: context,
@@ -1144,7 +1136,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         const SnackBar(
           content: Text('Debug logs cleared'),
           behavior: SnackBarBehavior.floating,
@@ -1153,7 +1145,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         SnackBar(
           content: Text('Failed to clear logs: $e'),
           behavior: SnackBarBehavior.floating,
@@ -1340,7 +1332,7 @@ class _WaterSizesDialogState extends State<_WaterSizesDialog> {
                 decoration: InputDecoration(
                   labelText: labels[i],
                   suffixText: 'ml',
-                  prefixIcon: Icon(
+                  prefixIcon: const Icon(
                     Icons.water_drop_outlined,
                     color: AppTheme.water,
                     size: 20,

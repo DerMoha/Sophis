@@ -7,7 +7,6 @@ import '../../../services/nutrition_provider.dart';
 import '../../../services/settings_provider.dart';
 
 /// Immutable view model containing all derived dashboard values.
-/// Avoids repeated calculations in both modern and legacy screens.
 class HomeDashboardVM {
   final Map<String, double> totals;
   final NutritionGoals goals;
