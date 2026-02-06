@@ -67,6 +67,7 @@ class _WorkoutBottomSheetState extends State<WorkoutBottomSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final mediaQuery = MediaQuery.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final l10n = AppLocalizations.of(context)!;
     final isEditing = widget.editEntry != null;
@@ -76,316 +77,331 @@ class _WorkoutBottomSheetState extends State<WorkoutBottomSheet> {
         color: theme.colorScheme.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Drag handle
-          Container(
-            margin: const EdgeInsets.only(top: 12),
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.outline.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-
-          // Header
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 20, 16, 0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: SafeArea(
+        top: false,
+        child: AnimatedPadding(
+          duration: const Duration(milliseconds: 150),
+          curve: Curves.easeOut,
+          padding: EdgeInsets.only(bottom: mediaQuery.viewInsets.bottom),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: AppTheme.fire.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.local_fire_department_rounded,
-                        color: AppTheme.fire,
-                        size: 22,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      isEditing ? l10n.editWorkout : l10n.logWorkout,
-                      style: theme.textTheme.headlineSmall,
-                    ),
-                  ],
-                ),
-                IconButton(
-                  icon: Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? Colors.white.withValues(alpha: 0.1)
-                          : Colors.black.withValues(alpha: 0.05),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(Icons.close, size: 18),
-                  ),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Quick add buttons (only in non-edit mode)
-          if (!isEditing)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Row(
-                children: [
-                  _QuickAddButton(
-                    amount: 100,
-                    onTap: () {
-                      context.read<NutritionProvider>().addWorkoutEntry(100);
-                      Navigator.pop(context);
-                    },
-                  ),
-                  const SizedBox(width: 12),
-                  _QuickAddButton(
-                    amount: 200,
-                    onTap: () {
-                      context.read<NutritionProvider>().addWorkoutEntry(200);
-                      Navigator.pop(context);
-                    },
-                  ),
-                  const SizedBox(width: 12),
-                  _QuickAddButton(
-                    amount: 300,
-                    onTap: () {
-                      context.read<NutritionProvider>().addWorkoutEntry(300);
-                      Navigator.pop(context);
-                    },
-                  ),
-                  const SizedBox(width: 12),
-                  _QuickAddButton(
-                    amount: 500,
-                    onTap: () {
-                      context.read<NutritionProvider>().addWorkoutEntry(500);
-                      Navigator.pop(context);
-                    },
-                  ),
-                ],
-              ),
-            ),
-          if (!isEditing) const SizedBox(height: 20),
-
-          // Custom Entry
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _caloriesController,
-                    keyboardType: TextInputType.number,
-                    autofocus: isEditing,
-                    decoration: InputDecoration(
-                      hintText: l10n.caloriesBurned,
-                      prefixIcon:
-                          const Icon(Icons.local_fire_department_outlined, size: 20),
-                      suffixText: 'kcal',
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 14,),
-                    ),
-                    onSubmitted: (_) => _saveEntry(),
+                // Drag handle
+                Container(
+                  margin: const EdgeInsets.only(top: 12),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.outline.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                const SizedBox(width: 12),
-                SizedBox(
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: _saveEntry,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.fire,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                    ),
-                    child: Text(isEditing ? l10n.save : l10n.add),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
 
-          // Optional note
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: TextField(
-              controller: _noteController,
-              decoration: InputDecoration(
-                hintText: l10n.noteOptional,
-                prefixIcon: const Icon(Icons.note_outlined, size: 20),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // History List (only in non-edit mode)
-          if (!isEditing) ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Row(
-                children: [
-                  Text(
-                    l10n.today,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            Flexible(
-              child: Consumer<NutritionProvider>(
-                builder: (context, nutrition, _) {
-                  final entries = nutrition.getTodayWorkoutEntries();
-
-                  if (entries.isEmpty) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 40),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
+                // Header
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 20, 16, 0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
                         children: [
                           Container(
-                            width: 56,
-                            height: 56,
+                            width: 40,
+                            height: 40,
                             decoration: BoxDecoration(
                               color: AppTheme.fire.withValues(alpha: 0.1),
-                              shape: BoxShape.circle,
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Icon(
-                              Icons.fitness_center_outlined,
-                              color: AppTheme.fire.withValues(alpha: 0.5),
-                              size: 24,
+                            child: const Icon(
+                              Icons.local_fire_department_rounded,
+                              color: AppTheme.fire,
+                              size: 22,
                             ),
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(width: 12),
                           Text(
-                            l10n.noWorkouts,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
+                            isEditing ? l10n.editWorkout : l10n.logWorkout,
+                            style: theme.textTheme.headlineSmall,
                           ),
                         ],
                       ),
-                    );
-                  }
+                      IconButton(
+                        icon: Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.1)
+                                : Colors.black.withValues(alpha: 0.05),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.close, size: 18),
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
 
-                  return SizedBox(
-                    height: 280,
-                    child: ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      itemCount: entries.length,
-                      itemBuilder: (context, index) {
-                        final entry = entries[index];
-                        return FadeInSlide(
-                          index: index,
-                          delay: const Duration(milliseconds: 30),
-                          child: Container(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 12,),
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? Colors.white.withValues(alpha: 0.05)
-                                  : Colors.black.withValues(alpha: 0.02),
-                              borderRadius:
-                                  BorderRadius.circular(AppTheme.radiusMD),
+                // Quick add buttons (only in non-edit mode)
+                if (!isEditing)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Row(
+                      children: [
+                        _QuickAddButton(
+                          amount: 100,
+                          onTap: () {
+                            context.read<NutritionProvider>().addWorkoutEntry(100);
+                            Navigator.pop(context);
+                          },
+                        ),
+                        const SizedBox(width: 12),
+                        _QuickAddButton(
+                          amount: 200,
+                          onTap: () {
+                            context.read<NutritionProvider>().addWorkoutEntry(200);
+                            Navigator.pop(context);
+                          },
+                        ),
+                        const SizedBox(width: 12),
+                        _QuickAddButton(
+                          amount: 300,
+                          onTap: () {
+                            context.read<NutritionProvider>().addWorkoutEntry(300);
+                            Navigator.pop(context);
+                          },
+                        ),
+                        const SizedBox(width: 12),
+                        _QuickAddButton(
+                          amount: 500,
+                          onTap: () {
+                            context.read<NutritionProvider>().addWorkoutEntry(500);
+                            Navigator.pop(context);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                if (!isEditing) const SizedBox(height: 20),
+
+                // Custom Entry
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _caloriesController,
+                          keyboardType: TextInputType.number,
+                          autofocus: isEditing,
+                          decoration: InputDecoration(
+                            hintText: l10n.caloriesBurned,
+                            prefixIcon: const Icon(
+                              Icons.local_fire_department_outlined,
+                              size: 20,
                             ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 32,
-                                  height: 32,
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.fire.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: const Icon(
-                                    Icons.local_fire_department,
-                                    color: AppTheme.fire,
-                                    size: 16,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        '${entry.caloriesBurned.toStringAsFixed(0)} kcal',
-                                        style: theme.textTheme.titleSmall
-                                            ?.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      Text(
-                                        entry.note ?? _formatTime(entry.timestamp),
-                                        style:
-                                            theme.textTheme.bodySmall?.copyWith(
-                                          color: theme
-                                              .colorScheme.onSurfaceVariant,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                IconButton(
-                                  icon: Icon(
-                                    Icons.edit_outlined,
-                                    color: theme.colorScheme.primary,
-                                    size: 20,
-                                  ),
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                    showModalBottomSheet(
-                                      context: context,
-                                      isScrollControlled: true,
-                                      backgroundColor: Colors.transparent,
-                                      builder: (_) =>
-                                          WorkoutBottomSheet(editEntry: entry),
-                                    );
-                                  },
-                                  visualDensity: VisualDensity.compact,
-                                ),
-                                IconButton(
-                                  icon: Icon(
-                                    Icons.delete_outline,
-                                    color: AppTheme.error.withValues(alpha: 0.7),
-                                    size: 20,
-                                  ),
-                                  onPressed: () => _deleteEntry(entry.id),
-                                  visualDensity: VisualDensity.compact,
-                                ),
-                              ],
+                            suffixText: 'kcal',
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
                             ),
                           ),
-                        );
-                      },
+                          onSubmitted: (_) => _saveEntry(),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      SizedBox(
+                        height: 52,
+                        child: ElevatedButton(
+                          onPressed: _saveEntry,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.fire,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                          ),
+                          child: Text(isEditing ? l10n.save : l10n.add),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Optional note
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: TextField(
+                    controller: _noteController,
+                    decoration: InputDecoration(
+                      hintText: l10n.noteOptional,
+                      prefixIcon: const Icon(Icons.note_outlined, size: 20),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
                     ),
-                  );
-                },
-              ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // History List (only in non-edit mode)
+                if (!isEditing) ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Row(
+                      children: [
+                        Text(
+                          l10n.today,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Consumer<NutritionProvider>(
+                    builder: (context, nutrition, _) {
+                      final entries = nutrition.getTodayWorkoutEntries();
+
+                      if (entries.isEmpty) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 40),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 56,
+                                height: 56,
+                                decoration: BoxDecoration(
+                                  color: AppTheme.fire.withValues(alpha: 0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.fitness_center_outlined,
+                                  color: AppTheme.fire.withValues(alpha: 0.5),
+                                  size: 24,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                l10n.noWorkouts,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      return ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        itemCount: entries.length,
+                        itemBuilder: (context, index) {
+                          final entry = entries[index];
+                          return FadeInSlide(
+                            index: index,
+                            delay: const Duration(milliseconds: 30),
+                            child: Container(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? Colors.white.withValues(alpha: 0.05)
+                                    : Colors.black.withValues(alpha: 0.02),
+                                borderRadius:
+                                    BorderRadius.circular(AppTheme.radiusMD),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 32,
+                                    height: 32,
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.fire.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Icon(
+                                      Icons.local_fire_department,
+                                      color: AppTheme.fire,
+                                      size: 16,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '${entry.caloriesBurned.toStringAsFixed(0)} kcal',
+                                          style: theme.textTheme.titleSmall
+                                              ?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        Text(
+                                          entry.note ??
+                                              _formatTime(entry.timestamp),
+                                          style: theme.textTheme.bodySmall
+                                              ?.copyWith(
+                                            color: theme
+                                                .colorScheme.onSurfaceVariant,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: Icon(
+                                      Icons.edit_outlined,
+                                      color: theme.colorScheme.primary,
+                                      size: 20,
+                                    ),
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                      showModalBottomSheet(
+                                        context: context,
+                                        isScrollControlled: true,
+                                        backgroundColor: Colors.transparent,
+                                        builder: (_) =>
+                                            WorkoutBottomSheet(editEntry: entry),
+                                      );
+                                    },
+                                    visualDensity: VisualDensity.compact,
+                                  ),
+                                  IconButton(
+                                    icon: Icon(
+                                      Icons.delete_outline,
+                                      color: AppTheme.error.withValues(alpha: 0.7),
+                                      size: 20,
+                                    ),
+                                    onPressed: () => _deleteEntry(entry.id),
+                                    visualDensity: VisualDensity.compact,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ],
+                SizedBox(height: mediaQuery.padding.bottom + 16),
+              ],
             ),
-          ],
-          SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
-        ],
+          ),
+        ),
       ),
     );
   }
