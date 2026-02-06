@@ -63,224 +63,234 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
       padding: EdgeInsets.only(
         bottom: mediaQuery.viewInsets.bottom,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Drag handle
-          const SizedBox(height: 12),
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // Header
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Row(
-              children: [
-                // Icon
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: accentColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Icon(
-                    Icons.medication_liquid_rounded,
-                    color: accentColor,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                // Title
-                Text(
-                  isEditing ? 'Edit Supplement' : 'Add Supplement',
-                  style: theme.textTheme.headlineSmall,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Form
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: SafeArea(
+        top: false,
+        child: AnimatedPadding(
+          duration: const Duration(milliseconds: 150),
+          curve: Curves.easeOut,
+          padding: EdgeInsets.only(bottom: mediaQuery.viewInsets.bottom),
+          child: SingleChildScrollView(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // Name field
-                Text(
-                  'Name',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
+                // Drag handle
+                const SizedBox(height: 12),
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _nameController,
-                  autofocus: !isEditing,
-                  decoration: InputDecoration(
-                    hintText: 'e.g., Omega-3, Vitamin C',
-                    filled: true,
-                    fillColor: theme.colorScheme.surfaceContainerHighest,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(
-                        color: _hasError ? Colors.red : Colors.transparent,
-                        width: 2,
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(
-                        color: _hasError ? Colors.red : Colors.transparent,
-                        width: 2,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(
-                        color: _hasError ? Colors.red : accentColor,
-                        width: 2,
-                      ),
-                    ),
-                  ),
-                  onChanged: (value) {
-                    if (_hasError && value.isNotEmpty) {
-                      setState(() => _hasError = false);
-                    }
-                  },
-                ),
-                if (_hasError)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8, left: 12),
-                    child: Text(
-                      'Name cannot be empty',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: Colors.red,
-                      ),
-                    ),
-                  ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
 
-                // Reminder time
-                Text(
-                  'Reminder Time',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                GestureDetector(
-                  onTap: _pickTime,
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.alarm_rounded,
+                // Header
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Row(
+                    children: [
+                      // Icon
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: accentColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Icon(
+                          Icons.medication_liquid_rounded,
                           color: accentColor,
                           size: 24,
                         ),
-                        const SizedBox(width: 12),
-                        Text(
-                          _formatTime(_reminderTime),
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const Spacer(),
-                        Icon(
-                          Icons.edit_rounded,
-                          color: theme.textTheme.bodySmall?.color,
-                          size: 20,
-                        ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(width: 16),
+                      // Title
+                      Text(
+                        isEditing ? 'Edit Supplement' : 'Add Supplement',
+                        style: theme.textTheme.headlineSmall,
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 24),
 
-                // Enabled switch
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Enable Reminder',
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w600,
+                // Form
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Name field
+                      Text(
+                        'Name',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _nameController,
+                        autofocus: !isEditing,
+                        decoration: InputDecoration(
+                          hintText: 'e.g., Omega-3, Vitamin C',
+                          filled: true,
+                          fillColor: theme.colorScheme.surfaceContainerHighest,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(
+                              color: _hasError ? Colors.red : Colors.transparent,
+                              width: 2,
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Get daily notifications',
-                            style: theme.textTheme.bodySmall,
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(
+                              color: _hasError ? Colors.red : Colors.transparent,
+                              width: 2,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(
+                              color: _hasError ? Colors.red : accentColor,
+                              width: 2,
+                            ),
+                          ),
+                        ),
+                        onChanged: (value) {
+                          if (_hasError && value.isNotEmpty) {
+                            setState(() => _hasError = false);
+                          }
+                        },
+                      ),
+                      if (_hasError)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8, left: 12),
+                          child: Text(
+                            'Name cannot be empty',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: Colors.red,
+                            ),
+                          ),
+                        ),
+                      const SizedBox(height: 24),
+
+                      // Reminder time
+                      Text(
+                        'Reminder Time',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      GestureDetector(
+                        onTap: _pickTime,
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.alarm_rounded,
+                                color: accentColor,
+                                size: 24,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                _formatTime(_reminderTime),
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const Spacer(),
+                              Icon(
+                                Icons.edit_rounded,
+                                color: theme.textTheme.bodySmall?.color,
+                                size: 20,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Enabled switch
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Enable Reminder',
+                                  style: theme.textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Get daily notifications',
+                                  style: theme.textTheme.bodySmall,
+                                ),
+                              ],
+                            ),
+                          ),
+                          Switch(
+                            value: _enabled,
+                            onChanged: (value) {
+                              setState(() => _enabled = value);
+                            },
+                            activeThumbColor: accentColor,
                           ),
                         ],
                       ),
-                    ),
-                    Switch(
-                      value: _enabled,
-                      onChanged: (value) {
-                        setState(() => _enabled = value);
-                      },
-                      activeThumbColor: accentColor,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 32),
+                      const SizedBox(height: 32),
 
-                // Save button
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: _save,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: accentColor,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                      // Save button
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton(
+                          onPressed: _save,
+                          style: FilledButton.styleFrom(
+                            backgroundColor: accentColor,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          child: Text(
+                            isEditing ? 'Save Changes' : 'Add Supplement',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                    child: Text(
-                      isEditing ? 'Save Changes' : 'Add Supplement',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                      const SizedBox(height: 16),
+
+                      // Cancel button
+                      if (!isEditing)
+                        SizedBox(
+                          width: double.infinity,
+                          child: TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Cancel'),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 16),
-
-                // Cancel button
-                if (!isEditing)
-                  SizedBox(
-                    width: double.infinity,
-                    child: TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Cancel'),
-                    ),
-                  ),
+                SizedBox(height: mediaQuery.padding.bottom + 16),
               ],
             ),
           ),
-          const SizedBox(height: 32),
-        ],
+        ),
       ),
     );
   }
