@@ -31,123 +31,128 @@ class MealDetailScreen extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(mealIcon, size: 24),
-            const SizedBox(width: 8),
-            Text(mealTitle),
-          ],
-        ),
-        actions: [
-          Consumer<NutritionProvider>(
-            builder: (context, nutrition, _) {
-              final entries = nutrition.getEntriesByMeal(mealType);
-              if (entries.isEmpty) return const SizedBox.shrink();
-              return IconButton(
-                icon: const Icon(Icons.share_outlined),
-                tooltip: l10n.share,
-                onPressed: () => _shareMeal(context, entries),
-              );
-            },
-          ),
-        ],
-      ),
-      body: Consumer<NutritionProvider>(
-        builder: (context, nutrition, _) {
-          final entries = nutrition.getEntriesByMeal(mealType);
-          final totalCalories = entries.fold(0.0, (sum, e) => sum + e.calories);
-          final totalProtein = entries.fold(0.0, (sum, e) => sum + e.protein);
-          final totalCarbs = entries.fold(0.0, (sum, e) => sum + e.carbs);
-          final totalFat = entries.fold(0.0, (sum, e) => sum + e.fat);
+    return Consumer<NutritionProvider>(
+      builder: (context, nutrition, _) {
+        final entries = nutrition.getEntriesByMeal(mealType);
 
-          if (entries.isEmpty) {
-            return _buildEmptyState(context, l10n, theme);
-          }
+        var totalCalories = 0.0;
+        var totalProtein = 0.0;
+        var totalCarbs = 0.0;
+        var totalFat = 0.0;
+        for (final entry in entries) {
+          totalCalories += entry.calories;
+          totalProtein += entry.protein;
+          totalCarbs += entry.carbs;
+          totalFat += entry.fat;
+        }
 
-          return Column(
-            children: [
-              // Summary card
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: GlassCard(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            totalCalories.toStringAsFixed(0),
-                            style: theme.textTheme.headlineMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            ' kcal',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _MacroSummary(
-                            label: l10n.protein,
-                            value: totalProtein,
-                            color: AppTheme.protein,
-                          ),
-                          _MacroSummary(
-                            label: l10n.carbs,
-                            value: totalCarbs,
-                            color: AppTheme.carbs,
-                          ),
-                          _MacroSummary(
-                            label: l10n.fat,
-                            value: totalFat,
-                            color: AppTheme.fat,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+        return Scaffold(
+          appBar: AppBar(
+            title: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(mealIcon, size: 24),
+                const SizedBox(width: 8),
+                Text(mealTitle),
+              ],
+            ),
+            actions: [
+              if (entries.isNotEmpty)
+                IconButton(
+                  icon: const Icon(Icons.share_outlined),
+                  tooltip: l10n.share,
+                  onPressed: () => _shareMeal(context, entries),
                 ),
-              ),
-              // Entries list
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: entries.length,
-                  itemBuilder: (context, index) {
-                    final entry = entries[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _MealEntryCard(
-                        entry: entry,
-                        mealType: mealType,
-                      ),
-                    );
-                  },
-                ),
-              ),
             ],
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddOptions(context),
-        icon: const Icon(Icons.add),
-        label: Text(l10n.add),
-      ),
+          ),
+          body: entries.isEmpty
+              ? _buildEmptyState(context, l10n, theme)
+              : Column(
+                  children: [
+                    // Summary card
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: GlassCard(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  totalCalories.toStringAsFixed(0),
+                                  style:
+                                      theme.textTheme.headlineMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  ' kcal',
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                _MacroSummary(
+                                  label: l10n.protein,
+                                  value: totalProtein,
+                                  color: AppTheme.protein,
+                                ),
+                                _MacroSummary(
+                                  label: l10n.carbs,
+                                  value: totalCarbs,
+                                  color: AppTheme.carbs,
+                                ),
+                                _MacroSummary(
+                                  label: l10n.fat,
+                                  value: totalFat,
+                                  color: AppTheme.fat,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    // Entries list
+                    Expanded(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: entries.length,
+                        itemBuilder: (context, index) {
+                          final entry = entries[index];
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: _MealEntryCard(
+                              entry: entry,
+                              mealType: mealType,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: () => _showAddOptions(context),
+            icon: const Icon(Icons.add),
+            label: Text(l10n.add),
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildEmptyState(BuildContext context, AppLocalizations l10n, ThemeData theme) {
+  Widget _buildEmptyState(
+    BuildContext context,
+    AppLocalizations l10n,
+    ThemeData theme,
+  ) {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -203,35 +208,55 @@ class MealDetailScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: Icon(Icons.edit_outlined, color: theme.colorScheme.primary),
+              leading:
+                  Icon(Icons.edit_outlined, color: theme.colorScheme.primary),
               title: Text(l10n.manualEntry),
               onTap: () {
                 Navigator.pop(ctx);
-                Navigator.push(context, AppTheme.slideRoute(AddFoodScreen(meal: mealType)));
+                Navigator.push(
+                  context,
+                  AppTheme.slideRoute(AddFoodScreen(meal: mealType)),
+                );
               },
             ),
             ListTile(
-              leading: Icon(Icons.search_outlined, color: theme.colorScheme.primary),
+              leading:
+                  Icon(Icons.search_outlined, color: theme.colorScheme.primary),
               title: Text(l10n.searchFood),
               onTap: () {
                 Navigator.pop(ctx);
-                Navigator.push(context, AppTheme.slideRoute(FoodSearchScreen(meal: mealType)));
+                Navigator.push(
+                  context,
+                  AppTheme.slideRoute(FoodSearchScreen(meal: mealType)),
+                );
               },
             ),
             ListTile(
-              leading: Icon(Icons.qr_code_scanner_outlined, color: theme.colorScheme.primary),
+              leading: Icon(
+                Icons.qr_code_scanner_outlined,
+                color: theme.colorScheme.primary,
+              ),
               title: Text(l10n.scanBarcode),
               onTap: () {
                 Navigator.pop(ctx);
-                Navigator.push(context, AppTheme.slideRoute(BarcodeScannerScreen(meal: mealType)));
+                Navigator.push(
+                  context,
+                  AppTheme.slideRoute(BarcodeScannerScreen(meal: mealType)),
+                );
               },
             ),
             ListTile(
-              leading: Icon(Icons.auto_awesome_outlined, color: theme.colorScheme.primary),
+              leading: Icon(
+                Icons.auto_awesome_outlined,
+                color: theme.colorScheme.primary,
+              ),
               title: Text(l10n.aiRecognition),
               onTap: () {
                 Navigator.pop(ctx);
-                Navigator.push(context, AppTheme.slideRoute(AIFoodCameraScreen(meal: mealType)));
+                Navigator.push(
+                  context,
+                  AppTheme.slideRoute(AIFoodCameraScreen(meal: mealType)),
+                );
               },
             ),
           ],
@@ -272,7 +297,9 @@ class _MealEntryCard extends StatelessWidget {
           // Main content - tappable for quick actions
           InkWell(
             onTap: () => _showQuickActions(context, l10n),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(AppTheme.radiusMD)),
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(AppTheme.radiusMD),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -304,16 +331,29 @@ class _MealEntryCard extends StatelessWidget {
                   // Macro row
                   Row(
                     children: [
-                      _MacroChip(label: 'P', value: entry.protein, color: AppTheme.protein),
+                      _MacroChip(
+                        label: 'P',
+                        value: entry.protein,
+                        color: AppTheme.protein,
+                      ),
                       const SizedBox(width: 12),
-                      _MacroChip(label: 'C', value: entry.carbs, color: AppTheme.carbs),
+                      _MacroChip(
+                        label: 'C',
+                        value: entry.carbs,
+                        color: AppTheme.carbs,
+                      ),
                       const SizedBox(width: 12),
-                      _MacroChip(label: 'F', value: entry.fat, color: AppTheme.fat),
+                      _MacroChip(
+                        label: 'F',
+                        value: entry.fat,
+                        color: AppTheme.fat,
+                      ),
                       const Spacer(),
                       Icon(
                         Icons.touch_app_outlined,
                         size: 16,
-                        color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                        color: theme.colorScheme.onSurfaceVariant
+                            .withValues(alpha: 0.5),
                       ),
                     ],
                   ),
@@ -324,8 +364,11 @@ class _MealEntryCard extends StatelessWidget {
           // Quick portion adjustment bar
           Container(
             decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(AppTheme.radiusMD)),
+              color: theme.colorScheme.surfaceContainerHighest
+                  .withValues(alpha: 0.3),
+              borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(AppTheme.radiusMD),
+              ),
             ),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -341,7 +384,8 @@ class _MealEntryCard extends StatelessWidget {
                     onTap: () => _adjustPortion(context, 0.9),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     child: Text(
                       '100%',
                       style: theme.textTheme.labelMedium?.copyWith(
@@ -422,7 +466,10 @@ class _MealEntryCard extends StatelessWidget {
             ),
             // Actions
             ListTile(
-              leading: Icon(Icons.swap_horiz_outlined, color: theme.colorScheme.primary),
+              leading: Icon(
+                Icons.swap_horiz_outlined,
+                color: theme.colorScheme.primary,
+              ),
               title: Text(l10n.moveTo),
               subtitle: Text(l10n.moveToMealSubtitle),
               onTap: () {
@@ -431,7 +478,8 @@ class _MealEntryCard extends StatelessWidget {
               },
             ),
             ListTile(
-              leading: Icon(Icons.copy_outlined, color: theme.colorScheme.primary),
+              leading:
+                  Icon(Icons.copy_outlined, color: theme.colorScheme.primary),
               title: Text(l10n.duplicate),
               subtitle: Text(l10n.duplicateSubtitle),
               onTap: () {
@@ -440,7 +488,8 @@ class _MealEntryCard extends StatelessWidget {
               },
             ),
             ListTile(
-              leading: Icon(Icons.edit_outlined, color: theme.colorScheme.primary),
+              leading:
+                  Icon(Icons.edit_outlined, color: theme.colorScheme.primary),
               title: Text(l10n.editEntry),
               subtitle: Text(l10n.editEntrySubtitle),
               onTap: () {
@@ -449,7 +498,10 @@ class _MealEntryCard extends StatelessWidget {
               },
             ),
             ListTile(
-              leading: Icon(Icons.bookmark_add_outlined, color: theme.colorScheme.primary),
+              leading: Icon(
+                Icons.bookmark_add_outlined,
+                color: theme.colorScheme.primary,
+              ),
               title: Text(l10n.saveToMyFoods),
               subtitle: Text(l10n.saveToMyFoodsSubtitle),
               onTap: () {
@@ -458,7 +510,8 @@ class _MealEntryCard extends StatelessWidget {
               },
             ),
             ListTile(
-              leading: Icon(Icons.share_outlined, color: theme.colorScheme.primary),
+              leading:
+                  Icon(Icons.share_outlined, color: theme.colorScheme.primary),
               title: Text(l10n.share),
               onTap: () {
                 Navigator.pop(ctx);
@@ -466,8 +519,12 @@ class _MealEntryCard extends StatelessWidget {
               },
             ),
             ListTile(
-              leading: Icon(Icons.delete_outline, color: theme.colorScheme.error),
-              title: Text(l10n.delete, style: TextStyle(color: theme.colorScheme.error)),
+              leading:
+                  Icon(Icons.delete_outline, color: theme.colorScheme.error),
+              title: Text(
+                l10n.delete,
+                style: TextStyle(color: theme.colorScheme.error),
+              ),
               onTap: () {
                 Navigator.pop(ctx);
                 _showDeleteConfirmation(context, l10n);
@@ -524,10 +581,14 @@ class _MealEntryCard extends StatelessWidget {
 
   void _showEditDialog(BuildContext context, AppLocalizations l10n) {
     final nameController = TextEditingController(text: entry.name);
-    final caloriesController = TextEditingController(text: entry.calories.toStringAsFixed(0));
-    final proteinController = TextEditingController(text: entry.protein.toStringAsFixed(1));
-    final carbsController = TextEditingController(text: entry.carbs.toStringAsFixed(1));
-    final fatController = TextEditingController(text: entry.fat.toStringAsFixed(1));
+    final caloriesController =
+        TextEditingController(text: entry.calories.toStringAsFixed(0));
+    final proteinController =
+        TextEditingController(text: entry.protein.toStringAsFixed(1));
+    final carbsController =
+        TextEditingController(text: entry.carbs.toStringAsFixed(1));
+    final fatController =
+        TextEditingController(text: entry.fat.toStringAsFixed(1));
 
     showDialog(
       context: context,
@@ -565,7 +626,8 @@ class _MealEntryCard extends StatelessWidget {
                         suffixText: 'g',
                         border: const OutlineInputBorder(),
                       ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
                     ),
                   ),
                 ],
@@ -581,7 +643,8 @@ class _MealEntryCard extends StatelessWidget {
                         suffixText: 'g',
                         border: const OutlineInputBorder(),
                       ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
                     ),
                   ),
                 ],
@@ -597,7 +660,8 @@ class _MealEntryCard extends StatelessWidget {
                         suffixText: 'g',
                         border: const OutlineInputBorder(),
                       ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
                     ),
                   ),
                 ],
@@ -614,8 +678,10 @@ class _MealEntryCard extends StatelessWidget {
             onPressed: () {
               final updatedEntry = entry.copyWith(
                 name: nameController.text.trim(),
-                calories: double.tryParse(caloriesController.text) ?? entry.calories,
-                protein: double.tryParse(proteinController.text) ?? entry.protein,
+                calories:
+                    double.tryParse(caloriesController.text) ?? entry.calories,
+                protein:
+                    double.tryParse(proteinController.text) ?? entry.protein,
                 carbs: double.tryParse(carbsController.text) ?? entry.carbs,
                 fat: double.tryParse(fatController.text) ?? entry.fat,
               );
@@ -674,7 +740,8 @@ class _MealEntryCard extends StatelessWidget {
               context.read<NutritionProvider>().removeFoodEntry(entry.id);
               Navigator.pop(ctx);
             },
-            style: TextButton.styleFrom(foregroundColor: theme.colorScheme.error),
+            style:
+                TextButton.styleFrom(foregroundColor: theme.colorScheme.error),
             child: Text(l10n.delete),
           ),
         ],
@@ -706,7 +773,8 @@ class _PortionButton extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: (isIncrease ? AppTheme.success : AppTheme.warning).withValues(alpha: 0.1),
+            color: (isIncrease ? AppTheme.success : AppTheme.warning)
+                .withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
@@ -751,8 +819,8 @@ class _MacroChip extends StatelessWidget {
         Text(
           '${value.toStringAsFixed(0)}g',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            fontWeight: FontWeight.w500,
-          ),
+                fontWeight: FontWeight.w500,
+              ),
         ),
       ],
     );

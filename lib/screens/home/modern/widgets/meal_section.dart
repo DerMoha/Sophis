@@ -75,10 +75,16 @@ class _MealSectionContent extends StatelessWidget {
         settings.getMealType(mealType)?.color ??
         theme.colorScheme.primary;
 
-    final total = entries.fold(0.0, (sum, e) => sum + e.calories);
-    final totalProtein = entries.fold(0.0, (sum, e) => sum + e.protein);
-    final totalCarbs = entries.fold(0.0, (sum, e) => sum + e.carbs);
-    final totalFat = entries.fold(0.0, (sum, e) => sum + e.fat);
+    var total = 0.0;
+    var totalProtein = 0.0;
+    var totalCarbs = 0.0;
+    var totalFat = 0.0;
+    for (final entry in entries) {
+      total += entry.calories;
+      totalProtein += entry.protein;
+      totalCarbs += entry.carbs;
+      totalFat += entry.fat;
+    }
 
     return MealCard(
       title: title,
@@ -91,16 +97,20 @@ class _MealSectionContent extends StatelessWidget {
       fat: totalFat,
       onHeaderTap: () => Navigator.push(
         context,
-        AppTheme.slideRoute(MealDetailScreen(
-          mealType: mealType,
-          mealTitle: title,
-          mealIcon: icon,
-        ),),
+        AppTheme.slideRoute(
+          MealDetailScreen(
+            mealType: mealType,
+            mealTitle: title,
+            mealIcon: icon,
+          ),
+        ),
       ),
       addMenu: _buildAddMenu(context, l10n, theme, entries),
       entries: entries.isEmpty
           ? [_buildEmptyState(theme, l10n)]
-          : entries.map((entry) => _buildEntryTile(context, l10n, entry)).toList(),
+          : entries
+              .map((entry) => _buildEntryTile(context, l10n, entry))
+              .toList(),
     );
   }
 
@@ -123,7 +133,8 @@ class _MealSectionContent extends StatelessWidget {
             tooltip: l10n.share,
           ),
         PopupMenuButton<String>(
-          icon: Icon(Icons.add_circle_outline, color: theme.colorScheme.primary),
+          icon:
+              Icon(Icons.add_circle_outline, color: theme.colorScheme.primary),
           tooltip: l10n.add,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppTheme.radiusMD),
@@ -132,15 +143,27 @@ class _MealSectionContent extends StatelessWidget {
           itemBuilder: (_) => [
             _buildPopupItem(Icons.edit_outlined, l10n.manualEntry, 'manual'),
             _buildPopupItem(Icons.search_outlined, l10n.searchFood, 'search'),
-            _buildPopupItem(Icons.qr_code_scanner_outlined, l10n.scanBarcode, 'barcode'),
-            _buildPopupItem(Icons.auto_awesome_outlined, l10n.aiRecognition, 'ai'),
+            _buildPopupItem(
+              Icons.qr_code_scanner_outlined,
+              l10n.scanBarcode,
+              'barcode',
+            ),
+            _buildPopupItem(
+              Icons.auto_awesome_outlined,
+              l10n.aiRecognition,
+              'ai',
+            ),
           ],
         ),
       ],
     );
   }
 
-  PopupMenuItem<String> _buildPopupItem(IconData icon, String label, String value) {
+  PopupMenuItem<String> _buildPopupItem(
+    IconData icon,
+    String label,
+    String value,
+  ) {
     return PopupMenuItem(
       value: value,
       child: Row(
@@ -165,7 +188,11 @@ class _MealSectionContent extends StatelessWidget {
     );
   }
 
-  Widget _buildEntryTile(BuildContext context, AppLocalizations l10n, FoodEntry entry) {
+  Widget _buildEntryTile(
+    BuildContext context,
+    AppLocalizations l10n,
+    FoodEntry entry,
+  ) {
     return FoodEntryTile(
       key: ValueKey(entry.id),
       name: entry.name,
@@ -203,7 +230,11 @@ class _MealSectionContent extends StatelessWidget {
     Navigator.push(context, AppTheme.slideRoute(ShareMealScreen(meal: meal)));
   }
 
-  void _showEntryOptions(BuildContext context, AppLocalizations l10n, FoodEntry entry) {
+  void _showEntryOptions(
+    BuildContext context,
+    AppLocalizations l10n,
+    FoodEntry entry,
+  ) {
     final theme = Theme.of(context);
 
     showModalBottomSheet(
@@ -213,7 +244,8 @@ class _MealSectionContent extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: Icon(Icons.share_outlined, color: theme.colorScheme.primary),
+              leading:
+                  Icon(Icons.share_outlined, color: theme.colorScheme.primary),
               title: Text(l10n.share),
               onTap: () {
                 Navigator.pop(ctx);
@@ -221,8 +253,12 @@ class _MealSectionContent extends StatelessWidget {
               },
             ),
             ListTile(
-              leading: Icon(Icons.delete_outline, color: theme.colorScheme.error),
-              title: Text(l10n.delete, style: TextStyle(color: theme.colorScheme.error)),
+              leading:
+                  Icon(Icons.delete_outline, color: theme.colorScheme.error),
+              title: Text(
+                l10n.delete,
+                style: TextStyle(color: theme.colorScheme.error),
+              ),
               onTap: () {
                 Navigator.pop(ctx);
                 _showDeleteConfirmation(context, l10n, entry);
@@ -261,7 +297,8 @@ class _MealSectionContent extends StatelessWidget {
               context.read<NutritionProvider>().removeFoodEntry(entry.id);
               Navigator.pop(ctx);
             },
-            style: TextButton.styleFrom(foregroundColor: theme.colorScheme.error),
+            style:
+                TextButton.styleFrom(foregroundColor: theme.colorScheme.error),
             child: Text(l10n.delete),
           ),
         ],
