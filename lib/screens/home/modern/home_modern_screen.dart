@@ -266,7 +266,7 @@ class _WelcomeView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -286,7 +286,7 @@ class _WelcomeView extends StatelessWidget {
                 ),
               ),
             ),
-            const Spacer(),
+            const SizedBox(height: 32),
             FadeInSlide(
               index: 2,
               child: OrganicCard(
@@ -339,7 +339,7 @@ class _WelcomeView extends StatelessWidget {
                 ),
               ),
             ),
-            const Spacer(flex: 2),
+            const SizedBox(height: 24),
           ],
         ),
       ),
