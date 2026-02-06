@@ -251,8 +251,7 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
           // Use Selector to only rebuild when THIS date's meals change
           // instead of watching the entire NutritionProvider
           return Selector<NutritionProvider, bool>(
-            selector: (_, provider) =>
-                provider.getPlannedMealsForDate(date).isNotEmpty,
+            selector: (_, provider) => provider.hasPlannedMealsForDate(date),
             builder: (context, hasMeals, child) {
               return GestureDetector(
                 onTap: () {

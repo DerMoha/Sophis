@@ -54,11 +54,12 @@ HomeDashboardVM buildHomeDashboardVM(
   final goals = nutrition.goals!;
   final burned = nutrition.burnedCalories;
   final effectiveGoal = goals.calories + burned;
+  final remaining = effectiveGoal - totals['calories']!;
 
   return HomeDashboardVM(
     totals: totals,
     goals: goals,
-    remaining: nutrition.getRemainingCalories(),
+    remaining: remaining,
     burnedCalories: burned,
     effectiveGoal: effectiveGoal,
     calorieProgress: (totals['calories']! / effectiveGoal).clamp(0.0, 1.0),
