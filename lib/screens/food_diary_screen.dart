@@ -243,9 +243,14 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
     NutritionProvider nutrition,
     DateTime date,
   ) {
+    final mealTypes = context.read<SettingsProvider>().mealTypes;
     final entries = nutrition.getEntriesForDate(date);
+    final entriesByMeal = <String, List<FoodEntry>>{};
+    for (final entry in entries) {
+      entriesByMeal.putIfAbsent(entry.meal, () => []).add(entry);
+    }
     final goals = nutrition.goals;
-    final totals = nutrition.getTotalsForDate(date);
+    final totals = _calculateTotals(entries);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
@@ -257,28 +262,23 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
         if (entries.isNotEmpty) const SizedBox(height: 24),
 
         // Meal sections - dynamic from settings
-        ...context
-            .read<SettingsProvider>()
-            .mealTypes
-            .asMap()
-            .entries
-            .expand((entry) {
+        ...mealTypes.asMap().entries.expand((entry) {
           final index = entry.key;
           final mealType = entry.value;
+          final mealEntries = entriesByMeal[mealType.id] ?? const <FoodEntry>[];
+
           return [
             _buildMealSection(
               context,
               theme,
               isDark,
               l10n,
-              entries,
-              mealType.id,
+              mealEntries,
               mealType.name,
               mealType.icon,
               mealType.color,
             ),
-            if (index < context.read<SettingsProvider>().mealTypes.length - 1)
-              const SizedBox(height: 12),
+            if (index < mealTypes.length - 1) const SizedBox(height: 12),
           ];
         }),
 
@@ -289,6 +289,22 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
         ],
       ],
     );
+  }
+
+  Map<String, double> _calculateTotals(List<FoodEntry> entries) {
+    double calories = 0, protein = 0, carbs = 0, fat = 0;
+    for (final entry in entries) {
+      calories += entry.calories;
+      protein += entry.protein;
+      carbs += entry.carbs;
+      fat += entry.fat;
+    }
+    return {
+      'calories': calories,
+      'protein': protein,
+      'carbs': carbs,
+      'fat': fat,
+    };
   }
 
   Widget _buildEmptyDayHint(ThemeData theme, AppLocalizations l10n) {
@@ -425,7 +441,11 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
   }
 
   Widget _buildMiniMacro(
-      ThemeData theme, String label, double value, Color color,) {
+    ThemeData theme,
+    String label,
+    double value,
+    Color color,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -464,13 +484,11 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
     ThemeData theme,
     bool isDark,
     AppLocalizations l10n,
-    List<FoodEntry> entries,
-    String mealType,
+    List<FoodEntry> mealEntries,
     String title,
     IconData icon, [
     Color? color,
   ]) {
-    final mealEntries = entries.where((e) => e.meal == mealType).toList();
     final totalCal =
         mealEntries.fold(0.0, (double sum, FoodEntry e) => sum + e.calories);
     final mealColor = color ?? theme.colorScheme.primary;
