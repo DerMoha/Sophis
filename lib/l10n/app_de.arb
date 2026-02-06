@@ -108,10 +108,15 @@
   "calorieGoalsSubtitle": "Tägliche Kalorien- und Makroziele festlegen",
   "waterSizes": "Wasser Schnelltasten",
   "waterSizesSubtitle": "Schnelltasten anpassen",
+  "trackSupplements": "Supplements tracken",
+  "trackSupplementsSubtitle": "Supplement-Karte anzeigen und Erinnerungen aktivieren",
+  "manageSupplements": "Supplements verwalten",
+  "manageSupplementsSubtitle": "Tägliche Supplements hinzufügen oder entfernen",
   "waterSizeSmall": "Klein",
   "waterSizeMedium": "Mittel",
   "waterSizeLarge": "Groß",
   "waterSizeExtraLarge": "Extra Groß",
+  "quickActionsSize": "Größe der Schnellaktionen",
 
   "units": "Einheiten",
   "metric": "Metrisch",
@@ -324,6 +329,16 @@
   },
   "achievements": "Erfolge",
   "totalDaysLogged": "{count} Tage insgesamt",
+  "supplements": "Supplements",
+  "allSupplements": "Alle Supplements",
+  "supplementsTotalCount": "{count} gesamt",
+  "supplementsTakenAll": "Alle Supplements genommen! 🎉",
+  "todaysProgress": "Heutiger Fortschritt",
+  "deleteSupplementTitle": "Supplement löschen?",
+  "deleteSupplementConfirmation": "Möchtest du {name} wirklich löschen?",
+  "supplementDeleted": "{name} gelöscht",
+  "undo": "Rückgängig",
+  "addSupplement": "Supplement hinzufügen",
   "@totalDaysLogged": {
     "placeholders": {
       "count": {"type": "int"}

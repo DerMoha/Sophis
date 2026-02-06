@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../models/meal_plan.dart';
@@ -72,27 +73,24 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
     }
   }
 
-  String _getDayName(DateTime date) {
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    return days[date.weekday - 1];
+  String _formatDayName(BuildContext context, DateTime date) {
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    return DateFormat.E(locale).format(date);
   }
 
-  String _getMonthName(DateTime date) {
-    const months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ];
-    return months[date.month - 1];
+  String _formatSelectedDate(
+    BuildContext context,
+    AppLocalizations l10n,
+    DateTime date,
+    bool isToday,
+  ) {
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final dayMonth = DateFormat('d MMMM', locale).format(date);
+
+    if (isToday) return '${l10n.today}, $dayMonth';
+
+    final weekday = DateFormat.E(locale).format(date);
+    return '$weekday, $dayMonth';
   }
 
   @override
@@ -190,9 +188,7 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
                 AnimatedSwitcher(
                   duration: AppTheme.animFast,
                   child: Text(
-                    isToday
-                        ? '${l10n.today}, ${selectedDate.day} ${_getMonthName(selectedDate)}'
-                        : '${_getDayName(selectedDate)}, ${selectedDate.day} ${_getMonthName(selectedDate)}',
+                    _formatSelectedDate(context, l10n, selectedDate, isToday),
                     key: ValueKey(selectedDate),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.primary,
@@ -305,7 +301,7 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
                     children: [
                       // Day name
                       Text(
-                        _getDayName(date),
+                        _formatDayName(context, date),
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: isSelected
                               ? Colors.white.withValues(alpha: 0.8)

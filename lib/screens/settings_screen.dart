@@ -163,9 +163,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           // Supplements Toggle
                           _buildSwitchTile(
                             context,
-                            title: 'Track Supplements',
-                            subtitle:
-                                'Show supplements card and enable reminders',
+                            title: l10n.trackSupplements,
+                            subtitle: l10n.trackSupplementsSubtitle,
                             icon: Icons.medication_outlined,
                             value: settings.showSupplements,
                             onChanged: (value) {
@@ -181,8 +180,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             // Supplements Management
                             _buildNavigationTile(
                               context,
-                              title: 'Manage Supplements',
-                              subtitle: 'Add or remove your daily supplements',
+                              title: l10n.manageSupplements,
+                              subtitle: l10n.manageSupplementsSubtitle,
                               icon: Icons.medication_liquid_rounded,
                               onTap: () => Navigator.push(
                                 context,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
+import '../l10n/generated/app_localizations.dart';
 import '../services/supplements_provider.dart';
 import '../models/supplement.dart';
 import '../theme/animations.dart';
@@ -19,6 +20,7 @@ class SupplementsScreen extends StatefulWidget {
 class _SupplementsScreenState extends State<SupplementsScreen> {
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final accentColor = theme.colorScheme.primary;
 
@@ -40,7 +42,7 @@ class _SupplementsScreenState extends State<SupplementsScreen> {
                 pinned: true,
                 elevation: 0,
                 backgroundColor: Colors.transparent,
-                title: const Text('Supplements'),
+                title: Text(l10n.supplements),
                 leading: IconButton(
                   icon: const Icon(Icons.arrow_back_rounded),
                   onPressed: () => Navigator.pop(context),
@@ -123,8 +125,8 @@ class _SupplementsScreenState extends State<SupplementsScreen> {
                               provider.todayCompletedCount ==
                                           provider.todayTotalCount &&
                                       provider.todayTotalCount > 0
-                                  ? 'All supplements taken! 🎉'
-                                  : 'Today\'s Progress',
+                                  ? l10n.supplementsTakenAll
+                                  : l10n.todaysProgress,
                               style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
@@ -143,9 +145,9 @@ class _SupplementsScreenState extends State<SupplementsScreen> {
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
                     child: SectionHeader(
-                      title: 'All Supplements',
+                      title: l10n.allSupplements,
                       trailing: Text(
-                        '${supplements.length} total',
+                        l10n.supplementsTotalCount(supplements.length),
                         style: theme.textTheme.bodySmall,
                       ),
                       padding: EdgeInsets.zero,
@@ -199,14 +201,17 @@ class _SupplementsScreenState extends State<SupplementsScreen> {
                               return await showDialog<bool>(
                                 context: context,
                                 builder: (context) => AlertDialog(
-                                  title: const Text('Delete Supplement?'),
+                                  title: Text(l10n.deleteSupplementTitle),
                                   content: Text(
-                                      'Are you sure you want to delete ${supplement.name}?',),
+                                    l10n.deleteSupplementConfirmation(
+                                      supplement.name,
+                                    ),
+                                  ),
                                   actions: [
                                     TextButton(
                                       onPressed: () =>
                                           Navigator.pop(context, false),
-                                      child: const Text('Cancel'),
+                                      child: Text(l10n.cancel),
                                     ),
                                     TextButton(
                                       onPressed: () =>
@@ -214,7 +219,7 @@ class _SupplementsScreenState extends State<SupplementsScreen> {
                                       style: TextButton.styleFrom(
                                         foregroundColor: AppTheme.error,
                                       ),
-                                      child: const Text('Delete'),
+                                      child: Text(l10n.delete),
                                     ),
                                   ],
                                 ),
@@ -224,9 +229,11 @@ class _SupplementsScreenState extends State<SupplementsScreen> {
                               provider.deleteSupplement(supplement.id);
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text('${supplement.name} deleted'),
+                                  content: Text(
+                                    l10n.supplementDeleted(supplement.name),
+                                  ),
                                   action: SnackBarAction(
-                                    label: 'Undo',
+                                    label: l10n.undo,
                                     onPressed: () {
                                       provider.addSupplement(supplement);
                                     },
@@ -261,7 +268,7 @@ class _SupplementsScreenState extends State<SupplementsScreen> {
         backgroundColor: accentColor,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add_rounded),
-        label: const Text('Add Supplement'),
+        label: Text(l10n.addSupplement),
       ),
     );
   }

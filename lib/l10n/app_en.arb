@@ -157,6 +157,10 @@
   "calorieGoalsSubtitle": "Set your daily calorie and macro targets",
   "waterSizes": "Water Quick-Add Sizes",
   "waterSizesSubtitle": "Customize the quick-add buttons",
+  "trackSupplements": "Track Supplements",
+  "trackSupplementsSubtitle": "Show supplements card and enable reminders",
+  "manageSupplements": "Manage Supplements",
+  "manageSupplementsSubtitle": "Add or remove your daily supplements",
   "waterSizeSmall": "Small",
   "waterSizeMedium": "Medium",
   "waterSizeLarge": "Large",
@@ -441,6 +445,31 @@
       "count": {"type": "int"}
     }
   },
+  "supplements": "Supplements",
+  "allSupplements": "All Supplements",
+  "supplementsTotalCount": "{count} total",
+  "@supplementsTotalCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "supplementsTakenAll": "All supplements taken! 🎉",
+  "todaysProgress": "Today's Progress",
+  "deleteSupplementTitle": "Delete supplement?",
+  "deleteSupplementConfirmation": "Are you sure you want to delete {name}?",
+  "@deleteSupplementConfirmation": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "supplementDeleted": "{name} deleted",
+  "@supplementDeleted": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "undo": "Undo",
+  "addSupplement": "Add Supplement",
   "achievementFirstLog": "First Log!",
   "achievement3Days": "3 Day Streak",
   "achievement7Days": "Week Warrior",
