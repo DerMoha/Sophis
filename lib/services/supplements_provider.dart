@@ -25,6 +25,9 @@ class SupplementsProvider extends ChangeNotifier {
   List<Supplement> _supplements = [];
   List<SupplementLogEntry> _logs = [];
   bool _isLoading = true;
+  List<Supplement>? _enabledSupplementsCache;
+  Set<String>? _todayCompletedIdsCache;
+  DateTime? _todayCompletedCacheDate;
 
   SupplementsProvider(this._db, this._notifications) {
     _loadData();
@@ -38,8 +41,16 @@ class SupplementsProvider extends ChangeNotifier {
   List<SupplementLogEntry> get logs => _logs;
   bool get isLoading => _isLoading;
 
-  List<Supplement> get enabledSupplements =>
-      _supplements.where((s) => s.enabled).toList();
+  List<Supplement> get enabledSupplements {
+    if (_enabledSupplementsCache != null) {
+      return _enabledSupplementsCache!;
+    }
+
+    _enabledSupplementsCache = List<Supplement>.unmodifiable(
+      _supplements.where((s) => s.enabled),
+    );
+    return _enabledSupplementsCache!;
+  }
 
   /// Get today's date range (midnight to midnight)
   ({DateTime start, DateTime end}) get _todayRange {
@@ -49,16 +60,42 @@ class SupplementsProvider extends ChangeNotifier {
     return (start: today, end: tomorrow);
   }
 
+  void _invalidateDerivedCaches() {
+    _enabledSupplementsCache = null;
+    _todayCompletedIdsCache = null;
+    _todayCompletedCacheDate = null;
+  }
+
+  bool _isTodayCompletionCacheValid() {
+    if (_todayCompletedIdsCache == null || _todayCompletedCacheDate == null) {
+      return false;
+    }
+
+    final now = DateTime.now();
+    return _todayCompletedCacheDate!.year == now.year &&
+        _todayCompletedCacheDate!.month == now.month &&
+        _todayCompletedCacheDate!.day == now.day;
+  }
+
   /// Returns set of supplement IDs completed today
   Set<String> getTodayCompletedIds() {
-    final range = _todayRange;
+    if (_isTodayCompletionCacheValid()) {
+      return _todayCompletedIdsCache!;
+    }
 
-    return _logs
-        .where((log) =>
-            log.timestamp.isAfter(range.start) &&
-            log.timestamp.isBefore(range.end),)
-        .map((log) => log.supplementId)
-        .toSet();
+    final range = _todayRange;
+    final completedIds = <String>{};
+
+    for (final log in _logs) {
+      if (!log.timestamp.isBefore(range.start) &&
+          log.timestamp.isBefore(range.end)) {
+        completedIds.add(log.supplementId);
+      }
+    }
+
+    _todayCompletedIdsCache = completedIds;
+    _todayCompletedCacheDate = range.start;
+    return completedIds;
   }
 
   /// Check if a supplement is completed today
@@ -84,8 +121,10 @@ class SupplementsProvider extends ChangeNotifier {
       Log.debug('Loading supplements from database');
       _supplements = await _db.getAllSupplements();
       _logs = await _db.getAllSupplementLogs();
+      _invalidateDerivedCaches();
       Log.info(
-          'Loaded ${_supplements.length} supplements with ${_logs.length} logs',);
+        'Loaded ${_supplements.length} supplements with ${_logs.length} logs',
+      );
     } catch (e, stackTrace) {
       Log.error('Failed to load supplements', error: e, stackTrace: stackTrace);
     }
@@ -127,11 +166,15 @@ class SupplementsProvider extends ChangeNotifier {
 
         await _db.deleteSupplementLog(todayLog.id);
         _logs.removeWhere((log) => log.id == todayLog.id);
+        _invalidateDerivedCaches();
         Log.debug('Unchecked supplement $supplementId for today');
         isNowCompleted = false;
       } catch (e, stackTrace) {
-        Log.error('Failed to remove supplement log for $supplementId',
-            error: e, stackTrace: stackTrace,);
+        Log.error(
+          'Failed to remove supplement log for $supplementId',
+          error: e,
+          stackTrace: stackTrace,
+        );
         return; // Skip notification if log not found
       }
     } else {
@@ -143,6 +186,7 @@ class SupplementsProvider extends ChangeNotifier {
       );
       await _db.insertSupplementLog(log);
       _logs.add(log);
+      _invalidateDerivedCaches();
       Log.debug('Checked supplement $supplementId for today');
       isNowCompleted = true;
     }
@@ -173,6 +217,7 @@ class SupplementsProvider extends ChangeNotifier {
     await _db.insertSupplement(supplement);
     _supplements.add(supplement);
     _supplements.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    _invalidateDerivedCaches();
 
     if (supplement.enabled && supplement.reminderTime != null) {
       await _scheduleNotification(
@@ -191,6 +236,7 @@ class SupplementsProvider extends ChangeNotifier {
     final index = _supplements.indexWhere((s) => s.id == supplement.id);
     if (index != -1) {
       _supplements[index] = supplement;
+      _invalidateDerivedCaches();
     }
 
     // Reschedule notification
@@ -216,6 +262,7 @@ class SupplementsProvider extends ChangeNotifier {
 
       // Delete associated logs
       _logs.removeWhere((log) => log.supplementId == id);
+      _invalidateDerivedCaches();
 
       // Cancel notification
       await _cancelNotification(supplement);
@@ -223,8 +270,11 @@ class SupplementsProvider extends ChangeNotifier {
       Log.info('Deleted supplement: ${supplement.name}');
       notifyListeners();
     } catch (e, stackTrace) {
-      Log.error('Failed to delete supplement $id',
-          error: e, stackTrace: stackTrace,);
+      Log.error(
+        'Failed to delete supplement $id',
+        error: e,
+        stackTrace: stackTrace,
+      );
       throw Exception('Supplement not found');
     }
   }
@@ -245,6 +295,7 @@ class SupplementsProvider extends ChangeNotifier {
     for (var i = 0; i < _supplements.length; i++) {
       _supplements[i] = _supplements[i].copyWith(sortOrder: i);
     }
+    _invalidateDerivedCaches();
 
     // Batch update to database for better performance
     await _db.batchUpdateSupplements(_supplements);
@@ -264,7 +315,8 @@ class SupplementsProvider extends ChangeNotifier {
     final index = _supplements.indexWhere((s) => s.id == supplementId);
     if (index == -1 || index >= _maxSupplements) {
       Log.warning(
-          'Supplement index $index exceeds max allowed ($_maxSupplements)',);
+        'Supplement index $index exceeds max allowed ($_maxSupplements)',
+      );
       return _notificationIdStart; // Fallback to first ID
     }
     return _notificationIdStart + index;
@@ -290,7 +342,8 @@ class SupplementsProvider extends ChangeNotifier {
       startTomorrow: skipToday,
     );
     Log.info(
-        'Scheduled notification for ${supplement.name} at ${supplement.reminderTime}',);
+      'Scheduled notification for ${supplement.name} at ${supplement.reminderTime}',
+    );
   }
 
   /// Cancel notification for a supplement
