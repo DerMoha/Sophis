@@ -268,7 +268,7 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                   Expanded(
                     child: Text(
                       'Only ${widget.remainingRequests} AI request(s) left today',
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: AppTheme.warning,
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
@@ -297,11 +297,11 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                     // Food name
                     TextFormField(
                       controller: widget.result.nameController,
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         labelText: 'Food name',
                         hintText: 'e.g., Chicken Breast',
-                        prefixIcon: const Icon(Icons.restaurant, size: 20),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        prefixIcon: Icon(Icons.restaurant, size: 20),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       ),
                       validator: _validateName,
                     ),
@@ -312,12 +312,12 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                       controller: widget.result.portionController,
                       keyboardType: TextInputType.number,
                       inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,1}'))],
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         labelText: 'Portion size',
                         hintText: '100',
-                        prefixIcon: const Icon(Icons.scale, size: 20),
+                        prefixIcon: Icon(Icons.scale, size: 20),
                         suffixText: 'g',
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       ),
                       validator: (v) => _validatePositiveNumber(v, 'Portion'),
                     ),
@@ -348,12 +348,12 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                       controller: widget.result.caloriesController,
                       keyboardType: TextInputType.number,
                       inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,1}'))],
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         labelText: 'Calories',
                         hintText: '200',
-                        prefixIcon: const Icon(Icons.local_fire_department_outlined, size: 20),
+                        prefixIcon: Icon(Icons.local_fire_department_outlined, size: 20),
                         suffixText: 'kcal',
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       ),
                       validator: (v) => _validatePositiveNumber(v, 'Calories'),
                     ),
@@ -368,11 +368,11 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                             controller: widget.result.proteinController,
                             keyboardType: TextInputType.number,
                             inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,1}'))],
-                            decoration: InputDecoration(
+                            decoration: const InputDecoration(
                               labelText: 'Protein',
                               hintText: '20',
                               suffixText: 'g',
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                             ),
                             validator: (v) => _validatePositiveNumber(v, 'Protein'),
                           ),
@@ -384,11 +384,11 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                             controller: widget.result.carbsController,
                             keyboardType: TextInputType.number,
                             inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,1}'))],
-                            decoration: InputDecoration(
+                            decoration: const InputDecoration(
                               labelText: 'Carbs',
                               hintText: '30',
                               suffixText: 'g',
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                             ),
                             validator: (v) => _validatePositiveNumber(v, 'Carbs'),
                           ),
@@ -400,11 +400,11 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                             controller: widget.result.fatController,
                             keyboardType: TextInputType.number,
                             inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,1}'))],
-                            decoration: InputDecoration(
+                            decoration: const InputDecoration(
                               labelText: 'Fat',
                               hintText: '10',
                               suffixText: 'g',
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                             ),
                             validator: (v) => _validatePositiveNumber(v, 'Fat'),
                           ),

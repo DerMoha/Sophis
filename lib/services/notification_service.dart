@@ -104,7 +104,7 @@ class NotificationService {
     );
 
     Log.info(
-        'Scheduled notification $id at $hour:${minute.toString().padLeft(2, '0')}');
+        'Scheduled notification $id at $hour:${minute.toString().padLeft(2, '0')}',);
   }
 
   /// Cancel a specific reminder

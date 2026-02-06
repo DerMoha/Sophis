@@ -190,7 +190,7 @@ class _SupplementsScreenState extends State<SupplementsScreen> {
                                 borderRadius:
                                     BorderRadius.circular(AppTheme.radiusLG),
                               ),
-                              child: Icon(
+                              child: const Icon(
                                 Icons.delete_rounded,
                                 color: AppTheme.error,
                               ),
@@ -201,7 +201,7 @@ class _SupplementsScreenState extends State<SupplementsScreen> {
                                 builder: (context) => AlertDialog(
                                   title: const Text('Delete Supplement?'),
                                   content: Text(
-                                      'Are you sure you want to delete ${supplement.name}?'),
+                                      'Are you sure you want to delete ${supplement.name}?',),
                                   actions: [
                                     TextButton(
                                       onPressed: () =>
@@ -359,7 +359,7 @@ class _SupplementsScreenState extends State<SupplementsScreen> {
                 supplement.copyWith(enabled: value),
               );
             },
-            activeColor: accentColor,
+            activeThumbColor: accentColor,
           ),
 
           // Edit button
@@ -380,7 +380,7 @@ class _SupplementsScreenState extends State<SupplementsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            EmptyState(
+            const EmptyState(
               icon: Icons.medication_liquid_rounded,
               title: 'No supplements yet',
               subtitle: 'Add your first supplement to start tracking',

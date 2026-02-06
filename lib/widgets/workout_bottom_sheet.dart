@@ -195,7 +195,7 @@ class _WorkoutBottomSheetState extends State<WorkoutBottomSheet> {
                           const Icon(Icons.local_fire_department_outlined, size: 20),
                       suffixText: 'kcal',
                       contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 14),
+                          horizontal: 16, vertical: 14,),
                     ),
                     onSubmitted: (_) => _saveEntry(),
                   ),
@@ -299,7 +299,7 @@ class _WorkoutBottomSheetState extends State<WorkoutBottomSheet> {
                           child: Container(
                             margin: const EdgeInsets.only(bottom: 8),
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 12),
+                                horizontal: 16, vertical: 12,),
                             decoration: BoxDecoration(
                               color: isDark
                                   ? Colors.white.withValues(alpha: 0.05)

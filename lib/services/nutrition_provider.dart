@@ -144,8 +144,9 @@ class NutritionProvider extends ChangeNotifier {
       if (legacyFoods.isNotEmpty) await _db.insertFoods(legacyFoods);
       if (legacyWater.isNotEmpty) await _db.insertWaterList(legacyWater);
       if (legacyWeights.isNotEmpty) await _db.insertWeightList(legacyWeights);
-      if (legacyWorkouts.isNotEmpty)
+      if (legacyWorkouts.isNotEmpty) {
         await _db.insertWorkoutList(legacyWorkouts);
+      }
 
       await _storage.setMigrationComplete();
       Log.info('Migration completed: ${legacyFoods.length} foods, ${legacyWater.length} water, ${legacyWeights.length} weights, ${legacyWorkouts.length} workouts');
@@ -223,7 +224,7 @@ class NutritionProvider extends ChangeNotifier {
         .where((e) =>
             e.timestamp.year == now.year &&
             e.timestamp.month == now.month &&
-            e.timestamp.day == now.day)
+            e.timestamp.day == now.day,)
         .toList();
 
     // Also pre-compute meal entries while we're at it
@@ -247,7 +248,7 @@ class NutritionProvider extends ChangeNotifier {
         .where((e) =>
             e.timestamp.year == date.year &&
             e.timestamp.month == date.month &&
-            e.timestamp.day == date.day)
+            e.timestamp.day == date.day,)
         .toList();
   }
 
@@ -281,7 +282,7 @@ class NutritionProvider extends ChangeNotifier {
       'calories': cal,
       'protein': prot,
       'carbs': carb,
-      'fat': fat
+      'fat': fat,
     };
     return _cachedTodayTotals!;
   }
@@ -370,7 +371,7 @@ class NutritionProvider extends ChangeNotifier {
         .where((e) =>
             e.timestamp.year == now.year &&
             e.timestamp.month == now.month &&
-            e.timestamp.day == now.day)
+            e.timestamp.day == now.day,)
         .fold(0.0, (sum, e) => sum + e.caloriesBurned);
   }
 
@@ -381,7 +382,7 @@ class NutritionProvider extends ChangeNotifier {
         .where((e) =>
             e.timestamp.year == now.year &&
             e.timestamp.month == now.month &&
-            e.timestamp.day == now.day)
+            e.timestamp.day == now.day,)
         .toList()
       ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
   }
@@ -417,7 +418,7 @@ class NutritionProvider extends ChangeNotifier {
         .where((e) =>
             e.timestamp.year == now.year &&
             e.timestamp.month == now.month &&
-            e.timestamp.day == now.day)
+            e.timestamp.day == now.day,)
         .fold(0.0, (sum, e) => sum + e.amountMl);
   }
 
@@ -427,7 +428,7 @@ class NutritionProvider extends ChangeNotifier {
         .where((e) =>
             e.timestamp.year == now.year &&
             e.timestamp.month == now.month &&
-            e.timestamp.day == now.day)
+            e.timestamp.day == now.day,)
         .toList()
       ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
   }

@@ -204,7 +204,7 @@ class _ImportMealScreenState extends State<ImportMealScreen> {
                                         setState(() => _selectedMeal = mealType.id);
                                       }
                                     },
-                                  ))
+                                  ),)
                               .toList(),
                         ),
                       ],

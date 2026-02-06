@@ -115,7 +115,7 @@ class ShareableMeal {
 
   /// Create from a list of FoodEntries
   factory ShareableMeal.fromFoodEntries(List<FoodEntry> entries,
-      {String? title}) {
+      {String? title,}) {
     return ShareableMeal(
       title: title,
       items: entries.map((e) => SharedFoodItem.fromFoodEntry(e)).toList(),

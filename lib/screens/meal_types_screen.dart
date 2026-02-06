@@ -181,14 +181,14 @@ class _EditMealTypeSheetState extends State<_EditMealTypeSheet> {
     // Find selected icon index
     _selectedIconIndex = widget.mealType != null
         ? CustomMealType.availableIcons.indexWhere(
-            (icon) => icon.codePoint == widget.mealType!.iconCodePoint)
+            (icon) => icon.codePoint == widget.mealType!.iconCodePoint,)
         : 0;
     if (_selectedIconIndex < 0) _selectedIconIndex = 0;
 
     // Find selected color index
     _selectedColorIndex = widget.mealType != null
         ? CustomMealType.availableColors.indexWhere(
-            (color) => color.toARGB32() == widget.mealType!.colorValue)
+            (color) => color.toARGB32() == widget.mealType!.colorValue,)
         : 0;
     if (_selectedColorIndex < 0) _selectedColorIndex = 0;
 

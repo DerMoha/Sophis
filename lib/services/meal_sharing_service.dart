@@ -64,14 +64,14 @@ class MealSharingService {
   /// Validate incoming share data
   static ShareableMealValidation validateMeal(ShareableMeal? meal) {
     if (meal == null) {
-      return ShareableMealValidation(
+      return const ShareableMealValidation(
         isValid: false,
         error: 'Invalid share data',
       );
     }
 
     if (meal.items.isEmpty) {
-      return ShareableMealValidation(
+      return const ShareableMealValidation(
         isValid: false,
         error: 'Shared meal contains no items',
       );

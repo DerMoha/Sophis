@@ -287,7 +287,7 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
                       Navigator.pop(ctx);
                     },
                   ),
-                )),
+                ),),
           ],
         ),
       ),
@@ -446,7 +446,7 @@ class _PortionGrid extends StatelessWidget {
             serving: s,
             isSelected: selected == s,
             onTap: () => onSelect(s),
-          )).toList(),
+          ),).toList(),
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../models/meal_plan.dart';
+import '../models/nutrition_goals.dart';
 import '../services/nutrition_provider.dart';
 import '../theme/app_theme.dart';
 import '../theme/animations.dart';
@@ -29,7 +30,8 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
     super.initState();
     _baseDate = DateTime.now();
     _selectedDayOffset = 0; // Start at today
-    _dayPageController = PageController(initialPage: _daysRange + _selectedDayOffset);
+    _dayPageController =
+        PageController(initialPage: _daysRange + _selectedDayOffset);
     _dayScrollController = ScrollController();
 
     // Scroll to center the selected day after build
@@ -54,7 +56,8 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
 
     // Each day card is ~72 wide + 8 margin = 80
     final targetOffset = (_daysRange + _selectedDayOffset) * 80.0 -
-        (MediaQuery.of(context).size.width / 2) + 40;
+        (MediaQuery.of(context).size.width / 2) +
+        40;
 
     if (animated) {
       _dayScrollController.animateTo(
@@ -76,8 +79,18 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
 
   String _getMonthName(DateTime date) {
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     return months[date.month - 1];
   }
@@ -122,7 +135,12 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
                     child: Consumer<NutritionProvider>(
                       builder: (context, nutrition, _) {
                         return _buildDayContent(
-                          context, theme, isDark, l10n, nutrition, date,
+                          context,
+                          theme,
+                          isDark,
+                          l10n,
+                          nutrition,
+                          date,
                         );
                       },
                     ),
@@ -202,7 +220,8 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
               },
               tooltip: l10n.today,
               style: IconButton.styleFrom(
-                backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
+                backgroundColor:
+                    theme.colorScheme.primary.withValues(alpha: 0.1),
                 foregroundColor: theme.colorScheme.primary,
               ),
             ),
@@ -211,7 +230,11 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
     );
   }
 
-  Widget _buildDaySelector(ThemeData theme, bool isDark, AppLocalizations l10n) {
+  Widget _buildDaySelector(
+    ThemeData theme,
+    bool isDark,
+    AppLocalizations l10n,
+  ) {
     final today = DateTime.now();
     final todayNorm = DateTime(today.year, today.month, today.day);
 
@@ -232,93 +255,95 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
           // Use Selector to only rebuild when THIS date's meals change
           // instead of watching the entire NutritionProvider
           return Selector<NutritionProvider, bool>(
-            selector: (_, provider) => provider.getPlannedMealsForDate(date).isNotEmpty,
+            selector: (_, provider) =>
+                provider.getPlannedMealsForDate(date).isNotEmpty,
             builder: (context, hasMeals, child) {
               return GestureDetector(
-            onTap: () {
-              setState(() {
-                _selectedDayOffset = dayOffset;
-              });
-              _dayPageController.animateToPage(
-                index,
-                duration: AppTheme.animNormal,
-                curve: Curves.easeOutCubic,
-              );
-              HapticFeedback.selectionClick();
-            },
-            child: AnimatedContainer(
-              duration: AppTheme.animFast,
-              width: 72,
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.surface,
-                borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-                border: Border.all(
-                  color: isSelected
-                      ? theme.colorScheme.primary
-                      : isToday
+                onTap: () {
+                  setState(() {
+                    _selectedDayOffset = dayOffset;
+                  });
+                  _dayPageController.animateToPage(
+                    index,
+                    duration: AppTheme.animNormal,
+                    curve: Curves.easeOutCubic,
+                  );
+                  HapticFeedback.selectionClick();
+                },
+                child: AnimatedContainer(
+                  duration: AppTheme.animFast,
+                  width: 72,
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.surface,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+                    border: Border.all(
+                      color: isSelected
                           ? theme.colorScheme.primary
-                          : isDark
-                              ? Colors.white.withValues(alpha: 0.08)
-                              : Colors.black.withValues(alpha: 0.06),
-                  width: isToday && !isSelected ? 2 : 1,
-                ),
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                          color: theme.colorScheme.primary.withValues(alpha: 0.3),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
+                          : isToday
+                              ? theme.colorScheme.primary
+                              : isDark
+                                  ? Colors.white.withValues(alpha: 0.08)
+                                  : Colors.black.withValues(alpha: 0.06),
+                      width: isToday && !isSelected ? 2 : 1,
+                    ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: theme.colorScheme.primary
+                                  .withValues(alpha: 0.3),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Day name
+                      Text(
+                        _getDayName(date),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: isSelected
+                              ? Colors.white.withValues(alpha: 0.8)
+                              : theme.colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 0.5,
                         ),
-                      ]
-                    : null,
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Day name
-                  Text(
-                    _getDayName(date),
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: isSelected
-                          ? Colors.white.withValues(alpha: 0.8)
-                          : theme.colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  // Day number
-                  Text(
-                    '${date.day}',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      color: isSelected
-                          ? Colors.white
-                          : theme.colorScheme.onSurface,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  // Meal indicator
-                  AnimatedContainer(
-                    duration: AppTheme.animFast,
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: hasMeals
-                          ? (isSelected
+                      ),
+                      const SizedBox(height: 4),
+                      // Day number
+                      Text(
+                        '${date.day}',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          color: isSelected
                               ? Colors.white
-                              : theme.colorScheme.primary)
-                          : Colors.transparent,
-                      shape: BoxShape.circle,
-                    ),
+                              : theme.colorScheme.onSurface,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      // Meal indicator
+                      AnimatedContainer(
+                        duration: AppTheme.animFast,
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: hasMeals
+                              ? (isSelected
+                                  ? Colors.white
+                                  : theme.colorScheme.primary)
+                              : Colors.transparent,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-          );
+                ),
+              );
             },
           );
         },
@@ -345,28 +370,55 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
         if (meals.isNotEmpty)
           _buildNutritionSummary(theme, isDark, l10n, totals, goals),
 
-        if (meals.isNotEmpty)
-          const SizedBox(height: 24),
+        if (meals.isNotEmpty) const SizedBox(height: 24),
 
         // Meal sections
         _buildMealSection(
-          context, theme, isDark, l10n, nutrition,
-          date, 'breakfast', l10n.breakfast, Icons.wb_sunny_outlined,
+          context,
+          theme,
+          isDark,
+          l10n,
+          nutrition,
+          date,
+          'breakfast',
+          l10n.breakfast,
+          Icons.wb_sunny_outlined,
         ),
         const SizedBox(height: 12),
         _buildMealSection(
-          context, theme, isDark, l10n, nutrition,
-          date, 'lunch', l10n.lunch, Icons.restaurant_outlined,
+          context,
+          theme,
+          isDark,
+          l10n,
+          nutrition,
+          date,
+          'lunch',
+          l10n.lunch,
+          Icons.restaurant_outlined,
         ),
         const SizedBox(height: 12),
         _buildMealSection(
-          context, theme, isDark, l10n, nutrition,
-          date, 'dinner', l10n.dinner, Icons.nightlight_outlined,
+          context,
+          theme,
+          isDark,
+          l10n,
+          nutrition,
+          date,
+          'dinner',
+          l10n.dinner,
+          Icons.nightlight_outlined,
         ),
         const SizedBox(height: 12),
         _buildMealSection(
-          context, theme, isDark, l10n, nutrition,
-          date, 'snack', l10n.snacks, Icons.cookie_outlined,
+          context,
+          theme,
+          isDark,
+          l10n,
+          nutrition,
+          date,
+          'snack',
+          l10n.snacks,
+          Icons.cookie_outlined,
         ),
 
         // Helpful tip when empty
@@ -417,7 +469,7 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
     bool isDark,
     AppLocalizations l10n,
     Map<String, double> totals,
-    goals,
+    NutritionGoals? goals,
   ) {
     final calorieGoal = goals?.calories ?? 2000;
     final calorieProgress = (totals['calories']! / calorieGoal).clamp(0.0, 1.5);
@@ -451,7 +503,8 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
                   value: calorieProgress,
                   size: 80,
                   strokeWidth: 8,
-                  color: isOverGoal ? AppTheme.error : theme.colorScheme.primary,
+                  color:
+                      isOverGoal ? AppTheme.error : theme.colorScheme.primary,
                   showGlow: true,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -489,18 +542,24 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
                     Row(
                       children: [
                         _buildMiniMacro(
-                          theme, l10n.protein,
-                          totals['protein']!, AppTheme.protein,
+                          theme,
+                          l10n.protein,
+                          totals['protein']!,
+                          AppTheme.protein,
                         ),
                         const SizedBox(width: 16),
                         _buildMiniMacro(
-                          theme, l10n.carbs,
-                          totals['carbs']!, AppTheme.carbs,
+                          theme,
+                          l10n.carbs,
+                          totals['carbs']!,
+                          AppTheme.carbs,
                         ),
                         const SizedBox(width: 16),
                         _buildMiniMacro(
-                          theme, l10n.fat,
-                          totals['fat']!, AppTheme.fat,
+                          theme,
+                          l10n.fat,
+                          totals['fat']!,
+                          AppTheme.fat,
                         ),
                       ],
                     ),
@@ -542,7 +601,12 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
     );
   }
 
-  Widget _buildMiniMacro(ThemeData theme, String label, double value, Color color) {
+  Widget _buildMiniMacro(
+    ThemeData theme,
+    String label,
+    double value,
+    Color color,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -663,9 +727,16 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
                   ? Colors.white.withValues(alpha: 0.06)
                   : Colors.black.withValues(alpha: 0.04),
             ),
-            ...meals.map((meal) => _buildPlannedMealTile(
-              context, theme, isDark, l10n, nutrition, meal,
-            )),
+            ...meals.map(
+              (meal) => _buildPlannedMealTile(
+                context,
+                theme,
+                isDark,
+                l10n,
+                nutrition,
+                meal,
+              ),
+            ),
           ],
         ],
       ),
@@ -735,7 +806,7 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
                 ),
               ),
               Text(
-                '${meal.calories.toStringAsFixed(0)}',
+                meal.calories.toStringAsFixed(0),
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -781,8 +852,10 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: Icon(Icons.check_circle_outline,
-                    color: theme.colorScheme.primary),
+                leading: Icon(
+                  Icons.check_circle_outline,
+                  color: theme.colorScheme.primary,
+                ),
                 title: Text(l10n.logAsEaten),
                 subtitle: Text(l10n.logAsEatenSubtitle),
                 onTap: () {
@@ -794,8 +867,10 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
                 },
               ),
               ListTile(
-                leading: Icon(Icons.copy_outlined,
-                    color: theme.colorScheme.primary),
+                leading: Icon(
+                  Icons.copy_outlined,
+                  color: theme.colorScheme.primary,
+                ),
                 title: Text(l10n.copyToAnotherDay),
                 onTap: () {
                   Navigator.pop(context);
@@ -803,9 +878,12 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.delete_outline, color: AppTheme.error),
-                title: Text(l10n.delete,
-                    style: const TextStyle(color: AppTheme.error)),
+                leading:
+                    const Icon(Icons.delete_outline, color: AppTheme.error),
+                title: Text(
+                  l10n.delete,
+                  style: const TextStyle(color: AppTheme.error),
+                ),
                 onTap: () {
                   nutrition.removePlannedMeal(meal.id);
                   Navigator.pop(context);
@@ -825,7 +903,8 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
 
     final selectedDate = await showDatePicker(
       context: context,
-      initialDate: _getDateForOffset(_selectedDayOffset).add(const Duration(days: 1)),
+      initialDate:
+          _getDateForOffset(_selectedDayOffset).add(const Duration(days: 1)),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
       helpText: l10n.selectDate,
@@ -838,7 +917,6 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
       );
     }
   }
-
 }
 
 class _MacroChip extends StatelessWidget {

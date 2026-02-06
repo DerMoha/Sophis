@@ -202,7 +202,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             child: Row(
               children: [
-                Icon(Icons.star_rounded, size: 18, color: Colors.amber),
+                const Icon(Icons.star_rounded, size: 18, color: Colors.amber),
                 const SizedBox(width: 6),
                 Text(
                   l10n.favorites,
@@ -218,7 +218,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
                 onTap: () => _showPortionPicker(item),
                 isFavorite: true,
                 onFavoriteToggle: () => provider.toggleFavorite(item),
-              )),
+              ),),
         ],
         // My Foods section
         if (customFoods.isNotEmpty) ...[
@@ -238,7 +238,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
                 onLongPress: () => _showDeleteCustomFoodDialog(item),
                 isFavorite: provider.isFavorite(item.id),
                 onFavoriteToggle: () => provider.toggleFavorite(item),
-              )),
+              ),),
         ],
         // Recently Used section
         if (recentFoods.isNotEmpty) ...[
@@ -256,7 +256,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
                 onTap: () => _showPortionPicker(item),
                 isFavorite: provider.isFavorite(item.id),
                 onFavoriteToggle: () => provider.toggleFavorite(item),
-              )),
+              ),),
         ],
       ],
     );

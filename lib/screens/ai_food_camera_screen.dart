@@ -81,8 +81,9 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     if (mounted) setState(() => _remainingRequests = remaining);
 
     if (apiKey == null || apiKey.isEmpty) {
-      if (mounted)
+      if (mounted) {
         setState(() => _error = AppLocalizations.of(context)!.errorApiKey);
+      }
       return;
     }
 
@@ -99,9 +100,10 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       await _geminiService.initialize(apiKey);
       if (mounted) setState(() => _serviceInitialized = true);
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() =>
-            _error = AppLocalizations.of(context)!.errorInit(e.toString()));
+            _error = AppLocalizations.of(context)!.errorInit(e.toString()),);
+      }
     } finally {
       if (mounted) setState(() => _isInitializing = false);
     }
@@ -142,9 +144,10 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
         _error = null;
       });
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() => _error =
-            AppLocalizations.of(context)!.errorPickImage(e.toString()));
+            AppLocalizations.of(context)!.errorPickImage(e.toString()),);
+      }
     }
   }
 
@@ -301,7 +304,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-          content: Text(AppLocalizations.of(context)!.addedSnack(entry.name))),
+          content: Text(AppLocalizations.of(context)!.addedSnack(entry.name)),),
     );
   }
 
@@ -595,7 +598,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
             Icon(Icons.no_food, size: 48, color: theme.disabledColor),
             const SizedBox(height: 16),
             Text(l10n.noFoodDetected,
-                style: TextStyle(color: theme.disabledColor)),
+                style: TextStyle(color: theme.disabledColor),),
           ],
         ),
       );
@@ -628,7 +631,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                   child: Text(
                     food.name,
                     style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w600),
+                        fontSize: 16, fontWeight: FontWeight.w600,),
                   ),
                 ),
                 IconButton(
@@ -658,7 +661,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(Icons.edit,
-                        size: 12, color: theme.colorScheme.primary),
+                        size: 12, color: theme.colorScheme.primary,),
                     const SizedBox(width: 4),
                     Text(
                       'Modified',
@@ -704,7 +707,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                     result.isAdded
                         ? Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 8),
+                                horizontal: 16, vertical: 8,),
                             decoration: BoxDecoration(
                               color: Colors.green,
                               borderRadius: BorderRadius.circular(20),
@@ -713,11 +716,11 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 const Icon(Icons.check,
-                                    color: Colors.white, size: 18),
+                                    color: Colors.white, size: 18,),
                                 const SizedBox(width: 4),
                                 Text(AppLocalizations.of(context)!.added,
                                     style:
-                                        const TextStyle(color: Colors.white)),
+                                        const TextStyle(color: Colors.white),),
                               ],
                             ),
                           )
@@ -727,7 +730,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                             label: Text(AppLocalizations.of(context)!.add),
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 8),
+                                  horizontal: 16, vertical: 8,),
                             ),
                           ),
                   ],
@@ -761,7 +764,7 @@ class EditableFoodResult {
         currentAnalysis = analysis,
         nameController = TextEditingController(text: analysis.name),
         portionController = TextEditingController(
-            text: analysis.portionGrams.toStringAsFixed(0)),
+            text: analysis.portionGrams.toStringAsFixed(0),),
         caloriesController =
             TextEditingController(text: analysis.calories.toStringAsFixed(0)),
         proteinController =
@@ -806,7 +809,7 @@ class EditableFoodResult {
 
     if (parts.isEmpty) {
       parts.add(
-          'Re-evaluate the nutrition values for "${nameController.text.trim()}"');
+          'Re-evaluate the nutrition values for "${nameController.text.trim()}"',);
     }
 
     return '${parts.join(', ')}.';

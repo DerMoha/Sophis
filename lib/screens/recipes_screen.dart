@@ -122,7 +122,7 @@ class RecipesScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: selectedMeal,
+                initialValue: selectedMeal,
                 decoration: InputDecoration(labelText: l10n.meal),
                 items: [
                   DropdownMenuItem(value: 'breakfast', child: Text(l10n.breakfast)),

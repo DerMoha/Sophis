@@ -231,7 +231,7 @@ class AppTheme {
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radiusMD),
-          borderSide: BorderSide(color: error, width: 1),
+          borderSide: const BorderSide(color: error, width: 1),
         ),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -285,13 +285,13 @@ class AppTheme {
           borderRadius: BorderRadius.circular(radiusLG),
         ),
       ),
-      bottomSheetTheme: BottomSheetThemeData(
+      bottomSheetTheme: const BottomSheetThemeData(
         backgroundColor: _lightSurface,
-        shape: const RoundedRectangleBorder(
+        shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         ),
         dragHandleColor: _lightBorder,
-        dragHandleSize: const Size(40, 4),
+        dragHandleSize: Size(40, 4),
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: _lightSurface,
@@ -312,7 +312,7 @@ class AppTheme {
         ),
         behavior: SnackBarBehavior.floating,
       ),
-      iconTheme: IconThemeData(color: _lightTextSecondary, size: 22),
+      iconTheme: const IconThemeData(color: _lightTextSecondary, size: 22),
       textTheme: textTheme,
       listTileTheme: ListTileThemeData(
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
@@ -420,7 +420,7 @@ class AppTheme {
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radiusMD),
-          borderSide: BorderSide(color: error, width: 1),
+          borderSide: const BorderSide(color: error, width: 1),
         ),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -474,13 +474,13 @@ class AppTheme {
           borderRadius: BorderRadius.circular(radiusLG),
         ),
       ),
-      bottomSheetTheme: BottomSheetThemeData(
+      bottomSheetTheme: const BottomSheetThemeData(
         backgroundColor: _darkSurface,
-        shape: const RoundedRectangleBorder(
+        shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         ),
         dragHandleColor: _darkBorder,
-        dragHandleSize: const Size(40, 4),
+        dragHandleSize: Size(40, 4),
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: _darkSurface,
@@ -501,7 +501,7 @@ class AppTheme {
         ),
         behavior: SnackBarBehavior.floating,
       ),
-      iconTheme: IconThemeData(color: _darkTextSecondary, size: 22),
+      iconTheme: const IconThemeData(color: _darkTextSecondary, size: 22),
       textTheme: textTheme,
       listTileTheme: ListTileThemeData(
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),

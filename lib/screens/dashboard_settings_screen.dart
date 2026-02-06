@@ -189,7 +189,7 @@ class _DashboardCardTile extends StatelessWidget {
               Switch(
                 value: card.visible,
                 onChanged: (_) => onToggleVisibility(),
-                activeColor: theme.colorScheme.primary,
+                activeThumbColor: theme.colorScheme.primary,
               ),
               const SizedBox(width: 8),
               // Drag handle

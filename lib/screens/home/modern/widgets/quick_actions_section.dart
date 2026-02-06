@@ -103,7 +103,7 @@ class QuickActionsSection extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(child: second is SizedBox ? second : second),
         ],
-      ));
+      ),);
 
       if (i + 2 < actions.length) {
         rows.add(const SizedBox(height: 12));

@@ -56,7 +56,7 @@ class SupplementsProvider extends ChangeNotifier {
     return _logs
         .where((log) =>
             log.timestamp.isAfter(range.start) &&
-            log.timestamp.isBefore(range.end))
+            log.timestamp.isBefore(range.end),)
         .map((log) => log.supplementId)
         .toSet();
   }
@@ -85,7 +85,7 @@ class SupplementsProvider extends ChangeNotifier {
       _supplements = await _db.getAllSupplements();
       _logs = await _db.getAllSupplementLogs();
       Log.info(
-          'Loaded ${_supplements.length} supplements with ${_logs.length} logs');
+          'Loaded ${_supplements.length} supplements with ${_logs.length} logs',);
     } catch (e, stackTrace) {
       Log.error('Failed to load supplements', error: e, stackTrace: stackTrace);
     }
@@ -131,7 +131,7 @@ class SupplementsProvider extends ChangeNotifier {
         isNowCompleted = false;
       } catch (e, stackTrace) {
         Log.error('Failed to remove supplement log for $supplementId',
-            error: e, stackTrace: stackTrace);
+            error: e, stackTrace: stackTrace,);
         return; // Skip notification if log not found
       }
     } else {
@@ -224,7 +224,7 @@ class SupplementsProvider extends ChangeNotifier {
       notifyListeners();
     } catch (e, stackTrace) {
       Log.error('Failed to delete supplement $id',
-          error: e, stackTrace: stackTrace);
+          error: e, stackTrace: stackTrace,);
       throw Exception('Supplement not found');
     }
   }
@@ -249,6 +249,9 @@ class SupplementsProvider extends ChangeNotifier {
     // Batch update to database for better performance
     await _db.batchUpdateSupplements(_supplements);
 
+    // Update all notifications to reflect new indices after reordering
+    await updateAllNotifications();
+
     notifyListeners();
   }
 
@@ -261,7 +264,7 @@ class SupplementsProvider extends ChangeNotifier {
     final index = _supplements.indexWhere((s) => s.id == supplementId);
     if (index == -1 || index >= _maxSupplements) {
       Log.warning(
-          'Supplement index $index exceeds max allowed ($_maxSupplements)');
+          'Supplement index $index exceeds max allowed ($_maxSupplements)',);
       return _notificationIdStart; // Fallback to first ID
     }
     return _notificationIdStart + index;
@@ -287,7 +290,7 @@ class SupplementsProvider extends ChangeNotifier {
       startTomorrow: skipToday,
     );
     Log.info(
-        'Scheduled notification for ${supplement.name} at ${supplement.reminderTime}');
+        'Scheduled notification for ${supplement.name} at ${supplement.reminderTime}',);
   }
 
   /// Cancel notification for a supplement

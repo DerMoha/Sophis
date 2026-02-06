@@ -99,13 +99,13 @@ class GeminiFoodService {
     final requestsToday = await getRequestsToday();
     if (!await canMakeRequest()) {
       Log.warning(
-          'Gemini API rate limit reached: $requestsToday/$dailyLimit today');
+          'Gemini API rate limit reached: $requestsToday/$dailyLimit today',);
       throw Exception(
-          'Daily limit reached (20 requests/day). Try again tomorrow.');
+          'Daily limit reached (20 requests/day). Try again tomorrow.',);
     }
 
     Log.info(
-        'Gemini API food analysis request (${requestsToday + 1}/$dailyLimit today)');
+        'Gemini API food analysis request (${requestsToday + 1}/$dailyLimit today)',);
 
     // Build image parts
     final imageParts = <DataPart>[];
@@ -153,7 +153,7 @@ If no food is visible, return: {"foods": []}
 
     try {
       final response = await _model!.generateContent([
-        Content.multi([prompt, ...imageParts])
+        Content.multi([prompt, ...imageParts]),
       ]);
 
       // Increment counter after successful request
@@ -170,7 +170,7 @@ If no food is visible, return: {"foods": []}
       return results;
     } catch (e, stackTrace) {
       Log.error('Gemini API food analysis failed',
-          error: e, stackTrace: stackTrace);
+          error: e, stackTrace: stackTrace,);
       throw Exception('Failed to analyze image: $e');
     }
   }
@@ -194,13 +194,13 @@ If no food is visible, return: {"foods": []}
     final requestsToday = await getRequestsToday();
     if (!await canMakeRequest()) {
       Log.warning(
-          'Gemini API rate limit reached: $requestsToday/$dailyLimit today');
+          'Gemini API rate limit reached: $requestsToday/$dailyLimit today',);
       throw Exception(
-          'Daily limit reached (20 requests/day). Try again tomorrow.');
+          'Daily limit reached (20 requests/day). Try again tomorrow.',);
     }
 
     Log.info(
-        'Gemini API food correction request (${requestsToday + 1}/$dailyLimit today)');
+        'Gemini API food correction request (${requestsToday + 1}/$dailyLimit today)',);
 
     // Build image parts
     final imageParts = <DataPart>[];
@@ -259,7 +259,7 @@ Respond ONLY with valid JSON in this exact format, no other text:
 
     try {
       final response = await _model!.generateContent([
-        Content.multi([prompt, ...imageParts])
+        Content.multi([prompt, ...imageParts]),
       ]);
 
       // Increment counter after successful request
@@ -277,7 +277,7 @@ Respond ONLY with valid JSON in this exact format, no other text:
       return results.first;
     } catch (e, stackTrace) {
       Log.error('Gemini API food correction failed',
-          error: e, stackTrace: stackTrace);
+          error: e, stackTrace: stackTrace,);
       throw Exception('Failed to re-analyze image: $e');
     }
   }
@@ -324,13 +324,13 @@ Respond ONLY with valid JSON in this exact format, no other text:
     final requestsToday = await getRequestsToday();
     if (!await canMakeRequest()) {
       Log.warning(
-          'Gemini API rate limit reached: $requestsToday/$dailyLimit today');
+          'Gemini API rate limit reached: $requestsToday/$dailyLimit today',);
       throw Exception(
-          'Daily limit reached (20 requests/day). Try again tomorrow.');
+          'Daily limit reached (20 requests/day). Try again tomorrow.',);
     }
 
     Log.info(
-        'Gemini API recipe extraction request (${requestsToday + 1}/$dailyLimit today)');
+        'Gemini API recipe extraction request (${requestsToday + 1}/$dailyLimit today)',);
 
     final bytes = await imageFile.readAsBytes();
     final imagePart = DataPart('image/jpeg', bytes);
@@ -392,7 +392,7 @@ If no recipe is visible or readable, return:
 
     try {
       final response = await _model!.generateContent([
-        Content.multi([prompt, imagePart])
+        Content.multi([prompt, imagePart]),
       ]);
 
       // Increment counter after successful request
@@ -406,11 +406,11 @@ If no recipe is visible or readable, return:
 
       final result = _parseRecipeResponse(text);
       Log.info(
-          'Gemini API extracted recipe with ${result.ingredients.length} ingredients');
+          'Gemini API extracted recipe with ${result.ingredients.length} ingredients',);
       return result;
     } catch (e, stackTrace) {
       Log.error('Gemini API recipe extraction failed',
-          error: e, stackTrace: stackTrace);
+          error: e, stackTrace: stackTrace,);
       throw Exception('Failed to extract recipe: $e');
     }
   }

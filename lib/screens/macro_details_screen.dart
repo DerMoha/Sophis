@@ -17,7 +17,6 @@ class MacroDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
 
     // Calculate percentages
     final proteinProgress = totals['protein']! / goals.protein;
@@ -100,7 +99,7 @@ class MacroDetailsScreen extends StatelessWidget {
     
     final finalExcessColor = excessColor ?? AppTheme.error;
     final statusText = isOver 
-        ? (positiveExcess ? "Goal exceeding" : l10n.over) // Or specific "Extra" text 
+        ? (positiveExcess ? 'Goal exceeding' : l10n.over) // Or specific "Extra" text 
         : l10n.remaining;
     final statusColor = isOver 
         ? finalExcessColor 
@@ -131,7 +130,7 @@ class MacroDetailsScreen extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    "${current.toStringAsFixed(1)} / ${goal.toStringAsFixed(1)} g",
+                    '${current.toStringAsFixed(1)} / ${goal.toStringAsFixed(1)} g',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -167,7 +166,7 @@ class MacroDetailsScreen extends StatelessWidget {
                     // Center Text
                     Center(
                       child: Text(
-                        "${(progress * 100).toInt()}%",
+                        '${(progress * 100).toInt()}%',
                         style: theme.textTheme.labelSmall?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: isOver ? finalExcessColor : color,
@@ -188,8 +187,7 @@ class MacroDetailsScreen extends StatelessWidget {
               // Calculate scaling
               // If over, we scale so the total bar is visible (up to a reasonable limit, e.g. 150%)
               // If under, we scale so 100% is the full width (Goal = full width)
-              
-              const double minScale = 1.0; 
+
               // If progress > 1.0, scale max to progress. Add buffer? No, let's fit it.
               // We want the 'Goal' mark to be visible.
               // Let's settle on: Total Width represents max(Target, Current).
@@ -284,7 +282,7 @@ class MacroDetailsScreen extends StatelessWidget {
                 ),
               ),
               Text(
-                "${remaining.abs().toStringAsFixed(1)} g",
+                '${remaining.abs().toStringAsFixed(1)} g',
                 style: theme.textTheme.titleMedium?.copyWith(
                   color: isOver ? finalExcessColor : theme.colorScheme.onSurface,
                   fontWeight: FontWeight.bold,

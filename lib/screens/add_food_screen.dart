@@ -221,7 +221,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                                   suffixText: 'kcal',
                                   prefixIcon: const Icon(
                                       Icons.local_fire_department_outlined,
-                                      size: 20),
+                                      size: 20,),
                                 ),
                                 keyboardType: TextInputType.number,
                                 validator: (v) =>

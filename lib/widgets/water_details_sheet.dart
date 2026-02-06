@@ -185,7 +185,7 @@ class _WaterDetailsSheetState extends State<WaterDetailsSheet> {
                             hintText: waterUnit,
                             prefixIcon: const Icon(Icons.edit_outlined, size: 20),
                             contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 14),
+                                horizontal: 16, vertical: 14,),
                           ),
                           onSubmitted: (_) => _addCustomWater(),
                         ),
@@ -275,7 +275,7 @@ class _WaterDetailsSheetState extends State<WaterDetailsSheet> {
                       child: Container(
                         margin: const EdgeInsets.only(bottom: 8),
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
+                            horizontal: 16, vertical: 12,),
                         decoration: BoxDecoration(
                           color: isDark
                               ? Colors.white.withValues(alpha: 0.05)

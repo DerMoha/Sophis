@@ -237,7 +237,7 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
                       onChanged: (value) {
                         setState(() => _enabled = value);
                       },
-                      activeColor: accentColor,
+                      activeThumbColor: accentColor,
                     ),
                   ],
                 ),
@@ -333,7 +333,7 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
     // Check for duplicate names (excluding current supplement when editing)
     final isDuplicate = provider.supplements.any((s) =>
         s.name.toLowerCase() == name.toLowerCase() &&
-        s.id != widget.supplement?.id);
+        s.id != widget.supplement?.id,);
 
     if (isDuplicate) {
       ScaffoldMessenger.of(context).showSnackBar(

@@ -140,7 +140,7 @@ class ShareMealScreen extends StatelessWidget {
                                 color: theme.colorScheme.primary,
                               ),
                             ),
-                          )),
+                          ),),
                     ],
                   ),
                 ),

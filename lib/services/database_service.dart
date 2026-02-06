@@ -121,7 +121,7 @@ class DatabaseService extends _$DatabaseService {
               fat: row.fat,
               timestamp: row.timestamp,
               meal: row.meal,
-            ))
+            ),)
         .toList();
   }
 
@@ -135,7 +135,7 @@ class DatabaseService extends _$DatabaseService {
       fat: Value(entry.fat),
       timestamp: Value(entry.timestamp),
       meal: Value(entry.meal),
-    ));
+    ),);
   }
 
   /// Batch insert multiple food entries
@@ -157,7 +157,7 @@ class DatabaseService extends _$DatabaseService {
                 fat: Value(entry.fat),
                 timestamp: Value(entry.timestamp),
                 meal: Value(entry.meal),
-              )),
+              ),),
           mode: InsertMode.insertOrReplace,
         );
       });
@@ -178,7 +178,7 @@ class DatabaseService extends _$DatabaseService {
       fat: Value(entry.fat),
       timestamp: Value(entry.timestamp),
       meal: Value(entry.meal),
-    ));
+    ),);
   }
 
   Future<int> deleteFood(String id) {
@@ -196,7 +196,7 @@ class DatabaseService extends _$DatabaseService {
               id: row.id,
               amountMl: row.amountMl,
               timestamp: row.timestamp,
-            ))
+            ),)
         .toList();
   }
 
@@ -205,7 +205,7 @@ class DatabaseService extends _$DatabaseService {
       id: Value(entry.id),
       amountMl: Value(entry.amountMl),
       timestamp: Value(entry.timestamp),
-    ));
+    ),);
   }
 
   /// Batch insert multiple water entries
@@ -219,7 +219,7 @@ class DatabaseService extends _$DatabaseService {
               id: Value(entry.id),
               amountMl: Value(entry.amountMl),
               timestamp: Value(entry.timestamp),
-            )),
+            ),),
         mode: InsertMode.insertOrReplace,
       );
     });
@@ -241,7 +241,7 @@ class DatabaseService extends _$DatabaseService {
               weightKg: row.weightKg,
               timestamp: row.timestamp,
               note: row.note,
-            ))
+            ),)
         .toList();
   }
 
@@ -251,7 +251,7 @@ class DatabaseService extends _$DatabaseService {
       weightKg: Value(entry.weightKg),
       timestamp: Value(entry.timestamp),
       note: Value(entry.note),
-    ));
+    ),);
   }
 
   Future<void> insertWeightList(List<WeightEntry> entries) async {
@@ -263,7 +263,7 @@ class DatabaseService extends _$DatabaseService {
               weightKg: Value(entry.weightKg),
               timestamp: Value(entry.timestamp),
               note: Value(entry.note),
-            )),
+            ),),
         mode: InsertMode.insertOrReplace,
       );
     });
@@ -285,7 +285,7 @@ class DatabaseService extends _$DatabaseService {
               caloriesBurned: row.caloriesBurned,
               timestamp: row.timestamp,
               note: row.note,
-            ))
+            ),)
         .toList();
   }
 
@@ -295,7 +295,7 @@ class DatabaseService extends _$DatabaseService {
       caloriesBurned: Value(entry.caloriesBurned),
       timestamp: Value(entry.timestamp),
       note: Value(entry.note),
-    ));
+    ),);
   }
 
   Future<void> insertWorkoutList(List<WorkoutEntry> entries) async {
@@ -307,7 +307,7 @@ class DatabaseService extends _$DatabaseService {
               caloriesBurned: Value(entry.caloriesBurned),
               timestamp: Value(entry.timestamp),
               note: Value(entry.note),
-            )),
+            ),),
         mode: InsertMode.insertOrReplace,
       );
     });
@@ -319,7 +319,7 @@ class DatabaseService extends _$DatabaseService {
       caloriesBurned: Value(entry.caloriesBurned),
       timestamp: Value(entry.timestamp),
       note: Value(entry.note),
-    ));
+    ),);
   }
 
   Future<int> deleteWorkout(String id) {
@@ -342,7 +342,7 @@ class DatabaseService extends _$DatabaseService {
               enabled: row.enabled,
               sortOrder: row.sortOrder,
               createdAt: row.createdAt,
-            ))
+            ),)
         .toList();
   }
 
@@ -354,7 +354,7 @@ class DatabaseService extends _$DatabaseService {
       enabled: Value(supplement.enabled),
       sortOrder: Value(supplement.sortOrder),
       createdAt: Value(supplement.createdAt),
-    ));
+    ),);
   }
 
   Future<bool> updateSupplement(Supplement supplement) {
@@ -365,7 +365,7 @@ class DatabaseService extends _$DatabaseService {
       enabled: Value(supplement.enabled),
       sortOrder: Value(supplement.sortOrder),
       createdAt: Value(supplement.createdAt),
-    ));
+    ),);
   }
 
   /// Batch update multiple supplements in a single transaction
@@ -406,7 +406,7 @@ class DatabaseService extends _$DatabaseService {
               id: row.id,
               supplementId: row.supplementId,
               timestamp: row.timestamp,
-            ))
+            ),)
         .toList();
   }
 
@@ -415,7 +415,7 @@ class DatabaseService extends _$DatabaseService {
       id: Value(log.id),
       supplementId: Value(log.supplementId),
       timestamp: Value(log.timestamp),
-    ));
+    ),);
   }
 
   Future<int> deleteSupplementLog(String id) {
@@ -428,7 +428,7 @@ class DatabaseService extends _$DatabaseService {
 
     final rows = await (select(supplementLogs)
           ..where((t) => t.timestamp.isBiggerOrEqualValue(startOfDay) &
-                         t.timestamp.isSmallerOrEqualValue(endOfDay)))
+                         t.timestamp.isSmallerOrEqualValue(endOfDay),))
         .get();
 
     return rows
@@ -436,7 +436,7 @@ class DatabaseService extends _$DatabaseService {
               id: row.id,
               supplementId: row.supplementId,
               timestamp: row.timestamp,
-            ))
+            ),)
         .toList();
   }
 

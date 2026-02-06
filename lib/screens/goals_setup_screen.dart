@@ -465,7 +465,7 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
     required void Function(T?) onChanged,
   }) {
     return DropdownButtonFormField<T>(
-      value: value,
+      initialValue: value,
       isExpanded: true,
       decoration: InputDecoration(
         labelText: label,
@@ -478,7 +478,7 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
                   itemLabel(item),
                   overflow: TextOverflow.ellipsis,
                 ),
-              ))
+              ),)
           .toList(),
       onChanged: onChanged,
     );

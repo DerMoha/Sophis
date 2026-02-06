@@ -254,7 +254,7 @@ class _FadeInSlideState extends State<FadeInSlide>
     ).animate(CurvedAnimation(
       parent: _controller,
       curve: widget.curve,
-    ));
+    ),);
 
     Future.delayed(widget.delay * widget.index, () {
       if (mounted) _controller.forward();
@@ -334,7 +334,7 @@ class _ScaleFadeInState extends State<ScaleFadeIn>
     ).animate(CurvedAnimation(
       parent: _controller,
       curve: widget.curve,
-    ));
+    ),);
 
     Future.delayed(widget.delay, () {
       if (mounted) _controller.forward();
@@ -448,7 +448,7 @@ class _PulseAnimationState extends State<PulseAnimation>
     ).animate(CurvedAnimation(
       parent: _controller,
       curve: Curves.easeInOut,
-    ));
+    ),);
 
     if (widget.enabled) {
       _controller.repeat(reverse: true);
@@ -608,7 +608,7 @@ class _BounceButtonState extends State<BounceButton>
     ).animate(CurvedAnimation(
       parent: _controller,
       curve: Curves.easeInOut,
-    ));
+    ),);
   }
 
   @override
