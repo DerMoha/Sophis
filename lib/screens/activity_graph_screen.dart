@@ -17,6 +17,8 @@ class ActivityGraphScreen extends StatefulWidget {
 class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
   int _selectedDays = 7; // 7 or 30 days
 
+  int _dayKey(DateTime date) => date.year * 10000 + date.month * 100 + date.day;
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -136,28 +138,35 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
   }
 
   List<DayData> _getHistoricalData(NutritionProvider nutrition, int days) {
-    final result = <DayData>[];
     final now = DateTime.now();
+    final endDate = DateTime(now.year, now.month, now.day);
+    final startDate = endDate.subtract(Duration(days: days - 1));
+    final startKey = _dayKey(startDate);
+    final endKey = _dayKey(endDate);
 
+    final totalsByDay = <int, _DayTotals>{};
+    for (final entry in nutrition.entries) {
+      final key = _dayKey(entry.timestamp);
+      if (key < startKey || key > endKey) continue;
+
+      final totals = totalsByDay.putIfAbsent(key, _DayTotals.new);
+      totals.calories += entry.calories;
+      totals.protein += entry.protein;
+      totals.carbs += entry.carbs;
+      totals.fat += entry.fat;
+    }
+
+    final result = <DayData>[];
     for (int i = days - 1; i >= 0; i--) {
-      final date = DateTime(now.year, now.month, now.day - i);
-      final entries = nutrition.getEntriesForDate(date);
-
-      double calories = 0, protein = 0, carbs = 0, fat = 0;
-      for (final entry in entries) {
-        calories += entry.calories;
-        protein += entry.protein;
-        carbs += entry.carbs;
-        fat += entry.fat;
-      }
-
+      final date = endDate.subtract(Duration(days: i));
+      final totals = totalsByDay[_dayKey(date)];
       result.add(
         DayData(
           date: date,
-          calories: calories,
-          protein: protein,
-          carbs: carbs,
-          fat: fat,
+          calories: totals?.calories ?? 0.0,
+          protein: totals?.protein ?? 0.0,
+          carbs: totals?.carbs ?? 0.0,
+          fat: totals?.fat ?? 0.0,
         ),
       );
     }
@@ -372,8 +381,11 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  const Icon(Icons.check_circle,
-                      size: 16, color: AppTheme.success,),
+                  const Icon(
+                    Icons.check_circle,
+                    size: 16,
+                    color: AppTheme.success,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     l10n.daysOnTrack(daysMetCalories, data.length),
@@ -441,4 +453,11 @@ class DayData {
     required this.carbs,
     required this.fat,
   });
+}
+
+class _DayTotals {
+  double calories = 0.0;
+  double protein = 0.0;
+  double carbs = 0.0;
+  double fat = 0.0;
 }
