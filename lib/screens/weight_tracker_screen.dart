@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../models/app_settings.dart';
+import '../models/weight_entry.dart';
 import '../services/nutrition_provider.dart';
 import '../services/settings_provider.dart';
 import '../theme/app_theme.dart';
@@ -146,8 +147,9 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
                                       labelText: weightLabel,
                                       suffixText: weightUnit,
                                       prefixIcon: const Icon(
-                                          Icons.scale_outlined,
-                                          size: 20),
+                                        Icons.scale_outlined,
+                                        size: 20,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -159,8 +161,9 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
                                     decoration: InputDecoration(
                                       labelText: l10n.noteOptional,
                                       prefixIcon: const Icon(
-                                          Icons.note_outlined,
-                                          size: 20),
+                                        Icons.note_outlined,
+                                        size: 20,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -187,7 +190,9 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
                         index: 1,
                         child: GlassCard(
                           padding: const EdgeInsets.symmetric(
-                              vertical: 24, horizontal: 16),
+                            vertical: 24,
+                            horizontal: 16,
+                          ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
@@ -222,9 +227,9 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
                                 ),
                                 _WeightStat(
                                   label: l10n.toGo,
-                                  valueKg: (latest.weightKg -
-                                          profile!.targetWeight!)
-                                      .abs(),
+                                  valueKg:
+                                      (latest.weightKg - profile!.targetWeight!)
+                                          .abs(),
                                   color: AppTheme.warning,
                                   unitSystem: unitSystem,
                                 ),
@@ -252,15 +257,18 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
                                     color: theme.colorScheme.primary,
                                   ),
                                   const SizedBox(width: 8),
-                                  Text(l10n.progress,
-                                      style: theme.textTheme.titleMedium),
+                                  Text(
+                                    l10n.progress,
+                                    style: theme.textTheme.titleMedium,
+                                  ),
                                 ],
                               ),
                               const SizedBox(height: 24),
                               SizedBox(
                                 height: 200,
-                                child:
-                                    _buildChart(entries.reversed.take(30).toList(), unitSystem),
+                                child: _buildChart(
+                                    entries.reversed.take(30).toList(),
+                                    unitSystem,),
                               ),
                             ],
                           ),
@@ -286,16 +294,18 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
                         ),
                       )
                     else
-                      ...entries.asMap().entries.map((entry) => FadeInSlide(
-                            index: 4 + entry.key,
-                            child: _WeightEntryTile(
-                              weightKg: entry.value.weightKg,
-                              date: entry.value.timestamp,
-                              note: entry.value.note,
-                              unitSystem: unitSystem,
-                              onDelete: () => _confirmDelete(entry.value.id),
+                      ...entries.asMap().entries.map(
+                            (entry) => FadeInSlide(
+                              index: 4 + entry.key,
+                              child: _WeightEntryTile(
+                                weightKg: entry.value.weightKg,
+                                date: entry.value.timestamp,
+                                note: entry.value.note,
+                                unitSystem: unitSystem,
+                                onDelete: () => _confirmDelete(entry.value.id),
+                              ),
                             ),
-                          )),
+                          ),
                   ]),
                 );
               },
@@ -306,14 +316,15 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
     );
   }
 
-  Widget _buildChart(List entries, UnitSystem unitSystem) {
+  Widget _buildChart(List<WeightEntry> entries, UnitSystem unitSystem) {
     if (entries.isEmpty) return const SizedBox();
     final theme = Theme.of(context);
 
     final spots = <FlSpot>[];
     for (var i = 0; i < entries.length; i++) {
       // Convert to display unit for chart
-      final displayWeight = UnitConverter.displayWeight(entries[i].weightKg, unitSystem);
+      final displayWeight =
+          UnitConverter.displayWeight(entries[i].weightKg, unitSystem);
       spots.add(FlSpot(i.toDouble(), displayWeight));
     }
 
@@ -368,13 +379,15 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
           touchTooltipData: LineTouchTooltipData(
             getTooltipColor: (_) => theme.colorScheme.surface,
             getTooltipItems: (spots) => spots
-                .map((spot) => LineTooltipItem(
-                      '${spot.y.toStringAsFixed(1)} ${UnitConverter.weightUnit(unitSystem)}',
-                      TextStyle(
-                        color: theme.colorScheme.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ))
+                .map(
+                  (spot) => LineTooltipItem(
+                    '${spot.y.toStringAsFixed(1)} ${UnitConverter.weightUnit(unitSystem)}',
+                    TextStyle(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                )
                 .toList(),
           ),
         ),
@@ -401,7 +414,8 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
               context.read<NutritionProvider>().removeWeightEntry(id);
               Navigator.pop(ctx);
             },
-            style: TextButton.styleFrom(foregroundColor: theme.colorScheme.error),
+            style:
+                TextButton.styleFrom(foregroundColor: theme.colorScheme.error),
             child: Text(l10n.delete),
           ),
         ],

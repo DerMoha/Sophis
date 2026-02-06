@@ -31,7 +31,7 @@ class OpenFoodFactsService {
       final response = await http.get(url);
       if (response.statusCode != 200) return [];
 
-      final data = jsonDecode(response.body);
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
       final products = data['products'] as List? ?? [];
 
       final results = products
@@ -61,7 +61,7 @@ class OpenFoodFactsService {
       if (_searchCache.length > 50) {
         final sortedKeys = _searchCache.keys.toList()
           ..sort((a, b) => _searchCache[a]!.timestamp
-              .compareTo(_searchCache[b]!.timestamp));
+              .compareTo(_searchCache[b]!.timestamp),);
         for (final key in sortedKeys.take(_searchCache.length - 50)) {
           _searchCache.remove(key);
         }
@@ -74,13 +74,13 @@ class OpenFoodFactsService {
     try {
       final url = Uri.parse('$_baseUrl/api/v0/product/$barcode.json');
       final response = await http.get(url);
-      
+
       if (response.statusCode != 200) return null;
 
-      final data = jsonDecode(response.body);
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
       if (data['status'] != 1) return null;
 
-      return _parseProduct(data['product']);
+      return _parseProduct(data['product'] as Map<String, dynamic>?);
     } catch (e) {
       return null;
     }
@@ -113,7 +113,7 @@ class OpenFoodFactsService {
     // Extract serving size info
     final servingSize = product['serving_size']?.toString();
     final servingQuantity = _parseNutrient(
-        {'q': product['serving_quantity']}, 'q');
+        {'q': product['serving_quantity']}, 'q',);
 
     // Generate serving options
     List<ServingSize> servings = [];
@@ -125,7 +125,7 @@ class OpenFoodFactsService {
     return FoodItem(
       id: product['code'] ?? DateTime.now().millisecondsSinceEpoch.toString(),
       name: name.toString(),
-      category: product['categories_tags']?.first?.toString() ?? 'food',
+      category: (product['categories_tags'] as List?)?.first?.toString() ?? 'food',
       caloriesPer100g: calories,
       proteinPer100g: protein,
       carbsPer100g: carbs,

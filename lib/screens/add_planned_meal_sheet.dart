@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../models/meal_plan.dart';
 import '../models/recipe.dart';
+import '../models/food_item.dart';
 import '../services/nutrition_provider.dart';
 import '../services/openfoodfacts_service.dart';
 import '../services/gemini_food_service.dart';
@@ -35,7 +36,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
   final ImagePicker _imagePicker = ImagePicker();
   GeminiFoodService? _geminiService;
 
-  List<dynamic> _searchResults = [];
+  List<FoodItem> _searchResults = [];
   bool _isSearching = false;
   String? _searchError;
 
@@ -109,7 +110,8 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
                 const Spacer(),
                 // Meal type selector
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: theme.colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(AppTheme.radiusFull),
@@ -119,10 +121,22 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
                       value: _selectedMealType,
                       isDense: true,
                       items: [
-                        DropdownMenuItem(value: 'breakfast', child: Text(l10n.breakfast)),
-                        DropdownMenuItem(value: 'lunch', child: Text(l10n.lunch)),
-                        DropdownMenuItem(value: 'dinner', child: Text(l10n.dinner)),
-                        DropdownMenuItem(value: 'snack', child: Text(l10n.snacks)),
+                        DropdownMenuItem(
+                          value: 'breakfast',
+                          child: Text(l10n.breakfast),
+                        ),
+                        DropdownMenuItem(
+                          value: 'lunch',
+                          child: Text(l10n.lunch),
+                        ),
+                        DropdownMenuItem(
+                          value: 'dinner',
+                          child: Text(l10n.dinner),
+                        ),
+                        DropdownMenuItem(
+                          value: 'snack',
+                          child: Text(l10n.snacks),
+                        ),
                       ],
                       onChanged: (value) {
                         setState(() {
@@ -189,7 +203,8 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
               Icon(
                 Icons.menu_book_outlined,
                 size: 48,
-                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                color:
+                    theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
               ),
               const SizedBox(height: 16),
               Text(
@@ -355,7 +370,11 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
                       itemBuilder: (context, index) {
                         final food = _searchResults[index];
                         return _buildFoodResultCard(
-                          context, theme, isDark, l10n, food,
+                          context,
+                          theme,
+                          isDark,
+                          l10n,
+                          food,
                         );
                       },
                     ),
@@ -381,7 +400,8 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
               Icon(
                 Icons.key_outlined,
                 size: 48,
-                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                color:
+                    theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
               ),
               const SizedBox(height: 16),
               Text(
@@ -433,7 +453,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
+              const Icon(
                 Icons.error_outline,
                 size: 48,
                 color: AppTheme.error,
@@ -522,7 +542,8 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
                       Icon(
                         Icons.menu_book_outlined,
                         size: 64,
-                        color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+                        color: theme.colorScheme.onSurfaceVariant
+                            .withValues(alpha: 0.3),
                       ),
                       const SizedBox(height: 16),
                       Text(
@@ -610,7 +631,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
             children: [
               Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.check_circle,
                     color: AppTheme.success,
                   ),
@@ -645,11 +666,23 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
               // Macros row
               Row(
                 children: [
-                  _buildMacroChip(l10n.protein, recipe.proteinPerServing, AppTheme.protein),
+                  _buildMacroChip(
+                    l10n.protein,
+                    recipe.proteinPerServing,
+                    AppTheme.protein,
+                  ),
                   const SizedBox(width: 8),
-                  _buildMacroChip(l10n.carbs, recipe.carbsPerServing, AppTheme.carbs),
+                  _buildMacroChip(
+                    l10n.carbs,
+                    recipe.carbsPerServing,
+                    AppTheme.carbs,
+                  ),
                   const SizedBox(width: 8),
-                  _buildMacroChip(l10n.fat, recipe.fatPerServing, AppTheme.fat),
+                  _buildMacroChip(
+                    l10n.fat,
+                    recipe.fatPerServing,
+                    AppTheme.fat,
+                  ),
                 ],
               ),
             ],
@@ -679,7 +712,8 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
             children: recipe.ingredients.map((ing) {
               final emoji = ShoppingCategory.getIcon(ing.category);
               return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 child: Row(
                   children: [
                     Text(emoji, style: const TextStyle(fontSize: 16)),
@@ -691,10 +725,12 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 2,),
                       decoration: BoxDecoration(
                         color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(AppTheme.radiusFull),
+                        borderRadius:
+                            BorderRadius.circular(AppTheme.radiusFull),
                       ),
                       child: Text(
                         ing.displayAmount,
@@ -787,7 +823,8 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
     });
 
     try {
-      final result = await _geminiService!.extractRecipeFromImage(_scannedImage!);
+      final result =
+          await _geminiService!.extractRecipeFromImage(_scannedImage!);
       setState(() {
         _extractedRecipe = result;
         _isScanning = false;
@@ -808,12 +845,16 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
     final nutrition = context.read<NutritionProvider>();
 
     // Convert extracted ingredients to planned meal ingredients
-    final ingredients = recipe.ingredients.map((i) => PlannedMealIngredient(
-          name: i.name,
-          amount: i.amount,
-          unit: i.unit,
-          category: i.category,
-        )).toList();
+    final ingredients = recipe.ingredients
+        .map(
+          (i) => PlannedMealIngredient(
+            name: i.name,
+            amount: i.amount,
+            unit: i.unit,
+            category: i.category,
+          ),
+        )
+        .toList();
 
     final plannedMeal = PlannedMeal(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -838,7 +879,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
     ThemeData theme,
     bool isDark,
     AppLocalizations l10n,
-    dynamic food,
+    FoodItem food,
   ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -925,7 +966,8 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
     }
   }
 
-  void _showServingsDialog(BuildContext context, AppLocalizations l10n, Recipe recipe) {
+  void _showServingsDialog(
+      BuildContext context, AppLocalizations l10n, Recipe recipe,) {
     int servings = 1;
     showDialog(
       context: context,
@@ -956,7 +998,10 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
                         vertical: 8,
                       ),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                       ),
                       child: Text(
@@ -974,9 +1019,9 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
                 Text(
                   '${totalCal.toStringAsFixed(0)} kcal',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
               ],
             ),
@@ -1004,12 +1049,16 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
     final nutrition = context.read<NutritionProvider>();
 
     // Convert recipe ingredients to planned meal ingredients
-    final ingredients = recipe.ingredients.map((i) => PlannedMealIngredient(
-          name: i.name,
-          amount: (i.amountGrams * servings) / recipe.servings,
-          unit: 'g',
-          category: _inferCategory(i.name),
-        )).toList();
+    final ingredients = recipe.ingredients
+        .map(
+          (i) => PlannedMealIngredient(
+            name: i.name,
+            amount: (i.amountGrams * servings) / recipe.servings,
+            unit: 'g',
+            category: _inferCategory(i.name),
+          ),
+        )
+        .toList();
 
     final plannedMeal = PlannedMeal(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -1030,7 +1079,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
     HapticFeedback.mediumImpact();
   }
 
-  void _addFoodAsPlannedMeal(dynamic food) {
+  void _addFoodAsPlannedMeal(FoodItem food) {
     final nutrition = context.read<NutritionProvider>();
 
     final plannedMeal = PlannedMeal(
@@ -1059,16 +1108,38 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
 
   String _inferCategory(String name) {
     final lower = name.toLowerCase();
-    if (_matchesAny(lower, ['chicken', 'beef', 'pork', 'fish', 'salmon', 'tuna', 'egg', 'meat', 'turkey'])) {
+    if (_matchesAny(lower, [
+      'chicken',
+      'beef',
+      'pork',
+      'fish',
+      'salmon',
+      'tuna',
+      'egg',
+      'meat',
+      'turkey',
+    ])) {
       return ShoppingCategory.protein;
     }
     if (_matchesAny(lower, ['milk', 'cheese', 'yogurt', 'butter', 'cream'])) {
       return ShoppingCategory.dairy;
     }
-    if (_matchesAny(lower, ['apple', 'banana', 'orange', 'tomato', 'lettuce', 'carrot', 'onion', 'garlic', 'vegetable', 'fruit'])) {
+    if (_matchesAny(lower, [
+      'apple',
+      'banana',
+      'orange',
+      'tomato',
+      'lettuce',
+      'carrot',
+      'onion',
+      'garlic',
+      'vegetable',
+      'fruit',
+    ])) {
       return ShoppingCategory.produce;
     }
-    if (_matchesAny(lower, ['bread', 'rice', 'pasta', 'oat', 'cereal', 'flour'])) {
+    if (_matchesAny(
+        lower, ['bread', 'rice', 'pasta', 'oat', 'cereal', 'flour'],)) {
       return ShoppingCategory.grains;
     }
     if (_matchesAny(lower, ['frozen', 'ice cream'])) {

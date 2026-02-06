@@ -1,3 +1,5 @@
+import '../l10n/generated/app_localizations.dart';
+
 /// A single planned meal for a specific day and meal slot
 class PlannedMeal {
   final String id;
@@ -191,7 +193,7 @@ class ShoppingCategory {
   /// Get localized display name for a category
   /// Note: This method is kept for backwards compatibility but should use
   /// the localization-aware version when possible
-  static String getLocalizedDisplayName(String category, dynamic l10n) {
+  static String getLocalizedDisplayName(String category, AppLocalizations l10n) {
     switch (category) {
       case produce:
         return l10n.categoryProduce;

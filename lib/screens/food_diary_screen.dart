@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../models/food_entry.dart';
+import '../models/nutrition_goals.dart';
 import '../services/nutrition_provider.dart';
 import '../services/settings_provider.dart';
 import '../theme/app_theme.dart';
@@ -30,7 +31,8 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
     super.initState();
     _baseDate = DateTime.now();
     _selectedDayOffset = 0; // Start at today
-    _pageController = PageController(initialPage: _daysRange + _selectedDayOffset);
+    _pageController =
+        PageController(initialPage: _daysRange + _selectedDayOffset);
   }
 
   @override
@@ -48,10 +50,14 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final dateNorm = DateTime(date.year, date.month, date.day);
-    
-    if (dateNorm == today) return l10n.today;
-    if (dateNorm == today.subtract(const Duration(days: 1))) return l10n.yesterday;
-    
+
+    if (dateNorm == today) {
+      return l10n.today;
+    }
+    if (dateNorm == today.subtract(const Duration(days: 1))) {
+      return l10n.yesterday;
+    }
+
     // Use intl for localized day names (e.g., 'Mon' in EN, 'Mo' in DE)
     return DateFormat.E(locale).format(date);
   }
@@ -114,7 +120,12 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
                     child: Consumer<NutritionProvider>(
                       builder: (context, nutrition, _) {
                         return _buildDayContent(
-                          context, theme, isDark, l10n, nutrition, date,
+                          context,
+                          theme,
+                          isDark,
+                          l10n,
+                          nutrition,
+                          date,
                         );
                       },
                     ),
@@ -188,7 +199,9 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
           IconButton(
             icon: Icon(
               Icons.chevron_right_rounded,
-              color: canGoForward ? null : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+              color: canGoForward
+                  ? null
+                  : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
             ),
             onPressed: canGoForward ? _goToNextDay : null,
             style: IconButton.styleFrom(
@@ -210,7 +223,8 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
               },
               tooltip: l10n.today,
               style: IconButton.styleFrom(
-                backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
+                backgroundColor:
+                    theme.colorScheme.primary.withValues(alpha: 0.1),
                 foregroundColor: theme.colorScheme.primary,
               ),
             )
@@ -240,17 +254,28 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
         if (entries.isNotEmpty)
           _buildNutritionSummary(theme, isDark, l10n, totals, goals),
 
-        if (entries.isNotEmpty)
-          const SizedBox(height: 24),
+        if (entries.isNotEmpty) const SizedBox(height: 24),
 
         // Meal sections - dynamic from settings
-        ...context.read<SettingsProvider>().mealTypes.asMap().entries.expand((entry) {
+        ...context
+            .read<SettingsProvider>()
+            .mealTypes
+            .asMap()
+            .entries
+            .expand((entry) {
           final index = entry.key;
           final mealType = entry.value;
           return [
             _buildMealSection(
-              context, theme, isDark, l10n, entries,
-              mealType.id, mealType.name, mealType.icon, mealType.color,
+              context,
+              theme,
+              isDark,
+              l10n,
+              entries,
+              mealType.id,
+              mealType.name,
+              mealType.icon,
+              mealType.color,
             ),
             if (index < context.read<SettingsProvider>().mealTypes.length - 1)
               const SizedBox(height: 12),
@@ -300,7 +325,7 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
     bool isDark,
     AppLocalizations l10n,
     Map<String, double> totals,
-    goals,
+    NutritionGoals? goals,
   ) {
     final calorieGoal = goals?.calories ?? 2000;
     final calorieProgress = (totals['calories']! / calorieGoal).clamp(0.0, 1.5);
@@ -370,18 +395,24 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
                 Row(
                   children: [
                     _buildMiniMacro(
-                      theme, l10n.protein,
-                      totals['protein']!, AppTheme.protein,
+                      theme,
+                      l10n.protein,
+                      totals['protein']!,
+                      AppTheme.protein,
                     ),
                     const SizedBox(width: 16),
                     _buildMiniMacro(
-                      theme, l10n.carbs,
-                      totals['carbs']!, AppTheme.carbs,
+                      theme,
+                      l10n.carbs,
+                      totals['carbs']!,
+                      AppTheme.carbs,
                     ),
                     const SizedBox(width: 16),
                     _buildMiniMacro(
-                      theme, l10n.fat,
-                      totals['fat']!, AppTheme.fat,
+                      theme,
+                      l10n.fat,
+                      totals['fat']!,
+                      AppTheme.fat,
                     ),
                   ],
                 ),
@@ -393,7 +424,8 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
     );
   }
 
-  Widget _buildMiniMacro(ThemeData theme, String label, double value, Color color) {
+  Widget _buildMiniMacro(
+      ThemeData theme, String label, double value, Color color,) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -439,7 +471,8 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
     Color? color,
   ]) {
     final mealEntries = entries.where((e) => e.meal == mealType).toList();
-    final totalCal = mealEntries.fold(0.0, (double sum, FoodEntry e) => sum + e.calories);
+    final totalCal =
+        mealEntries.fold(0.0, (double sum, FoodEntry e) => sum + e.calories);
     final mealColor = color ?? theme.colorScheme.primary;
 
     return Container(
@@ -557,7 +590,7 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
             ),
           ),
           Text(
-            '${entry.calories.toStringAsFixed(0)}',
+            entry.calories.toStringAsFixed(0),
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
             ),

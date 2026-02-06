@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_slow_async_io
+
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
@@ -108,8 +110,16 @@ class LogService {
     _logger.e(_sanitize(message), error: error, stackTrace: stackTrace);
   }
 
+  /// Flush any pending log entries to disk
+  Future<void> flush() async {
+    await _flushBuffer();
+  }
+
   /// Get list of log files sorted by date (newest first)
   Future<List<LogFile>> getLogFiles() async {
+    // Flush buffer first to ensure all entries are written
+    await _flushBuffer();
+
     if (!await _logDirectory.exists()) {
       return [];
     }
@@ -139,7 +149,7 @@ class LogService {
           date: date,
           size: stat.size,
           entryCount: entryCount,
-        ));
+        ),);
       }
     }
 
@@ -225,7 +235,7 @@ class LogService {
       }
 
       // Write all buffered entries
-      final content = _logBuffer.join('\n') + '\n';
+      final content = '${_logBuffer.join('\n')}\n';
       await _currentLogFile!.writeAsString(
         content,
         mode: FileMode.append,
@@ -371,4 +381,5 @@ class _FileStat {
 }
 
 // Convenience global accessors (shorter than LogService.instance)
+// ignore: non_constant_identifier_names
 final Log = LogService.instance;

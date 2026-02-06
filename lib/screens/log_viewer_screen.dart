@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../services/log_service.dart';
 import '../theme/app_theme.dart';
@@ -42,14 +45,26 @@ class _LogViewerScreenState extends State<LogViewerScreen> {
     }
   }
 
+  /// Copy a log file to temp directory for sharing (iOS sandbox workaround)
+  Future<File> _copyToTemp(File source) async {
+    final tempDir = await getTemporaryDirectory();
+    final fileName = p.basename(source.path);
+    final tempFile = File(p.join(tempDir.path, fileName));
+    return source.copy(tempFile.path);
+  }
+
   Future<void> _shareAllLogs() async {
     if (_logFiles == null || _logFiles!.isEmpty) return;
 
     try {
-      final files = _logFiles!.map((f) => XFile(f.file.path)).toList();
+      // Copy files to temp directory for iOS sharing
+      final tempFiles = await Future.wait(
+        _logFiles!.map((f) => _copyToTemp(f.file)),
+      );
+      final xFiles = tempFiles.map((f) => XFile(f.path)).toList();
 
       await Share.shareXFiles(
-        files,
+        xFiles,
         subject: 'Sophis Debug Logs - ${DateFormat('yyyy-MM-dd').format(DateTime.now())}',
         text: 'Debug logs from Sophis nutrition tracker',
       );
@@ -64,8 +79,11 @@ class _LogViewerScreenState extends State<LogViewerScreen> {
 
   Future<void> _shareLog(LogFile logFile) async {
     try {
+      // Copy to temp directory for iOS sharing
+      final tempFile = await _copyToTemp(logFile.file);
+
       await Share.shareXFiles(
-        [XFile(logFile.file.path)],
+        [XFile(tempFile.path)],
         subject: 'Sophis Debug Log - ${logFile.formattedDate}',
       );
     } catch (e) {

@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../services/nutrition_provider.dart';
+import '../models/nutrition_goals.dart';
 import '../theme/app_theme.dart';
 
 class ActivityGraphScreen extends StatefulWidget {
@@ -150,13 +151,15 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
         fat += entry.fat;
       }
 
-      result.add(DayData(
-        date: date,
-        calories: calories,
-        protein: protein,
-        carbs: carbs,
-        fat: fat,
-      ));
+      result.add(
+        DayData(
+          date: date,
+          calories: calories,
+          protein: protein,
+          carbs: carbs,
+          fat: fat,
+        ),
+      );
     }
 
     return result;
@@ -173,11 +176,10 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
     String unit = 'kcal',
   }) {
     final values = data.map(getValue).toList();
-    final maxValue = values.isNotEmpty 
-        ? values.reduce((a, b) => a > b ? a : b) 
-        : 0.0;
-    final avgValue = values.isNotEmpty 
-        ? values.reduce((a, b) => a + b) / values.length 
+    final maxValue =
+        values.isNotEmpty ? values.reduce((a, b) => a > b ? a : b) : 0.0;
+    final avgValue = values.isNotEmpty
+        ? values.reduce((a, b) => a + b) / values.length
         : 0.0;
 
     return Card(
@@ -229,7 +231,9 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
                           final index = value.toInt();
                           if (index >= 0 && index < data.length) {
                             // Show only some labels to avoid crowding
-                            if (_selectedDays == 7 || index % 5 == 0 || index == data.length - 1) {
+                            if (_selectedDays == 7 ||
+                                index % 5 == 0 ||
+                                index == data.length - 1) {
                               return Padding(
                                 padding: const EdgeInsets.only(top: 8),
                                 child: Text(
@@ -264,7 +268,9 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
                       barRods: [
                         BarChartRodData(
                           toY: value,
-                          color: isGoalMet ? color : color.withValues(alpha: 0.6), // 150/255
+                          color: isGoalMet
+                              ? color
+                              : color.withValues(alpha: 0.6), // 150/255
                           width: _selectedDays == 7 ? 24 : 8,
                           borderRadius: const BorderRadius.only(
                             topLeft: Radius.circular(4),
@@ -308,21 +314,24 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
 
   Widget _buildMacroSummary(
     List<DayData> data,
-    dynamic goals,
+    NutritionGoals? goals,
     AppLocalizations l10n,
     ThemeData theme,
   ) {
     if (data.isEmpty) return const SizedBox();
 
     // Calculate averages
-    final avgCalories = data.map((d) => d.calories).reduce((a, b) => a + b) / data.length;
-    final avgProtein = data.map((d) => d.protein).reduce((a, b) => a + b) / data.length;
+    final avgCalories =
+        data.map((d) => d.calories).reduce((a, b) => a + b) / data.length;
+    final avgProtein =
+        data.map((d) => d.protein).reduce((a, b) => a + b) / data.length;
 
     // Count days where goal was met
     int daysMetCalories = 0;
     if (goals != null) {
       for (final d in data) {
-        if (d.calories >= goals.calories * 0.9 && d.calories <= goals.calories * 1.1) {
+        if (d.calories >= goals.calories * 0.9 &&
+            d.calories <= goals.calories * 1.1) {
           daysMetCalories++;
         }
       }
@@ -363,7 +372,8 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  const Icon(Icons.check_circle, size: 16, color: AppTheme.success),
+                  const Icon(Icons.check_circle,
+                      size: 16, color: AppTheme.success,),
                   const SizedBox(width: 4),
                   Text(
                     l10n.daysOnTrack(daysMetCalories, data.length),
