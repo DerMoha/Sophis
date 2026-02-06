@@ -44,7 +44,7 @@ class QuickActionsSection extends StatelessWidget {
 
   Widget _buildChipRow(BuildContext context, ThemeData theme) {
     return SizedBox(
-      height: 44,
+      height: 48,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: actions.length,
@@ -63,6 +63,7 @@ class QuickActionsSection extends StatelessWidget {
         onTap: action.onTap,
         borderRadius: BorderRadius.circular(22),
         child: Container(
+          constraints: const BoxConstraints(minHeight: 48),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.1),

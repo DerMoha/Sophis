@@ -294,33 +294,43 @@ class _SupplementsScreenState extends State<SupplementsScreen> {
           const SizedBox(width: 12),
 
           // Checkbox
-          GestureDetector(
-            onTap: () {
-              if (supplement.enabled) {
-                HapticFeedback.mediumImpact();
-                provider.toggleCompletion(supplement.id);
-              }
-            },
-            child: Container(
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                color: isCompleted ? accentColor : Colors.transparent,
-                border: Border.all(
-                  color: isCompleted
-                      ? accentColor
-                      : theme.colorScheme.outline.withValues(alpha: 0.3),
-                  width: 2,
-                ),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: isCompleted
-                  ? const Icon(
-                      Icons.check_rounded,
-                      size: 16,
-                      color: Colors.white,
-                    )
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: supplement.enabled
+                  ? () {
+                      HapticFeedback.mediumImpact();
+                      provider.toggleCompletion(supplement.id);
+                    }
                   : null,
+              child: SizedBox(
+                width: 48,
+                height: 48,
+                child: Center(
+                  child: Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: isCompleted ? accentColor : Colors.transparent,
+                      border: Border.all(
+                        color: isCompleted
+                            ? accentColor
+                            : theme.colorScheme.outline.withValues(alpha: 0.3),
+                        width: 2,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: isCompleted
+                        ? const Icon(
+                            Icons.check_rounded,
+                            size: 16,
+                            color: Colors.white,
+                          )
+                        : null,
+                  ),
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 12),
