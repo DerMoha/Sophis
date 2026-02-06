@@ -317,11 +317,13 @@ class SupplementsProvider extends ChangeNotifier {
   }
 
   /// Update all notifications (reschedule all enabled supplements)
-  Future<void> updateAllNotifications() async {
+  Future<void> updateAllNotifications({bool enable = true}) async {
     // Cancel all supplement notifications (100-199)
     for (var i = _notificationIdStart; i < _notificationIdEnd; i++) {
       await _notifications.cancelReminder(i);
     }
+
+    if (!enable) return;
 
     // Schedule notifications for all enabled supplements (up to max)
     for (var i = 0; i < _supplements.length && i < _maxSupplements; i++) {

@@ -4,20 +4,25 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../services/supplements_provider.dart';
 import '../models/supplement.dart';
+import '../theme/animations.dart';
 import '../theme/app_theme.dart';
 import '../widgets/organic_components.dart';
 import '../widgets/supplement_edit_sheet.dart';
 
-class SupplementsScreen extends StatelessWidget {
+class SupplementsScreen extends StatefulWidget {
   const SupplementsScreen({super.key});
 
+  @override
+  State<SupplementsScreen> createState() => _SupplementsScreenState();
+}
+
+class _SupplementsScreenState extends State<SupplementsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final accentColor = theme.colorScheme.primary;
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.background,
       body: Consumer<SupplementsProvider>(
         builder: (context, provider, _) {
           if (provider.isLoading) {
@@ -28,25 +33,17 @@ class SupplementsScreen extends StatelessWidget {
           final completedIds = provider.getTodayCompletedIds();
 
           return CustomScrollView(
+            physics: const BouncingScrollPhysics(),
             slivers: [
               // App Bar
               SliverAppBar(
                 pinned: true,
-                expandedHeight: 100,
-                backgroundColor: theme.colorScheme.surface,
                 elevation: 0,
-                centerTitle: false,
+                backgroundColor: Colors.transparent,
+                title: const Text('Supplements'),
                 leading: IconButton(
                   icon: const Icon(Icons.arrow_back_rounded),
                   onPressed: () => Navigator.pop(context),
-                ),
-                flexibleSpace: FlexibleSpaceBar(
-                  title: Text(
-                    'Supplements',
-                    style: theme.textTheme.headlineMedium,
-                  ),
-                  titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
-                  expandedTitleScale: 1.0,
                 ),
                 actions: [
                   IconButton(
@@ -59,78 +56,81 @@ class SupplementsScreen extends StatelessWidget {
               // Today's Progress Card
               if (supplements.isNotEmpty)
                 SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: GlassCard(
+                  child: FadeInSlide(
+                    index: 0,
+                    child: Padding(
                       padding: const EdgeInsets.all(20),
-                      child: Column(
-                        children: [
-                          // Circular progress
-                          SizedBox(
-                            width: 100,
-                            height: 100,
-                            child: Stack(
-                              children: [
-                                // Background circle
-                                SizedBox.expand(
-                                  child: CircularProgressIndicator(
-                                    value: 1.0,
-                                    strokeWidth: 8,
-                                    backgroundColor: theme
-                                        .colorScheme.surfaceContainerHighest,
-                                    valueColor: AlwaysStoppedAnimation(
-                                      theme.colorScheme.surfaceContainerHighest,
+                      child: GlassCard(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          children: [
+                            // Circular progress
+                            SizedBox(
+                              width: 100,
+                              height: 100,
+                              child: Stack(
+                                children: [
+                                  // Background circle
+                                  SizedBox.expand(
+                                    child: CircularProgressIndicator(
+                                      value: 1.0,
+                                      strokeWidth: 8,
+                                      backgroundColor: theme
+                                          .colorScheme.surfaceContainerHighest,
+                                      valueColor: AlwaysStoppedAnimation(
+                                        theme.colorScheme.surfaceContainerHighest,
+                                      ),
                                     ),
                                   ),
-                                ),
-                                // Progress circle
-                                SizedBox.expand(
-                                  child: CircularProgressIndicator(
-                                    value: provider.todayTotalCount > 0
-                                        ? provider.todayCompletedCount /
-                                            provider.todayTotalCount
-                                        : 0.0,
-                                    strokeWidth: 8,
-                                    backgroundColor: Colors.transparent,
-                                    valueColor:
-                                        AlwaysStoppedAnimation(accentColor),
+                                  // Progress circle
+                                  SizedBox.expand(
+                                    child: CircularProgressIndicator(
+                                      value: provider.todayTotalCount > 0
+                                          ? provider.todayCompletedCount /
+                                              provider.todayTotalCount
+                                          : 0.0,
+                                      strokeWidth: 8,
+                                      backgroundColor: Colors.transparent,
+                                      valueColor:
+                                          AlwaysStoppedAnimation(accentColor),
+                                    ),
                                   ),
-                                ),
-                                // Center text
-                                Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        '${provider.todayCompletedCount}',
-                                        style: theme.textTheme.headlineMedium
-                                            ?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                          color: accentColor,
+                                  // Center text
+                                  Center(
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          '${provider.todayCompletedCount}',
+                                          style: theme.textTheme.headlineMedium
+                                              ?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                            color: accentColor,
+                                          ),
                                         ),
-                                      ),
-                                      Text(
-                                        'of ${provider.todayTotalCount}',
-                                        style: theme.textTheme.bodySmall,
-                                      ),
-                                    ],
+                                        Text(
+                                          'of ${provider.todayTotalCount}',
+                                          style: theme.textTheme.bodySmall,
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            provider.todayCompletedCount ==
-                                        provider.todayTotalCount &&
-                                    provider.todayTotalCount > 0
-                                ? 'All supplements taken! 🎉'
-                                : 'Today\'s Progress',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
+                            const SizedBox(height: 16),
+                            Text(
+                              provider.todayCompletedCount ==
+                                          provider.todayTotalCount &&
+                                      provider.todayTotalCount > 0
+                                  ? 'All supplements taken! 🎉'
+                                  : 'Today\'s Progress',
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -138,22 +138,18 @@ class SupplementsScreen extends StatelessWidget {
 
               // Section Header
               SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
-                  child: Row(
-                    children: [
-                      Text(
-                        'All Supplements',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const Spacer(),
-                      Text(
+                child: FadeInSlide(
+                  index: 1,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+                    child: SectionHeader(
+                      title: 'All Supplements',
+                      trailing: Text(
                         '${supplements.length} total',
                         style: theme.textTheme.bodySmall,
                       ),
-                    ],
+                      padding: EdgeInsets.zero,
+                    ),
                   ),
                 ),
               ),
@@ -161,7 +157,10 @@ class SupplementsScreen extends StatelessWidget {
               // Supplements List
               if (supplements.isEmpty)
                 SliverFillRemaining(
-                  child: _buildEmptyState(context, theme),
+                  child: FadeInSlide(
+                    index: 2,
+                    child: _buildEmptyState(context, theme),
+                  ),
                 )
               else
                 SliverPadding(

@@ -96,6 +96,7 @@ class AppSettings {
   final List<CustomMealType> customMealTypes;
   // Meal display settings
   final bool showMealMacros;
+  final bool showSupplements;
   // Home Screen Layout
   final HomeLayoutMode homeLayout;
   // Quick Action Button Size
@@ -122,6 +123,7 @@ class AppSettings {
     this.dashboardCards = const [],
     this.customMealTypes = const [],
     this.showMealMacros = false,
+    this.showSupplements = true,
     this.homeLayout = HomeLayoutMode.modern,
     this.quickActionSize = QuickActionSize.small,
     this.debugLoggingEnabled = false,
@@ -148,6 +150,7 @@ class AppSettings {
         'dashboardCards': dashboardCards.map((c) => c.toJson()).toList(),
         'customMealTypes': customMealTypes.map((m) => m.toJson()).toList(),
         'showMealMacros': showMealMacros,
+        'showSupplements': showSupplements,
         'debugLoggingEnabled': debugLoggingEnabled,
       };
 
@@ -183,6 +186,7 @@ class AppSettings {
                 .toList() ??
             const [],
         showMealMacros: json['showMealMacros'] as bool? ?? false,
+        showSupplements: json['showSupplements'] as bool? ?? true,
         debugLoggingEnabled: json['debugLoggingEnabled'] as bool? ?? false,
       );
 
@@ -205,6 +209,7 @@ class AppSettings {
     List<DashboardCard>? dashboardCards,
     List<CustomMealType>? customMealTypes,
     bool? showMealMacros,
+    bool? showSupplements,
     HomeLayoutMode? homeLayout,
     QuickActionSize? quickActionSize,
     bool? debugLoggingEnabled,
@@ -238,6 +243,7 @@ class AppSettings {
         dashboardCards: dashboardCards ?? this.dashboardCards,
         customMealTypes: customMealTypes ?? this.customMealTypes,
         showMealMacros: showMealMacros ?? this.showMealMacros,
+        showSupplements: showSupplements ?? this.showSupplements,
         homeLayout: homeLayout ?? this.homeLayout,
         quickActionSize: quickActionSize ?? this.quickActionSize,
         debugLoggingEnabled: debugLoggingEnabled ?? this.debugLoggingEnabled,

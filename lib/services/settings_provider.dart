@@ -104,9 +104,16 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   bool get showMealMacros => _settings.showMealMacros;
+  bool get showSupplements => _settings.showSupplements;
 
   Future<void> setShowMealMacros(bool enabled) async {
     _settings = _settings.copyWith(showMealMacros: enabled);
+    await _storage.saveSettings(_settings);
+    notifyListeners();
+  }
+
+  Future<void> setShowSupplements(bool enabled) async {
+    _settings = _settings.copyWith(showSupplements: enabled);
     await _storage.saveSettings(_settings);
     notifyListeners();
   }

@@ -6,6 +6,7 @@ import '../services/data_export_service.dart';
 import '../services/nutrition_provider.dart';
 import '../services/settings_provider.dart';
 import '../services/log_service.dart';
+import '../services/supplements_provider.dart';
 import 'log_viewer_screen.dart';
 import '../theme/app_theme.dart';
 import '../theme/animations.dart';
@@ -177,17 +178,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                           ),
                           const SizedBox(height: 12),
-                          // Supplements
-                          _buildNavigationTile(
+                          // Supplements Toggle
+                          _buildSwitchTile(
                             context,
-                            title: 'Supplements',
-                            subtitle: 'Manage your daily supplements',
-                            icon: Icons.medication_liquid_rounded,
-                            onTap: () => Navigator.push(
-                              context,
-                              AppTheme.slideRoute(const SupplementsScreen()),
-                            ),
+                            title: 'Track Supplements',
+                            subtitle:
+                                'Show supplements card and enable reminders',
+                            icon: Icons.medication_outlined,
+                            value: settings.showSupplements,
+                            onChanged: (value) {
+                              settings.setShowSupplements(value);
+                              // Update notifications
+                              context
+                                  .read<SupplementsProvider>()
+                                  .updateAllNotifications(enable: value);
+                            },
                           ),
+                          if (settings.showSupplements) ...[
+                            const SizedBox(height: 12),
+                            // Supplements Management
+                            _buildNavigationTile(
+                              context,
+                              title: 'Manage Supplements',
+                              subtitle: 'Add or remove your daily supplements',
+                              icon: Icons.medication_liquid_rounded,
+                              onTap: () => Navigator.push(
+                                context,
+                                AppTheme.slideRoute(const SupplementsScreen()),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -268,6 +288,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             context,
                             title: l10n.enableReminders,
                             subtitle: l10n.enableRemindersSubtitle,
+                            icon: Icons.alarm_outlined,
                             value: settings.remindersEnabled,
                             onChanged: settings.setRemindersEnabled,
                           ),
@@ -316,6 +337,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             context,
                             title: l10n.healthSync,
                             subtitle: l10n.healthSyncSubtitle,
+                            icon: Icons.favorite_outline,
                             value: settings.healthSyncEnabled,
                             onChanged: (value) async {
                               final success =
@@ -393,16 +415,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         title: 'Developer & Debugging',
                         icon: Icons.bug_report_outlined,
                         children: [
-                          SwitchListTile(
-                            title: const Text('Enable Debug Logging'),
-                            subtitle: const Text(
-                              'Help diagnose issues by recording app activity',
-                            ),
+                          _buildSwitchTile(
+                            context,
+                            title: 'Enable Debug Logging',
+                            subtitle:
+                                'Help diagnose issues by recording app activity',
+                            icon: Icons.terminal_outlined,
                             value: settings.debugLoggingEnabled,
                             onChanged: settings.setDebugLoggingEnabled,
-                            contentPadding: EdgeInsets.zero,
                           ),
-                          const Divider(height: 32),
+                          const SizedBox(height: 12),
                           _buildNavigationTile(
                             context,
                             title: 'View Debug Logs',
@@ -849,34 +871,57 @@ class _SettingsScreenState extends State<SettingsScreen> {
     BuildContext context, {
     required String title,
     required String subtitle,
+    required IconData icon,
     required bool value,
     required void Function(bool) onChanged,
   }) {
     final theme = Theme.of(context);
 
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: theme.textTheme.titleSmall),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.1),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              icon,
+              size: 18,
+              color: theme.colorScheme.primary,
+            ),
           ),
-        ),
-        const SizedBox(width: 16),
-        Switch(
-          value: value,
-          onChanged: onChanged,
-        ),
-      ],
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: theme.textTheme.titleSmall),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+          ),
+        ],
+      ),
     );
   }
 
