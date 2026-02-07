@@ -60,9 +60,6 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
         color: theme.colorScheme.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      padding: EdgeInsets.only(
-        bottom: mediaQuery.viewInsets.bottom,
-      ),
       child: SafeArea(
         top: false,
         child: AnimatedPadding(
