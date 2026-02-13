@@ -20,7 +20,16 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   Future<void> _loadSecureData() async {
-    _geminiApiKey = await _storage.loadApiKey();
+    try {
+      _geminiApiKey = await _storage.loadApiKey();
+    } catch (e, stackTrace) {
+      Log.warning(
+        'Failed to restore Gemini API key from secure storage. User may need to re-enter it.',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      _geminiApiKey = null;
+    }
     notifyListeners();
   }
 
@@ -310,17 +319,21 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   Future<void> addMealType(CustomMealType mealType) async {
-    final types = List<CustomMealType>.from(_settings.customMealTypes.isEmpty
-        ? CustomMealType.defaults
-        : _settings.customMealTypes,);
+    final types = List<CustomMealType>.from(
+      _settings.customMealTypes.isEmpty
+          ? CustomMealType.defaults
+          : _settings.customMealTypes,
+    );
     types.add(mealType);
     await setMealTypes(types);
   }
 
   Future<void> updateMealType(CustomMealType mealType) async {
-    final types = List<CustomMealType>.from(_settings.customMealTypes.isEmpty
-        ? CustomMealType.defaults
-        : _settings.customMealTypes,);
+    final types = List<CustomMealType>.from(
+      _settings.customMealTypes.isEmpty
+          ? CustomMealType.defaults
+          : _settings.customMealTypes,
+    );
     final index = types.indexWhere((m) => m.id == mealType.id);
     if (index != -1) {
       types[index] = mealType;
@@ -329,9 +342,11 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   Future<void> removeMealType(String id) async {
-    final types = List<CustomMealType>.from(_settings.customMealTypes.isEmpty
-        ? CustomMealType.defaults
-        : _settings.customMealTypes,);
+    final types = List<CustomMealType>.from(
+      _settings.customMealTypes.isEmpty
+          ? CustomMealType.defaults
+          : _settings.customMealTypes,
+    );
     // Only remove if not a default meal
     types.removeWhere((m) => m.id == id && !m.isDefault);
     await setMealTypes(types);

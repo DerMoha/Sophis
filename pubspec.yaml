@@ -36,6 +36,7 @@ dependencies:
 
   # Phase 7: Meal Planning
   share_plus: ^10.0.0
+  url_launcher: ^6.2.5
 
   # Meal Sharing
   qr_flutter: ^4.1.0

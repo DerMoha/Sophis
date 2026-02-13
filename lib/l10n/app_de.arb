@@ -238,6 +238,7 @@
   "exportDataSubtitle": "Alle Daten als Backup speichern",
   "importData": "Daten importieren",
   "importDataSubtitle": "Aus einer Backup-Datei wiederherstellen",
+  "autoRestoreBackupNote": "Die automatische Wiederherstellung nach Neuinstallation hängt davon ab, dass iCloud-/Google-Backups auf deinem Gerät aktiviert sind.",
   "exportSuccess": "Daten erfolgreich exportiert",
   "exportFailed": "Export fehlgeschlagen",
   "importSuccess": "Import abgeschlossen",

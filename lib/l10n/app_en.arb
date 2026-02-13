@@ -333,6 +333,7 @@
   "exportDataSubtitle": "Save all your data to a backup file",
   "importData": "Import Data",
   "importDataSubtitle": "Restore from a backup file",
+  "autoRestoreBackupNote": "Automatic restore after reinstall depends on iCloud/Google backup being enabled on your device.",
   "exportSuccess": "Data exported successfully",
   "exportFailed": "Export failed",
   "importSuccess": "Import complete",
