@@ -8,6 +8,7 @@ import '../services/openfoodfacts_service.dart';
 import '../services/nutrition_provider.dart';
 import '../widgets/food_search_result_tile.dart';
 import '../widgets/portion_picker_sheet.dart';
+import 'package:uuid/uuid.dart';
 
 class FoodSearchScreen extends StatefulWidget {
   final String meal;
@@ -21,7 +22,7 @@ class FoodSearchScreen extends StatefulWidget {
 class _FoodSearchScreenState extends State<FoodSearchScreen> {
   final _searchController = TextEditingController();
   final _service = OpenFoodFactsService();
-  
+
   List<FoodItem> _results = [];
   bool _isSearchingApi = false;
   String? _error;
@@ -45,9 +46,9 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
   void _onSearchChanged() {
     // Cancel previous timer
     _debounce?.cancel();
-    
+
     final query = _searchController.text.trim();
-    
+
     // Start searching after 2+ characters with 300ms debounce
     if (query.length >= 2) {
       _debounce = Timer(const Duration(milliseconds: 300), () {
@@ -64,16 +65,15 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
 
   Future<void> _search(String query) async {
     if (query.isEmpty) return;
-    
+
     // 1. Instant Local Search
     try {
-      final customMatches = context
-          .read<NutritionProvider>()
-          .searchCustomFoods(query);
-      
+      final customMatches =
+          context.read<NutritionProvider>().searchCustomFoods(query);
+
       setState(() {
         _results = customMatches; // Show local results immediately
-        _isSearchingApi = true;   // Start showing API loading indicator
+        _isSearchingApi = true; // Start showing API loading indicator
         _error = null;
       });
     } catch (e) {
@@ -83,13 +83,14 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
     // 2. Background API Search
     try {
       final apiResults = await _service.search(query);
-      
+
       // Only update if query hasn't changed and widget is still mounted
       if (mounted && _searchController.text.trim() == query) {
         setState(() {
           // Re-fetch local to be safe (in case user added something while waiting
           // technically unlikely in this flow, but good practice to keep consistent)
-          final customMatches = context.read<NutritionProvider>().searchCustomFoods(query);
+          final customMatches =
+              context.read<NutritionProvider>().searchCustomFoods(query);
           _results = [...customMatches, ...apiResults];
           _isSearchingApi = false;
         });
@@ -124,7 +125,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
         : item.name;
 
     final entry = FoodEntry(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: const Uuid().v4(),
       name: '$displayName (${grams.toStringAsFixed(0)}g)',
       calories: nutrients['calories']!,
       protein: nutrients['protein']!,
@@ -213,12 +214,14 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
               ],
             ),
           ),
-          ...favoriteFoods.map((item) => FoodSearchResultTile(
-                item: item,
-                onTap: () => _showPortionPicker(item),
-                isFavorite: true,
-                onFavoriteToggle: () => provider.toggleFavorite(item),
-              ),),
+          ...favoriteFoods.map(
+            (item) => FoodSearchResultTile(
+              item: item,
+              onTap: () => _showPortionPicker(item),
+              isFavorite: true,
+              onFavoriteToggle: () => provider.toggleFavorite(item),
+            ),
+          ),
         ],
         // My Foods section
         if (customFoods.isNotEmpty) ...[
@@ -231,14 +234,16 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
                   ),
             ),
           ),
-          ...customFoods.map((item) => FoodSearchResultTile(
-                item: item,
-                onTap: () => _showPortionPicker(item),
-                isCustomFood: true,
-                onLongPress: () => _showDeleteCustomFoodDialog(item),
-                isFavorite: provider.isFavorite(item.id),
-                onFavoriteToggle: () => provider.toggleFavorite(item),
-              ),),
+          ...customFoods.map(
+            (item) => FoodSearchResultTile(
+              item: item,
+              onTap: () => _showPortionPicker(item),
+              isCustomFood: true,
+              onLongPress: () => _showDeleteCustomFoodDialog(item),
+              isFavorite: provider.isFavorite(item.id),
+              onFavoriteToggle: () => provider.toggleFavorite(item),
+            ),
+          ),
         ],
         // Recently Used section
         if (recentFoods.isNotEmpty) ...[
@@ -251,12 +256,14 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
                   ),
             ),
           ),
-          ...recentFoods.map((item) => FoodSearchResultTile(
-                item: item,
-                onTap: () => _showPortionPicker(item),
-                isFavorite: provider.isFavorite(item.id),
-                onFavoriteToggle: () => provider.toggleFavorite(item),
-              ),),
+          ...recentFoods.map(
+            (item) => FoodSearchResultTile(
+              item: item,
+              onTap: () => _showPortionPicker(item),
+              isFavorite: provider.isFavorite(item.id),
+              onFavoriteToggle: () => provider.toggleFavorite(item),
+            ),
+          ),
         ],
       ],
     );
@@ -281,7 +288,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
               decoration: InputDecoration(
                 hintText: l10n.searchFoodHint,
                 prefixIcon: const Icon(Icons.search),
-                suffixIcon: _isSearchingApi 
+                suffixIcon: _isSearchingApi
                     ? const Padding(
                         padding: EdgeInsets.all(12),
                         child: SizedBox(
@@ -301,10 +308,10 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
               ),
             ),
           ),
-          
+
           // Progress Indicator (Optional visibility boost)
           if (_isSearchingApi && _results.isNotEmpty)
-             const LinearProgressIndicator(minHeight: 2),
+            const LinearProgressIndicator(minHeight: 2),
 
           // Content Area
           Expanded(
@@ -330,8 +337,8 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
 
     if (_results.isEmpty) {
       if (_isSearchingApi) {
-         // Still searching API, no local results found yet
-         return const Center(child: CircularProgressIndicator());
+        // Still searching API, no local results found yet
+        return const Center(child: CircularProgressIndicator());
       }
       return Center(
         child: Text(

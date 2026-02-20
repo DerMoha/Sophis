@@ -15,6 +15,7 @@ import 'health_service.dart';
 import 'database_service.dart';
 import 'home_widget_service.dart';
 import 'log_service.dart';
+import 'package:uuid/uuid.dart';
 
 /// Central state management for nutrition tracking
 class NutritionProvider extends ChangeNotifier {
@@ -327,7 +328,7 @@ class NutritionProvider extends ChangeNotifier {
   /// Duplicate a food entry (creates new entry with same data)
   Future<void> duplicateFoodEntry(FoodEntry entry, {String? toMeal}) async {
     final newEntry = entry.copyWith(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: const Uuid().v4(),
       timestamp: DateTime.now(),
       meal: toMeal ?? entry.meal,
     );
@@ -457,7 +458,7 @@ class NutritionProvider extends ChangeNotifier {
   /// Add a new workout entry
   Future<void> addWorkoutEntry(double calories, {String? note}) async {
     final entry = WorkoutEntry(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: const Uuid().v4(),
       caloriesBurned: calories,
       timestamp: DateTime.now(),
       note: note,
@@ -534,7 +535,7 @@ class NutritionProvider extends ChangeNotifier {
   // Water
   Future<void> addWater(double ml) async {
     final entry = WaterEntry(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: const Uuid().v4(),
       amountMl: ml,
       timestamp: DateTime.now(),
     );
@@ -595,7 +596,7 @@ class NutritionProvider extends ChangeNotifier {
   // Weight
   Future<void> addWeight(double kg, {String? note}) async {
     final entry = WeightEntry(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: const Uuid().v4(),
       weightKg: kg,
       timestamp: DateTime.now(),
       note: note,
@@ -645,7 +646,7 @@ class NutritionProvider extends ChangeNotifier {
   Future<void> addRecipeAsMeal(Recipe recipe, int servings, String meal) async {
     final nutrients = recipe.nutrientsPerServing;
     final entry = FoodEntry(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: const Uuid().v4(),
       name: '${recipe.name} (${servings}x)',
       calories: nutrients['calories']! * servings,
       protein: nutrients['protein']! * servings,
@@ -729,7 +730,7 @@ class NutritionProvider extends ChangeNotifier {
   /// Copy a planned meal to another date
   Future<void> copyPlannedMealToDate(PlannedMeal meal, DateTime newDate) async {
     final newMeal = PlannedMeal(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: const Uuid().v4(),
       date: newDate,
       meal: meal.meal,
       name: meal.name,
@@ -755,7 +756,7 @@ class NutritionProvider extends ChangeNotifier {
   /// Convert a planned meal to a food entry (add to today's log)
   Future<void> logPlannedMeal(PlannedMeal planned) async {
     final entry = FoodEntry(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: const Uuid().v4(),
       name: planned.name,
       calories: planned.calories,
       protein: planned.protein,

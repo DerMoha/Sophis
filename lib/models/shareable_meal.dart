@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:uuid/uuid.dart';
 
 import 'food_entry.dart';
 import '../services/gemini_food_service.dart';
@@ -51,7 +52,8 @@ class SharedFoodItem {
       );
 
   /// Create from a FoodAnalysis (AI result)
-  factory SharedFoodItem.fromFoodAnalysis(FoodAnalysis analysis, {String? customName}) =>
+  factory SharedFoodItem.fromFoodAnalysis(FoodAnalysis analysis,
+          {String? customName,}) =>
       SharedFoodItem(
         name: customName ?? '${analysis.name} (${analysis.portionDisplay})',
         calories: analysis.calories,
@@ -63,7 +65,7 @@ class SharedFoodItem {
 
   /// Convert to a FoodEntry for logging
   FoodEntry toFoodEntry(String meal) => FoodEntry(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: const Uuid().v4(),
         name: name,
         calories: calories,
         protein: protein,
@@ -114,8 +116,10 @@ class ShareableMeal {
   }
 
   /// Create from a list of FoodEntries
-  factory ShareableMeal.fromFoodEntries(List<FoodEntry> entries,
-      {String? title,}) {
+  factory ShareableMeal.fromFoodEntries(
+    List<FoodEntry> entries, {
+    String? title,
+  }) {
     return ShareableMeal(
       title: title,
       items: entries.map((e) => SharedFoodItem.fromFoodEntry(e)).toList(),

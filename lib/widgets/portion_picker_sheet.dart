@@ -5,6 +5,7 @@ import '../models/serving_size.dart';
 import '../models/custom_portion.dart';
 import '../services/nutrition_provider.dart';
 import '../l10n/generated/app_localizations.dart';
+import 'package:uuid/uuid.dart';
 
 /// A modal bottom sheet for selecting portion sizes
 class PortionPickerSheet extends StatefulWidget {
@@ -113,7 +114,7 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
             onPressed: () {
               if (nameController.text.trim().isNotEmpty) {
                 final portion = CustomPortion(
-                  id: DateTime.now().millisecondsSinceEpoch.toString(),
+                  id: const Uuid().v4(),
                   productKey: _productKey,
                   name: nameController.text.trim(),
                   grams: _selectedGrams,
@@ -185,7 +186,8 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
                   child: ListView(
                     controller: scrollController,
                     padding: const EdgeInsets.all(20),
-                    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
                     children: [
                       // Preset portions from API
                       if (widget.item.servings.isNotEmpty) ...[
@@ -207,7 +209,8 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
                         _SectionTitle(
                           title: l10n.myPortions,
                           trailing: TextButton(
-                            onPressed: () => _showEditPortionsSheet(customPortions),
+                            onPressed: () =>
+                                _showEditPortionsSheet(customPortions),
                             child: Text(l10n.edit),
                           ),
                         ),
@@ -235,7 +238,8 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
                         controller: _customController,
                         focusNode: _focusNode,
                         onChanged: _onCustomAmountChanged,
-                        onSubmitted: (_) => _addAndClose(), // Add directly when pressing Done
+                        onSubmitted: (_) =>
+                            _addAndClose(), // Add directly when pressing Done
                         onSavePreset: _showSavePresetDialog,
                       ),
 
@@ -277,17 +281,19 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 16),
-            ...portions.map((p) => ListTile(
-                  title: Text(p.name),
-                  subtitle: Text('${p.grams.toStringAsFixed(0)}g'),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete_outline),
-                    onPressed: () {
-                      context.read<NutritionProvider>().removeCustomPortion(p.id);
-                      Navigator.pop(ctx);
-                    },
-                  ),
-                ),),
+            ...portions.map(
+              (p) => ListTile(
+                title: Text(p.name),
+                subtitle: Text('${p.grams.toStringAsFixed(0)}g'),
+                trailing: IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: () {
+                    context.read<NutritionProvider>().removeCustomPortion(p.id);
+                    Navigator.pop(ctx);
+                  },
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -342,7 +348,9 @@ class _ProductHeader extends StatelessWidget {
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+              color: isDark
+                  ? Colors.white10
+                  : Colors.black.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(12),
             ),
             clipBehavior: Clip.antiAlias,
@@ -442,11 +450,15 @@ class _PortionGrid extends StatelessWidget {
     return Wrap(
       spacing: 8,
       runSpacing: 8,
-      children: servings.map((s) => _PortionChip(
-            serving: s,
-            isSelected: selected == s,
-            onTap: () => onSelect(s),
-          ),).toList(),
+      children: servings
+          .map(
+            (s) => _PortionChip(
+              serving: s,
+              isSelected: selected == s,
+              onTap: () => onSelect(s),
+            ),
+          )
+          .toList(),
     );
   }
 }
@@ -551,7 +563,8 @@ class _CustomPortionChips extends StatelessWidget {
 
         return Material(
           color: isSelected
-              ? theme.colorScheme.secondary.withValues(alpha: isDark ? 0.25 : 0.12)
+              ? theme.colorScheme.secondary
+                  .withValues(alpha: isDark ? 0.25 : 0.12)
               : theme.colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(12),
           child: InkWell(
@@ -584,7 +597,8 @@ class _CustomPortionChips extends StatelessWidget {
                   Text(
                     p.name,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.w500,
                       color: isSelected
                           ? theme.colorScheme.secondary
                           : theme.colorScheme.onSurface,
@@ -593,7 +607,8 @@ class _CustomPortionChips extends StatelessWidget {
                   const SizedBox(width: 8),
                   // Grams badge
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
                       color: isSelected
                           ? theme.colorScheme.secondary.withValues(alpha: 0.2)
@@ -655,7 +670,8 @@ class _CustomAmountInput extends StatelessWidget {
               child: TextField(
                 controller: controller,
                 focusNode: focusNode,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
                 textInputAction: TextInputAction.done,
                 style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w600,
@@ -666,7 +682,8 @@ class _CustomAmountInput extends StatelessWidget {
                   suffixStyle: theme.textTheme.titleMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),

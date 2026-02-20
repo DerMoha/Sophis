@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../models/food_entry.dart';
 import '../models/food_item.dart';
+import 'package:uuid/uuid.dart';
 import '../models/shareable_meal.dart';
 import '../services/nutrition_provider.dart';
 import '../theme/app_theme.dart';
@@ -700,7 +701,7 @@ class _MealEntryCard extends StatelessWidget {
 
   void _saveToMyFoods(BuildContext context, AppLocalizations l10n) {
     final customFood = FoodItem(
-      id: 'custom_${DateTime.now().millisecondsSinceEpoch}',
+      id: 'custom_${const Uuid().v4()}',
       name: entry.name,
       category: 'custom',
       caloriesPer100g: entry.calories,

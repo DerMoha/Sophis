@@ -4,6 +4,7 @@ import '../l10n/generated/app_localizations.dart';
 import '../models/custom_meal_type.dart';
 import '../services/settings_provider.dart';
 import '../theme/app_theme.dart';
+import 'package:uuid/uuid.dart';
 
 class MealTypesScreen extends StatefulWidget {
   const MealTypesScreen({super.key});
@@ -84,7 +85,8 @@ class _MealTypesScreenState extends State<MealTypesScreen> {
                 SnackBar(content: Text(l10n.mealTypeDeleted)),
               );
             },
-            child: Text(l10n.delete, style: const TextStyle(color: AppTheme.error)),
+            child: Text(l10n.delete,
+                style: const TextStyle(color: AppTheme.error),),
           ),
         ],
       ),
@@ -181,14 +183,16 @@ class _EditMealTypeSheetState extends State<_EditMealTypeSheet> {
     // Find selected icon index
     _selectedIconIndex = widget.mealType != null
         ? CustomMealType.availableIcons.indexWhere(
-            (icon) => icon.codePoint == widget.mealType!.iconCodePoint,)
+            (icon) => icon.codePoint == widget.mealType!.iconCodePoint,
+          )
         : 0;
     if (_selectedIconIndex < 0) _selectedIconIndex = 0;
 
     // Find selected color index
     _selectedColorIndex = widget.mealType != null
         ? CustomMealType.availableColors.indexWhere(
-            (color) => color.toARGB32() == widget.mealType!.colorValue,)
+            (color) => color.toARGB32() == widget.mealType!.colorValue,
+          )
         : 0;
     if (_selectedColorIndex < 0) _selectedColorIndex = 0;
 
@@ -337,7 +341,8 @@ class _EditMealTypeSheetState extends State<_EditMealTypeSheet> {
                             : null,
                       ),
                       child: isSelected
-                          ? const Icon(Icons.check, color: Colors.white, size: 20)
+                          ? const Icon(Icons.check,
+                              color: Colors.white, size: 20,)
                           : null,
                     ),
                   );
@@ -353,7 +358,8 @@ class _EditMealTypeSheetState extends State<_EditMealTypeSheet> {
               onTap: _pickReminderTime,
               borderRadius: BorderRadius.circular(AppTheme.radiusMD),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   border: Border.all(color: theme.colorScheme.outline),
                   borderRadius: BorderRadius.circular(AppTheme.radiusMD),
@@ -440,7 +446,7 @@ class _EditMealTypeSheetState extends State<_EditMealTypeSheet> {
     } else {
       // Create new meal type
       final newMealType = CustomMealType(
-        id: 'custom_${DateTime.now().millisecondsSinceEpoch}',
+        id: 'custom_${const Uuid().v4()}',
         name: name,
         iconCodePoint: selectedIcon.codePoint,
         colorValue: selectedColor.toARGB32(),

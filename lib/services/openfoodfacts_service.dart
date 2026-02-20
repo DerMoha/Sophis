@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/food_item.dart';
 import '../models/serving_size.dart';
+import 'package:uuid/uuid.dart';
 
 /// Service for searching food products via OpenFoodFacts API
 class OpenFoodFactsService {
@@ -60,8 +61,11 @@ class OpenFoodFactsService {
       // If still too many, remove oldest
       if (_searchCache.length > 50) {
         final sortedKeys = _searchCache.keys.toList()
-          ..sort((a, b) => _searchCache[a]!.timestamp
-              .compareTo(_searchCache[b]!.timestamp),);
+          ..sort(
+            (a, b) => _searchCache[a]!
+                .timestamp
+                .compareTo(_searchCache[b]!.timestamp),
+          );
         for (final key in sortedKeys.take(_searchCache.length - 50)) {
           _searchCache.remove(key);
         }
@@ -113,7 +117,9 @@ class OpenFoodFactsService {
     // Extract serving size info
     final servingSize = product['serving_size']?.toString();
     final servingQuantity = _parseNutrient(
-        {'q': product['serving_quantity']}, 'q',);
+      {'q': product['serving_quantity']},
+      'q',
+    );
 
     // Generate serving options
     List<ServingSize> servings = [];
@@ -123,9 +129,10 @@ class OpenFoodFactsService {
     }
 
     return FoodItem(
-      id: product['code'] ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      id: product['code'] ?? const Uuid().v4(),
       name: name.toString(),
-      category: (product['categories_tags'] as List?)?.first?.toString() ?? 'food',
+      category:
+          (product['categories_tags'] as List?)?.first?.toString() ?? 'food',
       caloriesPer100g: calories,
       proteinPer100g: protein,
       carbsPer100g: carbs,
@@ -164,5 +171,6 @@ class _CacheEntry {
   _CacheEntry(this.results, this.timestamp);
 
   bool get isExpired =>
-      DateTime.now().difference(timestamp) > OpenFoodFactsService._cacheDuration;
+      DateTime.now().difference(timestamp) >
+      OpenFoodFactsService._cacheDuration;
 }

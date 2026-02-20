@@ -11,6 +11,7 @@ import '../services/meal_sharing_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/portion_picker_sheet.dart';
 import 'import_meal_screen.dart';
+import 'package:uuid/uuid.dart';
 
 class BarcodeScannerScreen extends StatefulWidget {
   final String meal;
@@ -24,7 +25,7 @@ class BarcodeScannerScreen extends StatefulWidget {
 class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
   final MobileScannerController _controller = MobileScannerController();
   final _service = OpenFoodFactsService();
-  
+
   bool _isProcessing = false;
   String? _lastScannedCode;
 
@@ -123,7 +124,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
         : product.name;
 
     final entry = FoodEntry(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: const Uuid().v4(),
       name: '$displayName (${grams.toStringAsFixed(0)}g)',
       calories: nutrients['calories']!,
       protein: nutrients['protein']!,

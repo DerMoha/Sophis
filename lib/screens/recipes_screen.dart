@@ -4,6 +4,7 @@ import '../l10n/generated/app_localizations.dart';
 import '../models/recipe.dart';
 import '../services/nutrition_provider.dart';
 import '../theme/app_theme.dart';
+import 'package:uuid/uuid.dart';
 
 class RecipesScreen extends StatelessWidget {
   const RecipesScreen({super.key});
@@ -35,9 +36,11 @@ class RecipesScreen extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.restaurant_outlined, size: 64, color: theme.disabledColor),
+                  Icon(Icons.restaurant_outlined,
+                      size: 64, color: theme.disabledColor,),
                   const SizedBox(height: 16),
-                  Text(l10n.noEntries, style: TextStyle(color: theme.disabledColor)),
+                  Text(l10n.noEntries,
+                      style: TextStyle(color: theme.disabledColor),),
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
                     onPressed: () => Navigator.push(
@@ -81,7 +84,8 @@ class RecipesScreen extends StatelessWidget {
                         case 'edit':
                           Navigator.push(
                             context,
-                            AppTheme.slideRoute(RecipeCreateScreen(recipe: recipe)),
+                            AppTheme.slideRoute(
+                                RecipeCreateScreen(recipe: recipe),),
                           );
                           break;
                         case 'delete':
@@ -125,7 +129,8 @@ class RecipesScreen extends StatelessWidget {
                 initialValue: selectedMeal,
                 decoration: InputDecoration(labelText: l10n.meal),
                 items: [
-                  DropdownMenuItem(value: 'breakfast', child: Text(l10n.breakfast)),
+                  DropdownMenuItem(
+                      value: 'breakfast', child: Text(l10n.breakfast),),
                   DropdownMenuItem(value: 'lunch', child: Text(l10n.lunch)),
                   DropdownMenuItem(value: 'dinner', child: Text(l10n.dinner)),
                   DropdownMenuItem(value: 'snack', child: Text(l10n.snacks)),
@@ -143,10 +148,10 @@ class RecipesScreen extends StatelessWidget {
               onPressed: () {
                 final servings = int.tryParse(servingsController.text) ?? 1;
                 context.read<NutritionProvider>().addRecipeAsMeal(
-                  recipe,
-                  servings,
-                  selectedMeal,
-                );
+                      recipe,
+                      servings,
+                      selectedMeal,
+                    );
                 Navigator.pop(ctx);
               },
               child: Text(l10n.add),
@@ -267,7 +272,7 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
               if (nameController.text.isEmpty) return;
 
               final ingredient = RecipeIngredient(
-                id: DateTime.now().millisecondsSinceEpoch.toString(),
+                id: const Uuid().v4(),
                 name: nameController.text,
                 amountGrams: double.tryParse(amountController.text) ?? 100,
                 calories: double.tryParse(caloriesController.text) ?? 0,
@@ -290,7 +295,7 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
     if (_nameController.text.isEmpty) return;
 
     final recipe = Recipe(
-      id: widget.recipe?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      id: widget.recipe?.id ?? const Uuid().v4(),
       name: _nameController.text,
       ingredients: _ingredients,
       servings: int.tryParse(_servingsController.text) ?? 1,
@@ -385,9 +390,11 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
                 child: ListTile(
                   dense: true,
                   title: Text(i.name),
-                  subtitle: Text('${i.amountGrams.toStringAsFixed(0)}g • ${i.calories.toStringAsFixed(0)} kcal'),
+                  subtitle: Text(
+                      '${i.amountGrams.toStringAsFixed(0)}g • ${i.calories.toStringAsFixed(0)} kcal',),
                   trailing: IconButton(
-                    icon: const Icon(Icons.delete_outline, color: AppTheme.error),
+                    icon:
+                        const Icon(Icons.delete_outline, color: AppTheme.error),
                     onPressed: () => setState(() => _ingredients.remove(i)),
                   ),
                 ),

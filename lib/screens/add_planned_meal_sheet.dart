@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:uuid/uuid.dart';
+import 'package:gal/gal.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../models/meal_plan.dart';
 import '../models/recipe.dart';
@@ -726,7 +728,9 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2,),
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: theme.colorScheme.primary.withValues(alpha: 0.1),
                         borderRadius:
@@ -802,6 +806,14 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
         imageQuality: 85,
       );
       if (image != null) {
+        if (source == ImageSource.camera) {
+          try {
+            await Gal.putImage(image.path);
+          } catch (e) {
+            debugPrint('Failed to save to gallery: $e');
+          }
+        }
+
         setState(() {
           _scannedImage = File(image.path);
           _scanError = null;
@@ -857,7 +869,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
         .toList();
 
     final plannedMeal = PlannedMeal(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: const Uuid().v4(),
       date: widget.date,
       meal: _selectedMealType,
       name: recipe.recipeName ?? 'Scanned Recipe',
@@ -967,7 +979,10 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
   }
 
   void _showServingsDialog(
-      BuildContext context, AppLocalizations l10n, Recipe recipe,) {
+    BuildContext context,
+    AppLocalizations l10n,
+    Recipe recipe,
+  ) {
     int servings = 1;
     showDialog(
       context: context,
@@ -1061,7 +1076,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
         .toList();
 
     final plannedMeal = PlannedMeal(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: const Uuid().v4(),
       date: widget.date,
       meal: _selectedMealType,
       name: '${recipe.name} (${servings}x)',
@@ -1083,7 +1098,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
     final nutrition = context.read<NutritionProvider>();
 
     final plannedMeal = PlannedMeal(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: const Uuid().v4(),
       date: widget.date,
       meal: _selectedMealType,
       name: food.name,
@@ -1139,7 +1154,9 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
       return ShoppingCategory.produce;
     }
     if (_matchesAny(
-        lower, ['bread', 'rice', 'pasta', 'oat', 'cereal', 'flour'],)) {
+      lower,
+      ['bread', 'rice', 'pasta', 'oat', 'cereal', 'flour'],
+    )) {
       return ShoppingCategory.grains;
     }
     if (_matchesAny(lower, ['frozen', 'ice cream'])) {
@@ -1274,7 +1291,7 @@ class _ManualEntryFormState extends State<_ManualEntryForm> {
     final nutrition = context.read<NutritionProvider>();
 
     final plannedMeal = PlannedMeal(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: const Uuid().v4(),
       date: widget.date,
       meal: widget.mealType,
       name: _nameController.text,

@@ -8,6 +8,7 @@ import '../services/settings_provider.dart';
 import '../theme/app_theme.dart';
 import '../theme/animations.dart';
 import '../widgets/organic_components.dart';
+import 'package:uuid/uuid.dart';
 
 class AddFoodScreen extends StatefulWidget {
   final String meal;
@@ -67,7 +68,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
     final fat = double.tryParse(_fatController.text) ?? 0;
 
     final entry = FoodEntry(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: const Uuid().v4(),
       name: name,
       calories: calories,
       protein: protein,
@@ -82,7 +83,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
     // Also save as custom food if checkbox is checked
     if (_saveAsCustomFood) {
       final customFood = FoodItem(
-        id: 'custom_${DateTime.now().millisecondsSinceEpoch}',
+        id: 'custom_${const Uuid().v4()}',
         name: name,
         category: 'custom',
         caloriesPer100g: calories,
@@ -160,13 +161,15 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                             vertical: 10,
                           ),
                           decoration: BoxDecoration(
-                            color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                            color: theme.colorScheme.primary
+                                .withValues(alpha: 0.1),
                             borderRadius:
                                 BorderRadius.circular(AppTheme.radiusFull),
                           ),
                           child: Builder(
                             builder: (context) {
-                              final mealColor = _getMealColor(context) ?? theme.colorScheme.primary;
+                              final mealColor = _getMealColor(context) ??
+                                  theme.colorScheme.primary;
                               return Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -206,12 +209,15 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                                 controller: _nameController,
                                 decoration: InputDecoration(
                                   labelText: l10n.foodName,
-                                  prefixIcon:
-                                      const Icon(Icons.restaurant_outlined, size: 20),
+                                  prefixIcon: const Icon(
+                                      Icons.restaurant_outlined,
+                                      size: 20,),
                                 ),
-                                textCapitalization: TextCapitalization.sentences,
-                                validator: (v) =>
-                                    v == null || v.isEmpty ? l10n.required : null,
+                                textCapitalization:
+                                    TextCapitalization.sentences,
+                                validator: (v) => v == null || v.isEmpty
+                                    ? l10n.required
+                                    : null,
                               ),
                               const SizedBox(height: 16),
                               TextFormField(
@@ -220,12 +226,14 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                                   labelText: l10n.calories,
                                   suffixText: 'kcal',
                                   prefixIcon: const Icon(
-                                      Icons.local_fire_department_outlined,
-                                      size: 20,),
+                                    Icons.local_fire_department_outlined,
+                                    size: 20,
+                                  ),
                                 ),
                                 keyboardType: TextInputType.number,
-                                validator: (v) =>
-                                    v == null || v.isEmpty ? l10n.required : null,
+                                validator: (v) => v == null || v.isEmpty
+                                    ? l10n.required
+                                    : null,
                               ),
                             ],
                           ),
@@ -295,7 +303,8 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                           ),
                           child: CheckboxListTile(
                             value: _saveAsCustomFood,
-                            onChanged: (v) => setState(() => _saveAsCustomFood = v ?? false),
+                            onChanged: (v) =>
+                                setState(() => _saveAsCustomFood = v ?? false),
                             title: Text(
                               l10n.saveAsCustomFood,
                               style: theme.textTheme.bodyMedium,

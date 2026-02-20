@@ -43,6 +43,8 @@
 	<string>Sophis uses Face ID to securely authenticate you.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Sophis accesses your photo library to let you select food photos for AI analysis.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Sophis needs permission to save photos you take within the app to your photo library.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

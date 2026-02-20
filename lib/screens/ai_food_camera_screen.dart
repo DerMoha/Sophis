@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../l10n/generated/app_localizations.dart';
+import 'package:uuid/uuid.dart';
+import 'package:gal/gal.dart';
 import '../services/gemini_food_service.dart';
 import '../services/nutrition_provider.dart';
 import '../services/settings_provider.dart';
@@ -101,8 +103,9 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       if (mounted) setState(() => _serviceInitialized = true);
     } catch (e) {
       if (mounted) {
-        setState(() =>
-            _error = AppLocalizations.of(context)!.errorInit(e.toString()),);
+        setState(
+          () => _error = AppLocalizations.of(context)!.errorInit(e.toString()),
+        );
       }
     } finally {
       if (mounted) setState(() => _isInitializing = false);
@@ -138,6 +141,14 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
 
       if (picked == null) return;
 
+      if (source == ImageSource.camera) {
+        try {
+          await Gal.putImage(picked.path);
+        } catch (e) {
+          debugPrint('Failed to save to gallery: $e');
+        }
+      }
+
       setState(() {
         _images.add(File(picked.path));
         _results = null;
@@ -145,8 +156,10 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       });
     } catch (e) {
       if (mounted) {
-        setState(() => _error =
-            AppLocalizations.of(context)!.errorPickImage(e.toString()),);
+        setState(
+          () => _error =
+              AppLocalizations.of(context)!.errorPickImage(e.toString()),
+        );
       }
     }
   }
@@ -286,7 +299,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     final food = result.currentAnalysis; // Use edited values!
 
     final entry = FoodEntry(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: const Uuid().v4(),
       name: '${food.name} (${food.portionDisplay})',
       calories: food.calories,
       protein: food.protein,
@@ -304,7 +317,8 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-          content: Text(AppLocalizations.of(context)!.addedSnack(entry.name)),),
+        content: Text(AppLocalizations.of(context)!.addedSnack(entry.name)),
+      ),
     );
   }
 
@@ -597,8 +611,10 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
           children: [
             Icon(Icons.no_food, size: 48, color: theme.disabledColor),
             const SizedBox(height: 16),
-            Text(l10n.noFoodDetected,
-                style: TextStyle(color: theme.disabledColor),),
+            Text(
+              l10n.noFoodDetected,
+              style: TextStyle(color: theme.disabledColor),
+            ),
           ],
         ),
       );
@@ -631,7 +647,9 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                   child: Text(
                     food.name,
                     style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w600,),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
                 IconButton(
@@ -660,8 +678,11 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.edit,
-                        size: 12, color: theme.colorScheme.primary,),
+                    Icon(
+                      Icons.edit,
+                      size: 12,
+                      color: theme.colorScheme.primary,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       'Modified',
@@ -707,7 +728,9 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                     result.isAdded
                         ? Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 8,),
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.green,
                               borderRadius: BorderRadius.circular(20),
@@ -715,12 +738,16 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.check,
-                                    color: Colors.white, size: 18,),
+                                const Icon(
+                                  Icons.check,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
                                 const SizedBox(width: 4),
-                                Text(AppLocalizations.of(context)!.added,
-                                    style:
-                                        const TextStyle(color: Colors.white),),
+                                Text(
+                                  AppLocalizations.of(context)!.added,
+                                  style: const TextStyle(color: Colors.white),
+                                ),
                               ],
                             ),
                           )
@@ -730,7 +757,9 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                             label: Text(AppLocalizations.of(context)!.add),
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 8,),
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
                             ),
                           ),
                   ],
@@ -764,7 +793,8 @@ class EditableFoodResult {
         currentAnalysis = analysis,
         nameController = TextEditingController(text: analysis.name),
         portionController = TextEditingController(
-            text: analysis.portionGrams.toStringAsFixed(0),),
+          text: analysis.portionGrams.toStringAsFixed(0),
+        ),
         caloriesController =
             TextEditingController(text: analysis.calories.toStringAsFixed(0)),
         proteinController =
@@ -809,7 +839,8 @@ class EditableFoodResult {
 
     if (parts.isEmpty) {
       parts.add(
-          'Re-evaluate the nutrition values for "${nameController.text.trim()}"',);
+        'Re-evaluate the nutrition values for "${nameController.text.trim()}"',
+      );
     }
 
     return '${parts.join(', ')}.';
