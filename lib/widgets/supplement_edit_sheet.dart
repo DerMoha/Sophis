@@ -31,8 +31,8 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
     if (widget.supplement?.reminderTime != null) {
       final parts = widget.supplement!.reminderTime!.split(':');
       _reminderTime = TimeOfDay(
-        hour: int.parse(parts[0]),
-        minute: int.parse(parts[1]),
+        hour: int.tryParse(parts[0]) ?? 0,
+        minute: int.tryParse(parts[1]) ?? 0,
       );
     } else {
       _reminderTime = const TimeOfDay(hour: 9, minute: 0);
@@ -136,14 +136,16 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide(
-                              color: _hasError ? Colors.red : Colors.transparent,
+                              color:
+                                  _hasError ? Colors.red : Colors.transparent,
                               width: 2,
                             ),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide(
-                              color: _hasError ? Colors.red : Colors.transparent,
+                              color:
+                                  _hasError ? Colors.red : Colors.transparent,
                               width: 2,
                             ),
                           ),
@@ -338,9 +340,11 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
     final provider = context.read<SupplementsProvider>();
 
     // Check for duplicate names (excluding current supplement when editing)
-    final isDuplicate = provider.supplements.any((s) =>
-        s.name.toLowerCase() == name.toLowerCase() &&
-        s.id != widget.supplement?.id,);
+    final isDuplicate = provider.supplements.any(
+      (s) =>
+          s.name.toLowerCase() == name.toLowerCase() &&
+          s.id != widget.supplement?.id,
+    );
 
     if (isDuplicate) {
       ScaffoldMessenger.of(context).showSnackBar(

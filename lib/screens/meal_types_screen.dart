@@ -85,8 +85,10 @@ class _MealTypesScreenState extends State<MealTypesScreen> {
                 SnackBar(content: Text(l10n.mealTypeDeleted)),
               );
             },
-            child: Text(l10n.delete,
-                style: const TextStyle(color: AppTheme.error),),
+            child: Text(
+              l10n.delete,
+              style: const TextStyle(color: AppTheme.error),
+            ),
           ),
         ],
       ),
@@ -201,8 +203,8 @@ class _EditMealTypeSheetState extends State<_EditMealTypeSheet> {
       final parts = widget.mealType!.reminderTime!.split(':');
       if (parts.length == 2) {
         _reminderTime = TimeOfDay(
-          hour: int.parse(parts[0]),
-          minute: int.parse(parts[1]),
+          hour: int.tryParse(parts[0]) ?? 0,
+          minute: int.tryParse(parts[1]) ?? 0,
         );
       }
     }
@@ -341,8 +343,11 @@ class _EditMealTypeSheetState extends State<_EditMealTypeSheet> {
                             : null,
                       ),
                       child: isSelected
-                          ? const Icon(Icons.check,
-                              color: Colors.white, size: 20,)
+                          ? const Icon(
+                              Icons.check,
+                              color: Colors.white,
+                              size: 20,
+                            )
                           : null,
                     ),
                   );

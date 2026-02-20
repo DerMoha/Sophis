@@ -1267,7 +1267,8 @@ class _ReminderTimeTile extends StatelessWidget {
   TimeOfDay _parseTime(String? timeStr) {
     if (timeStr == null) return defaultTime;
     final parts = timeStr.split(':');
-    return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
+    return TimeOfDay(
+        hour: int.tryParse(parts[0]) ?? 0, minute: int.tryParse(parts[1]) ?? 0,);
   }
 
   String _formatTime(TimeOfDay time) {

@@ -104,7 +104,8 @@ class NotificationService {
     );
 
     Log.info(
-        'Scheduled notification $id at $hour:${minute.toString().padLeft(2, '0')}',);
+      'Scheduled notification $id at $hour:${minute.toString().padLeft(2, '0')}',
+    );
   }
 
   /// Cancel a specific reminder
@@ -139,8 +140,8 @@ class NotificationService {
         id: 0,
         title: 'Time for Breakfast! 🍳',
         body: 'Don\'t forget to log your breakfast',
-        hour: int.parse(parts[0]),
-        minute: int.parse(parts[1]),
+        hour: int.tryParse(parts[0]) ?? 0,
+        minute: int.tryParse(parts[1]) ?? 0,
       );
     }
 
@@ -150,8 +151,8 @@ class NotificationService {
         id: 1,
         title: 'Time for Lunch! 🥗',
         body: 'Don\'t forget to log your lunch',
-        hour: int.parse(parts[0]),
-        minute: int.parse(parts[1]),
+        hour: int.tryParse(parts[0]) ?? 0,
+        minute: int.tryParse(parts[1]) ?? 0,
       );
     }
 
@@ -161,8 +162,8 @@ class NotificationService {
         id: 2,
         title: 'Time for Dinner! 🍽️',
         body: 'Don\'t forget to log your dinner',
-        hour: int.parse(parts[0]),
-        minute: int.parse(parts[1]),
+        hour: int.tryParse(parts[0]) ?? 0,
+        minute: int.tryParse(parts[1]) ?? 0,
       );
     }
   }

@@ -388,8 +388,8 @@ class SettingsProvider extends ChangeNotifier {
             id: i,
             title: 'Time for ${meal.name}!',
             body: 'Don\'t forget to log your ${meal.name.toLowerCase()}',
-            hour: int.parse(parts[0]),
-            minute: int.parse(parts[1]),
+            hour: int.tryParse(parts[0]) ?? 0,
+            minute: int.tryParse(parts[1]) ?? 0,
           );
         }
       }

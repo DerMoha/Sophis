@@ -330,8 +330,8 @@ class SupplementsProvider extends ChangeNotifier {
     if (!supplement.enabled || supplement.reminderTime == null) return;
 
     final parts = supplement.reminderTime!.split(':');
-    final hour = int.parse(parts[0]);
-    final minute = int.parse(parts[1]);
+    final hour = int.tryParse(parts[0]) ?? 0;
+    final minute = int.tryParse(parts[1]) ?? 0;
 
     await _notifications.scheduleMealReminder(
       id: _getNotificationId(supplement.id),
