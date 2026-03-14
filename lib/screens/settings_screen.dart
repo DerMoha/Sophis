@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../models/app_settings.dart';
 import '../services/data_export_service.dart';
@@ -12,6 +11,10 @@ import 'log_viewer_screen.dart';
 import '../theme/app_theme.dart';
 import '../theme/animations.dart';
 import '../widgets/organic_components.dart';
+import '../widgets/settings/settings_tiles.dart';
+import '../widgets/settings/reminder_time_tile.dart';
+import '../widgets/settings/water_sizes_dialog.dart';
+import '../widgets/settings/api_key_guide_dialog.dart';
 import 'dashboard_settings_screen.dart';
 import 'goals_setup_screen.dart';
 import 'meal_macros_settings_screen.dart';
@@ -115,13 +118,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         title: l10n.appearance,
                         icon: Icons.palette_outlined,
                         children: [
-                          _buildSettingRow(
-                            context,
+                          SettingRow(
                             title: l10n.theme,
-                            child: _buildSegmentedControl<ThemeMode>(
-                              context,
+                            child: SegmentedControl<ThemeMode>(
                               value: settings.themeMode,
-                              options: [
+                              options: const [
                                 (ThemeMode.system, Icons.brightness_auto),
                                 (ThemeMode.light, Icons.light_mode_outlined),
                                 (ThemeMode.dark, Icons.dark_mode_outlined),
@@ -130,13 +131,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                           ),
                           const SizedBox(height: 20),
-                          _buildSettingRow(
-                            context,
+                          SettingRow(
                             title: l10n.quickActionsSize,
-                            child: _buildSegmentedControl<QuickActionSize>(
-                              context,
+                            child: SegmentedControl<QuickActionSize>(
                               value: settings.quickActionSize,
-                              options: [
+                              options: const [
                                 (
                                   QuickActionSize.small,
                                   Icons.view_column_rounded
@@ -171,8 +170,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         icon: Icons.restaurant_outlined,
                         children: [
                           // Calorie Goals
-                          _buildNavigationTile(
-                            context,
+                          NavigationTile(
                             title: l10n.calorieGoals,
                             subtitle: l10n.calorieGoalsSubtitle,
                             icon: Icons.local_fire_department_outlined,
@@ -185,8 +183,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                           const SizedBox(height: 12),
                           // Water Sizes
-                          _buildNavigationTile(
-                            context,
+                          NavigationTile(
                             title: l10n.waterSizes,
                             subtitle: l10n.waterSizesSubtitle,
                             icon: Icons.water_drop_outlined,
@@ -195,8 +192,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                           const SizedBox(height: 12),
                           // Meal Macros
-                          _buildNavigationTile(
-                            context,
+                          NavigationTile(
                             title: l10n.showMealMacros,
                             subtitle: l10n.showMealMacrosSubtitle,
                             icon: Icons.pie_chart_outline,
@@ -209,8 +205,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                           const SizedBox(height: 12),
                           // Supplements Toggle
-                          _buildSwitchTile(
-                            context,
+                          SwitchTile(
                             title: l10n.trackSupplements,
                             subtitle: l10n.trackSupplementsSubtitle,
                             icon: Icons.medication_outlined,
@@ -226,8 +221,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           if (settings.showSupplements) ...[
                             const SizedBox(height: 12),
                             // Supplements Management
-                            _buildNavigationTile(
-                              context,
+                            NavigationTile(
                               title: l10n.manageSupplements,
                               subtitle: l10n.manageSupplementsSubtitle,
                               icon: Icons.medication_liquid_rounded,
@@ -281,8 +275,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         title: l10n.quickActions,
                         icon: Icons.dashboard_customize_outlined,
                         children: [
-                          _buildNavigationTile(
-                            context,
+                          NavigationTile(
                             title: l10n.customizeDashboard,
                             subtitle: l10n.customizeDashboardSubtitle,
                             icon: Icons.grid_view_outlined,
@@ -294,8 +287,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                           ),
                           const SizedBox(height: 12),
-                          _buildNavigationTile(
-                            context,
+                          NavigationTile(
                             title: l10n.customizeMealTypes,
                             subtitle: l10n.customizeMealTypesSubtitle,
                             icon: Icons.restaurant_menu_outlined,
@@ -318,8 +310,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         title: l10n.mealReminders,
                         icon: Icons.notifications_outlined,
                         children: [
-                          _buildSwitchTile(
-                            context,
+                          SwitchTile(
                             title: l10n.enableReminders,
                             subtitle: l10n.enableRemindersSubtitle,
                             icon: Icons.alarm_outlined,
@@ -328,7 +319,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                           if (settings.remindersEnabled) ...[
                             const SizedBox(height: 16),
-                            _ReminderTimeTile(
+                            ReminderTimeTile(
                               icon: Icons.wb_twilight_rounded,
                               title: l10n.breakfast,
                               time: settings.breakfastReminderTime,
@@ -336,7 +327,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               onChanged: settings.setBreakfastReminder,
                             ),
                             const SizedBox(height: 8),
-                            _ReminderTimeTile(
+                            ReminderTimeTile(
                               icon: Icons.wb_sunny_rounded,
                               title: l10n.lunch,
                               time: settings.lunchReminderTime,
@@ -345,7 +336,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               onChanged: settings.setLunchReminder,
                             ),
                             const SizedBox(height: 8),
-                            _ReminderTimeTile(
+                            ReminderTimeTile(
                               icon: Icons.nights_stay_rounded,
                               title: l10n.dinner,
                               time: settings.dinnerReminderTime,
@@ -368,8 +359,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         title: l10n.fitnessSync,
                         icon: Icons.fitness_center_outlined,
                         children: [
-                          _buildSwitchTile(
-                            context,
+                          SwitchTile(
                             title: l10n.healthSync,
                             subtitle: l10n.healthSyncSubtitle,
                             icon: Icons.favorite_outline,
@@ -422,8 +412,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         title: l10n.dataSection,
                         icon: Icons.folder_outlined,
                         children: [
-                          _buildDataActionTile(
-                            context,
+                          DataActionTile(
                             title: l10n.exportData,
                             subtitle: l10n.exportDataSubtitle,
                             icon: Icons.upload_outlined,
@@ -431,8 +420,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             onTap: () => _handleExport(context, l10n),
                           ),
                           const SizedBox(height: 12),
-                          _buildDataActionTile(
-                            context,
+                          DataActionTile(
                             title: l10n.importData,
                             subtitle: l10n.importDataSubtitle,
                             icon: Icons.download_outlined,
@@ -460,8 +448,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         title: 'Developer & Debugging',
                         icon: Icons.bug_report_outlined,
                         children: [
-                          _buildSwitchTile(
-                            context,
+                          SwitchTile(
                             title: 'Enable Debug Logging',
                             subtitle:
                                 'Help diagnose issues by recording app activity',
@@ -470,8 +457,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             onChanged: settings.setDebugLoggingEnabled,
                           ),
                           const SizedBox(height: 12),
-                          _buildNavigationTile(
-                            context,
+                          NavigationTile(
                             title: 'View Debug Logs',
                             subtitle: 'Export logs for troubleshooting',
                             icon: Icons.list_alt_outlined,
@@ -482,8 +468,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             },
                           ),
                           const SizedBox(height: 12),
-                          _buildNavigationTile(
-                            context,
+                          NavigationTile(
                             title: 'Clear Debug Logs',
                             subtitle: 'Delete all diagnostic logs',
                             icon: Icons.delete_outline,
@@ -597,87 +582,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildSettingRow(
-    BuildContext context, {
-    required String title,
-    required Widget child,
-  }) {
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: theme.textTheme.titleSmall),
-        const SizedBox(height: 12),
-        child,
-      ],
-    );
-  }
-
-  Widget _buildNavigationTile(
-    BuildContext context, {
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    final theme = Theme.of(context);
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-            border: Border.all(
-              color: theme.colorScheme.outline.withValues(alpha: 0.1),
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  icon,
-                  size: 18,
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: theme.textTheme.titleSmall),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.chevron_right,
-                color: theme.colorScheme.onSurfaceVariant,
-                size: 20,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   void _showWaterSizesDialog(
     BuildContext context,
     SettingsProvider settings,
@@ -685,56 +589,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   ) {
     showDialog(
       context: context,
-      builder: (context) => _WaterSizesDialog(
+      builder: (context) => WaterSizesDialog(
         settings: settings,
         l10n: l10n,
-      ),
-    );
-  }
-
-  Widget _buildSegmentedControl<T>(
-    BuildContext context, {
-    required T value,
-    required List<(T, IconData)> options,
-    required void Function(T) onChanged,
-  }) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: isDark
-            ? Colors.white.withValues(alpha: 0.05)
-            : Colors.black.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-      ),
-      child: Row(
-        children: options.map((option) {
-          final isSelected = option.$1 == value;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => onChanged(option.$1),
-              child: AnimatedContainer(
-                duration: AppTheme.animFast,
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? theme.colorScheme.primary
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-                ),
-                child: Icon(
-                  option.$2,
-                  size: 20,
-                  color: isSelected
-                      ? Colors.white
-                      : theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ),
-          );
-        }).toList(),
       ),
     );
   }
@@ -948,64 +805,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildSwitchTile(
-    BuildContext context, {
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required bool value,
-    required void Function(bool) onChanged,
-  }) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-        border: Border.all(
-          color: theme.colorScheme.outline.withValues(alpha: 0.1),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              icon,
-              size: 18,
-              color: theme.colorScheme.primary,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: theme.textTheme.titleSmall),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildApiKeyInput(
     BuildContext context,
     SettingsProvider settings,
@@ -1061,81 +860,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showApiKeyGuide(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => const _ApiKeyGuideDialog(),
-    );
-  }
-
-  Widget _buildDataActionTile(
-    BuildContext context, {
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required bool isLoading,
-    required VoidCallback onTap,
-  }) {
-    final theme = Theme.of(context);
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: isLoading ? null : onTap,
-        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-            border: Border.all(
-              color: theme.colorScheme.outline.withValues(alpha: 0.1),
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: isLoading
-                    ? Padding(
-                        padding: const EdgeInsets.all(6),
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: theme.colorScheme.primary,
-                        ),
-                      )
-                    : Icon(
-                        icon,
-                        size: 18,
-                        color: theme.colorScheme.primary,
-                      ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: theme.textTheme.titleSmall),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.chevron_right,
-                color: theme.colorScheme.onSurfaceVariant,
-                size: 20,
-              ),
-            ],
-          ),
-        ),
-      ),
+      builder: (context) => const ApiKeyGuideDialog(),
     );
   }
 
@@ -1273,384 +998,5 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       );
     }
-  }
-}
-
-class _ReminderTimeTile extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String? time;
-  final TimeOfDay defaultTime;
-  final ValueChanged<String?> onChanged;
-
-  const _ReminderTimeTile({
-    required this.icon,
-    required this.title,
-    required this.time,
-    required this.defaultTime,
-    required this.onChanged,
-  });
-
-  TimeOfDay _parseTime(String? timeStr) {
-    if (timeStr == null) return defaultTime;
-    final parts = timeStr.split(':');
-    return TimeOfDay(
-      hour: int.tryParse(parts[0]) ?? 0,
-      minute: int.tryParse(parts[1]) ?? 0,
-    );
-  }
-
-  String _formatTime(TimeOfDay time) {
-    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final currentTime = _parseTime(time);
-    final isEnabled = time != null;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: isEnabled
-            ? theme.colorScheme.primary.withValues(alpha: 0.05)
-            : Colors.transparent,
-        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-        border: Border.all(
-          color: theme.colorScheme.outline.withValues(alpha: 0.1),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: isEnabled
-                  ? theme.colorScheme.primary.withValues(alpha: 0.1)
-                  : theme.colorScheme.outline.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              icon,
-              size: 18,
-              color: isEnabled
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: theme.textTheme.titleSmall,
-                ),
-                if (isEnabled)
-                  Text(
-                    currentTime.format(context),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  )
-                else
-                  Text(
-                    AppLocalizations.of(context)!.notSet,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          if (isEnabled)
-            IconButton(
-              icon: const Icon(Icons.close, size: 18),
-              onPressed: () => onChanged(null),
-              visualDensity: VisualDensity.compact,
-            ),
-          IconButton(
-            icon: Icon(
-              isEnabled ? Icons.edit_outlined : Icons.add,
-              size: 18,
-              color: theme.colorScheme.primary,
-            ),
-            onPressed: () async {
-              final picked = await showTimePicker(
-                context: context,
-                initialTime: currentTime,
-              );
-              if (picked != null) {
-                onChanged(_formatTime(picked));
-              }
-            },
-            visualDensity: VisualDensity.compact,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _WaterSizesDialog extends StatefulWidget {
-  final SettingsProvider settings;
-  final AppLocalizations l10n;
-
-  const _WaterSizesDialog({
-    required this.settings,
-    required this.l10n,
-  });
-
-  @override
-  State<_WaterSizesDialog> createState() => _WaterSizesDialogState();
-}
-
-class _WaterSizesDialogState extends State<_WaterSizesDialog> {
-  late final List<TextEditingController> _controllers;
-
-  @override
-  void initState() {
-    super.initState();
-    final sizes = widget.settings.waterSizes;
-    _controllers = [
-      TextEditingController(text: sizes[0].toString()),
-      TextEditingController(text: sizes[1].toString()),
-      TextEditingController(text: sizes[2].toString()),
-      TextEditingController(text: sizes[3].toString()),
-    ];
-  }
-
-  @override
-  void dispose() {
-    for (final c in _controllers) {
-      c.dispose();
-    }
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = widget.l10n;
-    final labels = [
-      l10n.waterSizeSmall,
-      l10n.waterSizeMedium,
-      l10n.waterSizeLarge,
-      l10n.waterSizeExtraLarge,
-    ];
-
-    return AlertDialog(
-      title: Text(l10n.waterSizes),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: List.generate(4, (i) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: TextField(
-                controller: _controllers[i],
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: labels[i],
-                  suffixText: 'ml',
-                  prefixIcon: const Icon(
-                    Icons.water_drop_outlined,
-                    color: AppTheme.water,
-                    size: 20,
-                  ),
-                ),
-              ),
-            );
-          }),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(l10n.cancel),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            final newSizes =
-                _controllers.map((c) => int.tryParse(c.text) ?? 250).toList();
-            widget.settings.setWaterSizes(
-              newSizes[0],
-              newSizes[1],
-              newSizes[2],
-              newSizes[3],
-            );
-            Navigator.pop(context);
-          },
-          child: Text(l10n.save),
-        ),
-      ],
-    );
-  }
-}
-
-class _ApiKeyGuideDialog extends StatelessWidget {
-  const _ApiKeyGuideDialog();
-
-  Future<void> _launchUrl(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final steps = [
-      (
-        '1',
-        'Go to Google AI Studio',
-        'Visit aistudio.google.com in your browser',
-        'aistudio.google.com'
-      ),
-      (
-        '2',
-        'Sign in',
-        'Sign in with your Google account (or create one)',
-        null
-      ),
-      ('3', 'Get API Key', 'Click the "Get API Key" button at the top', null),
-      ('4', 'Create Key', 'Click "Create API Key" and copy your new key', null),
-      (
-        '5',
-        'Paste in App',
-        'Return here and paste your key in the field above',
-        null
-      ),
-    ];
-
-    return AlertDialog(
-      title: Row(
-        children: [
-          Icon(
-            Icons.key_outlined,
-            color: theme.colorScheme.primary,
-          ),
-          const SizedBox(width: 12),
-          const Text('How to Get Your API Key'),
-        ],
-      ),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Get a free Gemini API key from Google AI Studio:',
-              style: theme.textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 20),
-            ...steps.map(
-              (step) => Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          step.$1,
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            color: theme.colorScheme.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            step.$2,
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          if (step.$4 != null)
-                            GestureDetector(
-                              onTap: () => _launchUrl('https://${step.$4}'),
-                              child: Text(
-                                step.$3,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.primary,
-                                  decoration: TextDecoration.underline,
-                                ),
-                              ),
-                            )
-                          else
-                            Text(
-                              step.$3,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.2),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    size: 18,
-                    color: theme.colorScheme.primary,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'The API key is stored securely on your device only.',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Got it'),
-        ),
-        ElevatedButton.icon(
-          onPressed: () => _launchUrl('https://aistudio.google.com'),
-          icon: const Icon(Icons.open_in_new, size: 16),
-          label: const Text('Open AI Studio'),
-        ),
-      ],
-    );
   }
 }
