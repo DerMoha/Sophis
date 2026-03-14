@@ -122,6 +122,7 @@
   "geminiApiKey": "Gemini API Key",
   "enterApiKey": "Enter your API key",
   "getApiKeyHelper": "Get a free key at aistudio.google.com",
+  "howToGetApiKey": "How to get a key",
   "notSet": "Not set",
   "clear": "Clear",
   "calculate": "Calculate",
@@ -232,10 +233,12 @@
   "scan": "Scan",
   "scanningRecipe": "Extracting ingredients...",
   "tryAgain": "Try Again",
+  "noRecipeFoundInImage": "No recipe found in image. Try a clearer photo.",
   "scanRecipeDescription": "Take a photo of a recipe from a cookbook, magazine, or screenshot. AI will extract the ingredients for you!",
   "selectRecipeImage": "Select a recipe image",
   "extractIngredients": "Extract Ingredients",
   "extractedRecipe": "Extracted Recipe",
+  "scannedRecipeName": "Scanned Recipe",
   "scanAgain": "Scan Again",
   "serving": "serving",
   "ingredients": "Ingredients",
@@ -265,8 +268,26 @@
       }
     }
   },
+  "errorNetworkTryAgain": "Network error. Please check your internet connection and try again.",
+  "errorAiLimitReached": "Daily AI limit reached. Please try again tomorrow.",
+  "errorInvalidApiKey": "Invalid API key. Please check your settings.",
+  "errorImageTooLarge": "Image file is too large. Please use a smaller image.",
+  "errorUnableToAnalyzeFood": "Unable to analyze food. Please try again.",
+  "unableToReanalyzeFood": "Unable to re-analyze this food item. Please try again.",
+  "foodReanalyzed": "Food re-analyzed successfully",
   "errorGeneric": "Error: {error}",
   "@errorGeneric": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "clearDebugLogs": "Clear Debug Logs",
+  "clearDebugLogsConfirm": "Are you sure you want to delete all diagnostic logs? This action cannot be undone.",
+  "debugLogsCleared": "Debug logs cleared",
+  "clearLogsFailed": "Failed to clear logs: {error}",
+  "@clearLogsFailed": {
     "placeholders": {
       "error": {
         "type": "String"

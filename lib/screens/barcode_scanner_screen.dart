@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
+
 import '../l10n/generated/app_localizations.dart';
 import '../models/food_item.dart';
-import '../models/food_entry.dart';
 import '../models/shareable_meal.dart';
+import '../services/food_entry_factory.dart';
+import '../services/meal_sharing_service.dart';
 import '../services/openfoodfacts_service.dart';
 import '../services/nutrition_provider.dart';
-import '../services/meal_sharing_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/portion_picker_sheet.dart';
 import 'import_meal_screen.dart';
-import 'package:uuid/uuid.dart';
 
 class BarcodeScannerScreen extends StatefulWidget {
   final String meal;
@@ -118,19 +118,9 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
   }
 
   void _addFoodEntry(FoodItem product, double grams) {
-    final nutrients = product.calculateFor(grams);
-    final displayName = product.brand != null && product.brand!.isNotEmpty
-        ? '${product.brand} ${product.name}'
-        : product.name;
-
-    final entry = FoodEntry(
-      id: const Uuid().v4(),
-      name: '$displayName (${grams.toStringAsFixed(0)}g)',
-      calories: nutrients['calories']!,
-      protein: nutrients['protein']!,
-      carbs: nutrients['carbs']!,
-      fat: nutrients['fat']!,
-      timestamp: DateTime.now(),
+    final entry = FoodEntryFactory.fromFoodItem(
+      item: product,
+      grams: grams,
       meal: widget.meal,
     );
 

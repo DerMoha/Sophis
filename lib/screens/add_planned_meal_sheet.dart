@@ -1,17 +1,18 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:uuid/uuid.dart';
 import 'package:gal/gal.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
+
 import '../l10n/generated/app_localizations.dart';
+import '../models/food_item.dart';
 import '../models/meal_plan.dart';
 import '../models/recipe.dart';
-import '../models/food_item.dart';
+import '../services/gemini_food_service.dart';
 import '../services/nutrition_provider.dart';
 import '../services/openfoodfacts_service.dart';
-import '../services/gemini_food_service.dart';
+import '../services/planned_meal_factory.dart';
 import '../services/settings_provider.dart';
 import '../theme/app_theme.dart';
 
@@ -841,7 +842,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
         _extractedRecipe = result;
         _isScanning = false;
         if (result.isEmpty) {
-          _scanError = 'No recipe found in image. Try a clearer photo.';
+          _scanError = AppLocalizations.of(context)!.noRecipeFoundInImage;
           _extractedRecipe = null;
         }
       });
@@ -855,30 +856,13 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
 
   void _addExtractedRecipeAsMeal(RecipeExtraction recipe) {
     final nutrition = context.read<NutritionProvider>();
+    final l10n = AppLocalizations.of(context)!;
 
-    // Convert extracted ingredients to planned meal ingredients
-    final ingredients = recipe.ingredients
-        .map(
-          (i) => PlannedMealIngredient(
-            name: i.name,
-            amount: i.amount,
-            unit: i.unit,
-            category: i.category,
-          ),
-        )
-        .toList();
-
-    final plannedMeal = PlannedMeal(
-      id: const Uuid().v4(),
+    final plannedMeal = PlannedMealFactory.fromExtractedRecipe(
+      recipe: recipe,
       date: widget.date,
       meal: _selectedMealType,
-      name: recipe.recipeName ?? 'Scanned Recipe',
-      calories: recipe.caloriesPerServing,
-      protein: recipe.proteinPerServing,
-      carbs: recipe.carbsPerServing,
-      fat: recipe.fatPerServing,
-      servings: 1,
-      ingredients: ingredients,
+      fallbackName: l10n.scannedRecipeName,
     );
 
     nutrition.addPlannedMeal(plannedMeal);
@@ -1060,33 +1044,13 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
   }
 
   void _addRecipeAsPlannedMeal(Recipe recipe, int servings) {
-    final nutrients = recipe.nutrientsPerServing;
     final nutrition = context.read<NutritionProvider>();
 
-    // Convert recipe ingredients to planned meal ingredients
-    final ingredients = recipe.ingredients
-        .map(
-          (i) => PlannedMealIngredient(
-            name: i.name,
-            amount: (i.amountGrams * servings) / recipe.servings,
-            unit: 'g',
-            category: _inferCategory(i.name),
-          ),
-        )
-        .toList();
-
-    final plannedMeal = PlannedMeal(
-      id: const Uuid().v4(),
+    final plannedMeal = PlannedMealFactory.fromRecipe(
+      recipe: recipe,
+      servings: servings,
       date: widget.date,
       meal: _selectedMealType,
-      name: '${recipe.name} (${servings}x)',
-      calories: nutrients['calories']! * servings,
-      protein: nutrients['protein']! * servings,
-      carbs: nutrients['carbs']! * servings,
-      fat: nutrients['fat']! * servings,
-      recipeId: recipe.id,
-      servings: servings.toDouble(),
-      ingredients: ingredients,
     );
 
     nutrition.addPlannedMeal(plannedMeal);
@@ -1097,79 +1061,15 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
   void _addFoodAsPlannedMeal(FoodItem food) {
     final nutrition = context.read<NutritionProvider>();
 
-    final plannedMeal = PlannedMeal(
-      id: const Uuid().v4(),
+    final plannedMeal = PlannedMealFactory.fromFoodItem(
+      food: food,
       date: widget.date,
       meal: _selectedMealType,
-      name: food.name,
-      calories: food.caloriesPer100g,
-      protein: food.proteinPer100g,
-      carbs: food.carbsPer100g,
-      fat: food.fatPer100g,
-      ingredients: [
-        PlannedMealIngredient(
-          name: food.name,
-          amount: 100,
-          unit: 'g',
-          category: _inferCategory(food.name),
-        ),
-      ],
     );
 
     nutrition.addPlannedMeal(plannedMeal);
     Navigator.pop(context);
     HapticFeedback.mediumImpact();
-  }
-
-  String _inferCategory(String name) {
-    final lower = name.toLowerCase();
-    if (_matchesAny(lower, [
-      'chicken',
-      'beef',
-      'pork',
-      'fish',
-      'salmon',
-      'tuna',
-      'egg',
-      'meat',
-      'turkey',
-    ])) {
-      return ShoppingCategory.protein;
-    }
-    if (_matchesAny(lower, ['milk', 'cheese', 'yogurt', 'butter', 'cream'])) {
-      return ShoppingCategory.dairy;
-    }
-    if (_matchesAny(lower, [
-      'apple',
-      'banana',
-      'orange',
-      'tomato',
-      'lettuce',
-      'carrot',
-      'onion',
-      'garlic',
-      'vegetable',
-      'fruit',
-    ])) {
-      return ShoppingCategory.produce;
-    }
-    if (_matchesAny(
-      lower,
-      ['bread', 'rice', 'pasta', 'oat', 'cereal', 'flour'],
-    )) {
-      return ShoppingCategory.grains;
-    }
-    if (_matchesAny(lower, ['frozen', 'ice cream'])) {
-      return ShoppingCategory.frozen;
-    }
-    if (_matchesAny(lower, ['water', 'juice', 'soda', 'coffee', 'tea'])) {
-      return ShoppingCategory.beverages;
-    }
-    return ShoppingCategory.pantry;
-  }
-
-  bool _matchesAny(String text, List<String> keywords) {
-    return keywords.any((k) => text.contains(k));
   }
 }
 
@@ -1290,8 +1190,7 @@ class _ManualEntryFormState extends State<_ManualEntryForm> {
 
     final nutrition = context.read<NutritionProvider>();
 
-    final plannedMeal = PlannedMeal(
-      id: const Uuid().v4(),
+    final plannedMeal = PlannedMealFactory.manual(
       date: widget.date,
       meal: widget.mealType,
       name: _nameController.text,
@@ -1299,14 +1198,6 @@ class _ManualEntryFormState extends State<_ManualEntryForm> {
       protein: double.tryParse(_proteinController.text) ?? 0,
       carbs: double.tryParse(_carbsController.text) ?? 0,
       fat: double.tryParse(_fatController.text) ?? 0,
-      ingredients: [
-        PlannedMealIngredient(
-          name: _nameController.text,
-          amount: 1,
-          unit: 'portion',
-          category: ShoppingCategory.other,
-        ),
-      ],
     );
 
     nutrition.addPlannedMeal(plannedMeal);

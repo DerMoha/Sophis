@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
+
 import '../l10n/generated/app_localizations.dart';
-import '../models/food_entry.dart';
 import '../models/food_item.dart';
+import '../services/food_entry_factory.dart';
 import '../services/nutrition_provider.dart';
 import '../services/settings_provider.dart';
 import '../theme/app_theme.dart';
 import '../theme/animations.dart';
 import '../widgets/organic_components.dart';
-import 'package:uuid/uuid.dart';
 
 class AddFoodScreen extends StatefulWidget {
   final String meal;
@@ -67,14 +68,12 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
     final carbs = double.tryParse(_carbsController.text) ?? 0;
     final fat = double.tryParse(_fatController.text) ?? 0;
 
-    final entry = FoodEntry(
-      id: const Uuid().v4(),
+    final entry = FoodEntryFactory.create(
       name: name,
       calories: calories,
       protein: protein,
       carbs: carbs,
       fat: fat,
-      timestamp: DateTime.now(),
       meal: widget.meal,
     );
 
@@ -210,8 +209,9 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                                 decoration: InputDecoration(
                                   labelText: l10n.foodName,
                                   prefixIcon: const Icon(
-                                      Icons.restaurant_outlined,
-                                      size: 20,),
+                                    Icons.restaurant_outlined,
+                                    size: 20,
+                                  ),
                                 ),
                                 textCapitalization:
                                     TextCapitalization.sentences,

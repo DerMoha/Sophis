@@ -2,13 +2,13 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import '../l10n/generated/app_localizations.dart';
-import 'package:uuid/uuid.dart';
 import 'package:gal/gal.dart';
+
+import '../l10n/generated/app_localizations.dart';
 import '../services/gemini_food_service.dart';
+import '../services/food_entry_factory.dart';
 import '../services/nutrition_provider.dart';
 import '../services/settings_provider.dart';
-import '../models/food_entry.dart';
 import '../models/shareable_meal.dart';
 import '../theme/app_theme.dart';
 import '../widgets/edit_food_analysis_sheet.dart';
@@ -48,30 +48,31 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
 
   /// Convert technical exceptions to user-friendly error messages
   String _getUserFriendlyError(dynamic error) {
+    final l10n = AppLocalizations.of(context)!;
     final errorStr = error.toString().toLowerCase();
 
     if (errorStr.contains('network') ||
         errorStr.contains('connection') ||
         errorStr.contains('timeout')) {
-      return 'Network error. Please check your internet connection and try again.';
+      return l10n.errorNetworkTryAgain;
     }
     if (errorStr.contains('quota') ||
         errorStr.contains('limit') ||
         errorStr.contains('429')) {
-      return 'Daily AI limit reached. Please try again tomorrow.';
+      return l10n.errorAiLimitReached;
     }
     if (errorStr.contains('api key') ||
         errorStr.contains('apikey') ||
         errorStr.contains('unauthorized') ||
         errorStr.contains('401')) {
-      return 'Invalid API key. Please check your settings.';
+      return l10n.errorInvalidApiKey;
     }
     if (errorStr.contains('image') && errorStr.contains('size')) {
-      return 'Image file is too large. Please use a smaller image.';
+      return l10n.errorImageTooLarge;
     }
 
     // Fallback to generic message for unknown errors
-    return 'Unable to analyze food. Please try again.';
+    return l10n.errorUnableToAnalyzeFood;
   }
 
   Future<void> _initService() async {
@@ -254,8 +255,9 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       if (!mounted) return;
 
       if (updatedAnalysis == null) {
+        final l10n = AppLocalizations.of(context)!;
         setState(() {
-          _error = 'Unable to re-analyze this food item. Please try again.';
+          _error = l10n.unableToReanalyzeFood;
           _remainingRequests = remaining;
           _isLoading = false;
         });
@@ -283,7 +285,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Food re-analyzed successfully')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.foodReanalyzed)),
       );
     } catch (e) {
       if (mounted) {
@@ -298,14 +300,12 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
   void _addFood(EditableFoodResult result) {
     final food = result.currentAnalysis; // Use edited values!
 
-    final entry = FoodEntry(
-      id: const Uuid().v4(),
+    final entry = FoodEntryFactory.create(
       name: '${food.name} (${food.portionDisplay})',
       calories: food.calories,
       protein: food.protein,
       carbs: food.carbs,
       fat: food.fat,
-      timestamp: DateTime.now(),
       meal: widget.meal,
     );
 

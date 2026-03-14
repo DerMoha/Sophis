@@ -18,6 +18,19 @@ import 'meal_macros_settings_screen.dart';
 import 'meal_types_screen.dart';
 import 'supplements_screen.dart';
 
+enum _SettingsSection {
+  appearance,
+  nutrition,
+  language,
+  units,
+  dashboard,
+  reminders,
+  fitness,
+  ai,
+  data,
+  developer,
+}
+
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -28,26 +41,37 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _isExporting = false;
   bool _isImporting = false;
-  final Map<String, bool> _expandedSections = {
-    'appearance': false,
-    'nutrition': false,
-    'language': false,
-    'units': false,
-    'dashboard': false,
-    'reminders': false,
-    'fitness': false,
-    'ai': false,
-    'data': false,
-    'developer': false,
+  final TextEditingController _apiKeyController = TextEditingController();
+  final FocusNode _apiKeyFocusNode = FocusNode();
+  final Map<_SettingsSection, bool> _expandedSections = {
+    for (final section in _SettingsSection.values) section: false,
   };
 
-  bool _isSectionExpanded(String sectionId) =>
-      _expandedSections[sectionId] ?? false;
+  bool _isSectionExpanded(_SettingsSection section) =>
+      _expandedSections[section] ?? false;
 
-  void _toggleSection(String sectionId) {
+  void _toggleSection(_SettingsSection section) {
     setState(() {
-      _expandedSections[sectionId] = !_isSectionExpanded(sectionId);
+      _expandedSections[section] = !_isSectionExpanded(section);
     });
+  }
+
+  @override
+  void dispose() {
+    _apiKeyController.dispose();
+    _apiKeyFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _syncApiKeyController(String apiKey) {
+    if (_apiKeyFocusNode.hasFocus || _apiKeyController.text == apiKey) {
+      return;
+    }
+
+    _apiKeyController.value = TextEditingValue(
+      text: apiKey,
+      selection: TextSelection.collapsed(offset: apiKey.length),
+    );
   }
 
   @override
@@ -87,7 +111,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       index: 0,
                       child: _buildSectionCard(
                         context,
-                        sectionId: 'appearance',
+                        section: _SettingsSection.appearance,
                         title: l10n.appearance,
                         icon: Icons.palette_outlined,
                         children: [
@@ -142,7 +166,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       index: 1,
                       child: _buildSectionCard(
                         context,
-                        sectionId: 'nutrition',
+                        section: _SettingsSection.nutrition,
                         title: l10n.nutrition,
                         icon: Icons.restaurant_outlined,
                         children: [
@@ -223,7 +247,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       index: 2,
                       child: _buildSectionCard(
                         context,
-                        sectionId: 'language',
+                        section: _SettingsSection.language,
                         title: l10n.language,
                         icon: Icons.language_outlined,
                         children: [
@@ -238,7 +262,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       index: 3,
                       child: _buildSectionCard(
                         context,
-                        sectionId: 'units',
+                        section: _SettingsSection.units,
                         title: l10n.units,
                         icon: Icons.straighten_outlined,
                         children: [
@@ -253,7 +277,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       index: 4,
                       child: _buildSectionCard(
                         context,
-                        sectionId: 'dashboard',
+                        section: _SettingsSection.dashboard,
                         title: l10n.quickActions,
                         icon: Icons.dashboard_customize_outlined,
                         children: [
@@ -290,7 +314,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       index: 3,
                       child: _buildSectionCard(
                         context,
-                        sectionId: 'reminders',
+                        section: _SettingsSection.reminders,
                         title: l10n.mealReminders,
                         icon: Icons.notifications_outlined,
                         children: [
@@ -340,7 +364,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       index: 4,
                       child: _buildSectionCard(
                         context,
-                        sectionId: 'fitness',
+                        section: _SettingsSection.fitness,
                         title: l10n.fitnessSync,
                         icon: Icons.fitness_center_outlined,
                         children: [
@@ -379,7 +403,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       index: 5,
                       child: _buildSectionCard(
                         context,
-                        sectionId: 'ai',
+                        section: _SettingsSection.ai,
                         title: l10n.aiSection,
                         icon: Icons.auto_awesome_outlined,
                         children: [
@@ -394,7 +418,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       index: 6,
                       child: _buildSectionCard(
                         context,
-                        sectionId: 'data',
+                        section: _SettingsSection.data,
                         title: l10n.dataSection,
                         icon: Icons.folder_outlined,
                         children: [
@@ -432,7 +456,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       index: 7,
                       child: _buildSectionCard(
                         context,
-                        sectionId: 'developer',
+                        section: _SettingsSection.developer,
                         title: 'Developer & Debugging',
                         icon: Icons.bug_report_outlined,
                         children: [
@@ -503,13 +527,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildSectionCard(
     BuildContext context, {
-    required String sectionId,
+    required _SettingsSection section,
     required String title,
     required IconData icon,
     required List<Widget> children,
   }) {
     final theme = Theme.of(context);
-    final isExpanded = _isSectionExpanded(sectionId);
+    final isExpanded = _isSectionExpanded(section);
 
     return GlassCard(
       padding: EdgeInsets.zero,
@@ -519,7 +543,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Material(
             color: Colors.transparent,
             child: InkWell(
-              onTap: () => _toggleSection(sectionId),
+              onTap: () => _toggleSection(section),
               borderRadius: BorderRadius.circular(AppTheme.radiusLG),
               child: Padding(
                 padding: const EdgeInsets.all(20),
@@ -989,6 +1013,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   ) {
     final theme = Theme.of(context);
     final hasKey = settings.geminiApiKey?.isNotEmpty == true;
+    _syncApiKeyController(settings.geminiApiKey ?? '');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1002,7 +1027,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 : null,
           ),
           obscureText: true,
-          controller: TextEditingController(text: settings.geminiApiKey ?? ''),
+          controller: _apiKeyController,
+          focusNode: _apiKeyFocusNode,
           onChanged: settings.setGeminiApiKey,
         ),
         const SizedBox(height: 8),
@@ -1019,7 +1045,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             TextButton.icon(
               onPressed: () => _showApiKeyGuide(context),
               icon: const Icon(Icons.help_outline, size: 16),
-              label: const Text('How to get a key'),
+              label: Text(l10n.howToGetApiKey),
               style: TextButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 minimumSize: Size.zero,
@@ -1196,20 +1222,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _handleClearLogs(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
 
     // Show confirmation dialog
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Clear Debug Logs'),
-        content: const Text(
-          'Are you sure you want to delete all diagnostic logs? This action cannot be undone.',
+        title: Text(l10n.clearDebugLogs),
+        content: Text(
+          l10n.clearDebugLogsConfirm,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
@@ -1217,7 +1244,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               backgroundColor: Theme.of(context).colorScheme.error,
               foregroundColor: Theme.of(context).colorScheme.onError,
             ),
-            child: const Text('Delete'),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -1231,8 +1258,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (!mounted) return;
 
       messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Debug logs cleared'),
+        SnackBar(
+          content: Text(l10n.debugLogsCleared),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -1241,7 +1268,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       messenger.showSnackBar(
         SnackBar(
-          content: Text('Failed to clear logs: $e'),
+          content: Text(l10n.clearLogsFailed(e.toString())),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -1268,7 +1295,9 @@ class _ReminderTimeTile extends StatelessWidget {
     if (timeStr == null) return defaultTime;
     final parts = timeStr.split(':');
     return TimeOfDay(
-        hour: int.tryParse(parts[0]) ?? 0, minute: int.tryParse(parts[1]) ?? 0,);
+      hour: int.tryParse(parts[0]) ?? 0,
+      minute: int.tryParse(parts[1]) ?? 0,
+    );
   }
 
   String _formatTime(TimeOfDay time) {
