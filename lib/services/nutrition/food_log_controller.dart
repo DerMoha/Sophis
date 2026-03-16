@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import '../../models/food_entry.dart';
 import '../../models/food_item.dart';
+import '../../models/nutrition_totals.dart';
 import '../database_service.dart';
 
 /// Manages food entries, today's cache, and food history cache.
@@ -16,12 +17,12 @@ class FoodLogController {
 
   // Today's cache
   List<FoodEntry>? _cachedTodayEntries;
-  Map<String, double>? _cachedTodayTotals;
+  NutritionTotals? _cachedTodayTotals;
   Map<String, List<FoodEntry>>? _cachedMealEntries;
 
   // History cache
   Map<int, List<FoodEntry>>? _foodEntriesByDateCache;
-  Map<int, Map<String, double>>? _foodTotalsByDateCache;
+  Map<int, NutritionTotals>? _foodTotalsByDateCache;
 
   FoodLogController(
     this._db,
@@ -67,35 +68,27 @@ class FoodLogController {
     }
 
     final entriesByDate = <int, List<FoodEntry>>{};
-    final totalsByDate = <int, Map<String, double>>{};
+    final totalsByDate = <int, NutritionTotals>{};
 
     for (final entry in _entries) {
       final key = _dayKey(entry.timestamp);
       entriesByDate.putIfAbsent(key, () => []).add(entry);
 
-      final totals = totalsByDate.putIfAbsent(
-        key,
-        () => {
-          'calories': 0.0,
-          'protein': 0.0,
-          'carbs': 0.0,
-          'fat': 0.0,
-        },
-      );
-      totals['calories'] = totals['calories']! + entry.calories;
-      totals['protein'] = totals['protein']! + entry.protein;
-      totals['carbs'] = totals['carbs']! + entry.carbs;
-      totals['fat'] = totals['fat']! + entry.fat;
+      final existing = totalsByDate[key] ?? NutritionTotals.zero;
+      totalsByDate[key] = existing +
+          NutritionTotals(
+            calories: entry.calories,
+            protein: entry.protein,
+            carbs: entry.carbs,
+            fat: entry.fat,
+          );
     }
 
     _foodEntriesByDateCache = {
       for (final item in entriesByDate.entries)
         item.key: List<FoodEntry>.unmodifiable(item.value),
     };
-    _foodTotalsByDateCache = {
-      for (final item in totalsByDate.entries)
-        item.key: Map<String, double>.unmodifiable(item.value),
-    };
+    _foodTotalsByDateCache = totalsByDate;
   }
 
   Future<void> addFoodEntry(FoodEntry entry) async {
@@ -180,7 +173,8 @@ class FoodLogController {
     return [];
   }
 
-  Map<String, double> getTodayTotals() {
+  /// Returns today's nutrition totals (typed).
+  NutritionTotals getTodayTotalsTyped() {
     _prepareTodayCache();
 
     if (_cachedTodayTotals != null) {
@@ -188,34 +182,39 @@ class FoodLogController {
     }
 
     final today = getTodayEntries();
-    double cal = 0, prot = 0, carb = 0, fat = 0;
+    var totals = NutritionTotals.zero;
     for (final e in today) {
-      cal += e.calories;
-      prot += e.protein;
-      carb += e.carbs;
-      fat += e.fat;
+      totals = totals +
+          NutritionTotals(
+            calories: e.calories,
+            protein: e.protein,
+            carbs: e.carbs,
+            fat: e.fat,
+          );
     }
-    _cachedTodayTotals = {
-      'calories': cal,
-      'protein': prot,
-      'carbs': carb,
-      'fat': fat,
-    };
-    return _cachedTodayTotals!;
+    _cachedTodayTotals = totals;
+    return totals;
   }
 
-  Map<String, double> getTotalsForDate(DateTime date) {
+  /// Returns today's nutrition totals as a map (legacy).
+  Map<String, double> getTodayTotals() => getTodayTotalsTyped().toMap();
+
+  /// Returns nutrition totals for a specific date (typed).
+  NutritionTotals getTotalsForDateTyped(DateTime date) {
     final now = DateTime.now();
     if (date.year == now.year &&
         date.month == now.month &&
         date.day == now.day) {
-      return getTodayTotals();
+      return getTodayTotalsTyped();
     }
 
     _ensureFoodHistoryCache();
-    return _foodTotalsByDateCache![_dayKey(date)] ??
-        const {'calories': 0.0, 'protein': 0.0, 'carbs': 0.0, 'fat': 0.0};
+    return _foodTotalsByDateCache![_dayKey(date)] ?? NutritionTotals.zero;
   }
+
+  /// Returns nutrition totals for a specific date as a map (legacy).
+  Map<String, double> getTotalsForDate(DateTime date) =>
+      getTotalsForDateTyped(date).toMap();
 
   Future<void> addRecentFood(FoodItem food) async {
     _recentFoods.removeWhere((f) => f.id == food.id);
