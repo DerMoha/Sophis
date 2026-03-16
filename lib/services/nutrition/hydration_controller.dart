@@ -2,8 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import '../../models/water_entry.dart';
 import '../database_service.dart';
-import '../home_widget_service.dart';
-import '../nutrition_provider.dart';
 
 /// Manages water entries and today's water cache.
 class HydrationController {
@@ -11,7 +9,6 @@ class HydrationController {
   final VoidCallback _onChanged;
   final bool Function() _isCacheValid;
   final DateTime Function() _currentCacheDate;
-  final NutritionProvider Function() _providerRef;
 
   List<WaterEntry> _waterEntries = [];
 
@@ -23,7 +20,6 @@ class HydrationController {
     this._onChanged,
     this._isCacheValid,
     this._currentCacheDate,
-    this._providerRef,
   );
 
   List<WaterEntry> get waterEntries => _waterEntries;
@@ -56,7 +52,6 @@ class HydrationController {
     _waterEntries.add(entry);
     invalidateCache();
     await _db.insertWater(entry);
-    HomeWidgetService.updateWidgetData(_providerRef());
     _onChanged();
   }
 
@@ -64,7 +59,6 @@ class HydrationController {
     _waterEntries.removeWhere((e) => e.id == id);
     invalidateCache();
     await _db.deleteWater(id);
-    HomeWidgetService.updateWidgetData(_providerRef());
     _onChanged();
   }
 

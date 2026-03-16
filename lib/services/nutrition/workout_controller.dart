@@ -2,8 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import '../../models/workout_entry.dart';
 import '../database_service.dart';
-import '../home_widget_service.dart';
-import '../nutrition_provider.dart';
 
 /// Manages workout entries and today's workout cache.
 class WorkoutController {
@@ -11,7 +9,6 @@ class WorkoutController {
   final VoidCallback _onChanged;
   final bool Function() _isCacheValid;
   final DateTime Function() _currentCacheDate;
-  final NutritionProvider Function() _providerRef;
 
   List<WorkoutEntry> _workoutEntries = [];
 
@@ -23,7 +20,6 @@ class WorkoutController {
     this._onChanged,
     this._isCacheValid,
     this._currentCacheDate,
-    this._providerRef,
   );
 
   List<WorkoutEntry> get workoutEntries => _workoutEntries;
@@ -57,7 +53,6 @@ class WorkoutController {
     _workoutEntries.add(entry);
     invalidateCache();
     await _db.insertWorkout(entry);
-    HomeWidgetService.updateWidgetData(_providerRef());
     _onChanged();
   }
 
@@ -67,7 +62,6 @@ class WorkoutController {
       _workoutEntries[index] = entry;
       invalidateCache();
       await _db.updateWorkout(entry);
-      HomeWidgetService.updateWidgetData(_providerRef());
       _onChanged();
     }
   }
@@ -76,7 +70,6 @@ class WorkoutController {
     _workoutEntries.removeWhere((e) => e.id == id);
     invalidateCache();
     await _db.deleteWorkout(id);
-    HomeWidgetService.updateWidgetData(_providerRef());
     _onChanged();
   }
 

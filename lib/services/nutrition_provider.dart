@@ -57,21 +57,18 @@ class NutritionProvider extends ChangeNotifier {
       _onFoodChanged,
       _isCacheValid,
       _currentCacheDate,
-      () => this,
     );
     _hydration = HydrationController(
       _db,
       _onSimpleChanged,
       _isCacheValid,
       _currentCacheDate,
-      () => this,
     );
     _workouts = WorkoutController(
       _db,
       _onSimpleChanged,
       _isCacheValid,
       _currentCacheDate,
-      () => this,
     );
     _mealPlan = MealPlanController(
       _storage,

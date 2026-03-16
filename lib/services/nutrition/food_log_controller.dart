@@ -3,8 +3,6 @@ import 'package:uuid/uuid.dart';
 import '../../models/food_entry.dart';
 import '../../models/food_item.dart';
 import '../database_service.dart';
-import '../home_widget_service.dart';
-import '../nutrition_provider.dart';
 
 /// Manages food entries, today's cache, and food history cache.
 class FoodLogController {
@@ -12,7 +10,6 @@ class FoodLogController {
   final VoidCallback _onChanged;
   final bool Function() _isCacheValid;
   final DateTime Function() _currentCacheDate;
-  final NutritionProvider Function() _providerRef;
 
   List<FoodEntry> _entries = [];
   List<FoodItem> _recentFoods = [];
@@ -31,7 +28,6 @@ class FoodLogController {
     this._onChanged,
     this._isCacheValid,
     this._currentCacheDate,
-    this._providerRef,
   );
 
   List<FoodEntry> get entries => _entries;
@@ -107,7 +103,6 @@ class FoodLogController {
     invalidateCache();
     invalidateFoodHistoryCache();
     await _db.insertFood(entry);
-    HomeWidgetService.updateWidgetData(_providerRef());
     _onChanged();
   }
 
@@ -116,7 +111,6 @@ class FoodLogController {
     invalidateCache();
     invalidateFoodHistoryCache();
     await _db.deleteFood(id);
-    HomeWidgetService.updateWidgetData(_providerRef());
     _onChanged();
   }
 
@@ -127,7 +121,6 @@ class FoodLogController {
       invalidateCache();
       invalidateFoodHistoryCache();
       await _db.updateFood(entry);
-      HomeWidgetService.updateWidgetData(_providerRef());
       _onChanged();
     }
   }
