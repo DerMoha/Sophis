@@ -7,9 +7,9 @@ import '../models/food_entry.dart';
 import '../models/nutrition_goals.dart';
 import '../services/nutrition_provider.dart';
 import '../services/settings_provider.dart';
-import '../theme/app_theme.dart';
-import '../theme/animations.dart';
-import '../widgets/organic_components.dart';
+import '../ui/theme/app_theme.dart';
+import '../ui/theme/animations.dart';
+import '../ui/components/organic_components.dart';
 
 /// Screen for browsing food diary entries across different dates
 class FoodDiaryScreen extends StatefulWidget {

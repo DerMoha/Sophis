@@ -14,7 +14,7 @@ import '../services/nutrition_provider.dart';
 import '../services/openfoodfacts_service.dart';
 import '../services/planned_meal_factory.dart';
 import '../services/settings_provider.dart';
-import '../theme/app_theme.dart';
+import '../ui/theme/app_theme.dart';
 
 class AddPlannedMealSheet extends StatefulWidget {
   final DateTime date;

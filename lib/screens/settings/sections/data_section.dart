@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../services/data_export_service.dart';
 import '../../../services/nutrition_provider.dart';
-import '../../../theme/app_theme.dart';
-import '../../../widgets/settings/settings_tiles.dart';
+import '../../../ui/theme/app_theme.dart';
+import '../../../ui/components/settings/settings_tiles.dart';
 
 class DataSection extends StatefulWidget {
   const DataSection({super.key});

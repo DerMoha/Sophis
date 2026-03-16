@@ -5,8 +5,8 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../services/log_service.dart';
-import '../theme/app_theme.dart';
-import '../widgets/organic_components.dart';
+import '../ui/theme/app_theme.dart';
+import '../ui/components/organic_components.dart';
 import 'log_detail_screen.dart';
 
 /// Screen for viewing and sharing debug log files

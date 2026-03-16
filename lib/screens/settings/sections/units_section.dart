@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../models/app_settings.dart';
 import '../../../services/settings_provider.dart';
-import '../../../theme/app_theme.dart';
+import '../../../ui/theme/app_theme.dart';
 
 class UnitsSection extends StatelessWidget {
   final SettingsProvider settings;

@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../models/custom_meal_type.dart';
 import '../services/settings_provider.dart';
-import '../theme/app_theme.dart';
+import '../ui/theme/app_theme.dart';
 import 'package:uuid/uuid.dart';
 
 class MealTypesScreen extends StatefulWidget {

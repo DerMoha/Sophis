@@ -7,8 +7,8 @@ import '../models/food_item.dart';
 import '../services/food_entry_factory.dart';
 import '../services/openfoodfacts_service.dart';
 import '../services/nutrition_provider.dart';
-import '../widgets/food_search_result_tile.dart';
-import '../widgets/portion_picker_sheet.dart';
+import '../ui/components/food_search_result_tile.dart';
+import '../ui/components/portion_picker_sheet.dart';
 
 class FoodSearchScreen extends StatefulWidget {
   final String meal;

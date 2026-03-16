@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../services/settings_provider.dart';
-import '../../../theme/app_theme.dart';
-import '../../../widgets/settings/api_key_guide_dialog.dart';
+import '../../../ui/theme/app_theme.dart';
+import '../../../ui/components/settings/api_key_guide_dialog.dart';
 
 class AiSection extends StatefulWidget {
   final SettingsProvider settings;

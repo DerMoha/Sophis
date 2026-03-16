@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../models/app_settings.dart';
-import '../../../theme/app_theme.dart';
+import '../../../ui/theme/app_theme.dart';
 import '../../food_diary_screen.dart';
 import '../../meal_planner_screen.dart';
 import '../../weight_tracker_screen.dart';
 import '../../recipes_screen.dart';
 import '../../activity_graph_screen.dart';
-import '../../../widgets/workout_bottom_sheet.dart';
+import '../../../ui/components/workout_bottom_sheet.dart';
 
 /// Represents a home screen quick action.
 class HomeAction {

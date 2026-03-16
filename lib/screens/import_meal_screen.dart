@@ -5,8 +5,8 @@ import '../l10n/generated/app_localizations.dart';
 import '../models/shareable_meal.dart';
 import '../services/nutrition_provider.dart';
 import '../services/settings_provider.dart';
-import '../theme/app_theme.dart';
-import '../widgets/organic_components.dart';
+import '../ui/theme/app_theme.dart';
+import '../ui/components/organic_components.dart';
 
 class ImportMealScreen extends StatefulWidget {
   final ShareableMeal meal;

@@ -5,10 +5,10 @@ import 'package:uuid/uuid.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../services/supplements_provider.dart';
 import '../models/supplement.dart';
-import '../theme/animations.dart';
-import '../theme/app_theme.dart';
-import '../widgets/organic_components.dart';
-import '../widgets/supplement_edit_sheet.dart';
+import '../ui/theme/animations.dart';
+import '../ui/theme/app_theme.dart';
+import '../ui/components/organic_components.dart';
+import '../ui/components/supplement_edit_sheet.dart';
 
 class SupplementsScreen extends StatefulWidget {
   const SupplementsScreen({super.key});

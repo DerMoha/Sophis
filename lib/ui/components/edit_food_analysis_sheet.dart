@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../screens/ai_food_camera_screen.dart';
-import '../theme/app_theme.dart';
+import '../ui/theme/app_theme.dart';
 
 class EditFoodAnalysisSheet extends StatefulWidget {
   final EditableFoodResult result;

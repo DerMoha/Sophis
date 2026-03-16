@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../services/settings_provider.dart';
-import '../../../widgets/settings/settings_tiles.dart';
-import '../../../widgets/settings/reminder_time_tile.dart';
+import '../../../ui/components/settings/settings_tiles.dart';
+import '../../../ui/components/settings/reminder_time_tile.dart';
 
 class RemindersSection extends StatelessWidget {
   final SettingsProvider settings;

@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../services/nutrition_provider.dart';
 import '../models/nutrition_goals.dart';
-import '../theme/app_theme.dart';
+import '../ui/theme/app_theme.dart';
 
 class ActivityGraphScreen extends StatefulWidget {
   const ActivityGraphScreen({super.key});

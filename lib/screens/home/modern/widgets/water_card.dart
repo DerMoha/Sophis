@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../models/app_settings.dart';
-import '../../../../theme/app_theme.dart';
-import '../../../../theme/animations.dart';
+import '../../../../ui/theme/app_theme.dart';
+import '../../../../ui/theme/animations.dart';
 import '../../../../utils/unit_converter.dart';
-import '../../../../widgets/organic_components.dart';
-import '../../../../widgets/water_details_sheet.dart';
+import '../../../../ui/components/organic_components.dart';
+import '../../../../ui/components/water_details_sheet.dart';
 import '../../../../services/nutrition_provider.dart';
 
 /// Water tracking card for the modern home screen.

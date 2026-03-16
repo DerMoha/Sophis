@@ -6,10 +6,10 @@ import '../models/app_settings.dart';
 import '../models/weight_entry.dart';
 import '../services/nutrition_provider.dart';
 import '../services/settings_provider.dart';
-import '../theme/app_theme.dart';
-import '../theme/animations.dart';
+import '../ui/theme/app_theme.dart';
+import '../ui/theme/animations.dart';
 import '../utils/unit_converter.dart';
-import '../widgets/organic_components.dart';
+import '../ui/components/organic_components.dart';
 
 class WeightTrackerScreen extends StatefulWidget {
   const WeightTrackerScreen({super.key});

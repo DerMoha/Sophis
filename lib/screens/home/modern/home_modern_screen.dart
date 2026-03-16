@@ -3,17 +3,17 @@ import 'package:provider/provider.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../services/nutrition_provider.dart';
 import '../../../services/settings_provider.dart';
-import '../../../theme/app_theme.dart';
-import '../../../theme/animations.dart';
-import '../../../widgets/organic_components.dart';
-import '../../../widgets/streak_card.dart';
-import '../../../widgets/supplements_today_card.dart';
+import '../../../ui/theme/app_theme.dart';
+import '../../../ui/theme/animations.dart';
+import '../../../ui/components/organic_components.dart';
+import '../../../ui/components/streak_card.dart';
+import '../../../ui/components/supplements_today_card.dart';
 import '../../goals_setup_screen.dart';
 import '../../settings_screen.dart';
 import '../shared/home_refresh.dart';
 import '../shared/home_dashboard_vm.dart';
 import '../shared/home_actions.dart';
-import 'widgets/widgets.dart';
+import 'ui/components/widgets.dart';
 
 class HomeScreenModern extends StatefulWidget {
   const HomeScreenModern({super.key});

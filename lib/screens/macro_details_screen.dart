@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../models/nutrition_goals.dart';
-import '../theme/app_theme.dart';
-import '../widgets/organic_components.dart';
+import '../ui/theme/app_theme.dart';
+import '../ui/components/organic_components.dart';
 
 class MacroDetailsScreen extends StatelessWidget {
   final Map<String, double> totals;

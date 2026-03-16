@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../l10n/generated/app_localizations.dart';
-import '../../../../theme/app_theme.dart';
-import '../../../../widgets/organic_components.dart';
+import '../../../../ui/theme/app_theme.dart';
+import '../../../../ui/components/organic_components.dart';
 import 'boosted_goal_display.dart';
 import 'compact_stat_row.dart';
 

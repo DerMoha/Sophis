@@ -16,7 +16,7 @@ import 'services/meal_sharing_service.dart';
 import 'services/database_service.dart';
 import 'services/supplements_provider.dart';
 import 'services/log_service.dart';
-import 'theme/app_theme.dart';
+import 'ui/theme/app_theme.dart';
 import 'screens/home_screen.dart';
 import 'screens/import_meal_screen.dart';
 

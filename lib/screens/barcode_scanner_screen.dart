@@ -9,8 +9,8 @@ import '../services/food_entry_factory.dart';
 import '../services/meal_sharing_service.dart';
 import '../services/openfoodfacts_service.dart';
 import '../services/nutrition_provider.dart';
-import '../theme/app_theme.dart';
-import '../widgets/portion_picker_sheet.dart';
+import '../ui/theme/app_theme.dart';
+import '../ui/components/portion_picker_sheet.dart';
 import 'import_meal_screen.dart';
 
 class BarcodeScannerScreen extends StatefulWidget {

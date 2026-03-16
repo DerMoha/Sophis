@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/workout_entry.dart';
 import '../services/nutrition_provider.dart';
-import '../theme/app_theme.dart';
-import '../theme/animations.dart';
+import '../ui/theme/app_theme.dart';
+import '../ui/theme/animations.dart';
 import '../l10n/generated/app_localizations.dart';
 
 class WorkoutBottomSheet extends StatefulWidget {

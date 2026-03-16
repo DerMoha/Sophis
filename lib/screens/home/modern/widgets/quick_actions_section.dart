@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../models/app_settings.dart';
-import '../../../../widgets/organic_components.dart';
+import '../../../../ui/components/organic_components.dart';
 import '../../shared/home_actions.dart';
 
 /// Displays quick action buttons either as a horizontal row of chips or a grid.

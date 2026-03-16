@@ -10,8 +10,8 @@ import '../services/food_entry_factory.dart';
 import '../services/nutrition_provider.dart';
 import '../services/settings_provider.dart';
 import '../models/shareable_meal.dart';
-import '../theme/app_theme.dart';
-import '../widgets/edit_food_analysis_sheet.dart';
+import '../ui/theme/app_theme.dart';
+import '../ui/components/edit_food_analysis_sheet.dart';
 import 'share_meal_screen.dart';
 
 class AIFoodCameraScreen extends StatefulWidget {
