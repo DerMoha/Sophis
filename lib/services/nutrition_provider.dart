@@ -15,86 +15,75 @@ import 'health_service.dart';
 import 'database_service.dart';
 import 'home_widget_service.dart';
 import 'log_service.dart';
+import 'nutrition/food_log_controller.dart';
+import 'nutrition/hydration_controller.dart';
+import 'nutrition/workout_controller.dart';
+import 'nutrition/meal_plan_controller.dart';
+import 'nutrition/food_library_controller.dart';
 import 'package:uuid/uuid.dart';
 
-/// Central state management for nutrition tracking
+/// Central state management for nutrition tracking.
+///
+/// Delegates domain logic to focused controllers while maintaining the public
+/// API surface for backward compatibility. Also handles cross-cutting concerns
+/// like goals, profile, user stats, health sync, and cache date management.
 class NutritionProvider extends ChangeNotifier {
-  static const Map<String, double> _zeroMacroTotals = {
-    'calories': 0.0,
-    'protein': 0.0,
-    'carbs': 0.0,
-    'fat': 0.0,
-  };
-
   final StorageService _storage;
-  final DatabaseService _db; // Database service
+  final DatabaseService _db;
+
+  late final FoodLogController _foodLog;
+  late final HydrationController _hydration;
+  late final WorkoutController _workouts;
+  late final MealPlanController _mealPlan;
+  late final FoodLibraryController _foodLibrary;
 
   NutritionGoals? _goals;
   UserProfile? _profile;
-  List<FoodEntry> _entries = [];
-  List<WaterEntry> _waterEntries = [];
   List<WeightEntry> _weightEntries = [];
-  List<Recipe> _recipes = [];
-  List<PlannedMeal> _plannedMeals = [];
-  Set<String> _shoppingListChecked = {};
-  List<CustomPortion> _customPortions = [];
-  List<FoodItem> _recentFoods = [];
-  List<WorkoutEntry> _workoutEntries = [];
-  List<FoodItem> _customFoods = [];
-  List<FoodItem> _favoriteFoods = [];
-  Set<String> _favoriteFoodIds = {};
   UserStats _userStats = const UserStats();
 
-  // Burned calories from health apps (synced from HealthKit/Health Connect)
   double _healthSyncBurnedCalories = 0.0;
   final HealthService _healthService = HealthService();
 
   bool _isLoading = true;
   bool get isLoading => _isLoading;
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // CACHING - Avoid repeated filtering on every build
-  // ═══════════════════════════════════════════════════════════════════════════
-  List<FoodEntry>? _cachedTodayEntries;
-  Map<String, double>? _cachedTodayTotals;
-  Map<String, List<FoodEntry>>? _cachedMealEntries;
-  double? _cachedTodayWaterTotal;
-  List<WaterEntry>? _cachedTodayWaterEntries;
-  double? _cachedTodayWorkoutCalories;
-  List<WorkoutEntry>? _cachedTodayWorkoutEntries;
-  DateTime? _cacheDate; // Track which day the cache is for
+  // Shared cache date tracking (used by food log, hydration, workout controllers)
+  DateTime? _cacheDate;
 
-  // Planned meal caches (indexed by YYYYMMDD key)
-  Map<int, List<FoodEntry>>? _foodEntriesByDateCache;
-  Map<int, Map<String, double>>? _foodTotalsByDateCache;
-  Map<int, List<PlannedMeal>>? _plannedMealsByDateCache;
-  Map<int, Map<String, List<PlannedMeal>>>? _plannedMealsByDateAndTypeCache;
-  Map<int, Map<String, double>>? _plannedTotalsByDateCache;
-
-  /// Invalidate cache when entries change or day changes
-  void _invalidateCache() {
-    _cachedTodayEntries = null;
-    _cachedTodayTotals = null;
-    _cachedMealEntries = null;
-    _cachedTodayWaterTotal = null;
-    _cachedTodayWaterEntries = null;
-    _cachedTodayWorkoutCalories = null;
-    _cachedTodayWorkoutEntries = null;
-    _cacheDate = null;
+  NutritionProvider(this._storage, this._db) {
+    _foodLog = FoodLogController(
+      _db,
+      _onFoodChanged,
+      _isCacheValid,
+      _currentCacheDate,
+      () => this,
+    );
+    _hydration = HydrationController(
+      _db,
+      _onSimpleChanged,
+      _isCacheValid,
+      _currentCacheDate,
+      () => this,
+    );
+    _workouts = WorkoutController(
+      _db,
+      _onSimpleChanged,
+      _isCacheValid,
+      _currentCacheDate,
+      () => this,
+    );
+    _mealPlan = MealPlanController(
+      _storage,
+      _onSimpleChanged,
+      _dayKey,
+    );
+    _foodLibrary = FoodLibraryController(_storage, _onSimpleChanged);
+    _loadData();
   }
 
-  void _invalidatePlannedMealsCache() {
-    _plannedMealsByDateCache = null;
-    _plannedMealsByDateAndTypeCache = null;
-    _plannedTotalsByDateCache = null;
-  }
+  // ── Cache date helpers (shared across controllers) ──────────────────────
 
-  void _invalidateFoodHistoryCache() {
-    _foodEntriesByDateCache = null;
-    _foodTotalsByDateCache = null;
-  }
-
-  /// Check if cache is still valid for today
   bool _isCacheValid() {
     if (_cacheDate == null) return false;
     final now = DateTime.now();
@@ -103,112 +92,57 @@ class NutritionProvider extends ChangeNotifier {
         _cacheDate!.day == now.day;
   }
 
+  DateTime _currentCacheDate() {
+    if (!_isCacheValid()) {
+      _prepareTodayCache();
+    }
+    return _cacheDate!;
+  }
+
   void _prepareTodayCache() {
     if (_isCacheValid()) return;
-    _cachedTodayEntries = null;
-    _cachedTodayTotals = null;
-    _cachedMealEntries = null;
-    _cachedTodayWaterTotal = null;
-    _cachedTodayWaterEntries = null;
-    _cachedTodayWorkoutCalories = null;
-    _cachedTodayWorkoutEntries = null;
     _cacheDate = DateTime.now();
   }
 
   int _dayKey(DateTime date) => date.year * 10000 + date.month * 100 + date.day;
 
-  void _ensurePlannedMealsCache() {
-    if (_plannedMealsByDateCache != null &&
-        _plannedMealsByDateAndTypeCache != null &&
-        _plannedTotalsByDateCache != null) {
-      return;
-    }
-
-    final mealsByDate = <int, List<PlannedMeal>>{};
-    final mealsByDateAndType = <int, Map<String, List<PlannedMeal>>>{};
-    final totalsByDate = <int, Map<String, double>>{};
-
-    for (final meal in _plannedMeals) {
-      final key = _dayKey(meal.date);
-
-      mealsByDate.putIfAbsent(key, () => []).add(meal);
-
-      final byType = mealsByDateAndType.putIfAbsent(key, () => {});
-      byType.putIfAbsent(meal.meal, () => []).add(meal);
-
-      final totals = totalsByDate.putIfAbsent(
-        key,
-        () => Map<String, double>.from(_zeroMacroTotals),
-      );
-      totals['calories'] = totals['calories']! + meal.calories;
-      totals['protein'] = totals['protein']! + meal.protein;
-      totals['carbs'] = totals['carbs']! + meal.carbs;
-      totals['fat'] = totals['fat']! + meal.fat;
-    }
-
-    _plannedMealsByDateCache = mealsByDate;
-    _plannedMealsByDateAndTypeCache = mealsByDateAndType;
-    _plannedTotalsByDateCache = totalsByDate;
+  /// Called by food log controller when food entries change.
+  /// Triggers streak update and home widget refresh.
+  Future<void> _onFoodChanged() async {
+    await _updateStreak();
+    HomeWidgetService.updateWidgetData(this);
+    notifyListeners();
   }
 
-  void _ensureFoodHistoryCache() {
-    if (_foodEntriesByDateCache != null && _foodTotalsByDateCache != null) {
-      return;
-    }
-
-    final entriesByDate = <int, List<FoodEntry>>{};
-    final totalsByDate = <int, Map<String, double>>{};
-
-    for (final entry in _entries) {
-      final key = _dayKey(entry.timestamp);
-      entriesByDate.putIfAbsent(key, () => []).add(entry);
-
-      final totals = totalsByDate.putIfAbsent(
-        key,
-        () => Map<String, double>.from(_zeroMacroTotals),
-      );
-      totals['calories'] = totals['calories']! + entry.calories;
-      totals['protein'] = totals['protein']! + entry.protein;
-      totals['carbs'] = totals['carbs']! + entry.carbs;
-      totals['fat'] = totals['fat']! + entry.fat;
-    }
-
-    _foodEntriesByDateCache = {
-      for (final item in entriesByDate.entries)
-        item.key: List<FoodEntry>.unmodifiable(item.value),
-    };
-    _foodTotalsByDateCache = {
-      for (final item in totalsByDate.entries)
-        item.key: Map<String, double>.unmodifiable(item.value),
-    };
+  /// Called by other controllers for simple change notification.
+  void _onSimpleChanged() {
+    HomeWidgetService.updateWidgetData(this);
+    notifyListeners();
   }
 
-  NutritionProvider(this._storage, this._db) {
-    _loadData();
-  }
+  // ── Public API: Getters ─────────────────────────────────────────────────
 
-  // Getters
   NutritionGoals? get goals => _goals;
   UserProfile? get profile => _profile;
-  List<FoodEntry> get entries => _entries;
-  List<WaterEntry> get waterEntries => _waterEntries;
+  List<FoodEntry> get entries => _foodLog.entries;
+  List<WaterEntry> get waterEntries => _hydration.waterEntries;
   List<WeightEntry> get weightEntries => _weightEntries;
-  List<Recipe> get recipes => _recipes;
-  List<PlannedMeal> get plannedMeals => _plannedMeals;
-  Set<String> get shoppingListChecked => _shoppingListChecked;
-  List<CustomPortion> get customPortions => _customPortions;
-  List<FoodItem> get recentFoods => _recentFoods;
-  List<WorkoutEntry> get workoutEntries => _workoutEntries;
-  List<FoodItem> get customFoods => _customFoods;
-  List<FoodItem> get favoriteFoods => _favoriteFoods;
+  List<Recipe> get recipes => _foodLibrary.recipes;
+  List<PlannedMeal> get plannedMeals => _mealPlan.plannedMeals;
+  Set<String> get shoppingListChecked => _mealPlan.shoppingListChecked;
+  List<CustomPortion> get customPortions => _foodLibrary.customPortions;
+  List<FoodItem> get recentFoods => _foodLog.recentFoods;
+  List<WorkoutEntry> get workoutEntries => _workouts.workoutEntries;
+  List<FoodItem> get customFoods => _foodLibrary.customFoods;
+  List<FoodItem> get favoriteFoods => _foodLibrary.favoriteFoods;
   UserStats get userStats => _userStats;
 
-  /// Total burned calories = manual workouts + health sync
   double get burnedCalories =>
-      getTodayWorkoutCalories() + _healthSyncBurnedCalories;
+      _workouts.getTodayWorkoutCalories() + _healthSyncBurnedCalories;
   StorageService get storage => _storage;
 
-  /// Reload all data from storage (used after import)
+  // ── Load / Reload ───────────────────────────────────────────────────────
+
   Future<void> reloadAll() async {
     await _loadData();
   }
@@ -217,31 +151,34 @@ class NutritionProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
-    // 1. Check for migration
     await _migrateToDbIfNeeded();
 
-    // 2. Load from DB
-    _entries = await _db.getAllFoods();
-    _waterEntries = await _db.getAllWater();
+    _foodLog.loadData(
+      await _db.getAllFoods(),
+      _storage.loadRecentFoods(),
+    );
+    _hydration.loadData(await _db.getAllWater());
     _weightEntries = await _db.getAllWeights();
-    _workoutEntries = await _db.getAllWorkouts();
+    _workouts.loadData(await _db.getAllWorkouts());
 
-    // 3. Load non-DB data from SharedPreferences
     _goals = _storage.loadGoals();
     _profile = _storage.loadProfile();
-    _recipes = _storage.loadRecipes();
-    _plannedMeals = _storage.loadPlannedMeals();
-    _shoppingListChecked = _storage.loadShoppingListChecked();
-    _customPortions = _storage.loadCustomPortions();
-    _recentFoods = _storage.loadRecentFoods();
-    _customFoods = _storage.loadCustomFoods();
-    _favoriteFoods = _storage.loadFavoriteFoods();
-    _favoriteFoodIds = _favoriteFoods.map((f) => f.id).toSet();
+
+    _foodLibrary.loadData(
+      recipes: _storage.loadRecipes(),
+      customFoods: _storage.loadCustomFoods(),
+      favoriteFoods: _storage.loadFavoriteFoods(),
+      customPortions: _storage.loadCustomPortions(),
+    );
+
+    _mealPlan.loadData(
+      _storage.loadPlannedMeals(),
+      _storage.loadShoppingListChecked(),
+    );
+
     _userStats = _storage.loadUserStats();
 
-    _invalidateCache();
-    _invalidateFoodHistoryCache();
-    _invalidatePlannedMealsCache();
+    _cacheDate = null; // Force cache rebuild
     HomeWidgetService.updateWidgetData(this);
 
     _isLoading = false;
@@ -253,7 +190,6 @@ class NutritionProvider extends ChangeNotifier {
 
     Log.info('Starting SharedPreferences to database migration');
 
-    // Load legacy data
     final legacyFoods = _storage.loadFoodEntries();
     final legacyWater = _storage.loadWaterEntries();
     final legacyWeights = _storage.loadWeightEntries();
@@ -273,11 +209,11 @@ class NutritionProvider extends ChangeNotifier {
       );
     } catch (e, stackTrace) {
       Log.error('Migration failed', error: e, stackTrace: stackTrace);
-      // Optionally rethrow or handle, but catching prevents app crash loop
     }
   }
 
-  // Goals
+  // ── Goals & Profile ────────────────────────────────────────────────────
+
   Future<void> setGoals(NutritionGoals goals) async {
     _goals = goals;
     await _storage.saveGoals(goals);
@@ -285,152 +221,44 @@ class NutritionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Profile
   Future<void> setProfile(UserProfile profile) async {
     _profile = profile;
     await _storage.saveProfile(profile);
     notifyListeners();
   }
 
-  // Food Entries
-  Future<void> addFoodEntry(FoodEntry entry) async {
-    _entries.add(entry);
-    _invalidateCache();
-    _invalidateFoodHistoryCache();
-    await _db.insertFood(entry); // DB
-    await _updateStreak(); // Update streak when food is logged
-    HomeWidgetService.updateWidgetData(this);
-    notifyListeners();
-  }
+  // ── Food Entries ────────────────────────────────────────────────────────
 
-  Future<void> removeFoodEntry(String id) async {
-    _entries.removeWhere((e) => e.id == id);
-    _invalidateCache();
-    _invalidateFoodHistoryCache();
-    await _db.deleteFood(id); // DB
-    HomeWidgetService.updateWidgetData(this);
-    notifyListeners();
-  }
+  Future<void> addFoodEntry(FoodEntry entry) => _foodLog.addFoodEntry(entry);
 
-  /// Update an existing food entry
-  Future<void> updateFoodEntry(FoodEntry entry) async {
-    final index = _entries.indexWhere((e) => e.id == entry.id);
-    if (index != -1) {
-      _entries[index] = entry;
-      _invalidateCache();
-      _invalidateFoodHistoryCache();
-      await _db.updateFood(entry); // DB
-      HomeWidgetService.updateWidgetData(this);
-      notifyListeners();
-    }
-  }
+  Future<void> removeFoodEntry(String id) => _foodLog.removeFoodEntry(id);
 
-  /// Duplicate a food entry (creates new entry with same data)
-  Future<void> duplicateFoodEntry(FoodEntry entry, {String? toMeal}) async {
-    final newEntry = entry.copyWith(
-      id: const Uuid().v4(),
-      timestamp: DateTime.now(),
-      meal: toMeal ?? entry.meal,
-    );
-    await addFoodEntry(newEntry);
-  }
+  Future<void> updateFoodEntry(FoodEntry entry) =>
+      _foodLog.updateFoodEntry(entry);
 
-  List<FoodEntry> getTodayEntries() {
-    _prepareTodayCache();
+  Future<void> duplicateFoodEntry(FoodEntry entry, {String? toMeal}) =>
+      _foodLog.duplicateFoodEntry(entry, toMeal: toMeal);
 
-    // Use cached value if valid
-    if (_cachedTodayEntries != null) {
-      return _cachedTodayEntries!;
-    }
+  List<FoodEntry> getTodayEntries() => _foodLog.getTodayEntries();
 
-    // Rebuild cache
-    final now = _cacheDate!;
-    _cachedTodayEntries = _entries
-        .where(
-          (e) =>
-              e.timestamp.year == now.year &&
-              e.timestamp.month == now.month &&
-              e.timestamp.day == now.day,
-        )
-        .toList();
+  List<FoodEntry> getEntriesForDate(DateTime date) =>
+      _foodLog.getEntriesForDate(date);
 
-    // Also pre-compute meal entries while we're at it
-    _cachedMealEntries = {};
-    for (final entry in _cachedTodayEntries!) {
-      _cachedMealEntries!.putIfAbsent(entry.meal, () => []).add(entry);
-    }
+  List<FoodEntry> getEntriesByMeal(String meal) =>
+      _foodLog.getEntriesByMeal(meal);
 
-    return _cachedTodayEntries!;
-  }
+  Map<String, double> getTodayTotals() => _foodLog.getTodayTotals();
 
-  List<FoodEntry> getEntriesForDate(DateTime date) {
-    final now = DateTime.now();
-    if (date.year == now.year &&
-        date.month == now.month &&
-        date.day == now.day) {
-      return getTodayEntries();
-    }
-
-    _ensureFoodHistoryCache();
-    return _foodEntriesByDateCache![_dayKey(date)] ?? const <FoodEntry>[];
-  }
-
-  List<FoodEntry> getEntriesByMeal(String meal) {
-    // Ensure cache is populated
-    getTodayEntries();
-
-    // Return cached meal entries or empty list
-    if (_cachedMealEntries != null && _cachedMealEntries!.containsKey(meal)) {
-      return _cachedMealEntries![meal]!;
-    }
-    return [];
-  }
-
-  Map<String, double> getTodayTotals() {
-    _prepareTodayCache();
-
-    // Use cached value if valid
-    if (_cachedTodayTotals != null) {
-      return _cachedTodayTotals!;
-    }
-
-    // Compute and cache
-    final today = getTodayEntries();
-    double cal = 0, prot = 0, carb = 0, fat = 0;
-    for (final e in today) {
-      cal += e.calories;
-      prot += e.protein;
-      carb += e.carbs;
-      fat += e.fat;
-    }
-    _cachedTodayTotals = {
-      'calories': cal,
-      'protein': prot,
-      'carbs': carb,
-      'fat': fat,
-    };
-    return _cachedTodayTotals!;
-  }
-
-  Map<String, double> getTotalsForDate(DateTime date) {
-    final now = DateTime.now();
-    if (date.year == now.year &&
-        date.month == now.month &&
-        date.day == now.day) {
-      return getTodayTotals();
-    }
-
-    _ensureFoodHistoryCache();
-    return _foodTotalsByDateCache![_dayKey(date)] ?? _zeroMacroTotals;
-  }
+  Map<String, double> getTotalsForDate(DateTime date) =>
+      _foodLog.getTotalsForDate(date);
 
   double getRemainingCalories() {
     if (_goals == null) return 0;
-    // Net remaining = goal - eaten + burned
     return _goals!.calories - getTodayTotals()['calories']! + burnedCalories;
   }
 
-  /// Refresh burned calories from health service (call on app open/resume)
+  // ── Health Sync ─────────────────────────────────────────────────────────
+
   Future<void> refreshBurnedCalories({bool enabled = true}) async {
     if (!enabled) {
       _healthSyncBurnedCalories = 0.0;
@@ -442,7 +270,6 @@ class NutritionProvider extends ChangeNotifier {
       _healthSyncBurnedCalories = await _healthService.getTodayBurnedCalories();
       notifyListeners();
     } catch (e, stackTrace) {
-      // Silently fail, keep previous value or 0
       Log.warning(
         'Failed to fetch burned calories from health service',
         error: e,
@@ -451,149 +278,40 @@ class NutritionProvider extends ChangeNotifier {
     }
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // WORKOUT ENTRIES
-  // ═══════════════════════════════════════════════════════════════════════════
+  // ── Workouts ────────────────────────────────────────────────────────────
 
-  /// Add a new workout entry
-  Future<void> addWorkoutEntry(double calories, {String? note}) async {
-    final entry = WorkoutEntry(
-      id: const Uuid().v4(),
-      caloriesBurned: calories,
-      timestamp: DateTime.now(),
-      note: note,
-    );
-    await restoreWorkoutEntry(entry);
-  }
+  Future<void> addWorkoutEntry(double calories, {String? note}) =>
+      _workouts.addWorkoutEntry(calories, note: note);
 
-  /// Restore specific workout entry (for import)
-  Future<void> restoreWorkoutEntry(WorkoutEntry entry) async {
-    _workoutEntries.add(entry);
-    _invalidateCache();
-    await _db.insertWorkout(entry); // DB
-    HomeWidgetService.updateWidgetData(this);
-    notifyListeners();
-  }
+  Future<void> restoreWorkoutEntry(WorkoutEntry entry) =>
+      _workouts.restoreWorkoutEntry(entry);
 
-  /// Update an existing workout entry
-  Future<void> updateWorkoutEntry(WorkoutEntry entry) async {
-    final index = _workoutEntries.indexWhere((e) => e.id == entry.id);
-    if (index != -1) {
-      _workoutEntries[index] = entry;
-      _invalidateCache();
-      await _db.updateWorkout(entry); // DB
-      HomeWidgetService.updateWidgetData(this);
-      notifyListeners();
-    }
-  }
+  Future<void> updateWorkoutEntry(WorkoutEntry entry) =>
+      _workouts.updateWorkoutEntry(entry);
 
-  /// Remove a workout entry
-  Future<void> removeWorkoutEntry(String id) async {
-    _workoutEntries.removeWhere((e) => e.id == id);
-    _invalidateCache();
-    await _db.deleteWorkout(id); // DB
-    HomeWidgetService.updateWidgetData(this);
-    notifyListeners();
-  }
+  Future<void> removeWorkoutEntry(String id) =>
+      _workouts.removeWorkoutEntry(id);
 
-  /// Get total burned calories from today's manual workout entries
-  double getTodayWorkoutCalories() {
-    _prepareTodayCache();
-    if (_cachedTodayWorkoutCalories != null) {
-      return _cachedTodayWorkoutCalories!;
-    }
+  double getTodayWorkoutCalories() => _workouts.getTodayWorkoutCalories();
 
-    final now = _cacheDate!;
-    var total = 0.0;
-    final todayEntries = <WorkoutEntry>[];
+  List<WorkoutEntry> getTodayWorkoutEntries() =>
+      _workouts.getTodayWorkoutEntries();
 
-    for (final entry in _workoutEntries) {
-      if (entry.timestamp.year == now.year &&
-          entry.timestamp.month == now.month &&
-          entry.timestamp.day == now.day) {
-        total += entry.caloriesBurned;
-        todayEntries.add(entry);
-      }
-    }
+  // ── Water ───────────────────────────────────────────────────────────────
 
-    todayEntries.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-    _cachedTodayWorkoutCalories = total;
-    _cachedTodayWorkoutEntries = todayEntries;
-    return total;
-  }
+  Future<void> addWater(double ml) => _hydration.addWater(ml);
 
-  /// Get today's workout entries sorted by most recent first
-  List<WorkoutEntry> getTodayWorkoutEntries() {
-    _prepareTodayCache();
-    if (_cachedTodayWorkoutEntries != null) {
-      return _cachedTodayWorkoutEntries!;
-    }
-    getTodayWorkoutCalories(); // Populates both workout caches
-    return _cachedTodayWorkoutEntries ?? const <WorkoutEntry>[];
-  }
+  Future<void> restoreWaterEntry(WaterEntry entry) =>
+      _hydration.restoreWaterEntry(entry);
 
-  // Water
-  Future<void> addWater(double ml) async {
-    final entry = WaterEntry(
-      id: const Uuid().v4(),
-      amountMl: ml,
-      timestamp: DateTime.now(),
-    );
-    await restoreWaterEntry(entry);
-  }
+  Future<void> removeWaterEntry(String id) => _hydration.removeWaterEntry(id);
 
-  /// Restore manual water entry (for import)
-  Future<void> restoreWaterEntry(WaterEntry entry) async {
-    _waterEntries.add(entry);
-    _invalidateCache();
-    await _db.insertWater(entry); // DB
-    HomeWidgetService.updateWidgetData(this);
-    notifyListeners();
-  }
+  double getTodayWaterTotal() => _hydration.getTodayWaterTotal();
 
-  Future<void> removeWaterEntry(String id) async {
-    _waterEntries.removeWhere((e) => e.id == id);
-    _invalidateCache();
-    await _db.deleteWater(id); // DB
-    HomeWidgetService.updateWidgetData(this);
-    notifyListeners();
-  }
+  List<WaterEntry> getTodayWaterEntries() => _hydration.getTodayWaterEntries();
 
-  double getTodayWaterTotal() {
-    _prepareTodayCache();
-    if (_cachedTodayWaterTotal != null) {
-      return _cachedTodayWaterTotal!;
-    }
+  // ── Weight ──────────────────────────────────────────────────────────────
 
-    final now = _cacheDate!;
-    var total = 0.0;
-    final todayEntries = <WaterEntry>[];
-
-    for (final entry in _waterEntries) {
-      if (entry.timestamp.year == now.year &&
-          entry.timestamp.month == now.month &&
-          entry.timestamp.day == now.day) {
-        total += entry.amountMl;
-        todayEntries.add(entry);
-      }
-    }
-
-    todayEntries.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-    _cachedTodayWaterTotal = total;
-    _cachedTodayWaterEntries = todayEntries;
-    return total;
-  }
-
-  List<WaterEntry> getTodayWaterEntries() {
-    _prepareTodayCache();
-    if (_cachedTodayWaterEntries != null) {
-      return _cachedTodayWaterEntries!;
-    }
-    getTodayWaterTotal(); // Populates both water caches
-    return _cachedTodayWaterEntries ?? const <WaterEntry>[];
-  }
-
-  // Weight
   Future<void> addWeight(double kg, {String? note}) async {
     final entry = WeightEntry(
       id: const Uuid().v4(),
@@ -604,44 +322,29 @@ class NutritionProvider extends ChangeNotifier {
     await restoreWeightEntry(entry);
   }
 
-  /// Restore manual weight entry (for import)
   Future<void> restoreWeightEntry(WeightEntry entry) async {
     _weightEntries.add(entry);
     _weightEntries.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-    await _db.insertWeight(entry); // DB
+    await _db.insertWeight(entry);
     notifyListeners();
   }
 
   Future<void> removeWeightEntry(String id) async {
     _weightEntries.removeWhere((e) => e.id == id);
-    await _db.deleteWeight(id); // DB
+    await _db.deleteWeight(id);
     notifyListeners();
   }
 
   WeightEntry? get latestWeight =>
       _weightEntries.isEmpty ? null : _weightEntries.first;
 
-  // Recipes
-  Future<void> addRecipe(Recipe recipe) async {
-    _recipes.add(recipe);
-    await _storage.saveRecipes(_recipes);
-    notifyListeners();
-  }
+  // ── Recipes ─────────────────────────────────────────────────────────────
 
-  Future<void> updateRecipe(Recipe recipe) async {
-    final i = _recipes.indexWhere((r) => r.id == recipe.id);
-    if (i != -1) {
-      _recipes[i] = recipe;
-      await _storage.saveRecipes(_recipes);
-      notifyListeners();
-    }
-  }
+  Future<void> addRecipe(Recipe recipe) => _foodLibrary.addRecipe(recipe);
 
-  Future<void> removeRecipe(String id) async {
-    _recipes.removeWhere((r) => r.id == id);
-    await _storage.saveRecipes(_recipes);
-    notifyListeners();
-  }
+  Future<void> updateRecipe(Recipe recipe) => _foodLibrary.updateRecipe(recipe);
+
+  Future<void> removeRecipe(String id) => _foodLibrary.removeRecipe(id);
 
   Future<void> addRecipeAsMeal(Recipe recipe, int servings, String meal) async {
     final nutrients = recipe.nutrientsPerServing;
@@ -658,102 +361,37 @@ class NutritionProvider extends ChangeNotifier {
     await addFoodEntry(entry);
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // MEAL PLANNING
-  // ═══════════════════════════════════════════════════════════════════════════
+  // ── Meal Planning ───────────────────────────────────────────────────────
 
-  Future<void> addPlannedMeal(PlannedMeal meal) async {
-    _plannedMeals.add(meal);
-    _invalidatePlannedMealsCache();
-    await _storage.savePlannedMeals(_plannedMeals);
-    notifyListeners();
-  }
+  Future<void> addPlannedMeal(PlannedMeal meal) =>
+      _mealPlan.addPlannedMeal(meal);
 
-  Future<void> removePlannedMeal(String id) async {
-    _plannedMeals.removeWhere((m) => m.id == id);
-    _invalidatePlannedMealsCache();
-    await _storage.savePlannedMeals(_plannedMeals);
-    notifyListeners();
-  }
+  Future<void> removePlannedMeal(String id) => _mealPlan.removePlannedMeal(id);
 
-  Future<void> updatePlannedMeal(PlannedMeal meal) async {
-    final i = _plannedMeals.indexWhere((m) => m.id == meal.id);
-    if (i != -1) {
-      _plannedMeals[i] = meal;
-      _invalidatePlannedMealsCache();
-      await _storage.savePlannedMeals(_plannedMeals);
-      notifyListeners();
-    }
-  }
+  Future<void> updatePlannedMeal(PlannedMeal meal) =>
+      _mealPlan.updatePlannedMeal(meal);
 
-  /// Get planned meals for a specific date
-  List<PlannedMeal> getPlannedMealsForDate(DateTime date) {
-    _ensurePlannedMealsCache();
-    return List.unmodifiable(
-      _plannedMealsByDateCache![_dayKey(date)] ?? const <PlannedMeal>[],
-    );
-  }
+  List<PlannedMeal> getPlannedMealsForDate(DateTime date) =>
+      _mealPlan.getPlannedMealsForDate(date);
 
-  bool hasPlannedMealsForDate(DateTime date) {
-    _ensurePlannedMealsCache();
-    final meals = _plannedMealsByDateCache![_dayKey(date)];
-    return meals != null && meals.isNotEmpty;
-  }
+  bool hasPlannedMealsForDate(DateTime date) =>
+      _mealPlan.hasPlannedMealsForDate(date);
 
-  /// Get planned meals for a date range (for week view)
-  List<PlannedMeal> getPlannedMealsForRange(DateTime start, DateTime end) {
-    final startNorm = DateTime(start.year, start.month, start.day);
-    final endNorm = DateTime(end.year, end.month, end.day);
-    return _plannedMeals.where((m) {
-      final mealDate = DateTime(m.date.year, m.date.month, m.date.day);
-      return !mealDate.isBefore(startNorm) && !mealDate.isAfter(endNorm);
-    }).toList();
-  }
+  List<PlannedMeal> getPlannedMealsForRange(DateTime start, DateTime end) =>
+      _mealPlan.getPlannedMealsForRange(start, end);
 
-  /// Get planned meals by meal type for a specific date
-  List<PlannedMeal> getPlannedMealsByType(DateTime date, String meal) {
-    _ensurePlannedMealsCache();
-    return List.unmodifiable(
-      _plannedMealsByDateAndTypeCache![_dayKey(date)]?[meal] ??
-          const <PlannedMeal>[],
-    );
-  }
+  List<PlannedMeal> getPlannedMealsByType(DateTime date, String meal) =>
+      _mealPlan.getPlannedMealsByType(date, meal);
 
-  /// Calculate totals for a planned day
-  Map<String, double> getPlannedTotalsForDate(DateTime date) {
-    _ensurePlannedMealsCache();
-    final totals = _plannedTotalsByDateCache![_dayKey(date)];
-    if (totals == null) return _zeroMacroTotals;
-    return Map.unmodifiable(totals);
-  }
+  Map<String, double> getPlannedTotalsForDate(DateTime date) =>
+      _mealPlan.getPlannedTotalsForDate(date);
 
-  /// Copy a planned meal to another date
-  Future<void> copyPlannedMealToDate(PlannedMeal meal, DateTime newDate) async {
-    final newMeal = PlannedMeal(
-      id: const Uuid().v4(),
-      date: newDate,
-      meal: meal.meal,
-      name: meal.name,
-      calories: meal.calories,
-      protein: meal.protein,
-      carbs: meal.carbs,
-      fat: meal.fat,
-      recipeId: meal.recipeId,
-      servings: meal.servings,
-      ingredients: meal.ingredients,
-    );
-    await addPlannedMeal(newMeal);
-  }
+  Future<void> copyPlannedMealToDate(PlannedMeal meal, DateTime newDate) =>
+      _mealPlan.copyPlannedMealToDate(meal, newDate);
 
-  /// Copy all meals from one day to another
-  Future<void> copyDayMeals(DateTime from, DateTime to) async {
-    final meals = getPlannedMealsForDate(from);
-    for (final meal in meals) {
-      await copyPlannedMealToDate(meal, to);
-    }
-  }
+  Future<void> copyDayMeals(DateTime from, DateTime to) =>
+      _mealPlan.copyDayMeals(from, to);
 
-  /// Convert a planned meal to a food entry (add to today's log)
   Future<void> logPlannedMeal(PlannedMeal planned) async {
     final entry = FoodEntry(
       id: const Uuid().v4(),
@@ -768,178 +406,57 @@ class NutritionProvider extends ChangeNotifier {
     await addFoodEntry(entry);
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // SHOPPING LIST
-  // ═══════════════════════════════════════════════════════════════════════════
+  // ── Shopping List ───────────────────────────────────────────────────────
 
-  /// Generate shopping list from planned meals in date range
-  List<ShoppingListItem> generateShoppingList(DateTime start, DateTime end) {
-    final meals = getPlannedMealsForRange(start, end);
-    final Map<String, ShoppingListItem> aggregated = {};
+  List<ShoppingListItem> generateShoppingList(DateTime start, DateTime end) =>
+      _mealPlan.generateShoppingList(start, end);
 
-    for (final meal in meals) {
-      for (final ingredient in meal.ingredients) {
-        final key = '${ingredient.name.toLowerCase()}_${ingredient.unit}';
-        if (aggregated.containsKey(key)) {
-          final existing = aggregated[key]!;
-          aggregated[key] = existing.copyWith(
-            totalAmount: existing.totalAmount + ingredient.amount,
-          );
-        } else {
-          aggregated[key] = ShoppingListItem(
-            name: ingredient.name,
-            totalAmount: ingredient.amount,
-            unit: ingredient.unit,
-            category: ingredient.category,
-            isChecked: _shoppingListChecked.contains(key),
-          );
-        }
-      }
-    }
+  Future<void> toggleShoppingItem(String name, String unit) =>
+      _mealPlan.toggleShoppingItem(name, unit);
 
-    return aggregated.values.toList()
-      ..sort((a, b) {
-        // Sort by category first, then by name
-        final catCompare = a.category.compareTo(b.category);
-        if (catCompare != 0) return catCompare;
-        return a.name.compareTo(b.name);
-      });
-  }
+  Future<void> clearCheckedShoppingItems() =>
+      _mealPlan.clearCheckedShoppingItems();
 
-  /// Toggle shopping list item checked state
-  Future<void> toggleShoppingItem(String name, String unit) async {
-    final key = '${name.toLowerCase()}_$unit';
-    if (_shoppingListChecked.contains(key)) {
-      _shoppingListChecked.remove(key);
-    } else {
-      _shoppingListChecked.add(key);
-    }
-    await _storage.saveShoppingListChecked(_shoppingListChecked);
-    notifyListeners();
-  }
+  bool isShoppingItemChecked(String name, String unit) =>
+      _mealPlan.isShoppingItemChecked(name, unit);
 
-  /// Clear all checked items
-  Future<void> clearCheckedShoppingItems() async {
-    _shoppingListChecked.clear();
-    await _storage.saveShoppingListChecked(_shoppingListChecked);
-    notifyListeners();
-  }
+  // ── Custom Portions ─────────────────────────────────────────────────────
 
-  /// Check if a shopping item is checked
-  bool isShoppingItemChecked(String name, String unit) {
-    return _shoppingListChecked.contains('${name.toLowerCase()}_$unit');
-  }
+  List<CustomPortion> getCustomPortionsForProduct(String productKey) =>
+      _foodLibrary.getCustomPortionsForProduct(productKey);
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // CUSTOM PORTIONS
-  // ═══════════════════════════════════════════════════════════════════════════
+  Future<void> addCustomPortion(CustomPortion portion) =>
+      _foodLibrary.addCustomPortion(portion);
 
-  /// Get custom portions for a specific product
-  List<CustomPortion> getCustomPortionsForProduct(String productKey) {
-    return _customPortions.where((p) => p.productKey == productKey).toList();
-  }
+  Future<void> removeCustomPortion(String id) =>
+      _foodLibrary.removeCustomPortion(id);
 
-  /// Add a new custom portion
-  Future<void> addCustomPortion(CustomPortion portion) async {
-    _customPortions.add(portion);
-    await _storage.saveCustomPortions(_customPortions);
-    notifyListeners();
-  }
+  // ── Recent Foods ────────────────────────────────────────────────────────
 
-  /// Remove a custom portion
-  Future<void> removeCustomPortion(String id) async {
-    _customPortions.removeWhere((p) => p.id == id);
-    await _storage.saveCustomPortions(_customPortions);
-    notifyListeners();
-  }
+  Future<void> addRecentFood(FoodItem food) => _foodLog.addRecentFood(food);
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // RECENT FOODS
-  // ═══════════════════════════════════════════════════════════════════════════
+  // ── Custom Foods ────────────────────────────────────────────────────────
 
-  /// Add a food to recent foods list (moves to top if already exists)
-  Future<void> addRecentFood(FoodItem food) async {
-    // Remove if already exists (we'll add it to the top)
-    _recentFoods.removeWhere((f) => f.id == food.id);
-    // Add to the beginning
-    _recentFoods.insert(0, food);
-    // Keep only last 20
-    if (_recentFoods.length > 20) {
-      _recentFoods = _recentFoods.take(20).toList();
-    }
-    await _storage.saveRecentFoods(_recentFoods);
-    notifyListeners();
-  }
+  Future<void> addCustomFood(FoodItem food) => _foodLibrary.addCustomFood(food);
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // CUSTOM FOODS (user-created foods for re-use)
-  // ═══════════════════════════════════════════════════════════════════════════
+  Future<void> removeCustomFood(String id) => _foodLibrary.removeCustomFood(id);
 
-  /// Add a food to custom foods list
-  Future<void> addCustomFood(FoodItem food) async {
-    // Don't add duplicates by id
-    if (_customFoods.any((f) => f.id == food.id)) return;
-    _customFoods.insert(0, food);
-    await _storage.saveCustomFoods(_customFoods);
-    notifyListeners();
-  }
+  List<FoodItem> searchCustomFoods(String query) =>
+      _foodLibrary.searchCustomFoods(query);
 
-  /// Remove a custom food by id
-  Future<void> removeCustomFood(String id) async {
-    _customFoods.removeWhere((f) => f.id == id);
-    await _storage.saveCustomFoods(_customFoods);
-    notifyListeners();
-  }
+  // ── Favorites ───────────────────────────────────────────────────────────
 
-  /// Search custom foods by name (case-insensitive)
-  List<FoodItem> searchCustomFoods(String query) {
-    if (query.isEmpty) return _customFoods;
-    final lowerQuery = query.toLowerCase();
-    return _customFoods
-        .where((f) => f.name.toLowerCase().contains(lowerQuery))
-        .toList();
-  }
+  bool isFavorite(String id) => _foodLibrary.isFavorite(id);
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // FAVORITE FOODS
-  // ═══════════════════════════════════════════════════════════════════════════
+  Future<void> addFavorite(FoodItem food) => _foodLibrary.addFavorite(food);
 
-  /// Check if a food is in favorites
-  bool isFavorite(String id) {
-    return _favoriteFoodIds.contains(id);
-  }
+  Future<void> removeFavorite(String id) => _foodLibrary.removeFavorite(id);
 
-  /// Add a food to favorites
-  Future<void> addFavorite(FoodItem food) async {
-    if (isFavorite(food.id)) return;
-    _favoriteFoods.insert(0, food.copyWith(isFavorite: true));
-    _favoriteFoodIds.add(food.id);
-    await _storage.saveFavoriteFoods(_favoriteFoods);
-    notifyListeners();
-  }
+  Future<void> toggleFavorite(FoodItem food) =>
+      _foodLibrary.toggleFavorite(food);
 
-  /// Remove a food from favorites
-  Future<void> removeFavorite(String id) async {
-    _favoriteFoods.removeWhere((f) => f.id == id);
-    _favoriteFoodIds.remove(id);
-    await _storage.saveFavoriteFoods(_favoriteFoods);
-    notifyListeners();
-  }
+  // ── Stats & Achievements ────────────────────────────────────────────────
 
-  /// Toggle favorite status for a food
-  Future<void> toggleFavorite(FoodItem food) async {
-    if (isFavorite(food.id)) {
-      await removeFavorite(food.id);
-    } else {
-      await addFavorite(food);
-    }
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // USER STATS & STREAKS
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  /// Update streak when food is logged
   Future<void> _updateStreak() async {
     final today = DateTime.now();
     final todayDate = DateTime(today.year, today.month, today.day);
@@ -950,10 +467,8 @@ class NutritionProvider extends ChangeNotifier {
       final daysDifference = todayDate.difference(lastLogDate).inDays;
 
       if (daysDifference == 0) {
-        // Already logged today, no change needed
         return;
       } else if (daysDifference == 1) {
-        // Consecutive day - increment streak
         _userStats = _userStats.copyWith(
           currentStreak: _userStats.currentStreak + 1,
           longestStreak: _userStats.currentStreak + 1 > _userStats.longestStreak
@@ -963,7 +478,6 @@ class NutritionProvider extends ChangeNotifier {
           totalDaysLogged: _userStats.totalDaysLogged + 1,
         );
       } else {
-        // Streak broken - reset to 1
         _userStats = _userStats.copyWith(
           currentStreak: 1,
           lastLogDate: today,
@@ -971,7 +485,6 @@ class NutritionProvider extends ChangeNotifier {
         );
       }
     } else {
-      // First ever log
       _userStats = _userStats.copyWith(
         currentStreak: 1,
         longestStreak: 1,
@@ -980,52 +493,44 @@ class NutritionProvider extends ChangeNotifier {
       );
     }
 
-    // Check for new achievements
     await _checkAchievements();
     await _storage.saveUserStats(_userStats);
   }
 
-  /// Check and award achievements based on current stats
   Future<void> _checkAchievements() async {
     final currentAchievements = List<String>.from(_userStats.achievements);
     var newAchievements = false;
 
-    // First Log
     if (!currentAchievements.contains(Achievements.firstLog) &&
         _userStats.totalDaysLogged >= 1) {
       currentAchievements.add(Achievements.firstLog);
       newAchievements = true;
     }
 
-    // 3 Day Streak
     if (!currentAchievements.contains(Achievements.threeDayStreak) &&
         _userStats.currentStreak >= 3) {
       currentAchievements.add(Achievements.threeDayStreak);
       newAchievements = true;
     }
 
-    // Week Warrior (7 days)
     if (!currentAchievements.contains(Achievements.weekWarrior) &&
         _userStats.currentStreak >= 7) {
       currentAchievements.add(Achievements.weekWarrior);
       newAchievements = true;
     }
 
-    // Two Week Streak (14 days)
     if (!currentAchievements.contains(Achievements.twoWeekStreak) &&
         _userStats.currentStreak >= 14) {
       currentAchievements.add(Achievements.twoWeekStreak);
       newAchievements = true;
     }
 
-    // Monthly Master (30 days)
     if (!currentAchievements.contains(Achievements.monthlyMaster) &&
         _userStats.currentStreak >= 30) {
       currentAchievements.add(Achievements.monthlyMaster);
       newAchievements = true;
     }
 
-    // Centurion (100 total days)
     if (!currentAchievements.contains(Achievements.centurion) &&
         _userStats.totalDaysLogged >= 100) {
       currentAchievements.add(Achievements.centurion);
@@ -1037,28 +542,23 @@ class NutritionProvider extends ChangeNotifier {
     }
   }
 
-  // Clear all
+  // ── Clear All ───────────────────────────────────────────────────────────
+
   Future<void> clearAllData() async {
     _goals = null;
     _profile = null;
-    _entries = [];
-    _waterEntries = [];
     _weightEntries = [];
-    _recipes = [];
-    _plannedMeals = [];
-    _shoppingListChecked = {};
-    _customPortions = [];
-    _recentFoods = [];
-    _workoutEntries = [];
-    _customFoods = [];
-    _favoriteFoods = [];
-    _favoriteFoodIds = {};
     _userStats = const UserStats();
-    _invalidateCache();
-    _invalidateFoodHistoryCache();
-    _invalidatePlannedMealsCache();
 
-    // Clear both DB and SharedPreferences
+    _foodLog.clearAll();
+    _hydration.clearAll();
+    _workouts.clearAll();
+    _mealPlan.clearAll();
+    _foodLibrary.clearAll();
+
+    _cacheDate = null;
+    _healthSyncBurnedCalories = 0.0;
+
     await _db.deleteAllData();
     await _storage.clear();
     notifyListeners();
