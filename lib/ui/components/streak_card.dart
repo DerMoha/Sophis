@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/user_stats.dart';
-import '../services/nutrition_provider.dart';
-import '../l10n/generated/app_localizations.dart';
+import '../../models/user_stats.dart';
+import '../../services/nutrition_provider.dart';
+import '../../l10n/generated/app_localizations.dart';
 import 'organic_components.dart';
 
 /// Compact streak display card for home screen

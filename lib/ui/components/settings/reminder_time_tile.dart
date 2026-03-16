@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../l10n/generated/app_localizations.dart';
-import '../../ui/theme/app_theme.dart';
+import '../../../l10n/generated/app_localizations.dart';
+import '../../theme/app_theme.dart';
 
 class ReminderTimeTile extends StatelessWidget {
   final IconData icon;

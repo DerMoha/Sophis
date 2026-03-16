@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/app_settings.dart';
-import '../services/nutrition_provider.dart';
-import '../services/settings_provider.dart';
-import '../ui/theme/app_theme.dart';
-import '../ui/theme/animations.dart';
-import '../utils/unit_converter.dart';
-import '../l10n/generated/app_localizations.dart';
+import '../../models/app_settings.dart';
+import '../../services/nutrition_provider.dart';
+import '../../services/settings_provider.dart';
+import '../theme/app_theme.dart';
+import '../theme/animations.dart';
+import '../../utils/unit_converter.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 class WaterDetailsSheet extends StatefulWidget {
   const WaterDetailsSheet({super.key});
@@ -131,7 +131,9 @@ class _WaterDetailsSheetState extends State<WaterDetailsSheet> {
                         unitSystem: unitSystem,
                         icon: Icons.local_cafe_outlined,
                         onTap: () {
-                          context.read<NutritionProvider>().addWater(sizes[0].toDouble());
+                          context
+                              .read<NutritionProvider>()
+                              .addWater(sizes[0].toDouble());
                         },
                       ),
                       const SizedBox(width: 12),
@@ -140,7 +142,9 @@ class _WaterDetailsSheetState extends State<WaterDetailsSheet> {
                         unitSystem: unitSystem,
                         icon: Icons.coffee_outlined,
                         onTap: () {
-                          context.read<NutritionProvider>().addWater(sizes[1].toDouble());
+                          context
+                              .read<NutritionProvider>()
+                              .addWater(sizes[1].toDouble());
                         },
                       ),
                       const SizedBox(width: 12),
@@ -149,7 +153,9 @@ class _WaterDetailsSheetState extends State<WaterDetailsSheet> {
                         unitSystem: unitSystem,
                         icon: Icons.water_drop_outlined,
                         onTap: () {
-                          context.read<NutritionProvider>().addWater(sizes[2].toDouble());
+                          context
+                              .read<NutritionProvider>()
+                              .addWater(sizes[2].toDouble());
                         },
                       ),
                       const SizedBox(width: 12),
@@ -158,7 +164,9 @@ class _WaterDetailsSheetState extends State<WaterDetailsSheet> {
                         unitSystem: unitSystem,
                         icon: Icons.local_drink_outlined,
                         onTap: () {
-                          context.read<NutritionProvider>().addWater(sizes[3].toDouble());
+                          context
+                              .read<NutritionProvider>()
+                              .addWater(sizes[3].toDouble());
                         },
                       ),
                     ],
@@ -183,9 +191,12 @@ class _WaterDetailsSheetState extends State<WaterDetailsSheet> {
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
                             hintText: waterUnit,
-                            prefixIcon: const Icon(Icons.edit_outlined, size: 20),
+                            prefixIcon:
+                                const Icon(Icons.edit_outlined, size: 20),
                             contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 14,),
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
                           ),
                           onSubmitted: (_) => _addCustomWater(),
                         ),
@@ -275,7 +286,9 @@ class _WaterDetailsSheetState extends State<WaterDetailsSheet> {
                       child: Container(
                         margin: const EdgeInsets.only(bottom: 8),
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12,),
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                         decoration: BoxDecoration(
                           color: isDark
                               ? Colors.white.withValues(alpha: 0.05)
@@ -304,17 +317,16 @@ class _WaterDetailsSheetState extends State<WaterDetailsSheet> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    UnitConverter.formatWaterShort(entry.amountMl, unitSystem),
-                                    style:
-                                        theme.textTheme.titleSmall?.copyWith(
+                                    UnitConverter.formatWaterShort(
+                                        entry.amountMl, unitSystem),
+                                    style: theme.textTheme.titleSmall?.copyWith(
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                   Text(
                                     _formatTime(entry.timestamp),
                                     style: theme.textTheme.bodySmall?.copyWith(
-                                      color:
-                                          theme.colorScheme.onSurfaceVariant,
+                                      color: theme.colorScheme.onSurfaceVariant,
                                     ),
                                   ),
                                 ],
@@ -368,7 +380,8 @@ class _QuickAddButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final displayText = UnitConverter.formatWaterShort(amountMl.toDouble(), unitSystem);
+    final displayText =
+        UnitConverter.formatWaterShort(amountMl.toDouble(), unitSystem);
 
     return Expanded(
       child: Material(

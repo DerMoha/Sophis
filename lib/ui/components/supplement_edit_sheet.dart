@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
-import '../services/supplements_provider.dart';
-import '../models/supplement.dart';
+import '../../services/supplements_provider.dart';
+import '../../models/supplement.dart';
 
 class SupplementEditSheet extends StatefulWidget {
   final Supplement? supplement;

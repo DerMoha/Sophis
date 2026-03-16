@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../ui/theme/app_theme.dart';
+import '../../theme/app_theme.dart';
 
 class CachedColors {
   static final Color borderDark = Colors.white.withValues(alpha: 0.08);

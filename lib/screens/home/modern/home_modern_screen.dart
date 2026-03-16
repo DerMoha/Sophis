@@ -13,7 +13,7 @@ import '../../settings_screen.dart';
 import '../shared/home_refresh.dart';
 import '../shared/home_dashboard_vm.dart';
 import '../shared/home_actions.dart';
-import 'ui/components/widgets.dart';
+import 'widgets/widgets.dart';
 
 class HomeScreenModern extends StatefulWidget {
   const HomeScreenModern({super.key});

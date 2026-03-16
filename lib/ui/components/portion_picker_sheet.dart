@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/food_item.dart';
-import '../models/serving_size.dart';
-import '../models/custom_portion.dart';
-import '../services/nutrition_provider.dart';
-import '../l10n/generated/app_localizations.dart';
+import '../../models/food_item.dart';
+import '../../models/serving_size.dart';
+import '../../models/custom_portion.dart';
+import '../../services/nutrition_provider.dart';
+import '../../l10n/generated/app_localizations.dart';
 import 'package:uuid/uuid.dart';
 
 /// A modal bottom sheet for selecting portion sizes

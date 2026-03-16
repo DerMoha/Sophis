@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/food_item.dart';
+import '../../models/food_item.dart';
 import 'organic_components.dart';
 
 /// A tile widget for displaying food search results
