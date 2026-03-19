@@ -55,11 +55,8 @@ dependencies:
   uuid: ^4.5.2
   gal: ^2.3.2
   
-  # Phase 6: Health Integration (Google Health Connect + Apple HealthKit)
-  # DISABLED: iOS crashes without HealthKit entitlement (requires paid Apple Developer)
-  # The native iOS code initializes even if we don't use it, causing crash
-  # To re-enable for ANDROID ONLY: see health_service_real.dart.disabled and use conditional imports
-  # health: ^13.2.1
+  # Phase 6: Health Integration (Apple HealthKit)
+  health: ^13.2.1
 
 dev_dependencies:
   flutter_test:

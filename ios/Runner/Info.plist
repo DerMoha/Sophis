@@ -37,6 +37,8 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Sophis reads your active calories burned from Apple Health to give you a more accurate daily calorie budget.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Sophis uses the camera to scan food barcodes and take photos of meals for AI analysis.</string>
 	<key>NSFaceIDUsageDescription</key>
