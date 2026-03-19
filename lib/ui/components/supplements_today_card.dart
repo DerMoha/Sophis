@@ -5,7 +5,7 @@ import '../../services/supplements_provider.dart';
 import '../../services/settings_provider.dart';
 import '../theme/app_theme.dart';
 import 'organic_components.dart';
-import '../../screens/supplements_screen.dart';
+import '../screens/supplements_screen.dart';
 
 class SupplementsTodayCard extends StatelessWidget {
   const SupplementsTodayCard({super.key});

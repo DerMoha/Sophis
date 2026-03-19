@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../models/food_item.dart';
 import '../../models/serving_size.dart';
 import '../../models/custom_portion.dart';
+import '../../models/nutrition_totals.dart';
 import '../../services/nutrition_provider.dart';
 import '../../l10n/generated/app_localizations.dart';
 import 'package:uuid/uuid.dart';
@@ -68,7 +69,7 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
     Navigator.pop(context);
   }
 
-  Map<String, double> get _calculatedNutrients =>
+  NutritionTotals get _calculatedNutrients =>
       widget.item.calculateFor(_selectedGrams);
 
   void _onServingSelected(ServingSize serving) {
@@ -254,7 +255,7 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
               // Bottom action bar - with keyboard-aware padding
               _AddButton(
                 grams: _selectedGrams,
-                calories: nutrients['calories'] ?? 0,
+                calories: nutrients.calories,
                 keyboardHeight: keyboardHeight,
                 onAdd: _addAndClose,
               ),
@@ -319,7 +320,7 @@ class _DragHandle extends StatelessWidget {
 class _ProductHeader extends StatelessWidget {
   final FoodItem item;
   final double grams;
-  final Map<String, double> nutrients;
+  final NutritionTotals nutrients;
 
   const _ProductHeader({
     required this.item,
@@ -386,7 +387,7 @@ class _ProductHeader extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${grams.toStringAsFixed(0)}g = ${nutrients['calories']?.toStringAsFixed(0) ?? 0} kcal',
+                  '${grams.toStringAsFixed(0)}g = ${nutrients.calories.toStringAsFixed(0)} kcal',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.primary,
                     fontWeight: FontWeight.w500,

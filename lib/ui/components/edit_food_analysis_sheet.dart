@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../screens/ai_food_camera_screen.dart';
+import '../screens/ai_food_camera_screen.dart';
 import '../theme/app_theme.dart';
 
 class EditFoodAnalysisSheet extends StatefulWidget {
@@ -68,7 +68,8 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
       final scaled = widget.result.originalAnalysis.scaledToPortion(newPortion);
 
       // Update macro controllers without triggering infinite loop
-      widget.result.caloriesController.text = scaled.calories.toStringAsFixed(0);
+      widget.result.caloriesController.text =
+          scaled.calories.toStringAsFixed(0);
       widget.result.proteinController.text = scaled.protein.toStringAsFixed(1);
       widget.result.carbsController.text = scaled.carbs.toStringAsFixed(1);
       widget.result.fatController.text = scaled.fat.toStringAsFixed(1);
@@ -101,8 +102,10 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
   void _resetToOriginal() {
     final original = widget.result.originalAnalysis;
     widget.result.nameController.text = original.name;
-    widget.result.portionController.text = original.portionGrams.toStringAsFixed(0);
-    widget.result.caloriesController.text = original.calories.toStringAsFixed(0);
+    widget.result.portionController.text =
+        original.portionGrams.toStringAsFixed(0);
+    widget.result.caloriesController.text =
+        original.calories.toStringAsFixed(0);
     widget.result.proteinController.text = original.protein.toStringAsFixed(1);
     widget.result.carbsController.text = original.carbs.toStringAsFixed(1);
     widget.result.fatController.text = original.fat.toStringAsFixed(1);
@@ -151,10 +154,14 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
   bool get _hasChanges {
     final original = widget.result.originalAnalysis;
     return widget.result.nameController.text.trim() != original.name ||
-        widget.result.portionController.text != original.portionGrams.toStringAsFixed(0) ||
-        widget.result.caloriesController.text != original.calories.toStringAsFixed(0) ||
-        widget.result.proteinController.text != original.protein.toStringAsFixed(1) ||
-        widget.result.carbsController.text != original.carbs.toStringAsFixed(1) ||
+        widget.result.portionController.text !=
+            original.portionGrams.toStringAsFixed(0) ||
+        widget.result.caloriesController.text !=
+            original.calories.toStringAsFixed(0) ||
+        widget.result.proteinController.text !=
+            original.protein.toStringAsFixed(1) ||
+        widget.result.carbsController.text !=
+            original.carbs.toStringAsFixed(1) ||
         widget.result.fatController.text != original.fat.toStringAsFixed(1);
   }
 
@@ -183,7 +190,8 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final showLowRequestWarning = widget.remainingRequests < 5 && widget.remainingRequests > 0;
+    final showLowRequestWarning =
+        widget.remainingRequests < 5 && widget.remainingRequests > 0;
     final canReAnalyze = widget.remainingRequests > 0;
 
     return Container(
@@ -263,7 +271,11 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.warning_amber_rounded, color: AppTheme.warning, size: 20),
+                  const Icon(
+                    Icons.warning_amber_rounded,
+                    color: AppTheme.warning,
+                    size: 20,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -301,7 +313,8 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                         labelText: 'Food name',
                         hintText: 'e.g., Chicken Breast',
                         prefixIcon: Icon(Icons.restaurant, size: 20),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       ),
                       validator: _validateName,
                     ),
@@ -311,13 +324,18 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                     TextFormField(
                       controller: widget.result.portionController,
                       keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,1}'))],
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(
+                          RegExp(r'^\d+\.?\d{0,1}'),
+                        ),
+                      ],
                       decoration: const InputDecoration(
                         labelText: 'Portion size',
                         hintText: '100',
                         prefixIcon: Icon(Icons.scale, size: 20),
                         suffixText: 'g',
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       ),
                       validator: (v) => _validatePositiveNumber(v, 'Portion'),
                     ),
@@ -326,9 +344,11 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                     // Auto-scale toggle
                     SwitchListTile(
                       value: _autoScaleEnabled,
-                      onChanged: (value) => setState(() => _autoScaleEnabled = value),
+                      onChanged: (value) =>
+                          setState(() => _autoScaleEnabled = value),
                       title: const Text('Auto-scale nutrition'),
-                      subtitle: const Text('Adjust macros when portion changes'),
+                      subtitle:
+                          const Text('Adjust macros when portion changes'),
                       contentPadding: EdgeInsets.zero,
                     ),
                     const SizedBox(height: 8),
@@ -347,13 +367,23 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                     TextFormField(
                       controller: widget.result.caloriesController,
                       keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,1}'))],
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(
+                          RegExp(r'^\d+\.?\d{0,1}'),
+                        ),
+                      ],
                       decoration: const InputDecoration(
                         labelText: 'Calories',
                         hintText: '200',
-                        prefixIcon: Icon(Icons.local_fire_department_outlined, size: 20),
+                        prefixIcon: Icon(
+                          Icons.local_fire_department_outlined,
+                          size: 20,
+                        ),
                         suffixText: 'kcal',
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
                       ),
                       validator: (v) => _validatePositiveNumber(v, 'Calories'),
                     ),
@@ -367,14 +397,22 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                           child: TextFormField(
                             controller: widget.result.proteinController,
                             keyboardType: TextInputType.number,
-                            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,1}'))],
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                RegExp(r'^\d+\.?\d{0,1}'),
+                              ),
+                            ],
                             decoration: const InputDecoration(
                               labelText: 'Protein',
                               hintText: '20',
                               suffixText: 'g',
-                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 14,
+                              ),
                             ),
-                            validator: (v) => _validatePositiveNumber(v, 'Protein'),
+                            validator: (v) =>
+                                _validatePositiveNumber(v, 'Protein'),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -383,14 +421,22 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                           child: TextFormField(
                             controller: widget.result.carbsController,
                             keyboardType: TextInputType.number,
-                            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,1}'))],
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                RegExp(r'^\d+\.?\d{0,1}'),
+                              ),
+                            ],
                             decoration: const InputDecoration(
                               labelText: 'Carbs',
                               hintText: '30',
                               suffixText: 'g',
-                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 14,
+                              ),
                             ),
-                            validator: (v) => _validatePositiveNumber(v, 'Carbs'),
+                            validator: (v) =>
+                                _validatePositiveNumber(v, 'Carbs'),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -399,12 +445,19 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                           child: TextFormField(
                             controller: widget.result.fatController,
                             keyboardType: TextInputType.number,
-                            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,1}'))],
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                RegExp(r'^\d+\.?\d{0,1}'),
+                              ),
+                            ],
                             decoration: const InputDecoration(
                               labelText: 'Fat',
                               hintText: '10',
                               suffixText: 'g',
-                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 14,
+                              ),
                             ),
                             validator: (v) => _validatePositiveNumber(v, 'Fat'),
                           ),
@@ -429,7 +482,10 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                           icon: const Icon(Icons.check, size: 18),
                           label: const Text('Save Changes'),
                           style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
                           ),
                         ),
                       ],
@@ -448,7 +504,10 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                             style: const TextStyle(fontSize: 13),
                           ),
                           style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
                           ),
                         ),
                       ),

@@ -196,8 +196,8 @@ class FoodLogController {
     return totals;
   }
 
-  /// Returns today's nutrition totals as a map (legacy).
-  Map<String, double> getTodayTotals() => getTodayTotalsTyped().toMap();
+  /// Returns today's nutrition totals.
+  NutritionTotals getTodayTotals() => getTodayTotalsTyped();
 
   /// Returns nutrition totals for a specific date (typed).
   NutritionTotals getTotalsForDateTyped(DateTime date) {
@@ -212,9 +212,9 @@ class FoodLogController {
     return _foodTotalsByDateCache![_dayKey(date)] ?? NutritionTotals.zero;
   }
 
-  /// Returns nutrition totals for a specific date as a map (legacy).
-  Map<String, double> getTotalsForDate(DateTime date) =>
-      getTotalsForDateTyped(date).toMap();
+  /// Returns nutrition totals for a specific date.
+  NutritionTotals getTotalsForDate(DateTime date) =>
+      getTotalsForDateTyped(date);
 
   Future<void> addRecentFood(FoodItem food) async {
     _recentFoods.removeWhere((f) => f.id == food.id);

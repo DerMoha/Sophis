@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import '../../models/meal_plan.dart';
+import '../../models/nutrition_totals.dart';
 import '../storage_service.dart';
 
 /// Manages planned meals, shopping list, and planned meal cache.
@@ -15,7 +16,7 @@ class MealPlanController {
   // Planned meal caches (indexed by YYYYMMDD key)
   Map<int, List<PlannedMeal>>? _plannedMealsByDateCache;
   Map<int, Map<String, List<PlannedMeal>>>? _plannedMealsByDateAndTypeCache;
-  Map<int, Map<String, double>>? _plannedTotalsByDateCache;
+  Map<int, NutritionTotals>? _plannedTotalsByDateCache;
 
   MealPlanController(
     this._storage,
@@ -23,12 +24,7 @@ class MealPlanController {
     this._dayKey,
   );
 
-  static const Map<String, double> _zeroMacroTotals = {
-    'calories': 0.0,
-    'protein': 0.0,
-    'carbs': 0.0,
-    'fat': 0.0,
-  };
+  static const _zeroMacroTotals = NutritionTotals.zero;
 
   List<PlannedMeal> get plannedMeals => _plannedMeals;
   Set<String> get shoppingListChecked => _shoppingListChecked;
@@ -57,7 +53,7 @@ class MealPlanController {
 
     final mealsByDate = <int, List<PlannedMeal>>{};
     final mealsByDateAndType = <int, Map<String, List<PlannedMeal>>>{};
-    final totalsByDate = <int, Map<String, double>>{};
+    final totalsByDate = <int, NutritionTotals>{};
 
     for (final meal in _plannedMeals) {
       final key = _dayKey(meal.date);
@@ -67,14 +63,13 @@ class MealPlanController {
       final byType = mealsByDateAndType.putIfAbsent(key, () => {});
       byType.putIfAbsent(meal.meal, () => []).add(meal);
 
-      final totals = totalsByDate.putIfAbsent(
-        key,
-        () => Map<String, double>.from(_zeroMacroTotals),
-      );
-      totals['calories'] = totals['calories']! + meal.calories;
-      totals['protein'] = totals['protein']! + meal.protein;
-      totals['carbs'] = totals['carbs']! + meal.carbs;
-      totals['fat'] = totals['fat']! + meal.fat;
+      totalsByDate[key] = (totalsByDate[key] ?? _zeroMacroTotals) +
+          NutritionTotals(
+            calories: meal.calories,
+            protein: meal.protein,
+            carbs: meal.carbs,
+            fat: meal.fat,
+          );
     }
 
     _plannedMealsByDateCache = mealsByDate;
@@ -136,11 +131,9 @@ class MealPlanController {
     );
   }
 
-  Map<String, double> getPlannedTotalsForDate(DateTime date) {
+  NutritionTotals getPlannedTotalsForDate(DateTime date) {
     _ensurePlannedMealsCache();
-    final totals = _plannedTotalsByDateCache![_dayKey(date)];
-    if (totals == null) return _zeroMacroTotals;
-    return Map.unmodifiable(totals);
+    return _plannedTotalsByDateCache![_dayKey(date)] ?? _zeroMacroTotals;
   }
 
   Future<void> copyPlannedMealToDate(PlannedMeal meal, DateTime newDate) async {

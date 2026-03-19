@@ -17,8 +17,8 @@ import 'services/database_service.dart';
 import 'services/supplements_provider.dart';
 import 'services/log_service.dart';
 import 'ui/theme/app_theme.dart';
-import 'screens/home_screen.dart';
-import 'screens/import_meal_screen.dart';
+import 'ui/screens/home_screen.dart';
+import 'ui/screens/import_meal_screen.dart';
 
 /// Global navigator key for deep link navigation
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -51,7 +51,8 @@ void main() async {
           create: (_) => NutritionProvider(storageService, databaseService),
         ),
         ChangeNotifierProvider(
-          create: (_) => SupplementsProvider(databaseService, notificationService),
+          create: (_) =>
+              SupplementsProvider(databaseService, notificationService),
         ),
       ],
       child: const SophisApp(),

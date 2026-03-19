@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../models/nutrition_goals.dart';
 import '../models/food_entry.dart';
+import '../models/nutrition_totals.dart';
 import '../models/user_profile.dart';
 import '../models/water_entry.dart';
 import '../models/weight_entry.dart';
@@ -244,14 +245,14 @@ class NutritionProvider extends ChangeNotifier {
   List<FoodEntry> getEntriesByMeal(String meal) =>
       _foodLog.getEntriesByMeal(meal);
 
-  Map<String, double> getTodayTotals() => _foodLog.getTodayTotals();
+  NutritionTotals getTodayTotals() => _foodLog.getTodayTotals();
 
-  Map<String, double> getTotalsForDate(DateTime date) =>
+  NutritionTotals getTotalsForDate(DateTime date) =>
       _foodLog.getTotalsForDate(date);
 
   double getRemainingCalories() {
     if (_goals == null) return 0;
-    return _goals!.calories - getTodayTotals()['calories']! + burnedCalories;
+    return _goals!.calories - getTodayTotals().calories + burnedCalories;
   }
 
   // ── Health Sync ─────────────────────────────────────────────────────────
@@ -348,10 +349,10 @@ class NutritionProvider extends ChangeNotifier {
     final entry = FoodEntry(
       id: const Uuid().v4(),
       name: '${recipe.name} (${servings}x)',
-      calories: nutrients['calories']! * servings,
-      protein: nutrients['protein']! * servings,
-      carbs: nutrients['carbs']! * servings,
-      fat: nutrients['fat']! * servings,
+      calories: nutrients.calories * servings,
+      protein: nutrients.protein * servings,
+      carbs: nutrients.carbs * servings,
+      fat: nutrients.fat * servings,
       timestamp: DateTime.now(),
       meal: meal,
     );
@@ -380,7 +381,7 @@ class NutritionProvider extends ChangeNotifier {
   List<PlannedMeal> getPlannedMealsByType(DateTime date, String meal) =>
       _mealPlan.getPlannedMealsByType(date, meal);
 
-  Map<String, double> getPlannedTotalsForDate(DateTime date) =>
+  NutritionTotals getPlannedTotalsForDate(DateTime date) =>
       _mealPlan.getPlannedTotalsForDate(date);
 
   Future<void> copyPlannedMealToDate(PlannedMeal meal, DateTime newDate) =>

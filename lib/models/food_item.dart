@@ -1,3 +1,4 @@
+import 'nutrition_totals.dart';
 import 'serving_size.dart';
 
 /// Food item template with nutrition per 100g
@@ -64,14 +65,14 @@ class FoodItem {
       );
 
   /// Calculate nutrition for a specific amount
-  Map<String, double> calculateFor(double grams) {
+  NutritionTotals calculateFor(double grams) {
     final factor = grams / 100;
-    return {
-      'calories': caloriesPer100g * factor,
-      'protein': proteinPer100g * factor,
-      'carbs': carbsPer100g * factor,
-      'fat': fatPer100g * factor,
-    };
+    return NutritionTotals(
+      calories: caloriesPer100g * factor,
+      protein: proteinPer100g * factor,
+      carbs: carbsPer100g * factor,
+      fat: fatPer100g * factor,
+    );
   }
 
   /// Create a copy with optional field overrides
@@ -104,4 +105,3 @@ class FoodItem {
         isFavorite: isFavorite ?? this.isFavorite,
       );
 }
-

@@ -1,4 +1,4 @@
-/// Typed nutrition data replacing Map<String, double>.
+/// Typed nutrition data replacing `Map<String, double>`.
 class NutritionTotals {
   final double calories;
   final double protein;

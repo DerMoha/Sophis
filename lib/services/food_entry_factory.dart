@@ -43,10 +43,10 @@ class FoodEntryFactory {
     return create(
       id: id,
       name: '$displayName (${grams.toStringAsFixed(0)}g)',
-      calories: nutrients['calories']!,
-      protein: nutrients['protein']!,
-      carbs: nutrients['carbs']!,
-      fat: nutrients['fat']!,
+      calories: nutrients.calories,
+      protein: nutrients.protein,
+      carbs: nutrients.carbs,
+      fat: nutrients.fat,
       meal: meal,
       timestamp: timestamp,
     );

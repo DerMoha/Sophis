@@ -57,13 +57,13 @@ class HomeWidgetService {
       final goal = provider.goals?.calories ?? 0;
 
       Log.debug(
-        'Updating widget: cal=${totals['calories']?.toInt()}/$goal, protein=${totals['protein']?.toInt()}g',
+        'Updating widget: cal=${totals.calories.toInt()}/$goal, protein=${totals.protein.toInt()}g',
       );
 
       // Save data
       await HomeWidget.saveWidgetData<double>(
         'calories_eaten',
-        totals['calories'],
+        totals.calories,
       );
       await HomeWidget.saveWidgetData<double>('calories_goal', goal);
       await HomeWidget.saveWidgetData<double>('calories_remaining', remaining);
@@ -71,10 +71,10 @@ class HomeWidgetService {
       // Save Macro Totals
       await HomeWidget.saveWidgetData<double>(
         'protein_eaten',
-        totals['protein'],
+        totals.protein,
       );
-      await HomeWidget.saveWidgetData<double>('carbs_eaten', totals['carbs']);
-      await HomeWidget.saveWidgetData<double>('fat_eaten', totals['fat']);
+      await HomeWidget.saveWidgetData<double>('carbs_eaten', totals.carbs);
+      await HomeWidget.saveWidgetData<double>('fat_eaten', totals.fat);
 
       // Save Macro Goals
       await HomeWidget.saveWidgetData<double>(

@@ -318,7 +318,9 @@ class _WaterDetailsSheetState extends State<WaterDetailsSheet> {
                                 children: [
                                   Text(
                                     UnitConverter.formatWaterShort(
-                                        entry.amountMl, unitSystem),
+                                      entry.amountMl,
+                                      unitSystem,
+                                    ),
                                     style: theme.textTheme.titleSmall?.copyWith(
                                       fontWeight: FontWeight.w600,
                                     ),
