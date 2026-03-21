@@ -15,7 +15,7 @@ import 'storage_service.dart';
 import 'health_service.dart';
 import 'database_service.dart';
 import 'home_widget_service.dart';
-import 'log_service.dart';
+import 'settings_provider.dart';
 import 'nutrition/food_log_controller.dart';
 import 'nutrition/hydration_controller.dart';
 import 'nutrition/workout_controller.dart';
@@ -45,6 +45,7 @@ class NutritionProvider extends ChangeNotifier {
 
   double _healthSyncBurnedCalories = 0.0;
   final HealthService _healthService = HealthService();
+  SettingsProvider? _settingsProvider;
 
   bool _isLoading = true;
   bool get isLoading => _isLoading;
@@ -139,6 +140,10 @@ class NutritionProvider extends ChangeNotifier {
       _workouts.getTodayWorkoutCalories() + _healthSyncBurnedCalories;
   StorageService get storage => _storage;
 
+  void attachSettingsProvider(SettingsProvider settings) {
+    _settingsProvider = settings;
+  }
+
   // ── Load / Reload ───────────────────────────────────────────────────────
 
   Future<void> reloadAll() async {
@@ -186,8 +191,6 @@ class NutritionProvider extends ChangeNotifier {
   Future<void> _migrateToDbIfNeeded() async {
     if (_storage.isMigrationComplete()) return;
 
-    Log.info('Starting SharedPreferences to database migration');
-
     final legacyFoods = _storage.loadFoodEntries();
     final legacyWater = _storage.loadWaterEntries();
     final legacyWeights = _storage.loadWeightEntries();
@@ -202,11 +205,8 @@ class NutritionProvider extends ChangeNotifier {
       }
 
       await _storage.setMigrationComplete();
-      Log.info(
-        'Migration completed: ${legacyFoods.length} foods, ${legacyWater.length} water, ${legacyWeights.length} weights, ${legacyWorkouts.length} workouts',
-      );
-    } catch (e, stackTrace) {
-      Log.error('Migration failed', error: e, stackTrace: stackTrace);
+    } catch (e) {
+      // Migration failed, will retry on next app start
     }
   }
 
@@ -227,12 +227,33 @@ class NutritionProvider extends ChangeNotifier {
 
   // ── Food Entries ────────────────────────────────────────────────────────
 
-  Future<void> addFoodEntry(FoodEntry entry) => _foodLog.addFoodEntry(entry);
+  Future<void> addFoodEntry(FoodEntry entry) async {
+    await _foodLog.addFoodEntry(entry);
+    await _syncNutritionForDate(entry.timestamp);
+  }
 
-  Future<void> removeFoodEntry(String id) => _foodLog.removeFoodEntry(id);
+  Future<void> removeFoodEntry(String id) async {
+    final entry = _foodLog.entries.where((e) => e.id == id).firstOrNull;
+    await _foodLog.removeFoodEntry(id);
+    if (entry != null) await _syncNutritionForDate(entry.timestamp);
+  }
 
-  Future<void> updateFoodEntry(FoodEntry entry) =>
-      _foodLog.updateFoodEntry(entry);
+  Future<void> updateFoodEntry(FoodEntry entry) async {
+    await _foodLog.updateFoodEntry(entry);
+    await _syncNutritionForDate(entry.timestamp);
+  }
+
+  Future<void> _syncNutritionForDate(DateTime date) async {
+    if (_settingsProvider?.healthNutritionSyncEnabled != true) return;
+    final totals = getTotalsForDate(date);
+    await _healthService.writeNutritionForDay(
+      date,
+      calories: totals.calories,
+      protein: totals.protein,
+      carbs: totals.carbs,
+      fat: totals.fat,
+    );
+  }
 
   Future<void> duplicateFoodEntry(FoodEntry entry, {String? toMeal}) =>
       _foodLog.duplicateFoodEntry(entry, toMeal: toMeal);
@@ -267,12 +288,8 @@ class NutritionProvider extends ChangeNotifier {
     try {
       _healthSyncBurnedCalories = await _healthService.getTodayBurnedCalories();
       notifyListeners();
-    } catch (e, stackTrace) {
-      Log.warning(
-        'Failed to fetch burned calories from health service',
-        error: e,
-        stackTrace: stackTrace,
-      );
+    } catch (e) {
+      // Health sync failed silently
     }
   }
 
@@ -316,8 +333,14 @@ class NutritionProvider extends ChangeNotifier {
       weightKg: kg,
       timestamp: DateTime.now(),
       note: note,
+      source: 'manual',
     );
     await restoreWeightEntry(entry);
+
+    if (_settingsProvider?.healthWeightSyncEnabled == true &&
+        entry.source == 'manual') {
+      await _healthService.writeWeight(kg, entry.timestamp);
+    }
   }
 
   Future<void> restoreWeightEntry(WeightEntry entry) async {
@@ -331,6 +354,37 @@ class NutritionProvider extends ChangeNotifier {
     _weightEntries.removeWhere((e) => e.id == id);
     await _db.deleteWeight(id);
     notifyListeners();
+  }
+
+  /// Pulls weight entries from Apple Health for the last 30 days and inserts
+  /// any that are not already recorded in Sophis (deduplicated within 60s).
+  Future<void> syncWeightFromHealth() async {
+    try {
+      final end = DateTime.now();
+      final start = end.subtract(const Duration(days: 30));
+      final healthEntries = await _healthService.getWeightEntries(start, end);
+
+      for (final he in healthEntries) {
+        final alreadyExists = _weightEntries.any(
+          (e) => (e.timestamp.difference(he.timestamp).inSeconds).abs() <= 60,
+        );
+        if (!alreadyExists) {
+          final entry = WeightEntry(
+            id: const Uuid().v4(),
+            weightKg: he.kg,
+            timestamp: he.timestamp,
+            source: 'health',
+          );
+          _weightEntries.add(entry);
+          await _db.insertWeight(entry);
+        }
+      }
+
+      _weightEntries.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      notifyListeners();
+    } catch (e) {
+      // Weight sync failed silently
+    }
   }
 
   WeightEntry? get latestWeight =>

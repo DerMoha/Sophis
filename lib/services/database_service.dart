@@ -10,8 +10,6 @@ import '../models/weight_entry.dart';
 import '../models/workout_entry.dart';
 import '../models/supplement.dart';
 import '../models/supplement_log.dart';
-import 'log_service.dart';
-
 part 'database_service.g.dart';
 
 // -----------------------------------------------------------------------------
@@ -46,6 +44,7 @@ class WeightLogs extends Table {
   RealColumn get weightKg => real()();
   DateTimeColumn get timestamp => dateTime()();
   TextColumn get note => text().nullable()();
+  TextColumn get source => text().withDefault(const Constant('manual'))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -100,18 +99,17 @@ class DatabaseService extends _$DatabaseService {
   DatabaseService() : super(_openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onUpgrade: (migrator, from, to) async {
-          Log.info('DB migration v$from → v$to started');
-          if (from == 1 && to == 2) {
+          if (from == 1) {
             await migrator.createTable(supplementDefinitions);
             await migrator.createTable(supplementLogs);
-            Log.info(
-              'DB migration v$from → v$to completed: Added supplement tables',
-            );
+          }
+          if (from <= 2 && to >= 3) {
+            await migrator.addColumn(weightLogs, weightLogs.source);
           }
         },
       );
@@ -159,7 +157,6 @@ class DatabaseService extends _$DatabaseService {
   /// If a record with the same ID exists, it will be replaced with the new data.
   Future<void> insertFoods(List<FoodEntry> entries) async {
     try {
-      Log.debug('Batch inserting ${entries.length} food entries');
       await batch((batch) {
         batch.insertAll(
           foods,
@@ -178,13 +175,7 @@ class DatabaseService extends _$DatabaseService {
           mode: InsertMode.insertOrReplace,
         );
       });
-      Log.info('Successfully inserted ${entries.length} food entries');
-    } catch (e, stackTrace) {
-      Log.error(
-        'Failed to batch insert food entries',
-        error: e,
-        stackTrace: stackTrace,
-      );
+    } catch (e) {
       rethrow;
     }
   }
@@ -271,6 +262,7 @@ class DatabaseService extends _$DatabaseService {
             weightKg: row.weightKg,
             timestamp: row.timestamp,
             note: row.note,
+            source: row.source,
           ),
         )
         .toList();
@@ -283,6 +275,7 @@ class DatabaseService extends _$DatabaseService {
         weightKg: Value(entry.weightKg),
         timestamp: Value(entry.timestamp),
         note: Value(entry.note),
+        source: Value(entry.source),
       ),
     );
   }
@@ -297,6 +290,7 @@ class DatabaseService extends _$DatabaseService {
             weightKg: Value(entry.weightKg),
             timestamp: Value(entry.timestamp),
             note: Value(entry.note),
+            source: Value(entry.source),
           ),
         ),
         mode: InsertMode.insertOrReplace,
@@ -505,19 +499,12 @@ class DatabaseService extends _$DatabaseService {
   // ---------------------------------------------------------------------------
 
   Future<void> deleteAllData() async {
-    try {
-      Log.warning('Deleting all database data');
-      await delete(foods).go();
-      await delete(waterLogs).go();
-      await delete(weightLogs).go();
-      await delete(workoutLogs).go();
-      await delete(supplementDefinitions).go();
-      await delete(supplementLogs).go();
-      Log.info('All database data deleted');
-    } catch (e, stackTrace) {
-      Log.error('Failed to delete all data', error: e, stackTrace: stackTrace);
-      rethrow;
-    }
+    await delete(foods).go();
+    await delete(waterLogs).go();
+    await delete(weightLogs).go();
+    await delete(workoutLogs).go();
+    await delete(supplementDefinitions).go();
+    await delete(supplementLogs).go();
   }
 }
 
@@ -549,18 +536,11 @@ Future<File> _resolveDatabaseFile() async {
   supportFile.parent.createSync(recursive: true);
 
   try {
-    Log.info('Migrating database file from Documents to Application Support');
     _copyIfNeeded(legacyFile.path, supportFile.path);
     _copyIfNeeded('${legacyFile.path}-wal', '${supportFile.path}-wal');
     _copyIfNeeded('${legacyFile.path}-shm', '${supportFile.path}-shm');
-    Log.info('Database file migration completed');
     return supportFile;
-  } catch (e, stackTrace) {
-    Log.error(
-      'Database file migration failed; continuing with legacy location',
-      error: e,
-      stackTrace: stackTrace,
-    );
+  } catch (e) {
     return legacyFile;
   }
 }

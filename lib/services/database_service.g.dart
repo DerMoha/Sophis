@@ -676,8 +676,15 @@ class $WeightLogsTable extends WeightLogs
   late final GeneratedColumn<String> note = GeneratedColumn<String>(
       'note', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
   @override
-  List<GeneratedColumn> get $columns => [id, weightKg, timestamp, note];
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+      'source', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('manual'));
+  @override
+  List<GeneratedColumn> get $columns => [id, weightKg, timestamp, note, source];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -709,6 +716,10 @@ class $WeightLogsTable extends WeightLogs
       context.handle(
           _noteMeta, note.isAcceptableOrUnknown(data['note']!, _noteMeta));
     }
+    if (data.containsKey('source')) {
+      context.handle(_sourceMeta,
+          source.isAcceptableOrUnknown(data['source']!, _sourceMeta));
+    }
     return context;
   }
 
@@ -726,6 +737,8 @@ class $WeightLogsTable extends WeightLogs
           .read(DriftSqlType.dateTime, data['${effectivePrefix}timestamp'])!,
       note: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}note']),
+      source: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}source'])!,
     );
   }
 
@@ -740,11 +753,13 @@ class WeightLog extends DataClass implements Insertable<WeightLog> {
   final double weightKg;
   final DateTime timestamp;
   final String? note;
+  final String source;
   const WeightLog(
       {required this.id,
       required this.weightKg,
       required this.timestamp,
-      this.note});
+      this.note,
+      required this.source});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -754,6 +769,7 @@ class WeightLog extends DataClass implements Insertable<WeightLog> {
     if (!nullToAbsent || note != null) {
       map['note'] = Variable<String>(note);
     }
+    map['source'] = Variable<String>(source);
     return map;
   }
 
@@ -763,6 +779,7 @@ class WeightLog extends DataClass implements Insertable<WeightLog> {
       weightKg: Value(weightKg),
       timestamp: Value(timestamp),
       note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      source: Value(source),
     );
   }
 
@@ -774,6 +791,7 @@ class WeightLog extends DataClass implements Insertable<WeightLog> {
       weightKg: serializer.fromJson<double>(json['weightKg']),
       timestamp: serializer.fromJson<DateTime>(json['timestamp']),
       note: serializer.fromJson<String?>(json['note']),
+      source: serializer.fromJson<String>(json['source']),
     );
   }
   @override
@@ -784,6 +802,7 @@ class WeightLog extends DataClass implements Insertable<WeightLog> {
       'weightKg': serializer.toJson<double>(weightKg),
       'timestamp': serializer.toJson<DateTime>(timestamp),
       'note': serializer.toJson<String?>(note),
+      'source': serializer.toJson<String>(source),
     };
   }
 
@@ -791,12 +810,14 @@ class WeightLog extends DataClass implements Insertable<WeightLog> {
           {String? id,
           double? weightKg,
           DateTime? timestamp,
-          Value<String?> note = const Value.absent()}) =>
+          Value<String?> note = const Value.absent(),
+          String? source}) =>
       WeightLog(
         id: id ?? this.id,
         weightKg: weightKg ?? this.weightKg,
         timestamp: timestamp ?? this.timestamp,
         note: note.present ? note.value : this.note,
+        source: source ?? this.source,
       );
   WeightLog copyWithCompanion(WeightLogsCompanion data) {
     return WeightLog(
@@ -804,6 +825,7 @@ class WeightLog extends DataClass implements Insertable<WeightLog> {
       weightKg: data.weightKg.present ? data.weightKg.value : this.weightKg,
       timestamp: data.timestamp.present ? data.timestamp.value : this.timestamp,
       note: data.note.present ? data.note.value : this.note,
+      source: data.source.present ? data.source.value : this.source,
     );
   }
 
@@ -813,13 +835,14 @@ class WeightLog extends DataClass implements Insertable<WeightLog> {
           ..write('id: $id, ')
           ..write('weightKg: $weightKg, ')
           ..write('timestamp: $timestamp, ')
-          ..write('note: $note')
+          ..write('note: $note, ')
+          ..write('source: $source')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, weightKg, timestamp, note);
+  int get hashCode => Object.hash(id, weightKg, timestamp, note, source);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -827,7 +850,8 @@ class WeightLog extends DataClass implements Insertable<WeightLog> {
           other.id == this.id &&
           other.weightKg == this.weightKg &&
           other.timestamp == this.timestamp &&
-          other.note == this.note);
+          other.note == this.note &&
+          other.source == this.source);
 }
 
 class WeightLogsCompanion extends UpdateCompanion<WeightLog> {
@@ -835,12 +859,14 @@ class WeightLogsCompanion extends UpdateCompanion<WeightLog> {
   final Value<double> weightKg;
   final Value<DateTime> timestamp;
   final Value<String?> note;
+  final Value<String> source;
   final Value<int> rowid;
   const WeightLogsCompanion({
     this.id = const Value.absent(),
     this.weightKg = const Value.absent(),
     this.timestamp = const Value.absent(),
     this.note = const Value.absent(),
+    this.source = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   WeightLogsCompanion.insert({
@@ -848,6 +874,7 @@ class WeightLogsCompanion extends UpdateCompanion<WeightLog> {
     required double weightKg,
     required DateTime timestamp,
     this.note = const Value.absent(),
+    this.source = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
         weightKg = Value(weightKg),
@@ -857,6 +884,7 @@ class WeightLogsCompanion extends UpdateCompanion<WeightLog> {
     Expression<double>? weightKg,
     Expression<DateTime>? timestamp,
     Expression<String>? note,
+    Expression<String>? source,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -864,6 +892,7 @@ class WeightLogsCompanion extends UpdateCompanion<WeightLog> {
       if (weightKg != null) 'weight_kg': weightKg,
       if (timestamp != null) 'timestamp': timestamp,
       if (note != null) 'note': note,
+      if (source != null) 'source': source,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -873,12 +902,14 @@ class WeightLogsCompanion extends UpdateCompanion<WeightLog> {
       Value<double>? weightKg,
       Value<DateTime>? timestamp,
       Value<String?>? note,
+      Value<String>? source,
       Value<int>? rowid}) {
     return WeightLogsCompanion(
       id: id ?? this.id,
       weightKg: weightKg ?? this.weightKg,
       timestamp: timestamp ?? this.timestamp,
       note: note ?? this.note,
+      source: source ?? this.source,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -898,6 +929,9 @@ class WeightLogsCompanion extends UpdateCompanion<WeightLog> {
     if (note.present) {
       map['note'] = Variable<String>(note.value);
     }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -911,6 +945,7 @@ class WeightLogsCompanion extends UpdateCompanion<WeightLog> {
           ..write('weightKg: $weightKg, ')
           ..write('timestamp: $timestamp, ')
           ..write('note: $note, ')
+          ..write('source: $source, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2153,6 +2188,7 @@ typedef $$WeightLogsTableCreateCompanionBuilder = WeightLogsCompanion Function({
   required double weightKg,
   required DateTime timestamp,
   Value<String?> note,
+  Value<String> source,
   Value<int> rowid,
 });
 typedef $$WeightLogsTableUpdateCompanionBuilder = WeightLogsCompanion Function({
@@ -2160,6 +2196,7 @@ typedef $$WeightLogsTableUpdateCompanionBuilder = WeightLogsCompanion Function({
   Value<double> weightKg,
   Value<DateTime> timestamp,
   Value<String?> note,
+  Value<String> source,
   Value<int> rowid,
 });
 
@@ -2183,6 +2220,9 @@ class $$WeightLogsTableFilterComposer
 
   ColumnFilters<String> get note => $composableBuilder(
       column: $table.note, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get source => $composableBuilder(
+      column: $table.source, builder: (column) => ColumnFilters(column));
 }
 
 class $$WeightLogsTableOrderingComposer
@@ -2205,6 +2245,9 @@ class $$WeightLogsTableOrderingComposer
 
   ColumnOrderings<String> get note => $composableBuilder(
       column: $table.note, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get source => $composableBuilder(
+      column: $table.source, builder: (column) => ColumnOrderings(column));
 }
 
 class $$WeightLogsTableAnnotationComposer
@@ -2227,6 +2270,9 @@ class $$WeightLogsTableAnnotationComposer
 
   GeneratedColumn<String> get note =>
       $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
 }
 
 class $$WeightLogsTableTableManager extends RootTableManager<
@@ -2256,6 +2302,7 @@ class $$WeightLogsTableTableManager extends RootTableManager<
             Value<double> weightKg = const Value.absent(),
             Value<DateTime> timestamp = const Value.absent(),
             Value<String?> note = const Value.absent(),
+            Value<String> source = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               WeightLogsCompanion(
@@ -2263,6 +2310,7 @@ class $$WeightLogsTableTableManager extends RootTableManager<
             weightKg: weightKg,
             timestamp: timestamp,
             note: note,
+            source: source,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -2270,6 +2318,7 @@ class $$WeightLogsTableTableManager extends RootTableManager<
             required double weightKg,
             required DateTime timestamp,
             Value<String?> note = const Value.absent(),
+            Value<String> source = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               WeightLogsCompanion.insert(
@@ -2277,6 +2326,7 @@ class $$WeightLogsTableTableManager extends RootTableManager<
             weightKg: weightKg,
             timestamp: timestamp,
             note: note,
+            source: source,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
