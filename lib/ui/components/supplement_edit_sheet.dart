@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../../services/supplements_provider.dart';
 import '../../models/supplement.dart';
+import '../theme/app_theme.dart';
 
 class SupplementEditSheet extends StatefulWidget {
   final Supplement? supplement;
@@ -77,7 +78,7 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
                   height: 4,
                   decoration: BoxDecoration(
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(2),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusXS),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -93,7 +94,8 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
                         height: 48,
                         decoration: BoxDecoration(
                           color: accentColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius:
+                              BorderRadius.circular(AppTheme.radiusMD),
                         ),
                         child: Icon(
                           Icons.medication_liquid_rounded,
@@ -134,25 +136,32 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
                           filled: true,
                           fillColor: theme.colorScheme.surfaceContainerHighest,
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius:
+                                BorderRadius.circular(AppTheme.radiusMD),
                             borderSide: BorderSide(
-                              color:
-                                  _hasError ? Colors.red : Colors.transparent,
+                              color: _hasError
+                                  ? theme.colorScheme.error
+                                  : Colors.transparent,
                               width: 2,
                             ),
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius:
+                                BorderRadius.circular(AppTheme.radiusMD),
                             borderSide: BorderSide(
-                              color:
-                                  _hasError ? Colors.red : Colors.transparent,
+                              color: _hasError
+                                  ? theme.colorScheme.error
+                                  : Colors.transparent,
                               width: 2,
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius:
+                                BorderRadius.circular(AppTheme.radiusMD),
                             borderSide: BorderSide(
-                              color: _hasError ? Colors.red : accentColor,
+                              color: _hasError
+                                  ? theme.colorScheme.error
+                                  : accentColor,
                               width: 2,
                             ),
                           ),
@@ -169,7 +178,7 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
                           child: Text(
                             'Name cannot be empty',
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: Colors.red,
+                              color: theme.colorScheme.error,
                             ),
                           ),
                         ),
@@ -186,10 +195,11 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
                       GestureDetector(
                         onTap: _pickTime,
                         child: Container(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(AppTheme.spaceMD),
                           decoration: BoxDecoration(
                             color: theme.colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius:
+                                BorderRadius.circular(AppTheme.radiusMD),
                           ),
                           child: Row(
                             children: [
@@ -257,17 +267,17 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
                           style: FilledButton.styleFrom(
                             backgroundColor: accentColor,
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: AppTheme.spaceMD,
+                            ),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius:
+                                  BorderRadius.circular(AppTheme.radiusMD),
                             ),
                           ),
                           child: Text(
                             isEditing ? 'Save Changes' : 'Add Supplement',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: theme.textTheme.labelLarge,
                           ),
                         ),
                       ),
@@ -350,7 +360,7 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('A supplement named "$name" already exists'),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
       return;

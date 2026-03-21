@@ -202,14 +202,13 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Drag handle
           Container(
             margin: const EdgeInsets.only(top: 12),
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: theme.colorScheme.outline.withAlpha(77),
-              borderRadius: BorderRadius.circular(2),
+              color: theme.colorScheme.outline.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(AppTheme.radiusXS),
             ),
           ),
 
@@ -225,8 +224,8 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withAlpha(26),
-                        borderRadius: BorderRadius.circular(12),
+                        color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                       ),
                       child: Icon(
                         Icons.edit_outlined,
@@ -247,9 +246,9 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                     height: 32,
                     decoration: BoxDecoration(
                       color: isDark
-                          ? Colors.white.withAlpha(26)
-                          : Colors.black.withAlpha(13),
-                      borderRadius: BorderRadius.circular(8),
+                          ? Colors.white.withValues(alpha: 0.1)
+                          : Colors.black.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusXS),
                     ),
                     child: const Icon(Icons.close, size: 18),
                   ),
@@ -263,11 +262,12 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
           if (showLowRequestWarning)
             Container(
               margin: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(AppTheme.spaceSM),
               decoration: BoxDecoration(
-                color: AppTheme.warning.withAlpha(26),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.warning.withAlpha(77)),
+                color: AppTheme.warning.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+                border:
+                    Border.all(color: AppTheme.warning.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
@@ -276,13 +276,12 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                     color: AppTheme.warning,
                     size: 20,
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppTheme.spaceSM),
                   Expanded(
                     child: Text(
                       'Only ${widget.remainingRequests} AI request(s) left today',
-                      style: const TextStyle(
+                      style: theme.textTheme.bodySmall?.copyWith(
                         color: AppTheme.warning,
-                        fontSize: 12,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -309,12 +308,14 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                     // Food name
                     TextFormField(
                       controller: widget.result.nameController,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Food name',
                         hintText: 'e.g., Chicken Breast',
-                        prefixIcon: Icon(Icons.restaurant, size: 20),
-                        contentPadding:
-                            EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        prefixIcon: const Icon(Icons.restaurant, size: 20),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: AppTheme.spaceMD,
+                          vertical: 14,
+                        ),
                       ),
                       validator: _validateName,
                     ),
@@ -329,13 +330,15 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                           RegExp(r'^\d+\.?\d{0,1}'),
                         ),
                       ],
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Portion size',
                         hintText: '100',
-                        prefixIcon: Icon(Icons.scale, size: 20),
+                        prefixIcon: const Icon(Icons.scale, size: 20),
                         suffixText: 'g',
-                        contentPadding:
-                            EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: AppTheme.spaceMD,
+                          vertical: 14,
+                        ),
                       ),
                       validator: (v) => _validatePositiveNumber(v, 'Portion'),
                     ),
@@ -372,16 +375,16 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                           RegExp(r'^\d+\.?\d{0,1}'),
                         ),
                       ],
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Calories',
                         hintText: '200',
-                        prefixIcon: Icon(
+                        prefixIcon: const Icon(
                           Icons.local_fire_department_outlined,
                           size: 20,
                         ),
                         suffixText: 'kcal',
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 16,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: AppTheme.spaceMD,
                           vertical: 14,
                         ),
                       ),
@@ -402,12 +405,12 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                                 RegExp(r'^\d+\.?\d{0,1}'),
                               ),
                             ],
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: 'Protein',
                               hintText: '20',
                               suffixText: 'g',
-                              contentPadding: EdgeInsets.symmetric(
-                                horizontal: 12,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: AppTheme.spaceSM,
                                 vertical: 14,
                               ),
                             ),
@@ -426,12 +429,12 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                                 RegExp(r'^\d+\.?\d{0,1}'),
                               ),
                             ],
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: 'Carbs',
                               hintText: '30',
                               suffixText: 'g',
-                              contentPadding: EdgeInsets.symmetric(
-                                horizontal: 12,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: AppTheme.spaceSM,
                                 vertical: 14,
                               ),
                             ),
@@ -450,12 +453,12 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                                 RegExp(r'^\d+\.?\d{0,1}'),
                               ),
                             ],
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: 'Fat',
                               hintText: '10',
                               suffixText: 'g',
-                              contentPadding: EdgeInsets.symmetric(
-                                horizontal: 12,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: AppTheme.spaceSM,
                                 vertical: 14,
                               ),
                             ),
@@ -483,8 +486,8 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                           label: const Text('Save Changes'),
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 12,
+                              horizontal: AppTheme.spaceLG,
+                              vertical: AppTheme.spaceSM,
                             ),
                           ),
                         ),
@@ -505,8 +508,8 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                           ),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 12,
+                              horizontal: AppTheme.spaceLG,
+                              vertical: AppTheme.spaceSM,
                             ),
                           ),
                         ),
@@ -517,10 +520,12 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                     if (!canReAnalyze)
                       Container(
                         margin: const EdgeInsets.only(top: 12),
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(AppTheme.spaceSM),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.errorContainer.withAlpha(77),
-                          borderRadius: BorderRadius.circular(8),
+                          color: theme.colorScheme.errorContainer
+                              .withValues(alpha: 0.3),
+                          borderRadius:
+                              BorderRadius.circular(AppTheme.radiusXS),
                         ),
                         child: Row(
                           children: [
@@ -529,12 +534,11 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                               size: 16,
                               color: theme.colorScheme.error,
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: AppTheme.spaceSM),
                             Expanded(
                               child: Text(
                                 'No AI requests remaining today. You can still manually edit values.',
-                                style: TextStyle(
-                                  fontSize: 11,
+                                style: theme.textTheme.bodySmall?.copyWith(
                                   color: theme.colorScheme.error,
                                 ),
                               ),

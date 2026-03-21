@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../models/user_stats.dart';
 import '../../services/nutrition_provider.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../theme/app_theme.dart';
 import 'organic_components.dart';
 
 /// Compact streak display card for home screen
@@ -32,8 +33,8 @@ class StreakCard extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: Colors.orange.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12),
+              color: AppTheme.fire.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(AppTheme.radiusSM),
             ),
             child: const Center(
               child: Text(
@@ -43,7 +44,7 @@ class StreakCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          
+
           // Streak text
           Expanded(
             child: Column(
@@ -65,7 +66,7 @@ class StreakCard extends StatelessWidget {
               ],
             ),
           ),
-          
+
           // Achievement count badge
           if (stats.achievements.isNotEmpty)
             Container(
@@ -89,7 +90,7 @@ class StreakCard extends StatelessWidget {
                 ],
               ),
             ),
-          
+
           const SizedBox(width: 4),
           Icon(
             Icons.chevron_right,
@@ -171,25 +172,29 @@ class _AchievementsSheet extends StatelessWidget {
                   id: Achievements.threeDayStreak,
                   emoji: '🔥',
                   label: l10n.achievement3Days,
-                  unlocked: stats.achievements.contains(Achievements.threeDayStreak),
+                  unlocked:
+                      stats.achievements.contains(Achievements.threeDayStreak),
                 ),
                 _AchievementBadge(
                   id: Achievements.weekWarrior,
                   emoji: '⚔️',
                   label: l10n.achievement7Days,
-                  unlocked: stats.achievements.contains(Achievements.weekWarrior),
+                  unlocked:
+                      stats.achievements.contains(Achievements.weekWarrior),
                 ),
                 _AchievementBadge(
                   id: Achievements.twoWeekStreak,
                   emoji: '🎯',
                   label: l10n.achievement14Days,
-                  unlocked: stats.achievements.contains(Achievements.twoWeekStreak),
+                  unlocked:
+                      stats.achievements.contains(Achievements.twoWeekStreak),
                 ),
                 _AchievementBadge(
                   id: Achievements.monthlyMaster,
                   emoji: '👑',
                   label: l10n.achievement30Days,
-                  unlocked: stats.achievements.contains(Achievements.monthlyMaster),
+                  unlocked:
+                      stats.achievements.contains(Achievements.monthlyMaster),
                 ),
                 _AchievementBadge(
                   id: Achievements.centurion,
@@ -244,7 +249,7 @@ class _AchievementBadge extends StatelessWidget {
             emoji,
             style: TextStyle(
               fontSize: 28,
-              color: unlocked ? null : Colors.grey,
+              color: unlocked ? null : theme.disabledColor,
             ),
           ),
           const SizedBox(height: 6),
@@ -253,9 +258,8 @@ class _AchievementBadge extends StatelessWidget {
             textAlign: TextAlign.center,
             style: theme.textTheme.labelSmall?.copyWith(
               fontWeight: FontWeight.w500,
-              color: unlocked
-                  ? theme.colorScheme.onSurface
-                  : theme.disabledColor,
+              color:
+                  unlocked ? theme.colorScheme.onSurface : theme.disabledColor,
             ),
           ),
         ],

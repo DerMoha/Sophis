@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../models/food_item.dart';
+import '../theme/app_theme.dart';
 import 'organic_components.dart';
 
-/// A tile widget for displaying food search results
 class FoodSearchResultTile extends StatelessWidget {
   final FoodItem item;
   final VoidCallback onTap;
@@ -26,25 +26,24 @@ class FoodSearchResultTile extends StatelessWidget {
     final theme = Theme.of(context);
 
     return GlassCard(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppTheme.spaceMD,
+        vertical: AppTheme.spaceXS,
+      ),
+      padding: const EdgeInsets.all(AppTheme.spaceSM),
       onTap: onTap,
       onLongPress: onLongPress,
       child: Row(
         children: [
-          // Custom food indicator or product image
           if (isCustomFood)
             _CustomFoodIcon()
           else
             _ProductImage(imageUrl: item.imageUrl),
           const SizedBox(width: 12),
-
-          // Product Info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Brand (if available) or "My Food" label
                 if (isCustomFood)
                   Text(
                     'My Foods',
@@ -63,7 +62,6 @@ class FoodSearchResultTile extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                // Product Name
                 Text(
                   item.name,
                   style: theme.textTheme.titleSmall?.copyWith(
@@ -73,22 +71,16 @@ class FoodSearchResultTile extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 6),
-                // Macro chips
                 _MacroChips(item: item),
               ],
             ),
           ),
-
           const SizedBox(width: 8),
-
-          // Favorite button
           if (onFavoriteToggle != null)
             _FavoriteButton(
               isFavorite: isFavorite,
               onTap: onFavoriteToggle!,
             ),
-
-          // Calories badge
           _CalorieBadge(calories: item.caloriesPer100g),
         ],
       ),
@@ -114,7 +106,7 @@ class _FavoriteButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 4),
         child: Icon(
           isFavorite ? Icons.star_rounded : Icons.star_outline_rounded,
-          color: isFavorite ? Colors.amber : Theme.of(context).disabledColor,
+          color: isFavorite ? AppTheme.carbs : Theme.of(context).disabledColor,
           size: 28,
         ),
       ),
@@ -132,8 +124,9 @@ class _CustomFoodIcon extends StatelessWidget {
       width: 56,
       height: 56,
       decoration: BoxDecoration(
-        color: theme.colorScheme.secondary.withValues(alpha: isDark ? 0.2 : 0.1),
-        borderRadius: BorderRadius.circular(12),
+        color:
+            theme.colorScheme.secondary.withValues(alpha: isDark ? 0.2 : 0.1),
+        borderRadius: BorderRadius.circular(AppTheme.radiusSM),
       ),
       child: Center(
         child: Icon(
@@ -161,14 +154,14 @@ class _ProductImage extends StatelessWidget {
       height: 56,
       decoration: BoxDecoration(
         color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppTheme.radiusSM),
       ),
       clipBehavior: Clip.antiAlias,
       child: imageUrl != null && imageUrl!.isNotEmpty
           ? Image.network(
               imageUrl!,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => _PlaceholderIcon(),
+              errorBuilder: (_, __, ___) => const _PlaceholderIcon(),
               loadingBuilder: (context, child, loadingProgress) {
                 if (loadingProgress == null) return child;
                 return Center(
@@ -186,12 +179,14 @@ class _ProductImage extends StatelessWidget {
                 );
               },
             )
-          : _PlaceholderIcon(),
+          : const _PlaceholderIcon(),
     );
   }
 }
 
 class _PlaceholderIcon extends StatelessWidget {
+  const _PlaceholderIcon();
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -217,19 +212,19 @@ class _MacroChips extends StatelessWidget {
         _MacroChip(
           label: 'P',
           value: item.proteinPer100g,
-          color: Colors.blue,
+          color: AppTheme.protein,
         ),
         const SizedBox(width: 6),
         _MacroChip(
           label: 'C',
           value: item.carbsPer100g,
-          color: Colors.orange,
+          color: AppTheme.carbs,
         ),
         const SizedBox(width: 6),
         _MacroChip(
           label: 'F',
           value: item.fatPer100g,
-          color: Colors.purple,
+          color: AppTheme.fat,
         ),
       ],
     );
@@ -256,14 +251,15 @@ class _MacroChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         color: color.withValues(alpha: isDark ? 0.2 : 0.1),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(AppTheme.radiusXS),
       ),
       child: Text(
         '$label: ${value.toStringAsFixed(0)}g',
         style: theme.textTheme.labelSmall?.copyWith(
-          color: isDark ? color.withValues(alpha: 0.9) : color.withValues(alpha: 0.8),
+          color: isDark
+              ? color.withValues(alpha: 0.9)
+              : color.withValues(alpha: 0.8),
           fontWeight: FontWeight.w500,
-          fontSize: 10,
         ),
       ),
     );
@@ -281,10 +277,13 @@ class _CalorieBadge extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.spaceSM,
+        vertical: AppTheme.spaceXS + 2,
+      ),
       decoration: BoxDecoration(
         color: theme.colorScheme.primary.withValues(alpha: isDark ? 0.2 : 0.1),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppTheme.radiusSM),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -300,7 +299,6 @@ class _CalorieBadge extends StatelessWidget {
             'kcal',
             style: theme.textTheme.labelSmall?.copyWith(
               color: theme.colorScheme.primary.withValues(alpha: 0.7),
-              fontSize: 9,
             ),
           ),
         ],

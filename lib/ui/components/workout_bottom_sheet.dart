@@ -94,7 +94,7 @@ class _WorkoutBottomSheetState extends State<WorkoutBottomSheet> {
                   height: 4,
                   decoration: BoxDecoration(
                     color: theme.colorScheme.outline.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(2),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusXS),
                   ),
                 ),
 
@@ -107,11 +107,12 @@ class _WorkoutBottomSheetState extends State<WorkoutBottomSheet> {
                       Row(
                         children: [
                           Container(
-                            width: 40,
-                            height: 40,
+                            width: 32,
+                            height: 32,
                             decoration: BoxDecoration(
                               color: AppTheme.fire.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius:
+                                  BorderRadius.circular(AppTheme.radiusXS),
                             ),
                             child: const Icon(
                               Icons.local_fire_department_rounded,
@@ -134,7 +135,8 @@ class _WorkoutBottomSheetState extends State<WorkoutBottomSheet> {
                             color: isDark
                                 ? Colors.white.withValues(alpha: 0.1)
                                 : Colors.black.withValues(alpha: 0.05),
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius:
+                                BorderRadius.circular(AppTheme.radiusXS),
                           ),
                           child: const Icon(Icons.close, size: 18),
                         ),
@@ -154,7 +156,9 @@ class _WorkoutBottomSheetState extends State<WorkoutBottomSheet> {
                         _QuickAddButton(
                           amount: 100,
                           onTap: () {
-                            context.read<NutritionProvider>().addWorkoutEntry(100);
+                            context
+                                .read<NutritionProvider>()
+                                .addWorkoutEntry(100);
                             Navigator.pop(context);
                           },
                         ),
@@ -162,7 +166,9 @@ class _WorkoutBottomSheetState extends State<WorkoutBottomSheet> {
                         _QuickAddButton(
                           amount: 200,
                           onTap: () {
-                            context.read<NutritionProvider>().addWorkoutEntry(200);
+                            context
+                                .read<NutritionProvider>()
+                                .addWorkoutEntry(200);
                             Navigator.pop(context);
                           },
                         ),
@@ -170,7 +176,9 @@ class _WorkoutBottomSheetState extends State<WorkoutBottomSheet> {
                         _QuickAddButton(
                           amount: 300,
                           onTap: () {
-                            context.read<NutritionProvider>().addWorkoutEntry(300);
+                            context
+                                .read<NutritionProvider>()
+                                .addWorkoutEntry(300);
                             Navigator.pop(context);
                           },
                         ),
@@ -178,7 +186,9 @@ class _WorkoutBottomSheetState extends State<WorkoutBottomSheet> {
                         _QuickAddButton(
                           amount: 500,
                           onTap: () {
-                            context.read<NutritionProvider>().addWorkoutEntry(500);
+                            context
+                                .read<NutritionProvider>()
+                                .addWorkoutEntry(500);
                             Navigator.pop(context);
                           },
                         ),
@@ -327,7 +337,8 @@ class _WorkoutBottomSheetState extends State<WorkoutBottomSheet> {
                                     width: 32,
                                     height: 32,
                                     decoration: BoxDecoration(
-                                      color: AppTheme.fire.withValues(alpha: 0.1),
+                                      color:
+                                          AppTheme.fire.withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: const Icon(
@@ -373,8 +384,9 @@ class _WorkoutBottomSheetState extends State<WorkoutBottomSheet> {
                                         context: context,
                                         isScrollControlled: true,
                                         backgroundColor: Colors.transparent,
-                                        builder: (_) =>
-                                            WorkoutBottomSheet(editEntry: entry),
+                                        builder: (_) => WorkoutBottomSheet(
+                                          editEntry: entry,
+                                        ),
                                       );
                                     },
                                     visualDensity: VisualDensity.compact,
@@ -382,7 +394,8 @@ class _WorkoutBottomSheetState extends State<WorkoutBottomSheet> {
                                   IconButton(
                                     icon: Icon(
                                       Icons.delete_outline,
-                                      color: AppTheme.error.withValues(alpha: 0.7),
+                                      color:
+                                          AppTheme.error.withValues(alpha: 0.7),
                                       size: 20,
                                     ),
                                     onPressed: () => _deleteEntry(entry.id),

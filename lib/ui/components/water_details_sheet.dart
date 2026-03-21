@@ -66,7 +66,7 @@ class _WaterDetailsSheetState extends State<WaterDetailsSheet> {
               height: 4,
               decoration: BoxDecoration(
                 color: theme.colorScheme.outline.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(2),
+                borderRadius: BorderRadius.circular(AppTheme.radiusXS),
               ),
             ),
 
@@ -83,7 +83,8 @@ class _WaterDetailsSheetState extends State<WaterDetailsSheet> {
                         height: 40,
                         decoration: BoxDecoration(
                           color: AppTheme.water.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius:
+                              BorderRadius.circular(AppTheme.radiusSM),
                         ),
                         child: const Icon(
                           Icons.water_drop_rounded,
@@ -106,7 +107,7 @@ class _WaterDetailsSheetState extends State<WaterDetailsSheet> {
                         color: isDark
                             ? Colors.white.withValues(alpha: 0.1)
                             : Colors.black.withValues(alpha: 0.05),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusXS),
                       ),
                       child: const Icon(Icons.close, size: 18),
                     ),
@@ -303,7 +304,8 @@ class _WaterDetailsSheetState extends State<WaterDetailsSheet> {
                               height: 32,
                               decoration: BoxDecoration(
                                 color: AppTheme.water.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius:
+                                    BorderRadius.circular(AppTheme.radiusXS),
                               ),
                               child: const Icon(
                                 Icons.water_drop,

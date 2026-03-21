@@ -49,7 +49,7 @@ class SupplementsTodayCard extends StatelessWidget {
                       height: 36,
                       decoration: BoxDecoration(
                         color: accentColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                       ),
                       child: Icon(
                         Icons.medication_liquid_rounded,
@@ -125,7 +125,7 @@ class SupplementsTodayCard extends StatelessWidget {
                       color: completedCount == totalCount
                           ? accentColor.withValues(alpha: 0.15)
                           : theme.colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                     ),
                     child: Text(
                       '$completedCount/$totalCount',
@@ -273,7 +273,7 @@ class _SupplementCheckboxState extends State<_SupplementCheckbox>
                     : theme.colorScheme.outline.withValues(alpha: 0.3),
                 width: 2,
               ),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(AppTheme.radiusXS),
             ),
             child: widget.isChecked
                 ? ScaleTransition(

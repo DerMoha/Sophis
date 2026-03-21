@@ -7,6 +7,7 @@ import '../../models/nutrition_totals.dart';
 import '../../services/nutrition_provider.dart';
 import '../../l10n/generated/app_localizations.dart';
 import 'package:uuid/uuid.dart';
+import '../theme/app_theme.dart';
 
 /// A modal bottom sheet for selecting portion sizes
 class PortionPickerSheet extends StatefulWidget {
@@ -186,7 +187,7 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
                   },
                   child: ListView(
                     controller: scrollController,
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(AppTheme.spaceLG),
                     keyboardDismissBehavior:
                         ScrollViewKeyboardDismissBehavior.onDrag,
                     children: [
@@ -311,7 +312,7 @@ class _DragHandle extends StatelessWidget {
       height: 4,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(2),
+        borderRadius: BorderRadius.circular(AppTheme.radiusXS),
       ),
     );
   }
@@ -334,7 +335,10 @@ class _ProductHeader extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.spaceLG,
+        vertical: AppTheme.spaceSM,
+      ),
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
@@ -352,7 +356,7 @@ class _ProductHeader extends StatelessWidget {
               color: isDark
                   ? Colors.white10
                   : Colors.black.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppTheme.radiusSM),
             ),
             clipBehavior: Clip.antiAlias,
             child: item.imageUrl != null
@@ -449,8 +453,8 @@ class _PortionGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Wrap(
-      spacing: 8,
-      runSpacing: 8,
+      spacing: AppTheme.spaceSM,
+      runSpacing: AppTheme.spaceSM,
       children: servings
           .map(
             (s) => _PortionChip(
@@ -484,12 +488,15 @@ class _PortionChip extends StatelessWidget {
       color: isSelected
           ? theme.colorScheme.primary.withValues(alpha: isDark ? 0.25 : 0.12)
           : theme.colorScheme.surfaceContainerHighest,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(AppTheme.radiusSM),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppTheme.radiusSM),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppTheme.spaceMD,
+            vertical: AppTheme.spaceSM,
+          ),
           decoration: BoxDecoration(
             border: Border.all(
               color: isSelected
@@ -497,7 +504,7 @@ class _PortionChip extends StatelessWidget {
                   : theme.colorScheme.outline.withValues(alpha: 0.2),
               width: isSelected ? 2 : 1,
             ),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppTheme.radiusSM),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -520,7 +527,7 @@ class _PortionChip extends StatelessWidget {
                   color: isSelected
                       ? theme.colorScheme.primary.withValues(alpha: 0.2)
                       : theme.colorScheme.onSurface.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusXS),
                 ),
                 child: Text(
                   '${serving.grams.toStringAsFixed(0)}g',
@@ -557,8 +564,8 @@ class _CustomPortionChips extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Wrap(
-      spacing: 8,
-      runSpacing: 8,
+      spacing: AppTheme.spaceSM,
+      runSpacing: AppTheme.spaceSM,
       children: portions.map((p) {
         final isSelected = (selectedGrams - p.grams).abs() < 0.1;
 
@@ -567,12 +574,15 @@ class _CustomPortionChips extends StatelessWidget {
               ? theme.colorScheme.secondary
                   .withValues(alpha: isDark ? 0.25 : 0.12)
               : theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppTheme.radiusSM),
           child: InkWell(
             onTap: () => onSelect(p),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppTheme.radiusSM),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppTheme.spaceMD,
+                vertical: AppTheme.spaceSM,
+              ),
               decoration: BoxDecoration(
                 border: Border.all(
                   color: isSelected
@@ -580,7 +590,7 @@ class _CustomPortionChips extends StatelessWidget {
                       : theme.colorScheme.outline.withValues(alpha: 0.2),
                   width: isSelected ? 2 : 1,
                 ),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppTheme.radiusSM),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -614,7 +624,7 @@ class _CustomPortionChips extends StatelessWidget {
                       color: isSelected
                           ? theme.colorScheme.secondary.withValues(alpha: 0.2)
                           : theme.colorScheme.onSurface.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusXS),
                     ),
                     child: Text(
                       '${p.grams.toStringAsFixed(0)}g',
@@ -683,19 +693,21 @@ class _CustomAmountInput extends StatelessWidget {
                   suffixStyle: theme.textTheme.titleMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: AppTheme.spaceMD,
+                    vertical: AppTheme.spaceMD,
+                  ),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                     borderSide: BorderSide(
                       color: theme.colorScheme.outline.withValues(alpha: 0.3),
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                     borderSide: BorderSide(
                       color: theme.colorScheme.primary,
                       width: 2,
@@ -715,7 +727,7 @@ class _CustomAmountInput extends StatelessWidget {
               style: IconButton.styleFrom(
                 backgroundColor: theme.colorScheme.primaryContainer,
                 foregroundColor: theme.colorScheme.onPrimaryContainer,
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppTheme.spaceMD),
               ),
             ),
           ],
@@ -783,9 +795,9 @@ class _AddButton extends StatelessWidget {
           child: ElevatedButton(
             onPressed: onAdd,
             style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
+              padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(AppTheme.radiusMD),
               ),
             ),
             child: Text(
@@ -793,10 +805,7 @@ class _AddButton extends StatelessWidget {
                 grams.toStringAsFixed(0),
                 calories.toStringAsFixed(0),
               ),
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
-              ),
+              style: theme.textTheme.labelLarge,
             ),
           ),
         ),
