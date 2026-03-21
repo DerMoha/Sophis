@@ -297,6 +297,103 @@ Respond ONLY with valid JSON in this exact format, no other text:
     }
   }
 
+  /// Analyze a nutrition label photo and extract per-100g values
+  Future<NutritionLabelResult?> analyzeNutritionLabel(File imageFile) async {
+    if (!_isInitialized || _model == null) {
+      throw Exception('Gemini service not initialized');
+    }
+
+    if (!await canMakeRequest()) {
+      throw Exception(
+        'Daily limit reached (20 requests/day). Try again tomorrow.',
+      );
+    }
+
+    final bytes = await imageFile.readAsBytes();
+    final imagePart = DataPart('image/jpeg', bytes);
+
+    const promptText = '''
+Analyze this photo of a nutrition label (Nährwerttabelle / Nährwertangaben).
+Extract the per-100g values. The label may be in German or English.
+
+Look for:
+- Energie / Energy → convert to kcal (1 kJ = 0.239 kcal)
+- Eiweiß / Protein
+- Kohlenhydrate / Carbohydrates
+- Fett / Fat
+- Product name if visible on the packaging
+
+Respond ONLY with valid JSON in this exact format, no other text:
+{
+  "product_name": "Product Name or null if not visible",
+  "brand": "Brand or null if not visible",
+  "calories_per_100g": 200,
+  "protein_per_100g": 10.0,
+  "carbs_per_100g": 25.0,
+  "fat_per_100g": 8.0,
+  "serving_size_g": 30,
+  "serving_name": "1 Portion"
+}
+
+If the image is not a nutrition label or values are unreadable, return:
+{"product_name": null, "brand": null, "calories_per_100g": 0, "protein_per_100g": 0, "carbs_per_100g": 0, "fat_per_100g": 0, "serving_size_g": null, "serving_name": null}
+''';
+
+    final prompt = TextPart(promptText);
+
+    try {
+      final response = await _model!.generateContent([
+        Content.multi([prompt, imagePart]),
+      ]);
+
+      await _incrementRequestCount();
+
+      final text = response.text;
+      if (text == null || text.isEmpty) return null;
+
+      return _parseNutritionLabelResponse(text);
+    } catch (e) {
+      throw Exception('Failed to analyze nutrition label: $e');
+    }
+  }
+
+  NutritionLabelResult? _parseNutritionLabelResponse(String text) {
+    try {
+      var cleaned = text.trim();
+      if (cleaned.startsWith('```json')) {
+        cleaned = cleaned.substring(7);
+      } else if (cleaned.startsWith('```')) {
+        cleaned = cleaned.substring(3);
+      }
+      if (cleaned.endsWith('```')) {
+        cleaned = cleaned.substring(0, cleaned.length - 3);
+      }
+      cleaned = cleaned.trim();
+
+      final json = jsonDecode(cleaned) as Map<String, dynamic>;
+
+      final calories =
+          (json['calories_per_100g'] as num?)?.toDouble() ?? 0;
+      if (calories == 0) return null;
+
+      return NutritionLabelResult(
+        productName: json['product_name']?.toString(),
+        brand: json['brand']?.toString(),
+        caloriesPer100g: calories,
+        proteinPer100g:
+            (json['protein_per_100g'] as num?)?.toDouble() ?? 0,
+        carbsPer100g:
+            (json['carbs_per_100g'] as num?)?.toDouble() ?? 0,
+        fatPer100g: (json['fat_per_100g'] as num?)?.toDouble() ?? 0,
+        servingSizeG:
+            (json['serving_size_g'] as num?)?.toDouble(),
+        servingName: json['serving_name']?.toString(),
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
   /// Extract recipe ingredients from an image of a recipe (cookbook, screenshot, etc.)
   Future<RecipeExtraction> extractRecipeFromImage(File imageFile) async {
     if (!_isInitialized || _model == null) {
@@ -555,4 +652,27 @@ class FoodAnalysis {
       fat: fat * ratio,
     );
   }
+}
+
+/// Result from analyzing a nutrition label photo
+class NutritionLabelResult {
+  final String? productName;
+  final String? brand;
+  final double caloriesPer100g;
+  final double proteinPer100g;
+  final double carbsPer100g;
+  final double fatPer100g;
+  final double? servingSizeG;
+  final String? servingName;
+
+  const NutritionLabelResult({
+    this.productName,
+    this.brand,
+    required this.caloriesPer100g,
+    required this.proteinPer100g,
+    required this.carbsPer100g,
+    required this.fatPer100g,
+    this.servingSizeG,
+    this.servingName,
+  });
 }
