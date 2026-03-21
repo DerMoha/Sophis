@@ -7,6 +7,9 @@ import 'package:uuid/uuid.dart';
 /// Service for searching food products via OpenFoodFacts API
 class OpenFoodFactsService {
   static const _baseUrl = 'https://world.openfoodfacts.org';
+  static const _baseUrlDe = 'https://de.openfoodfacts.org';
+  static const _apiV2Fields =
+      'code,product_name,product_name_de,nutriments,brands,image_front_small_url,serving_size,serving_quantity,categories_tags';
   static const _cacheDuration = Duration(minutes: 10);
 
   // In-memory cache: query -> (results, timestamp)
@@ -73,16 +76,45 @@ class OpenFoodFactsService {
     }
   }
 
-  /// Lookup a product by barcode
-  Future<FoodItem?> lookupBarcode(String barcode) async {
+  /// Lookup a product by barcode on the German OpenFoodFacts endpoint
+  Future<FoodItem?> lookupBarcodeDe(String barcode) async {
     try {
-      final url = Uri.parse('$_baseUrl/api/v0/product/$barcode.json');
+      final url = Uri.parse(
+        '$_baseUrlDe/api/v2/product/$barcode.json?lc=de&fields=$_apiV2Fields',
+      );
       final response = await http.get(url);
 
       if (response.statusCode != 200) return null;
 
       final data = jsonDecode(response.body) as Map<String, dynamic>;
-      if (data['status'] != 1) return null;
+      if (data['status'] != 'success' &&
+          data['status'] != 1 &&
+          data['status_verbose'] != 'product found') {
+        return null;
+      }
+
+      return _parseProduct(data['product'] as Map<String, dynamic>?);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Lookup a product by barcode on the World OpenFoodFacts endpoint
+  Future<FoodItem?> lookupBarcode(String barcode) async {
+    try {
+      final url = Uri.parse(
+        '$_baseUrl/api/v2/product/$barcode.json?lc=de&fields=$_apiV2Fields',
+      );
+      final response = await http.get(url);
+
+      if (response.statusCode != 200) return null;
+
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      if (data['status'] != 'success' &&
+          data['status'] != 1 &&
+          data['status_verbose'] != 'product found') {
+        return null;
+      }
 
       return _parseProduct(data['product'] as Map<String, dynamic>?);
     } catch (e) {
@@ -93,7 +125,9 @@ class OpenFoodFactsService {
   FoodItem? _parseProduct(Map<String, dynamic>? product) {
     if (product == null) return null;
 
-    final name = product['product_name'] ?? product['product_name_en'];
+    final name = product['product_name_de'] ??
+        product['product_name'] ??
+        product['product_name_en'];
     if (name == null || name.toString().isEmpty) return null;
 
     final nutrients = product['nutriments'] as Map<String, dynamic>? ?? {};
