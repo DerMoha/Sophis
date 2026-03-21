@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../screens/ai_food_camera_screen.dart';
 import '../theme/app_theme.dart';
 
@@ -122,21 +123,21 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('Confirm Re-analysis'),
+          title: Text(AppLocalizations.of(ctx)!.confirmReanalysis),
           content: Text(
-            'You have ${widget.remainingRequests} request(s) remaining today. Continue?',
+            AppLocalizations.of(ctx)!.reanalysisConfirmation(widget.remainingRequests),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
+              child: Text(AppLocalizations.of(ctx)!.cancel),
             ),
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(ctx);
                 _reAnalyze();
               },
-              child: const Text('Continue'),
+              child: Text(AppLocalizations.of(ctx)!.continueAction),
             ),
           ],
         ),
@@ -166,22 +167,23 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
   }
 
   String? _validatePositiveNumber(String? value, String fieldName) {
+    final l10n = AppLocalizations.of(context)!;
     if (value == null || value.trim().isEmpty) {
-      return '$fieldName is required';
+      return l10n.fieldRequired(fieldName);
     }
     final number = double.tryParse(value);
     if (number == null) {
-      return 'Enter a valid number';
+      return l10n.enterValidNumber;
     }
     if (number < 0) {
-      return '$fieldName cannot be negative';
+      return l10n.fieldCannotBeNegative(fieldName);
     }
     return null;
   }
 
   String? _validateName(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return 'Food name is required';
+      return AppLocalizations.of(context)!.foodNameRequired;
     }
     return null;
   }
@@ -189,6 +191,7 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final isDark = theme.brightness == Brightness.dark;
     final showLowRequestWarning =
         widget.remainingRequests < 5 && widget.remainingRequests > 0;
@@ -235,7 +238,7 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      'Edit Food Analysis',
+                      l10n.editFoodAnalysis,
                       style: theme.textTheme.headlineSmall,
                     ),
                   ],
@@ -279,7 +282,7 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                   const SizedBox(width: AppTheme.spaceSM),
                   Expanded(
                     child: Text(
-                      'Only ${widget.remainingRequests} AI request(s) left today',
+                      l10n.aiRequestsWarning(widget.remainingRequests),
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: AppTheme.warning,
                         fontWeight: FontWeight.w500,
@@ -309,8 +312,8 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                     TextFormField(
                       controller: widget.result.nameController,
                       decoration: InputDecoration(
-                        labelText: 'Food name',
-                        hintText: 'e.g., Chicken Breast',
+                        labelText: l10n.foodName,
+                        hintText: l10n.foodNameHint,
                         prefixIcon: const Icon(Icons.restaurant, size: 20),
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: AppTheme.spaceMD,
@@ -331,7 +334,7 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                         ),
                       ],
                       decoration: InputDecoration(
-                        labelText: 'Portion size',
+                        labelText: l10n.portionSize,
                         hintText: '100',
                         prefixIcon: const Icon(Icons.scale, size: 20),
                         suffixText: 'g',
@@ -340,7 +343,7 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                           vertical: 14,
                         ),
                       ),
-                      validator: (v) => _validatePositiveNumber(v, 'Portion'),
+                      validator: (v) => _validatePositiveNumber(v, l10n.portionSize),
                     ),
                     const SizedBox(height: 16),
 
@@ -349,16 +352,16 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                       value: _autoScaleEnabled,
                       onChanged: (value) =>
                           setState(() => _autoScaleEnabled = value),
-                      title: const Text('Auto-scale nutrition'),
+                      title: Text(l10n.autoScaleNutrition),
                       subtitle:
-                          const Text('Adjust macros when portion changes'),
+                          Text(l10n.autoScaleNutritionSubtitle),
                       contentPadding: EdgeInsets.zero,
                     ),
                     const SizedBox(height: 8),
 
                     // Macros section header
                     Text(
-                      'NUTRITION VALUES',
+                      l10n.nutritionValues,
                       style: theme.textTheme.labelMedium?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                         letterSpacing: 0.5,
@@ -376,7 +379,7 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                         ),
                       ],
                       decoration: InputDecoration(
-                        labelText: 'Calories',
+                        labelText: l10n.calories,
                         hintText: '200',
                         prefixIcon: const Icon(
                           Icons.local_fire_department_outlined,
@@ -388,7 +391,7 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                           vertical: 14,
                         ),
                       ),
-                      validator: (v) => _validatePositiveNumber(v, 'Calories'),
+                      validator: (v) => _validatePositiveNumber(v, l10n.calories),
                     ),
                     const SizedBox(height: 16),
 
@@ -406,7 +409,7 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                               ),
                             ],
                             decoration: InputDecoration(
-                              labelText: 'Protein',
+                              labelText: l10n.protein,
                               hintText: '20',
                               suffixText: 'g',
                               contentPadding: const EdgeInsets.symmetric(
@@ -415,7 +418,7 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                               ),
                             ),
                             validator: (v) =>
-                                _validatePositiveNumber(v, 'Protein'),
+                                _validatePositiveNumber(v, l10n.protein),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -430,7 +433,7 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                               ),
                             ],
                             decoration: InputDecoration(
-                              labelText: 'Carbs',
+                              labelText: l10n.carbs,
                               hintText: '30',
                               suffixText: 'g',
                               contentPadding: const EdgeInsets.symmetric(
@@ -439,7 +442,7 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                               ),
                             ),
                             validator: (v) =>
-                                _validatePositiveNumber(v, 'Carbs'),
+                                _validatePositiveNumber(v, l10n.carbs),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -454,7 +457,7 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                               ),
                             ],
                             decoration: InputDecoration(
-                              labelText: 'Fat',
+                              labelText: l10n.fat,
                               hintText: '10',
                               suffixText: 'g',
                               contentPadding: const EdgeInsets.symmetric(
@@ -462,7 +465,7 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                                 vertical: 14,
                               ),
                             ),
-                            validator: (v) => _validatePositiveNumber(v, 'Fat'),
+                            validator: (v) => _validatePositiveNumber(v, l10n.fat),
                           ),
                         ),
                       ],
@@ -476,14 +479,14 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                         TextButton.icon(
                           onPressed: _hasChanges ? _resetToOriginal : null,
                           icon: const Icon(Icons.restore, size: 18),
-                          label: const Text('Reset'),
+                          label: Text(l10n.resetAction),
                         ),
                         const Spacer(),
                         // Save button
                         ElevatedButton.icon(
                           onPressed: _isValid ? _saveChanges : null,
                           icon: const Icon(Icons.check, size: 18),
-                          label: const Text('Save Changes'),
+                          label: Text(l10n.saveChanges),
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(
                               horizontal: AppTheme.spaceLG,
@@ -503,7 +506,7 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                           onPressed: _showReAnalyzeConfirmation,
                           icon: const Icon(Icons.auto_awesome, size: 18),
                           label: Text(
-                            'Ask AI to Re-evaluate (uses 1 of ${widget.remainingRequests} requests)',
+                            l10n.askAiReanalyze(widget.remainingRequests),
                             style: theme.textTheme.bodySmall,
                           ),
                           style: OutlinedButton.styleFrom(
@@ -537,7 +540,7 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                             const SizedBox(width: AppTheme.spaceSM),
                             Expanded(
                               child: Text(
-                                'No AI requests remaining today. You can still manually edit values.',
+                                l10n.noAiRequestsMessage,
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: theme.colorScheme.error,
                                 ),

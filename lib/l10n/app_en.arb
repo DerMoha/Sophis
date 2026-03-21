@@ -499,5 +499,49 @@
   "saveCorrection": "Save Correction",
   "resetToApiData": "Reset to Original",
   "editProduct": "Edit Product",
-  "productCorrectionSaved": "Product correction saved"
+  "productCorrectionSaved": "Product correction saved",
+
+  "confirmReanalysis": "Confirm Re-analysis",
+  "reanalysisConfirmation": "You have {count} request(s) remaining today. Continue?",
+  "@reanalysisConfirmation": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "continueAction": "Continue",
+  "editFoodAnalysis": "Edit Food Analysis",
+  "foodNameHint": "e.g., Chicken Breast",
+  "portionSize": "Portion size",
+  "autoScaleNutrition": "Auto-scale nutrition",
+  "autoScaleNutritionSubtitle": "Adjust macros when portion changes",
+  "nutritionValues": "NUTRITION VALUES",
+  "resetAction": "Reset",
+  "saveChanges": "Save Changes",
+  "askAiReanalyze": "Ask AI to Re-evaluate (uses 1 of {count} requests)",
+  "@askAiReanalyze": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "noAiRequestsMessage": "No AI requests remaining today. You can still manually edit values.",
+  "fieldRequired": "{field} is required",
+  "@fieldRequired": {
+    "placeholders": {
+      "field": {"type": "String"}
+    }
+  },
+  "enterValidNumber": "Enter a valid number",
+  "fieldCannotBeNegative": "{field} cannot be negative",
+  "@fieldCannotBeNegative": {
+    "placeholders": {
+      "field": {"type": "String"}
+    }
+  },
+  "foodNameRequired": "Food name is required",
+  "aiRequestsWarning": "Only {count} AI request(s) left today",
+  "@aiRequestsWarning": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  }
 }

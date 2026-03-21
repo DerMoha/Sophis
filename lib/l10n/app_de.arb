@@ -373,5 +373,49 @@
   "saveCorrection": "Korrektur speichern",
   "resetToApiData": "Zurücksetzen",
   "editProduct": "Produkt bearbeiten",
-  "productCorrectionSaved": "Produktkorrektur gespeichert"
+  "productCorrectionSaved": "Produktkorrektur gespeichert",
+
+  "confirmReanalysis": "Erneute Analyse bestätigen",
+  "reanalysisConfirmation": "Du hast noch {count} Anfrage(n) heute übrig. Fortfahren?",
+  "@reanalysisConfirmation": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "continueAction": "Weiter",
+  "editFoodAnalysis": "Analyse bearbeiten",
+  "foodNameHint": "z.B. Hähnchenbrust",
+  "portionSize": "Portionsgröße",
+  "autoScaleNutrition": "Nährwerte automatisch skalieren",
+  "autoScaleNutritionSubtitle": "Makros bei Portionsänderung anpassen",
+  "nutritionValues": "NÄHRWERTE",
+  "resetAction": "Zurücksetzen",
+  "saveChanges": "Änderungen speichern",
+  "askAiReanalyze": "KI erneut bewerten lassen (nutzt 1 von {count} Anfragen)",
+  "@askAiReanalyze": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "noAiRequestsMessage": "Keine KI-Anfragen mehr heute. Du kannst Werte weiterhin manuell bearbeiten.",
+  "fieldRequired": "{field} ist erforderlich",
+  "@fieldRequired": {
+    "placeholders": {
+      "field": {"type": "String"}
+    }
+  },
+  "enterValidNumber": "Gib eine gültige Zahl ein",
+  "fieldCannotBeNegative": "{field} darf nicht negativ sein",
+  "@fieldCannotBeNegative": {
+    "placeholders": {
+      "field": {"type": "String"}
+    }
+  },
+  "foodNameRequired": "Name ist erforderlich",
+  "aiRequestsWarning": "Nur noch {count} KI-Anfrage(n) heute übrig",
+  "@aiRequestsWarning": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  }
 }
