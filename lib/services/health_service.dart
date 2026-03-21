@@ -8,8 +8,24 @@ class HealthService {
   final Health _health = Health();
   bool _initialized = false;
 
-  static const _types = [HealthDataType.ACTIVE_ENERGY_BURNED];
-  static const _permissions = [HealthDataAccess.READ];
+  static const _burnedTypes = [HealthDataType.ACTIVE_ENERGY_BURNED];
+  static const _burnedPermissions = [HealthDataAccess.READ];
+
+  static const _weightTypes = [HealthDataType.WEIGHT];
+  static const _weightPermissions = [HealthDataAccess.READ_WRITE];
+
+  static const _nutritionTypes = [
+    HealthDataType.DIETARY_ENERGY_CONSUMED,
+    HealthDataType.DIETARY_PROTEIN_CONSUMED,
+    HealthDataType.DIETARY_CARBS_CONSUMED,
+    HealthDataType.DIETARY_FATS_CONSUMED,
+  ];
+  static const _nutritionPermissions = [
+    HealthDataAccess.WRITE,
+    HealthDataAccess.WRITE,
+    HealthDataAccess.WRITE,
+    HealthDataAccess.WRITE,
+  ];
 
   Future<void> initialize() async {
     if (_initialized) return;
@@ -22,7 +38,10 @@ class HealthService {
   Future<bool> requestPermissions() async {
     try {
       await initialize();
-      return await _health.requestAuthorization(_types, permissions: _permissions);
+      return await _health.requestAuthorization(
+        _burnedTypes,
+        permissions: _burnedPermissions,
+      );
     } catch (_) {
       return false;
     }
@@ -31,7 +50,35 @@ class HealthService {
   Future<bool> hasPermissions() async {
     try {
       await initialize();
-      return await _health.hasPermissions(_types, permissions: _permissions) ?? false;
+      return await _health.hasPermissions(
+            _burnedTypes,
+            permissions: _burnedPermissions,
+          ) ??
+          false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> requestWeightPermissions() async {
+    try {
+      await initialize();
+      return await _health.requestAuthorization(
+        _weightTypes,
+        permissions: _weightPermissions,
+      );
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> requestNutritionPermissions() async {
+    try {
+      await initialize();
+      return await _health.requestAuthorization(
+        _nutritionTypes,
+        permissions: _nutritionPermissions,
+      );
     } catch (_) {
       return false;
     }
@@ -49,7 +96,7 @@ class HealthService {
       final data = await _health.getHealthDataFromTypes(
         startTime: start,
         endTime: end,
-        types: _types,
+        types: _burnedTypes,
       );
       final deduped = _health.removeDuplicates(data);
       return deduped.fold<double>(0.0, (sum, point) {
@@ -61,6 +108,96 @@ class HealthService {
       });
     } catch (_) {
       return 0.0;
+    }
+  }
+
+  Future<List<({double kg, DateTime timestamp})>> getWeightEntries(
+    DateTime start,
+    DateTime end,
+  ) async {
+    try {
+      await initialize();
+      final data = await _health.getHealthDataFromTypes(
+        startTime: start,
+        endTime: end,
+        types: _weightTypes,
+      );
+      final deduped = _health.removeDuplicates(data);
+      return deduped
+          .where((p) => p.value is NumericHealthValue)
+          .map(
+            (p) => (
+              kg: (p.value as NumericHealthValue).numericValue.toDouble(),
+              timestamp: p.dateFrom,
+            ),
+          )
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<bool> writeWeight(double kg, DateTime timestamp) async {
+    try {
+      await initialize();
+      return await _health.writeHealthData(
+        value: kg,
+        type: HealthDataType.WEIGHT,
+        startTime: timestamp,
+        endTime: timestamp,
+      );
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> writeNutritionForDay(
+    DateTime date, {
+    required double calories,
+    required double protein,
+    required double carbs,
+    required double fat,
+  }) async {
+    try {
+      await initialize();
+      final start = DateTime(date.year, date.month, date.day);
+      final end = DateTime(date.year, date.month, date.day, 23, 59, 59);
+
+      // Delete existing entries for the day before rewriting
+      for (final type in _nutritionTypes) {
+        try {
+          await _health.delete(type: type, startTime: start, endTime: end);
+        } catch (_) {
+          // Ignore delete errors, proceed with write
+        }
+      }
+
+      await _health.writeHealthData(
+        value: calories,
+        type: HealthDataType.DIETARY_ENERGY_CONSUMED,
+        startTime: start,
+        endTime: end,
+      );
+      await _health.writeHealthData(
+        value: protein,
+        type: HealthDataType.DIETARY_PROTEIN_CONSUMED,
+        startTime: start,
+        endTime: end,
+      );
+      await _health.writeHealthData(
+        value: carbs,
+        type: HealthDataType.DIETARY_CARBS_CONSUMED,
+        startTime: start,
+        endTime: end,
+      );
+      await _health.writeHealthData(
+        value: fat,
+        type: HealthDataType.DIETARY_FATS_CONSUMED,
+        startTime: start,
+        endTime: end,
+      );
+    } catch (_) {
+      // Best-effort write
     }
   }
 }

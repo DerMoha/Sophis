@@ -4,7 +4,6 @@ import '../models/custom_meal_type.dart';
 import 'storage_service.dart';
 import 'notification_service.dart';
 import 'health_service.dart';
-import 'log_service.dart';
 
 /// Settings provider for theme, locale, and AI mode
 class SettingsProvider extends ChangeNotifier {
@@ -22,12 +21,7 @@ class SettingsProvider extends ChangeNotifier {
   Future<void> _loadSecureData() async {
     try {
       _geminiApiKey = await _storage.loadApiKey();
-    } catch (e, stackTrace) {
-      Log.warning(
-        'Failed to restore Gemini API key from secure storage. User may need to re-enter it.',
-        error: e,
-        stackTrace: stackTrace,
-      );
+    } catch (e) {
       _geminiApiKey = null;
     }
     notifyListeners();
@@ -55,13 +49,12 @@ class SettingsProvider extends ChangeNotifier {
 
   // Health sync
   bool get healthSyncEnabled => _settings.healthSyncEnabled;
+  bool get healthWeightSyncEnabled => _settings.healthWeightSyncEnabled;
+  bool get healthNutritionSyncEnabled => _settings.healthNutritionSyncEnabled;
 
   // Unit system
   UnitSystem get unitSystem => _settings.unitSystem;
   bool get isImperial => _settings.unitSystem == UnitSystem.imperial;
-
-  // Debug logging
-  bool get debugLoggingEnabled => _settings.debugLoggingEnabled;
 
   Locale? get locale {
     if (_settings.localeOverride == null) return null;
@@ -136,17 +129,6 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> setDebugLoggingEnabled(bool enabled) async {
-    _settings = _settings.copyWith(debugLoggingEnabled: enabled);
-    await _storage.saveSettings(_settings);
-    notifyListeners();
-
-    // Log the state change (will only write if enabled)
-    if (enabled) {
-      LogService.instance.info('Debug logging enabled by user');
-    }
-  }
-
   Future<void> setRemindersEnabled(bool enabled) async {
     if (enabled) {
       // Request permission when user enables reminders
@@ -216,6 +198,32 @@ class SettingsProvider extends ChangeNotifier {
     }
 
     _settings = _settings.copyWith(healthSyncEnabled: enabled);
+    await _storage.saveSettings(_settings);
+    notifyListeners();
+    return true;
+  }
+
+  Future<bool> setHealthWeightSyncEnabled(bool enabled) async {
+    if (enabled) {
+      final healthService = HealthService();
+      final granted = await healthService.requestWeightPermissions();
+      if (!granted) return false;
+    }
+
+    _settings = _settings.copyWith(healthWeightSyncEnabled: enabled);
+    await _storage.saveSettings(_settings);
+    notifyListeners();
+    return true;
+  }
+
+  Future<bool> setHealthNutritionSyncEnabled(bool enabled) async {
+    if (enabled) {
+      final healthService = HealthService();
+      final granted = await healthService.requestNutritionPermissions();
+      if (!granted) return false;
+    }
+
+    _settings = _settings.copyWith(healthNutritionSyncEnabled: enabled);
     await _storage.saveSettings(_settings);
     notifyListeners();
     return true;

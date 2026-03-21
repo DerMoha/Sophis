@@ -77,6 +77,8 @@ class AppSettings {
   final String? dinnerReminderTime;
   final bool remindersEnabled;
   final bool healthSyncEnabled;
+  final bool healthWeightSyncEnabled;
+  final bool healthNutritionSyncEnabled;
   // Custom water quick-add sizes (ml)
   final int waterSize1;
   final int waterSize2;
@@ -93,8 +95,6 @@ class AppSettings {
   final bool showSupplements;
   // Quick Action Button Size
   final QuickActionSize quickActionSize;
-  // Debug logging
-  final bool debugLoggingEnabled;
 
   const AppSettings({
     this.aiMode = AIMode.offlineBasic,
@@ -107,6 +107,8 @@ class AppSettings {
     this.dinnerReminderTime,
     this.remindersEnabled = false,
     this.healthSyncEnabled = false,
+    this.healthWeightSyncEnabled = false,
+    this.healthNutritionSyncEnabled = false,
     this.waterSize1 = 150,
     this.waterSize2 = 250,
     this.waterSize3 = 500,
@@ -117,7 +119,6 @@ class AppSettings {
     this.showMealMacros = false,
     this.showSupplements = true,
     this.quickActionSize = QuickActionSize.small,
-    this.debugLoggingEnabled = false,
   });
 
   Color get accentColor => Color(accentColorValue);
@@ -133,6 +134,8 @@ class AppSettings {
         'dinnerReminderTime': dinnerReminderTime,
         'remindersEnabled': remindersEnabled,
         'healthSyncEnabled': healthSyncEnabled,
+        'healthWeightSyncEnabled': healthWeightSyncEnabled,
+        'healthNutritionSyncEnabled': healthNutritionSyncEnabled,
         'waterSize1': waterSize1,
         'waterSize2': waterSize2,
         'waterSize3': waterSize3,
@@ -143,7 +146,6 @@ class AppSettings {
         'showMealMacros': showMealMacros,
         'showSupplements': showSupplements,
         'quickActionSize': quickActionSize.index,
-        'debugLoggingEnabled': debugLoggingEnabled,
       };
 
   factory AppSettings.fromJson(Map<String, dynamic> json) => AppSettings(
@@ -162,6 +164,10 @@ class AppSettings {
         dinnerReminderTime: json['dinnerReminderTime'],
         remindersEnabled: json['remindersEnabled'] ?? false,
         healthSyncEnabled: json['healthSyncEnabled'] ?? false,
+        healthWeightSyncEnabled:
+            json['healthWeightSyncEnabled'] as bool? ?? false,
+        healthNutritionSyncEnabled:
+            json['healthNutritionSyncEnabled'] as bool? ?? false,
         waterSize1: json['waterSize1'] ?? 150,
         waterSize2: json['waterSize2'] ?? 250,
         waterSize3: json['waterSize3'] ?? 500,
@@ -182,7 +188,6 @@ class AppSettings {
         quickActionSize: json['quickActionSize'] != null
             ? QuickActionSize.values[json['quickActionSize']]
             : QuickActionSize.small,
-        debugLoggingEnabled: json['debugLoggingEnabled'] as bool? ?? false,
       );
 
   AppSettings copyWith({
@@ -196,6 +201,8 @@ class AppSettings {
     String? dinnerReminderTime,
     bool? remindersEnabled,
     bool? healthSyncEnabled,
+    bool? healthWeightSyncEnabled,
+    bool? healthNutritionSyncEnabled,
     int? waterSize1,
     int? waterSize2,
     int? waterSize3,
@@ -206,7 +213,6 @@ class AppSettings {
     bool? showMealMacros,
     bool? showSupplements,
     QuickActionSize? quickActionSize,
-    bool? debugLoggingEnabled,
     bool clearLocale = false,
     bool clearBreakfast = false,
     bool clearLunch = false,
@@ -229,6 +235,10 @@ class AppSettings {
             : (dinnerReminderTime ?? this.dinnerReminderTime),
         remindersEnabled: remindersEnabled ?? this.remindersEnabled,
         healthSyncEnabled: healthSyncEnabled ?? this.healthSyncEnabled,
+        healthWeightSyncEnabled:
+            healthWeightSyncEnabled ?? this.healthWeightSyncEnabled,
+        healthNutritionSyncEnabled:
+            healthNutritionSyncEnabled ?? this.healthNutritionSyncEnabled,
         waterSize1: waterSize1 ?? this.waterSize1,
         waterSize2: waterSize2 ?? this.waterSize2,
         waterSize3: waterSize3 ?? this.waterSize3,
@@ -239,6 +249,5 @@ class AppSettings {
         showMealMacros: showMealMacros ?? this.showMealMacros,
         showSupplements: showSupplements ?? this.showSupplements,
         quickActionSize: quickActionSize ?? this.quickActionSize,
-        debugLoggingEnabled: debugLoggingEnabled ?? this.debugLoggingEnabled,
       );
 }

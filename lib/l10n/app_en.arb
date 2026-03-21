@@ -118,6 +118,10 @@
   "healthSyncSubtitle": "Sync burned calories from Health Connect / HealthKit",
   "healthPermissionError": "Health permission denied or not available",
   "burnedCaloriesDisclaimer": "Burned calories will be added to your daily budget",
+  "weightSync": "Weight Sync",
+  "weightSyncSubtitle": "Import weight from Apple Health and sync new entries back",
+  "nutritionSync": "Nutrition Sync",
+  "nutritionSyncSubtitle": "Send your food logs to Apple Health",
   "aiSection": "AI",
   "geminiApiKey": "Gemini API Key",
   "enterApiKey": "Enter your API key",
@@ -277,17 +281,6 @@
   "foodReanalyzed": "Food re-analyzed successfully",
   "errorGeneric": "Error: {error}",
   "@errorGeneric": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "clearDebugLogs": "Clear Debug Logs",
-  "clearDebugLogsConfirm": "Are you sure you want to delete all diagnostic logs? This action cannot be undone.",
-  "debugLogsCleared": "Debug logs cleared",
-  "clearLogsFailed": "Failed to clear logs: {error}",
-  "@clearLogsFailed": {
     "placeholders": {
       "error": {
         "type": "String"
