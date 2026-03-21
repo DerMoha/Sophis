@@ -205,7 +205,7 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
                       // Preset portions from API
                       if (widget.item.servings.isNotEmpty) ...[
                         _SectionTitle(title: l10n.portion),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: AppTheme.spaceSM2),
                         _PortionGrid(
                           servings: widget.item.servings,
                           selected: _selectedServing,
@@ -227,7 +227,7 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
                             child: Text(l10n.edit),
                           ),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: AppTheme.spaceSM2),
                         _CustomPortionChips(
                           portions: customPortions,
                           selectedGrams: _selectedGrams,
@@ -246,7 +246,7 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
 
                       // Custom amount input
                       _SectionTitle(title: l10n.customAmount),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppTheme.spaceSM2),
                       _CustomAmountInput(
                         controller: _customController,
                         focusNode: _focusNode,
@@ -820,7 +820,7 @@ class _AddButton extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
 
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
+      duration: AppTheme.animFaster,
       curve: Curves.easeOutCubic,
       padding: EdgeInsets.fromLTRB(
         16,

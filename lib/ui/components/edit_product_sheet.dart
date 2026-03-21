@@ -244,7 +244,7 @@ class _EditProductSheetState extends State<EditProductSheet> {
                         letterSpacing: 0.5,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppTheme.spaceSM2),
 
                     // Calories
                     TextFormField(

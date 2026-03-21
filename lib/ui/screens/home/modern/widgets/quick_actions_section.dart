@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../../../l10n/generated/app_localizations.dart';
 import '../../../../../../models/app_settings.dart';
 import '../../../../components/organic_components.dart';
+import '../../../../theme/app_theme.dart';
 import '../../shared/home_actions.dart';
 
 /// Displays quick action buttons either as a horizontal row of chips or a grid.
@@ -61,13 +62,13 @@ class QuickActionsSection extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: action.onTap,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLG),
         child: Container(
           constraints: const BoxConstraints(minHeight: 48),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: BorderRadius.circular(AppTheme.radiusLG),
             border: Border.all(color: color.withValues(alpha: 0.2)),
           ),
           child: Row(
@@ -107,7 +108,7 @@ class QuickActionsSection extends StatelessWidget {
       ),);
 
       if (i + 2 < actions.length) {
-        rows.add(const SizedBox(height: 12));
+        rows.add(const SizedBox(height: AppTheme.spaceSM2));
       }
     }
 

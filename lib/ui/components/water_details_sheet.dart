@@ -44,7 +44,6 @@ class _WaterDetailsSheetState extends State<WaterDetailsSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final l10n = AppLocalizations.of(context)!;
 
     final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
@@ -104,9 +103,7 @@ class _WaterDetailsSheetState extends State<WaterDetailsSheet> {
                       width: 32,
                       height: 32,
                       decoration: BoxDecoration(
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.1)
-                            : Colors.black.withValues(alpha: 0.05),
+                        color: theme.colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(AppTheme.radiusXS),
                       ),
                       child: const Icon(Icons.close, size: 18),
@@ -175,7 +172,7 @@ class _WaterDetailsSheetState extends State<WaterDetailsSheet> {
                 },
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppTheme.spaceLG2),
 
             // Custom Entry
             Consumer<SettingsProvider>(
@@ -209,7 +206,7 @@ class _WaterDetailsSheetState extends State<WaterDetailsSheet> {
                           onPressed: _addCustomWater,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.water,
-                            foregroundColor: Colors.white,
+                            foregroundColor: theme.colorScheme.onPrimary,
                             padding: const EdgeInsets.symmetric(horizontal: 24),
                           ),
                           child: Text(l10n.add),
@@ -262,7 +259,7 @@ class _WaterDetailsSheetState extends State<WaterDetailsSheet> {
                             size: 24,
                           ),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: AppTheme.spaceSM2),
                         Text(
                           l10n.noEntries,
                           style: theme.textTheme.bodyMedium?.copyWith(
@@ -291,9 +288,7 @@ class _WaterDetailsSheetState extends State<WaterDetailsSheet> {
                           vertical: 12,
                         ),
                         decoration: BoxDecoration(
-                          color: isDark
-                              ? Colors.white.withValues(alpha: 0.05)
-                              : Colors.black.withValues(alpha: 0.02),
+                          color: theme.colorScheme.surfaceContainerLowest,
                           borderRadius:
                               BorderRadius.circular(AppTheme.radiusMD),
                         ),

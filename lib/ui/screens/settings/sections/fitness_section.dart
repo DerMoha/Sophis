@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../../../l10n/generated/app_localizations.dart';
 import '../../../../../services/nutrition_provider.dart';
 import '../../../../../services/settings_provider.dart';
+import '../../../theme/app_theme.dart';
 import '../../../components/settings/settings_tiles.dart';
 
 class FitnessSection extends StatelessWidget {
@@ -38,7 +39,7 @@ class FitnessSection extends StatelessWidget {
             color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppTheme.spaceSM2),
         SwitchTile(
           title: l10n.weightSync,
           subtitle: l10n.weightSyncSubtitle,
@@ -55,7 +56,7 @@ class FitnessSection extends StatelessWidget {
             }
           },
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppTheme.spaceSM2),
         SwitchTile(
           title: l10n.nutritionSync,
           subtitle: l10n.nutritionSyncSubtitle,

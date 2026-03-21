@@ -57,7 +57,7 @@ class ReminderTimeTile extends StatelessWidget {
               color: isEnabled
                   ? theme.colorScheme.primary.withValues(alpha: 0.1)
                   : theme.colorScheme.outline.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(AppTheme.radiusXS),
             ),
             child: Icon(
               icon,

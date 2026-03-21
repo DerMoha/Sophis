@@ -32,14 +32,14 @@ class NutritionSection extends StatelessWidget {
             );
           },
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppTheme.spaceSM2),
         NavigationTile(
           title: l10n.waterSizes,
           subtitle: l10n.waterSizesSubtitle,
           icon: Icons.water_drop_outlined,
           onTap: () => _showWaterSizesDialog(context, settings, l10n),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppTheme.spaceSM2),
         NavigationTile(
           title: l10n.showMealMacros,
           subtitle: l10n.showMealMacrosSubtitle,
@@ -49,7 +49,7 @@ class NutritionSection extends StatelessWidget {
             AppTheme.slideRoute(const MealMacrosSettingsScreen()),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppTheme.spaceSM2),
         SwitchTile(
           title: l10n.trackSupplements,
           subtitle: l10n.trackSupplementsSubtitle,
@@ -63,7 +63,7 @@ class NutritionSection extends StatelessWidget {
           },
         ),
         if (settings.showSupplements) ...[
-          const SizedBox(height: 12),
+          const SizedBox(height: AppTheme.spaceSM2),
           NavigationTile(
             title: l10n.manageSupplements,
             subtitle: l10n.manageSupplementsSubtitle,

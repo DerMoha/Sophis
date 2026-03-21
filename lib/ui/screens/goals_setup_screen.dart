@@ -224,7 +224,7 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
 
           // Content
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+            padding: AppTheme.pagePadding,
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 Form(
@@ -309,7 +309,7 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 12),
+                              const SizedBox(height: AppTheme.spaceSM2),
 
                               // Age & Gender
                               Row(
@@ -335,7 +335,7 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 12),
+                              const SizedBox(height: AppTheme.spaceSM2),
 
                               // Activity Level
                               _buildDropdown<ActivityLevel>(
@@ -347,7 +347,7 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
                                 onChanged: (v) =>
                                     setState(() => _activityLevel = v),
                               ),
-                              const SizedBox(height: 12),
+                              const SizedBox(height: AppTheme.spaceSM2),
 
                               // Goal
                               _buildDropdown<Goal>(
@@ -358,7 +358,7 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
                                 itemLabel: (g) => _goalLabel(g),
                                 onChanged: (v) => setState(() => _goal = v),
                               ),
-                              const SizedBox(height: 20),
+                              const SizedBox(height: AppTheme.spaceLG2),
 
                               // Calculate Button
                               SizedBox(

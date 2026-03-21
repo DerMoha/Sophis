@@ -60,6 +60,7 @@ class AppTheme {
   // ANIMATION SYSTEM - Fluid, springy, alive
   // ═══════════════════════════════════════════════════════════════════════════
 
+  static const Duration animFaster = Duration(milliseconds: 200);
   static const Duration animFast = Duration(milliseconds: 150);
   static const Duration animNormal = Duration(milliseconds: 300);
   static const Duration animSlow = Duration(milliseconds: 500);
@@ -74,10 +75,12 @@ class AppTheme {
   // SHAPE SYSTEM - Organic, fluid borders
   // ═══════════════════════════════════════════════════════════════════════════
 
+  static const double radiusXXS = 6;
   static const double radiusXS = 8;
   static const double radiusSM = 12;
   static const double radiusMD = 16;
   static const double radiusLG = 24;
+  static const double radius2XL = 28;
   static const double radiusXL = 32;
   static const double radiusFull = 9999;
 
@@ -102,10 +105,67 @@ class AppTheme {
 
   static const double spaceXS = 4;
   static const double spaceSM = 8;
+  static const double spaceSM2 = 12;
   static const double spaceMD = 16;
+  static const double spaceLG2 = 20;
   static const double spaceLG = 24;
   static const double spaceXL = 32;
   static const double space2XL = 48;
+
+  // Page-level padding convenience
+  static const pagePadding = EdgeInsets.fromLTRB(20, 0, 20, 100);
+  static const pagePaddingTop = EdgeInsets.fromLTRB(20, 8, 20, 100);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SHADOW SYSTEM
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  static List<BoxShadow> shadowSM(bool isDark) => [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+          blurRadius: 8,
+          offset: const Offset(0, 2),
+          spreadRadius: -2,
+        ),
+      ];
+
+  static List<BoxShadow> shadowMD(bool isDark) => [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.06),
+          blurRadius: 16,
+          offset: const Offset(0, 4),
+          spreadRadius: -4,
+        ),
+      ];
+
+  static List<BoxShadow> shadowLG(bool isDark) => [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.06),
+          blurRadius: 24,
+          offset: const Offset(0, 8),
+          spreadRadius: -4,
+        ),
+      ];
+
+  static List<BoxShadow> shadowXL(bool isDark) => [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.08),
+          blurRadius: 32,
+          offset: const Offset(0, 12),
+          spreadRadius: -8,
+        ),
+      ];
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ICON SIZES
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  static const double iconXS = 14;
+  static const double iconSM = 18;
+  static const double iconMD = 22;
+  static const double iconLG = 28;
+  static const double iconXL = 48;
+  static const double iconHero = 64;
 
   // ═══════════════════════════════════════════════════════════════════════════
   // PAGE TRANSITIONS - Smooth and fluid

@@ -143,7 +143,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
 
           // Content
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+            padding: AppTheme.pagePadding,
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 Form(
@@ -239,7 +239,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: AppTheme.spaceLG2),
 
                       // Macros
                       FadeInSlide(
@@ -259,7 +259,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                                   color: theme.colorScheme.onSurfaceVariant,
                                 ),
                               ),
-                              const SizedBox(height: 20),
+                              const SizedBox(height: AppTheme.spaceLG2),
                               Row(
                                 children: [
                                   Expanded(
@@ -291,7 +291,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: AppTheme.spaceLG2),
 
                       // Save as custom food checkbox
                       FadeInSlide(

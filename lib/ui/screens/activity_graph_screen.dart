@@ -6,6 +6,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../../services/nutrition_provider.dart';
 import '../../../models/nutrition_goals.dart';
 import '../theme/app_theme.dart';
+import '../theme/animations.dart';
 
 class ActivityGraphScreen extends StatefulWidget {
   const ActivityGraphScreen({super.key});
@@ -77,57 +78,72 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Calorie chart
-                _buildChartCard(
-                  title: l10n.calories,
-                  data: data,
-                  getValue: (d) => d.calories,
-                  goalValue: goals?.calories,
-                  color: theme.colorScheme.primary,
-                  theme: theme,
-                  l10n: l10n,
+                FadeInSlide(
+                  index: 0,
+                  child: _buildChartCard(
+                    title: l10n.calories,
+                    data: data,
+                    getValue: (d) => d.calories,
+                    goalValue: goals?.calories,
+                    color: theme.colorScheme.primary,
+                    theme: theme,
+                    l10n: l10n,
+                  ),
                 ),
                 const SizedBox(height: 16),
 
                 // Macros summary
-                _buildMacroSummary(data, goals, l10n, theme),
+                FadeInSlide(
+                  index: 1,
+                  child: _buildMacroSummary(data, goals, l10n, theme),
+                ),
                 const SizedBox(height: 16),
 
                 // Protein chart
-                _buildChartCard(
-                  title: l10n.protein,
-                  data: data,
-                  getValue: (d) => d.protein,
-                  goalValue: goals?.protein,
-                  color: AppTheme.success,
-                  theme: theme,
-                  l10n: l10n,
-                  unit: 'g',
+                FadeInSlide(
+                  index: 2,
+                  child: _buildChartCard(
+                    title: l10n.protein,
+                    data: data,
+                    getValue: (d) => d.protein,
+                    goalValue: goals?.protein,
+                    color: AppTheme.success,
+                    theme: theme,
+                    l10n: l10n,
+                    unit: 'g',
+                  ),
                 ),
                 const SizedBox(height: 16),
 
                 // Carbs chart
-                _buildChartCard(
-                  title: l10n.carbs,
-                  data: data,
-                  getValue: (d) => d.carbs,
-                  goalValue: goals?.carbs,
-                  color: AppTheme.warning,
-                  theme: theme,
-                  l10n: l10n,
-                  unit: 'g',
+                FadeInSlide(
+                  index: 3,
+                  child: _buildChartCard(
+                    title: l10n.carbs,
+                    data: data,
+                    getValue: (d) => d.carbs,
+                    goalValue: goals?.carbs,
+                    color: AppTheme.warning,
+                    theme: theme,
+                    l10n: l10n,
+                    unit: 'g',
+                  ),
                 ),
                 const SizedBox(height: 16),
 
                 // Fat chart
-                _buildChartCard(
-                  title: l10n.fat,
-                  data: data,
-                  getValue: (d) => d.fat,
-                  goalValue: goals?.fat,
-                  color: AppTheme.error,
-                  theme: theme,
-                  l10n: l10n,
-                  unit: 'g',
+                FadeInSlide(
+                  index: 4,
+                  child: _buildChartCard(
+                    title: l10n.fat,
+                    data: data,
+                    getValue: (d) => d.fat,
+                    goalValue: goals?.fat,
+                    color: AppTheme.error,
+                    theme: theme,
+                    l10n: l10n,
+                    unit: 'g',
+                  ),
                 ),
               ],
             ),
@@ -226,7 +242,7 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
                         final day = data[groupIndex];
                         return BarTooltipItem(
                           '${DateFormat('MMM d').format(day.date)}\n${getValue(day).toStringAsFixed(0)} $unit',
-                          const TextStyle(color: Colors.white, fontSize: 12),
+                          TextStyle(color: theme.colorScheme.onPrimary, fontSize: 12),
                         );
                       },
                     ),
@@ -353,7 +369,7 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(l10n.summary, style: theme.textTheme.titleMedium),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppTheme.spaceSM2),
             Row(
               children: [
                 Expanded(
@@ -378,7 +394,7 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
               ],
             ),
             if (goals != null) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: AppTheme.spaceSM2),
               Row(
                 children: [
                   const Icon(
@@ -411,7 +427,7 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08), // 20/255
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppTheme.radiusXS),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

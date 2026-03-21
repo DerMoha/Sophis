@@ -73,7 +73,7 @@ class StreakCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppTheme.radiusSM),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -155,7 +155,7 @@ class _AchievementsSheet extends StatelessWidget {
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppTheme.spaceLG2),
 
             // Achievement grid
             Wrap(
@@ -204,7 +204,7 @@ class _AchievementsSheet extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppTheme.spaceLG2),
           ],
         ),
       ),
@@ -236,7 +236,7 @@ class _AchievementBadge extends StatelessWidget {
         color: unlocked
             ? theme.colorScheme.primary.withValues(alpha: 0.1)
             : theme.disabledColor.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppTheme.radiusSM),
         border: Border.all(
           color: unlocked
               ? theme.colorScheme.primary.withValues(alpha: 0.3)

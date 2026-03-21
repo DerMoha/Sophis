@@ -9,6 +9,7 @@ import '../../../services/openfoodfacts_service.dart';
 import '../../../services/nutrition_provider.dart';
 import '../components/food_search_result_tile.dart';
 import '../components/portion_picker_sheet.dart';
+import '../theme/app_theme.dart';
 
 class FoodSearchScreen extends StatefulWidget {
   final String meal;
@@ -198,7 +199,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             child: Row(
               children: [
-                const Icon(Icons.star_rounded, size: 18, color: Colors.amber),
+                Icon(Icons.star_rounded, size: 18, color: AppTheme.warning),
                 const SizedBox(width: 6),
                 Text(
                   l10n.favorites,
@@ -326,7 +327,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
 
     if (_error != null) {
       return Center(
-        child: Text(_error!, style: const TextStyle(color: Colors.red)),
+        child: Text(_error!, style: TextStyle(color: AppTheme.error)),
       );
     }
 

@@ -4,6 +4,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../../models/custom_meal_type.dart';
 import '../../../services/settings_provider.dart';
 import '../theme/app_theme.dart';
+import '../theme/animations.dart';
 import 'package:uuid/uuid.dart';
 
 class MealTypesScreen extends StatefulWidget {
@@ -114,12 +115,14 @@ class _MealTypeTile extends StatelessWidget {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
 
-    return Card(
-      margin: const EdgeInsets.symmetric(
-        horizontal: AppTheme.spaceMD,
-        vertical: AppTheme.spaceXS,
-      ),
-      child: ListTile(
+    return FadeInSlide(
+      index: 0,
+      child: Card(
+        margin: const EdgeInsets.symmetric(
+          horizontal: AppTheme.spaceMD,
+          vertical: AppTheme.spaceXS,
+        ),
+        child: ListTile(
         leading: Container(
           width: 44,
           height: 44,
@@ -158,6 +161,7 @@ class _MealTypeTile extends StatelessWidget {
               ),
             ),
           ],
+        ),
         ),
       ),
     );
@@ -281,7 +285,7 @@ class _EditMealTypeSheetState extends State<_EditMealTypeSheet> {
                   final isSelected = index == _selectedIconIndex;
                   return InkWell(
                     onTap: () => setState(() => _selectedIconIndex = index),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                     child: Container(
                       width: 48,
                       height: 48,
@@ -289,7 +293,7 @@ class _EditMealTypeSheetState extends State<_EditMealTypeSheet> {
                         color: isSelected
                             ? theme.colorScheme.primary.withValues(alpha: 0.1)
                             : theme.colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                         border: isSelected
                             ? Border.all(
                                 color: theme.colorScheme.primary,
@@ -323,7 +327,7 @@ class _EditMealTypeSheetState extends State<_EditMealTypeSheet> {
                   final isSelected = index == _selectedColorIndex;
                   return InkWell(
                     onTap: () => setState(() => _selectedColorIndex = index),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusLG),
                     child: Container(
                       width: 40,
                       height: 40,

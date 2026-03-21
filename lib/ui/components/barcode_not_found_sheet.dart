@@ -247,7 +247,7 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
                     widget.onSearchByName();
                   },
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppTheme.spaceSM2),
 
                 // Scan nutrition label
                 _buildOptionTile(
@@ -257,7 +257,7 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
                   isLoading: _isAnalyzing,
                   onTap: _isAnalyzing ? null : _scanNutritionLabel,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppTheme.spaceSM2),
 
                 // Enter manually
                 _buildOptionTile(
@@ -307,7 +307,7 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
                 height: 32,
                 decoration: BoxDecoration(
                   color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusXS),
                 ),
                 child: isLoading
                     ? Padding(

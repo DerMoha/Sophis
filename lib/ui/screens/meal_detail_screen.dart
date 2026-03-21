@@ -8,6 +8,7 @@ import '../../../models/shareable_meal.dart';
 import '../../../services/nutrition_provider.dart';
 import '../theme/app_theme.dart';
 import '../components/organic_components.dart';
+import '../theme/animations.dart';
 import 'add_food_screen.dart';
 import 'food_search_screen.dart';
 import 'barcode_scanner_screen.dart';
@@ -71,52 +72,55 @@ class MealDetailScreen extends StatelessWidget {
               : Column(
                   children: [
                     // Summary card
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: GlassCard(
+                    FadeInSlide(
+                      index: 0,
+                      child: Padding(
                         padding: const EdgeInsets.all(16),
-                        child: Column(
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  totalCalories.toStringAsFixed(0),
-                                  style:
-                                      theme.textTheme.headlineMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
+                        child: GlassCard(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    totalCalories.toStringAsFixed(0),
+                                    style:
+                                        theme.textTheme.headlineMedium?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
-                                ),
-                                Text(
-                                  ' kcal',
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
+                                  Text(
+                                    ' kcal',
+                                    style: theme.textTheme.titleMedium?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                _MacroSummary(
-                                  label: l10n.protein,
-                                  value: totalProtein,
-                                  color: AppTheme.protein,
-                                ),
-                                _MacroSummary(
-                                  label: l10n.carbs,
-                                  value: totalCarbs,
-                                  color: AppTheme.carbs,
-                                ),
-                                _MacroSummary(
-                                  label: l10n.fat,
-                                  value: totalFat,
-                                  color: AppTheme.fat,
-                                ),
-                              ],
-                            ),
-                          ],
+                                ],
+                              ),
+                              const SizedBox(height: AppTheme.spaceSM2),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  _MacroSummary(
+                                    label: l10n.protein,
+                                    value: totalProtein,
+                                    color: AppTheme.protein,
+                                  ),
+                                  _MacroSummary(
+                                    label: l10n.carbs,
+                                    value: totalCarbs,
+                                    color: AppTheme.carbs,
+                                  ),
+                                  _MacroSummary(
+                                    label: l10n.fat,
+                                    value: totalFat,
+                                    color: AppTheme.fat,
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -171,7 +175,7 @@ class MealDetailScreen extends StatelessWidget {
               color: theme.colorScheme.primary.withValues(alpha: 0.5),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppTheme.spaceLG2),
           Text(
             l10n.noEntries,
             style: theme.textTheme.titleMedium?.copyWith(
@@ -288,9 +292,7 @@ class _MealEntryCard extends StatelessWidget {
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radiusMD),
         border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.06)
-              : Colors.black.withValues(alpha: 0.04),
+          color: isDark ? CachedColors.surfaceTintDark06 : CachedColors.surfaceTintLight04,
         ),
       ),
       child: Column(
@@ -606,7 +608,7 @@ class _MealEntryCard extends StatelessWidget {
                   border: const OutlineInputBorder(),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppTheme.spaceSM2),
               TextField(
                 controller: caloriesController,
                 decoration: InputDecoration(
@@ -616,7 +618,7 @@ class _MealEntryCard extends StatelessWidget {
                 ),
                 keyboardType: TextInputType.number,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppTheme.spaceSM2),
               Row(
                 children: [
                   Expanded(
@@ -633,7 +635,7 @@ class _MealEntryCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppTheme.spaceSM2),
               Row(
                 children: [
                   Expanded(
@@ -650,7 +652,7 @@ class _MealEntryCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppTheme.spaceSM2),
               Row(
                 children: [
                   Expanded(

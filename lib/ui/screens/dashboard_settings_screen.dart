@@ -53,7 +53,7 @@ class DashboardSettingsScreen extends StatelessWidget {
 
           // Content
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+            padding: AppTheme.pagePadding,
             sliver: Consumer<SettingsProvider>(
               builder: (context, settings, _) {
                 final cards = settings.dashboardCards;

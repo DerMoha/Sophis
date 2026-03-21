@@ -364,7 +364,7 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                         letterSpacing: 0.5,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppTheme.spaceSM2),
 
                     // Calories
                     TextFormField(
@@ -496,7 +496,7 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
 
                     // Re-analyze button (conditional)
                     if (canReAnalyze && _hasChanges) ...[
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppTheme.spaceSM2),
                       SizedBox(
                         width: double.infinity,
                         child: OutlinedButton.icon(
@@ -504,7 +504,7 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                           icon: const Icon(Icons.auto_awesome, size: 18),
                           label: Text(
                             'Ask AI to Re-evaluate (uses 1 of ${widget.remainingRequests} requests)',
-                            style: const TextStyle(fontSize: 13),
+                            style: theme.textTheme.bodySmall,
                           ),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(

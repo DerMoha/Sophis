@@ -138,7 +138,7 @@ class QuickActionCard extends StatelessWidget {
                 height: 44,
                 decoration: BoxDecoration(
                   color: actionColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                 ),
                 child: Icon(icon, color: actionColor, size: 22),
               ),
@@ -197,7 +197,7 @@ class EmptyState extends StatelessWidget {
                 color: theme.colorScheme.primary.withValues(alpha: 0.5),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppTheme.spaceLG2),
             Text(
               title,
               style: theme.textTheme.titleMedium?.copyWith(

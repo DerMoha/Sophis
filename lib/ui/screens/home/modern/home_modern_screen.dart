@@ -154,7 +154,7 @@ class _HomeScreenModernState extends State<HomeScreenModern> {
       slivers: [
         _buildAppBar(l10n, theme),
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+          padding: AppTheme.pagePaddingTop,
           sliver: SliverList(
             delegate: SliverChildListDelegate(children),
           ),
@@ -181,7 +181,7 @@ class _HomeScreenModernState extends State<HomeScreenModern> {
             expandedTitleScale: 1.0,
             title: AnimatedOpacity(
               opacity: scrollOffset > 50 ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 200),
+              duration: AppTheme.animFaster,
               child: Text(
                 l10n.appTitle,
                 style: theme.textTheme.headlineMedium,
@@ -190,7 +190,7 @@ class _HomeScreenModernState extends State<HomeScreenModern> {
             background: SafeArea(
               child: AnimatedOpacity(
                 opacity: scrollOffset > 50 ? 0.0 : 1.0,
-                duration: const Duration(milliseconds: 200),
+                duration: AppTheme.animFaster,
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
                   child: Row(
@@ -228,7 +228,7 @@ class _HomeScreenModernState extends State<HomeScreenModern> {
                   height: 40,
                   decoration: BoxDecoration(
                     color: theme.colorScheme.surface,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                     border: Border.all(
                       color: theme.colorScheme.outline.withValues(alpha: 0.1),
                     ),
@@ -303,7 +303,7 @@ class _WelcomeView extends StatelessWidget {
                             theme.colorScheme.primary.withValues(alpha: 0.7),
                           ],
                         ),
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusLG),
                       ),
                       child: const Icon(
                         Icons.restaurant_menu_rounded,
@@ -316,7 +316,7 @@ class _WelcomeView extends StatelessWidget {
                       l10n.welcomeTitle,
                       style: theme.textTheme.headlineMedium,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppTheme.spaceSM2),
                     Text(
                       l10n.welcomeSubtitle,
                       style: theme.textTheme.bodyLarge?.copyWith(

@@ -23,7 +23,7 @@ class DashboardSection extends StatelessWidget {
             AppTheme.slideRoute(const DashboardSettingsScreen()),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppTheme.spaceSM2),
         NavigationTile(
           title: l10n.customizeMealTypes,
           subtitle: l10n.customizeMealTypesSubtitle,

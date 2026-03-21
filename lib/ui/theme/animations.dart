@@ -536,9 +536,9 @@ class _ShimmerEffectState extends State<ShimmerEffect>
     final isDark = theme.brightness == Brightness.dark;
 
     final baseColor = widget.baseColor ??
-        (isDark ? Colors.grey[800]! : Colors.grey[300]!);
+        (isDark ? theme.colorScheme.surfaceContainerHighest : theme.colorScheme.surfaceContainerHighest);
     final highlightColor = widget.highlightColor ??
-        (isDark ? Colors.grey[700]! : Colors.grey[100]!);
+        (isDark ? theme.colorScheme.surfaceContainer : theme.colorScheme.surfaceContainerLowest);
 
     return AnimatedBuilder(
       animation: _controller,

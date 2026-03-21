@@ -11,6 +11,15 @@ class CachedColors {
   static final Color shadowLightStrong = Colors.black.withValues(alpha: 0.08);
   static final Color waterBg = AppTheme.water.withValues(alpha: 0.1);
   static final Color waterBorder = AppTheme.water.withValues(alpha: 0.2);
+
+  // Surface tint colors for dark/light mode backgrounds
+  static final Color surfaceTintDark05 = Colors.white.withValues(alpha: 0.05);
+  static final Color surfaceTintDark06 = Colors.white.withValues(alpha: 0.06);
+  static final Color surfaceTintDark08 = Colors.white.withValues(alpha: 0.08);
+  static final Color surfaceTintDark10 = Colors.white.withValues(alpha: 0.1);
+  static final Color surfaceTintLight02 = Colors.black.withValues(alpha: 0.02);
+  static final Color surfaceTintLight04 = Colors.black.withValues(alpha: 0.04);
+  static final Color surfaceTintLight05 = Colors.black.withValues(alpha: 0.05);
 }
 
 class GlassCard extends StatelessWidget {
@@ -51,14 +60,7 @@ class GlassCard extends StatelessWidget {
               width: 1,
             )
           : null,
-      boxShadow: [
-        BoxShadow(
-          color: isDark ? CachedColors.shadowDark : CachedColors.shadowLight,
-          blurRadius: 24,
-          offset: const Offset(0, 8),
-          spreadRadius: -4,
-        ),
-      ],
+      boxShadow: AppTheme.shadowLG(isDark),
     );
 
     final content = Container(
@@ -113,16 +115,7 @@ class OrganicCard extends StatelessWidget {
     final decoration = BoxDecoration(
       color: color ?? theme.colorScheme.surface,
       borderRadius: useAltRadius ? AppTheme.blobRadiusAlt : AppTheme.blobRadius,
-      boxShadow: [
-        BoxShadow(
-          color: isDark
-              ? CachedColors.shadowDarkStrong
-              : CachedColors.shadowLightStrong,
-          blurRadius: 32,
-          offset: const Offset(0, 12),
-          spreadRadius: -8,
-        ),
-      ],
+      boxShadow: AppTheme.shadowXL(isDark),
     );
 
     final content = Container(

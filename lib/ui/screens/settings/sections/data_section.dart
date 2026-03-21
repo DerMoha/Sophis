@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../../../l10n/generated/app_localizations.dart';
 import '../../../../../services/data_export_service.dart';
 import '../../../../../services/nutrition_provider.dart';
+import '../../../theme/app_theme.dart';
 import '../../../components/settings/settings_tiles.dart';
 
 class DataSection extends StatefulWidget {
@@ -109,7 +110,7 @@ class _DataSectionState extends State<DataSection> {
           isLoading: _isExporting,
           onTap: () => _handleExport(context, l10n),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppTheme.spaceSM2),
         DataActionTile(
           title: l10n.importData,
           subtitle: l10n.importDataSubtitle,
@@ -117,7 +118,7 @@ class _DataSectionState extends State<DataSection> {
           isLoading: _isImporting,
           onTap: () => _handleImport(context, l10n),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppTheme.spaceSM2),
         Text(
           l10n.autoRestoreBackupNote,
           style: theme.textTheme.bodySmall?.copyWith(

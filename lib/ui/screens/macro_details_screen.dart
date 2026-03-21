@@ -4,6 +4,7 @@ import '../../../models/nutrition_goals.dart';
 import '../../../models/nutrition_totals.dart';
 import '../theme/app_theme.dart';
 import '../components/organic_components.dart';
+import '../theme/animations.dart';
 
 class MacroDetailsScreen extends StatelessWidget {
   final NutritionTotals totals;
@@ -45,41 +46,50 @@ class MacroDetailsScreen extends StatelessWidget {
               // Removed top spacing to allow true centering
 
               // Protein Section
-              _buildMacroDeepDive(
-                context,
-                label: l10n.protein,
-                current: totals.protein,
-                goal: goals.protein,
-                color: AppTheme.protein,
-                progress: proteinProgress,
-                icon: Icons.fitness_center_rounded,
-                positiveExcess: true,
-                excessColor: AppTheme.success,
+              FadeInSlide(
+                index: 0,
+                child: _buildMacroDeepDive(
+                  context,
+                  label: l10n.protein,
+                  current: totals.protein,
+                  goal: goals.protein,
+                  color: AppTheme.protein,
+                  progress: proteinProgress,
+                  icon: Icons.fitness_center_rounded,
+                  positiveExcess: true,
+                  excessColor: AppTheme.success,
+                ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: AppTheme.spaceLG2),
 
               // Carbs Section
-              _buildMacroDeepDive(
-                context,
-                label: l10n.carbs,
-                current: totals.carbs,
-                goal: goals.carbs,
-                color: AppTheme.carbs,
-                progress: carbsProgress,
-                icon: Icons.bolt_rounded,
+              FadeInSlide(
+                index: 1,
+                child: _buildMacroDeepDive(
+                  context,
+                  label: l10n.carbs,
+                  current: totals.carbs,
+                  goal: goals.carbs,
+                  color: AppTheme.carbs,
+                  progress: carbsProgress,
+                  icon: Icons.bolt_rounded,
+                ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: AppTheme.spaceLG2),
 
               // Fat Section
-              _buildMacroDeepDive(
-                context,
-                label: l10n.fat,
-                current: totals.fat,
-                goal: goals.fat,
-                color: AppTheme.fat,
-                progress: fatProgress,
-                icon: Icons
-                    .water_drop_rounded, // Assuming fat uses droplet or similar
+              FadeInSlide(
+                index: 2,
+                child: _buildMacroDeepDive(
+                  context,
+                  label: l10n.fat,
+                  current: totals.fat,
+                  goal: goals.fat,
+                  color: AppTheme.fat,
+                  progress: fatProgress,
+                  icon: Icons
+                      .water_drop_rounded, // Assuming fat uses droplet or similar
+                ),
               ),
             ],
           ),
@@ -214,7 +224,7 @@ class MacroDetailsScreen extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusXXS),
                 ),
                 child: Stack(
                   alignment: Alignment.centerLeft,

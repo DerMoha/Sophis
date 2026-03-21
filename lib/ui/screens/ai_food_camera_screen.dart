@@ -545,8 +545,8 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
             onTap: () => _removeImage(index),
             child: Container(
               padding: const EdgeInsets.all(4),
-              decoration: const BoxDecoration(
-                color: Colors.black54,
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.54),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.close, color: Colors.white, size: 16),
@@ -695,7 +695,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                   ],
                 ),
               ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppTheme.spaceSM2),
 
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -739,15 +739,15 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.check,
-                                  color: Colors.white,
+                                  color: theme.colorScheme.onPrimary,
                                   size: 18,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
                                   AppLocalizations.of(context)!.added,
-                                  style: const TextStyle(color: Colors.white),
+                                  style: TextStyle(color: theme.colorScheme.onPrimary),
                                 ),
                               ],
                             ),

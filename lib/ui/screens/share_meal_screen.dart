@@ -52,7 +52,7 @@ class ShareMealScreen extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(AppTheme.spaceMD),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: theme.colorScheme.surface,
                             borderRadius:
                                 BorderRadius.circular(AppTheme.radiusMD),
                           ),
@@ -60,7 +60,7 @@ class ShareMealScreen extends StatelessWidget {
                             data: deepLink,
                             version: QrVersions.auto,
                             size: 200,
-                            backgroundColor: Colors.white,
+                            backgroundColor: theme.colorScheme.surface,
                             errorCorrectionLevel: QrErrorCorrectLevel.M,
                           ),
                         ),

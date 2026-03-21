@@ -87,7 +87,7 @@ class MealMacrosSettingsScreen extends StatelessWidget {
                   isActive: !settings.showMealMacros,
                   child: _buildMealPreview(context, showMacros: false),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppTheme.spaceSM2),
 
                 // Preview: Macros ON
                 _buildPreviewCard(
@@ -113,7 +113,7 @@ class MealMacrosSettingsScreen extends StatelessWidget {
     final theme = Theme.of(context);
 
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
+      duration: AppTheme.animFaster,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isActive
@@ -150,7 +150,7 @@ class MealMacrosSettingsScreen extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppTheme.spaceSM2),
           child,
         ],
       ),

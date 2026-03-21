@@ -65,7 +65,7 @@ class MealCard extends StatelessWidget {
                           height: 40,
                           decoration: BoxDecoration(
                             color: mealColor.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                           ),
                           child: Icon(icon, color: mealColor, size: 20),
                         ),

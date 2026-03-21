@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../theme/app_theme.dart';
 
 class ApiKeyGuideDialog extends StatelessWidget {
   const ApiKeyGuideDialog({super.key});
@@ -57,7 +58,7 @@ class ApiKeyGuideDialog extends StatelessWidget {
               'Get a free Gemini API key from Google AI Studio:',
               style: theme.textTheme.bodyMedium,
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppTheme.spaceLG2),
             ...steps.map(
               (step) => Padding(
                 padding: const EdgeInsets.only(bottom: 16),
@@ -123,7 +124,7 @@ class ApiKeyGuideDialog extends StatelessWidget {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: theme.colorScheme.primary.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(AppTheme.radiusXS),
                 border: Border.all(
                   color: theme.colorScheme.primary.withValues(alpha: 0.2),
                 ),

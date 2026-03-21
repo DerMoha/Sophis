@@ -268,7 +268,7 @@ class _SupplementsScreenState extends State<SupplementsScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddSheet(context),
         backgroundColor: accentColor,
-        foregroundColor: Colors.white,
+        foregroundColor: theme.colorScheme.onPrimary,
         icon: const Icon(Icons.add_rounded),
         label: Text(l10n.addSupplement),
       ),
@@ -324,10 +324,10 @@ class _SupplementsScreenState extends State<SupplementsScreen> {
                       borderRadius: BorderRadius.circular(AppTheme.radiusXS),
                     ),
                     child: isCompleted
-                        ? const Icon(
+                        ? Icon(
                             Icons.check_rounded,
                             size: 16,
-                            color: Colors.white,
+                            color: theme.colorScheme.onPrimary,
                           )
                         : null,
                   ),

@@ -64,7 +64,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+            padding: AppTheme.pagePadding,
             sliver: Consumer<SettingsProvider>(
               builder: (context, settings, _) {
                 return SliverList(
@@ -224,7 +224,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       height: 36,
                       decoration: BoxDecoration(
                         color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                       ),
                       child: Icon(
                         icon,

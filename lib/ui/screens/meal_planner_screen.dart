@@ -116,7 +116,9 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
 
             // Swipeable day content
             Expanded(
-              child: PageView.builder(
+              child: FadeInSlide(
+                index: 1,
+                child: PageView.builder(
                 controller: _dayPageController,
                 onPageChanged: (page) {
                   setState(() {
@@ -129,9 +131,7 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
                   final dayOffset = index - _daysRange;
                   final date = _getDateForOffset(dayOffset);
 
-                  return FadeInSlide(
-                    index: 1,
-                    child: Consumer<NutritionProvider>(
+                  return Consumer<NutritionProvider>(
                       builder: (context, nutrition, _) {
                         return _buildDayContent(
                           context,
@@ -142,9 +142,9 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
                           date,
                         );
                       },
-                    ),
-                  );
+                    );
                 },
+              ),
               ),
             ),
           ],
@@ -360,7 +360,7 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
     final meals = nutrition.getPlannedMealsForDate(date);
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+      padding: AppTheme.pagePaddingTop,
       children: [
         // Nutrition summary (only if there are meals)
         if (meals.isNotEmpty)
@@ -380,7 +380,7 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
           l10n.breakfast,
           Icons.wb_sunny_outlined,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppTheme.spaceSM2),
         _buildMealSection(
           context,
           theme,
@@ -392,7 +392,7 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
           l10n.lunch,
           Icons.restaurant_outlined,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppTheme.spaceSM2),
         _buildMealSection(
           context,
           theme,
@@ -404,7 +404,7 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
           l10n.dinner,
           Icons.nightlight_outlined,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppTheme.spaceSM2),
         _buildMealSection(
           context,
           theme,
@@ -534,7 +534,7 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppTheme.spaceSM2),
                     Row(
                       children: [
                         _buildMiniMacro(
@@ -565,7 +565,7 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
             ],
           ),
           if (isOverGoal) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: AppTheme.spaceSM2),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
@@ -655,9 +655,7 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radiusLG),
         border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.06)
-              : Colors.black.withValues(alpha: 0.04),
+          color: isDark ? CachedColors.surfaceTintDark06 : CachedColors.surfaceTintLight04,
         ),
       ),
       child: Column(
@@ -675,7 +673,7 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
                     height: 40,
                     decoration: BoxDecoration(
                       color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                     ),
                     child: Icon(
                       icon,
@@ -719,9 +717,7 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
           if (meals.isNotEmpty) ...[
             Divider(
               height: 1,
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.06)
-                  : Colors.black.withValues(alpha: 0.04),
+              color: isDark ? CachedColors.surfaceTintDark06 : CachedColors.surfaceTintLight04,
             ),
             ...meals.map(
               (meal) => _buildPlannedMealTile(

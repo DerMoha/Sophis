@@ -73,7 +73,7 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
 
           // Content
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+            padding: AppTheme.pagePadding,
             sliver: Consumer2<NutritionProvider, SettingsProvider>(
               builder: (context, nutrition, settings, _) {
                 final entries = nutrition.weightEntries;
@@ -184,7 +184,7 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: AppTheme.spaceLG2),
 
                     // Current stats
                     if (latest != null || profile?.targetWeight != null)
@@ -240,7 +240,7 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
                           ),
                         ),
                       ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: AppTheme.spaceLG2),
 
                     // Chart
                     if (entries.length >= 2)
@@ -501,9 +501,7 @@ class _WeightEntryTile extends StatelessWidget {
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radiusMD),
         border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.06)
-              : Colors.black.withValues(alpha: 0.04),
+          color: isDark ? CachedColors.surfaceTintDark06 : CachedColors.surfaceTintLight04,
         ),
       ),
       child: Row(

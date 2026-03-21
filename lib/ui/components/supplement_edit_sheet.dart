@@ -72,7 +72,7 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 // Drag handle
-                const SizedBox(height: 12),
+                const SizedBox(height: AppTheme.spaceSM2),
                 Container(
                   width: 40,
                   height: 4,
@@ -81,7 +81,7 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
                     borderRadius: BorderRadius.circular(AppTheme.radiusXS),
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: AppTheme.spaceLG2),
 
                 // Header
                 Padding(
@@ -266,7 +266,7 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
                           onPressed: _save,
                           style: FilledButton.styleFrom(
                             backgroundColor: accentColor,
-                            foregroundColor: Colors.white,
+                            foregroundColor: theme.colorScheme.onPrimary,
                             padding: const EdgeInsets.symmetric(
                               vertical: AppTheme.spaceMD,
                             ),

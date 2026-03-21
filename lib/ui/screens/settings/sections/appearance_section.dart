@@ -30,7 +30,7 @@ class AppearanceSection extends StatelessWidget {
             onChanged: settings.setThemeMode,
           ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: AppTheme.spaceLG2),
         SettingRow(
           title: l10n.quickActionsSize,
           child: SegmentedControl<QuickActionSize>(
@@ -42,9 +42,9 @@ class AppearanceSection extends StatelessWidget {
             onChanged: settings.setQuickActionSize,
           ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: AppTheme.spaceLG2),
         Text(l10n.accentColor, style: theme.textTheme.titleSmall),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppTheme.spaceSM2),
         _AccentColorPicker(settings: settings),
       ],
     );

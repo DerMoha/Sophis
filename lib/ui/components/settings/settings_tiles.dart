@@ -39,7 +39,7 @@ class NavigationTile extends StatelessWidget {
                 height: 32,
                 decoration: BoxDecoration(
                   color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusXS),
                 ),
                 child: Icon(
                   icon,
@@ -111,7 +111,7 @@ class SwitchTile extends StatelessWidget {
             height: 32,
             decoration: BoxDecoration(
               color: theme.colorScheme.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(AppTheme.radiusXS),
             ),
             child: Icon(
               icon,
@@ -185,7 +185,7 @@ class DataActionTile extends StatelessWidget {
                 height: 32,
                 decoration: BoxDecoration(
                   color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusXS),
                 ),
                 child: isLoading
                     ? Padding(
@@ -247,7 +247,7 @@ class SettingRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(title, style: theme.textTheme.titleSmall),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppTheme.spaceSM2),
         child,
       ],
     );

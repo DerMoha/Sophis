@@ -14,6 +14,7 @@ import '../../../services/nutrition_provider.dart';
 import '../../../services/openfoodfacts_service.dart';
 import '../../../services/planned_meal_factory.dart';
 import '../../../services/settings_provider.dart';
+import '../components/organic/primitives.dart';
 import '../theme/app_theme.dart';
 
 class AddPlannedMealSheet extends StatefulWidget {
@@ -253,9 +254,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radiusLG),
         border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.06)
-              : Colors.black.withValues(alpha: 0.04),
+          color: isDark ? CachedColors.surfaceTintDark06 : CachedColors.surfaceTintLight04,
         ),
       ),
       child: InkWell(
@@ -438,7 +437,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
           mainAxisSize: MainAxisSize.min,
           children: [
             const CircularProgressIndicator(),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppTheme.spaceLG2),
             Text(
               l10n.scanningRecipe,
               style: theme.textTheme.bodyMedium,
@@ -588,7 +587,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
             ],
           ),
           if (_scannedImage != null) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: AppTheme.spaceSM2),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
@@ -706,9 +705,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
             color: theme.colorScheme.surface,
             borderRadius: BorderRadius.circular(AppTheme.radiusMD),
             border: Border.all(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.06)
-                  : Colors.black.withValues(alpha: 0.04),
+              color: isDark ? CachedColors.surfaceTintDark06 : CachedColors.surfaceTintLight04,
             ),
           ),
           child: Column(
@@ -883,9 +880,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radiusMD),
         border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.06)
-              : Colors.black.withValues(alpha: 0.04),
+          color: isDark ? CachedColors.surfaceTintDark06 : CachedColors.surfaceTintLight04,
         ),
       ),
       child: InkWell(
@@ -1014,7 +1009,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppTheme.spaceSM2),
                 Text(
                   '${totalCal.toStringAsFixed(0)} kcal',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(

@@ -68,7 +68,7 @@ class SupplementsTodayCard extends StatelessWidget {
                     color: theme.textTheme.bodySmall?.color,
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppTheme.spaceSM2),
                 Row(
                   children: [
                     Icon(
@@ -104,7 +104,7 @@ class SupplementsTodayCard extends StatelessWidget {
                     height: 36,
                     decoration: BoxDecoration(
                       color: accentColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                     ),
                     child: Icon(
                       Icons.medication_liquid_rounded,
@@ -278,10 +278,10 @@ class _SupplementCheckboxState extends State<_SupplementCheckbox>
             child: widget.isChecked
                 ? ScaleTransition(
                     scale: _scaleAnimation,
-                    child: const Icon(
+                    child: Icon(
                       Icons.check_rounded,
                       size: 16,
-                      color: Colors.white,
+                      color: theme.colorScheme.onPrimary,
                     ),
                   )
                 : null,

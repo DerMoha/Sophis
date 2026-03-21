@@ -195,7 +195,7 @@ class _WorkoutBottomSheetState extends State<WorkoutBottomSheet> {
                       ],
                     ),
                   ),
-                if (!isEditing) const SizedBox(height: 20),
+                if (!isEditing) const SizedBox(height: AppTheme.spaceLG2),
 
                 // Custom Entry
                 Padding(
@@ -238,7 +238,7 @@ class _WorkoutBottomSheetState extends State<WorkoutBottomSheet> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppTheme.spaceSM2),
 
                 // Optional note
                 Padding(
@@ -296,7 +296,7 @@ class _WorkoutBottomSheetState extends State<WorkoutBottomSheet> {
                                   size: 24,
                                 ),
                               ),
-                              const SizedBox(height: 12),
+                              const SizedBox(height: AppTheme.spaceSM2),
                               Text(
                                 l10n.noWorkouts,
                                 style: theme.textTheme.bodyMedium?.copyWith(
@@ -339,7 +339,7 @@ class _WorkoutBottomSheetState extends State<WorkoutBottomSheet> {
                                     decoration: BoxDecoration(
                                       color:
                                           AppTheme.fire.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(8),
+                                      borderRadius: BorderRadius.circular(AppTheme.radiusXS),
                                     ),
                                     child: const Icon(
                                       Icons.local_fire_department,

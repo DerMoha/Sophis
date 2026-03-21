@@ -4,6 +4,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../../models/recipe.dart';
 import '../../../services/nutrition_provider.dart';
 import '../theme/app_theme.dart';
+import '../theme/animations.dart';
 import 'package:uuid/uuid.dart';
 
 class RecipesScreen extends StatelessWidget {
@@ -67,9 +68,11 @@ class RecipesScreen extends StatelessWidget {
               final recipe = recipes[index];
               final nutrients = recipe.nutrientsPerServing;
 
-              return Card(
-                margin: const EdgeInsets.only(bottom: 12),
-                child: ListTile(
+              return FadeInSlide(
+                index: index,
+                child: Card(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: ListTile(
                   title: Text(recipe.name),
                   subtitle: Text(
                     '${nutrients.calories.toStringAsFixed(0)} kcal/${l10n.serving} • '
@@ -101,6 +104,7 @@ class RecipesScreen extends StatelessWidget {
                     },
                   ),
                   onTap: () => _showAddToMealDialog(context, recipe),
+                ),
                 ),
               );
             },
@@ -227,19 +231,19 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
                 controller: nameController,
                 decoration: InputDecoration(labelText: l10n.name),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppTheme.spaceSM2),
               TextField(
                 controller: amountController,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(labelText: l10n.amountGrams),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppTheme.spaceSM2),
               TextField(
                 controller: caloriesController,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(labelText: l10n.calories),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppTheme.spaceSM2),
               Row(
                 children: [
                   Expanded(

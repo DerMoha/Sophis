@@ -22,7 +22,7 @@ class DeveloperSection extends StatelessWidget {
           value: settings.debugLoggingEnabled,
           onChanged: settings.setDebugLoggingEnabled,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppTheme.spaceSM2),
         NavigationTile(
           title: 'View Debug Logs',
           subtitle: 'Export logs for troubleshooting',
@@ -33,7 +33,7 @@ class DeveloperSection extends StatelessWidget {
             );
           },
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppTheme.spaceSM2),
         NavigationTile(
           title: 'Clear Debug Logs',
           subtitle: 'Delete all diagnostic logs',
