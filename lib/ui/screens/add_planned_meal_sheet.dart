@@ -64,6 +64,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
     if (apiKey != null && apiKey.isNotEmpty) {
       _geminiService = GeminiFoodService();
       await _geminiService!.initialize(apiKey);
+      if (!mounted) return;
     }
   }
 
@@ -812,6 +813,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
           }
         }
 
+        if (!mounted) return;
         setState(() {
           _scannedImage = File(image.path);
           _scanError = null;
@@ -835,6 +837,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
     try {
       final result =
           await _geminiService!.extractRecipeFromImage(_scannedImage!);
+      if (!mounted) return;
       setState(() {
         _extractedRecipe = result;
         _isScanning = false;
@@ -945,6 +948,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
 
     try {
       final results = await _foodService.search(query);
+      if (!mounted) return;
       setState(() {
         _searchResults = results;
         _isSearching = false;
