@@ -39,6 +39,8 @@
 	<true/>
 	<key>NSHealthShareUsageDescription</key>
 	<string>Sophis reads your active calories burned from Apple Health to give you a more accurate daily calorie budget.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Sophis writes your weight and food logs to Apple Health to keep your health data in sync.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Sophis uses the camera to scan food barcodes and take photos of meals for AI analysis.</string>
 	<key>NSFaceIDUsageDescription</key>
