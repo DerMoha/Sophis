@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:home_widget/home_widget.dart';
 
 import '../services/nutrition_provider.dart';
-import 'log_service.dart';
 
 class HomeWidgetService {
   static const String appGroupId = 'group.sophis.sophis';
@@ -56,10 +55,6 @@ class HomeWidgetService {
       final water = provider.getTodayWaterTotal();
       final goal = provider.goals?.calories ?? 0;
 
-      Log.debug(
-        'Updating widget: cal=${totals.calories.toInt()}/$goal, protein=${totals.protein.toInt()}g',
-      );
-
       // Save data
       await HomeWidget.saveWidgetData<double>(
         'calories_eaten',
@@ -101,10 +96,8 @@ class HomeWidgetService {
         name: androidWidgetName,
         iOSName: iOSWidgetName,
       );
-
-      Log.info('Widget sync completed');
-    } catch (e, stackTrace) {
-      Log.error('Widget sync failed', error: e, stackTrace: stackTrace);
+    } catch (e) {
+      // Widget sync failed silently
     }
   }
 }

@@ -4,7 +4,6 @@ import '../models/supplement.dart';
 import '../models/supplement_log.dart';
 import 'database_service.dart';
 import 'notification_service.dart';
-import 'log_service.dart';
 
 /// Provider for managing supplement tracking, including completion logging
 /// and daily reminder notifications.
@@ -118,15 +117,11 @@ class SupplementsProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      Log.debug('Loading supplements from database');
       _supplements = await _db.getAllSupplements();
       _logs = await _db.getAllSupplementLogs();
       _invalidateDerivedCaches();
-      Log.info(
-        'Loaded ${_supplements.length} supplements with ${_logs.length} logs',
-      );
-    } catch (e, stackTrace) {
-      Log.error('Failed to load supplements', error: e, stackTrace: stackTrace);
+    } catch (e) {
+      // Failed to load supplements
     }
 
     _isLoading = false;
@@ -146,7 +141,6 @@ class SupplementsProvider extends ChangeNotifier {
     final supplementIndex =
         _supplements.indexWhere((s) => s.id == supplementId);
     if (supplementIndex == -1) {
-      Log.warning('Supplement not found for completion toggle: $supplementId');
       return;
     }
     final supplement = _supplements[supplementIndex];
@@ -167,14 +161,8 @@ class SupplementsProvider extends ChangeNotifier {
         await _db.deleteSupplementLog(todayLog.id);
         _logs.removeWhere((log) => log.id == todayLog.id);
         _invalidateDerivedCaches();
-        Log.debug('Unchecked supplement $supplementId for today');
         isNowCompleted = false;
-      } catch (e, stackTrace) {
-        Log.error(
-          'Failed to remove supplement log for $supplementId',
-          error: e,
-          stackTrace: stackTrace,
-        );
+      } catch (e) {
         return; // Skip notification if log not found
       }
     } else {
@@ -187,7 +175,6 @@ class SupplementsProvider extends ChangeNotifier {
       await _db.insertSupplementLog(log);
       _logs.add(log);
       _invalidateDerivedCaches();
-      Log.debug('Checked supplement $supplementId for today');
       isNowCompleted = true;
     }
 
@@ -256,7 +243,6 @@ class SupplementsProvider extends ChangeNotifier {
     try {
       final supplement = _supplements.firstWhere((s) => s.id == id);
 
-      Log.debug('Deleting supplement: ${supplement.name}');
       await _db.deleteSupplement(id);
       _supplements.removeWhere((s) => s.id == id);
 
@@ -267,14 +253,8 @@ class SupplementsProvider extends ChangeNotifier {
       // Cancel notification
       await _cancelNotification(supplement);
 
-      Log.info('Deleted supplement: ${supplement.name}');
       notifyListeners();
-    } catch (e, stackTrace) {
-      Log.error(
-        'Failed to delete supplement $id',
-        error: e,
-        stackTrace: stackTrace,
-      );
+    } catch (e) {
       throw Exception('Supplement not found');
     }
   }
@@ -314,9 +294,6 @@ class SupplementsProvider extends ChangeNotifier {
   int _getNotificationId(String supplementId) {
     final index = _supplements.indexWhere((s) => s.id == supplementId);
     if (index == -1 || index >= _maxSupplements) {
-      Log.warning(
-        'Supplement index $index exceeds max allowed ($_maxSupplements)',
-      );
       return _notificationIdStart; // Fallback to first ID
     }
     return _notificationIdStart + index;
@@ -341,9 +318,6 @@ class SupplementsProvider extends ChangeNotifier {
       minute: minute,
       startTomorrow: skipToday,
     );
-    Log.info(
-      'Scheduled notification for ${supplement.name} at ${supplement.reminderTime}',
-    );
   }
 
   /// Cancel notification for a supplement
@@ -363,12 +337,8 @@ class SupplementsProvider extends ChangeNotifier {
         supplement,
         skipToday: completed,
       );
-    } catch (e, stackTrace) {
-      Log.error(
-        'Failed to reschedule notification for ${supplement.name}',
-        error: e,
-        stackTrace: stackTrace,
-      );
+    } catch (e) {
+      // Failed to reschedule notification silently
     }
   }
 
