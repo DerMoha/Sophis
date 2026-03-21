@@ -190,7 +190,10 @@ class NutritionProvider extends ChangeNotifier {
   }
 
   Future<void> _migrateToDbIfNeeded() async {
-    if (_storage.isMigrationComplete()) return;
+    if (_storage.isMigrationComplete()) {
+      await _storage.clearLegacyMigratedData();
+      return;
+    }
 
     final legacyFoods = _storage.loadFoodEntries();
     final legacyWater = _storage.loadWaterEntries();
@@ -206,6 +209,7 @@ class NutritionProvider extends ChangeNotifier {
       }
 
       await _storage.setMigrationComplete();
+      await _storage.clearLegacyMigratedData();
     } catch (e) {
       // Migration failed, will retry on next app start
     }

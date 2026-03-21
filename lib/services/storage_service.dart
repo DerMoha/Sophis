@@ -266,4 +266,13 @@ class StorageService {
   bool isMigrationComplete() {
     return _prefs.getBool(_dbMigrationKey) ?? false;
   }
+
+  /// Remove legacy SharedPreferences data that has been migrated to SQLite
+  Future<void> clearLegacyMigratedData() async {
+    if (!isMigrationComplete()) return;
+    await _prefs.remove(_entriesKey);
+    await _prefs.remove(_waterEntriesKey);
+    await _prefs.remove(_weightEntriesKey);
+    await _prefs.remove(_workoutEntriesKey);
+  }
 }
