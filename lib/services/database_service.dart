@@ -81,6 +81,27 @@ class SupplementLogs extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+class BarcodeProducts extends Table {
+  TextColumn get barcode => text()();
+  TextColumn get name => text()();
+  TextColumn get brand => text().nullable()();
+  TextColumn get category => text().nullable()();
+  RealColumn get caloriesPer100g => real()();
+  RealColumn get proteinPer100g => real()();
+  RealColumn get carbsPer100g => real()();
+  RealColumn get fatPer100g => real()();
+  TextColumn get imageUrl => text().nullable()();
+  TextColumn get servingsJson => text().nullable()();
+  BoolColumn get isUserCorrected =>
+      boolean().withDefault(const Constant(false))();
+  DateTimeColumn get cachedAt => dateTime()();
+  TextColumn get source =>
+      text().withDefault(const Constant('api'))();
+
+  @override
+  Set<Column> get primaryKey => {barcode};
+}
+
 // -----------------------------------------------------------------------------
 // DATABASE CLASS
 // -----------------------------------------------------------------------------
@@ -93,13 +114,14 @@ class SupplementLogs extends Table {
     WorkoutLogs,
     SupplementDefinitions,
     SupplementLogs,
+    BarcodeProducts,
   ],
 )
 class DatabaseService extends _$DatabaseService {
   DatabaseService() : super(_openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -110,6 +132,9 @@ class DatabaseService extends _$DatabaseService {
           }
           if (from <= 2 && to >= 3) {
             await migrator.addColumn(weightLogs, weightLogs.source);
+          }
+          if (from <= 3 && to >= 4) {
+            await migrator.createTable(barcodeProducts);
           }
         },
       );
@@ -495,6 +520,37 @@ class DatabaseService extends _$DatabaseService {
   }
 
   // ---------------------------------------------------------------------------
+  // BARCODE PRODUCTS CACHE
+  // ---------------------------------------------------------------------------
+
+  Future<BarcodeProduct?> getCachedBarcode(String barcode) async {
+    final query = select(barcodeProducts)
+      ..where((t) => t.barcode.equals(barcode));
+    return query.getSingleOrNull();
+  }
+
+  Future<void> upsertBarcodeCache(BarcodeProductsCompanion entry) async {
+    await into(barcodeProducts).insertOnConflictUpdate(entry);
+  }
+
+  Future<void> deleteExpiredBarcodeCache() async {
+    final cutoff = DateTime.now().subtract(const Duration(days: 30));
+    await (delete(barcodeProducts)
+          ..where(
+            (t) =>
+                t.cachedAt.isSmallerThanValue(cutoff) &
+                t.isUserCorrected.equals(false),
+          ))
+        .go();
+  }
+
+  Future<void> deleteBarcodeCache(String barcode) async {
+    await (delete(barcodeProducts)
+          ..where((t) => t.barcode.equals(barcode)))
+        .go();
+  }
+
+  // ---------------------------------------------------------------------------
   // UTILS
   // ---------------------------------------------------------------------------
 
@@ -505,6 +561,7 @@ class DatabaseService extends _$DatabaseService {
     await delete(workoutLogs).go();
     await delete(supplementDefinitions).go();
     await delete(supplementLogs).go();
+    await delete(barcodeProducts).go();
   }
 }
 

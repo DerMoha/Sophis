@@ -1814,6 +1814,663 @@ class SupplementLogsCompanion extends UpdateCompanion<SupplementLog> {
   }
 }
 
+class $BarcodeProductsTable extends BarcodeProducts
+    with TableInfo<$BarcodeProductsTable, BarcodeProduct> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $BarcodeProductsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _barcodeMeta =
+      const VerificationMeta('barcode');
+  @override
+  late final GeneratedColumn<String> barcode = GeneratedColumn<String>(
+      'barcode', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+      'name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _brandMeta = const VerificationMeta('brand');
+  @override
+  late final GeneratedColumn<String> brand = GeneratedColumn<String>(
+      'brand', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _categoryMeta =
+      const VerificationMeta('category');
+  @override
+  late final GeneratedColumn<String> category = GeneratedColumn<String>(
+      'category', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _caloriesPer100gMeta =
+      const VerificationMeta('caloriesPer100g');
+  @override
+  late final GeneratedColumn<double> caloriesPer100g = GeneratedColumn<double>(
+      'calories_per100g', aliasedName, false,
+      type: DriftSqlType.double, requiredDuringInsert: true);
+  static const VerificationMeta _proteinPer100gMeta =
+      const VerificationMeta('proteinPer100g');
+  @override
+  late final GeneratedColumn<double> proteinPer100g = GeneratedColumn<double>(
+      'protein_per100g', aliasedName, false,
+      type: DriftSqlType.double, requiredDuringInsert: true);
+  static const VerificationMeta _carbsPer100gMeta =
+      const VerificationMeta('carbsPer100g');
+  @override
+  late final GeneratedColumn<double> carbsPer100g = GeneratedColumn<double>(
+      'carbs_per100g', aliasedName, false,
+      type: DriftSqlType.double, requiredDuringInsert: true);
+  static const VerificationMeta _fatPer100gMeta =
+      const VerificationMeta('fatPer100g');
+  @override
+  late final GeneratedColumn<double> fatPer100g = GeneratedColumn<double>(
+      'fat_per100g', aliasedName, false,
+      type: DriftSqlType.double, requiredDuringInsert: true);
+  static const VerificationMeta _imageUrlMeta =
+      const VerificationMeta('imageUrl');
+  @override
+  late final GeneratedColumn<String> imageUrl = GeneratedColumn<String>(
+      'image_url', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _servingsJsonMeta =
+      const VerificationMeta('servingsJson');
+  @override
+  late final GeneratedColumn<String> servingsJson = GeneratedColumn<String>(
+      'servings_json', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _isUserCorrectedMeta =
+      const VerificationMeta('isUserCorrected');
+  @override
+  late final GeneratedColumn<bool> isUserCorrected = GeneratedColumn<bool>(
+      'is_user_corrected', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("is_user_corrected" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _cachedAtMeta =
+      const VerificationMeta('cachedAt');
+  @override
+  late final GeneratedColumn<DateTime> cachedAt = GeneratedColumn<DateTime>(
+      'cached_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  @override
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+      'source', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('api'));
+  @override
+  List<GeneratedColumn> get $columns => [
+        barcode,
+        name,
+        brand,
+        category,
+        caloriesPer100g,
+        proteinPer100g,
+        carbsPer100g,
+        fatPer100g,
+        imageUrl,
+        servingsJson,
+        isUserCorrected,
+        cachedAt,
+        source
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'barcode_products';
+  @override
+  VerificationContext validateIntegrity(Insertable<BarcodeProduct> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('barcode')) {
+      context.handle(_barcodeMeta,
+          barcode.isAcceptableOrUnknown(data['barcode']!, _barcodeMeta));
+    } else if (isInserting) {
+      context.missing(_barcodeMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('brand')) {
+      context.handle(
+          _brandMeta, brand.isAcceptableOrUnknown(data['brand']!, _brandMeta));
+    }
+    if (data.containsKey('category')) {
+      context.handle(_categoryMeta,
+          category.isAcceptableOrUnknown(data['category']!, _categoryMeta));
+    }
+    if (data.containsKey('calories_per100g')) {
+      context.handle(
+          _caloriesPer100gMeta,
+          caloriesPer100g.isAcceptableOrUnknown(
+              data['calories_per100g']!, _caloriesPer100gMeta));
+    } else if (isInserting) {
+      context.missing(_caloriesPer100gMeta);
+    }
+    if (data.containsKey('protein_per100g')) {
+      context.handle(
+          _proteinPer100gMeta,
+          proteinPer100g.isAcceptableOrUnknown(
+              data['protein_per100g']!, _proteinPer100gMeta));
+    } else if (isInserting) {
+      context.missing(_proteinPer100gMeta);
+    }
+    if (data.containsKey('carbs_per100g')) {
+      context.handle(
+          _carbsPer100gMeta,
+          carbsPer100g.isAcceptableOrUnknown(
+              data['carbs_per100g']!, _carbsPer100gMeta));
+    } else if (isInserting) {
+      context.missing(_carbsPer100gMeta);
+    }
+    if (data.containsKey('fat_per100g')) {
+      context.handle(
+          _fatPer100gMeta,
+          fatPer100g.isAcceptableOrUnknown(
+              data['fat_per100g']!, _fatPer100gMeta));
+    } else if (isInserting) {
+      context.missing(_fatPer100gMeta);
+    }
+    if (data.containsKey('image_url')) {
+      context.handle(_imageUrlMeta,
+          imageUrl.isAcceptableOrUnknown(data['image_url']!, _imageUrlMeta));
+    }
+    if (data.containsKey('servings_json')) {
+      context.handle(
+          _servingsJsonMeta,
+          servingsJson.isAcceptableOrUnknown(
+              data['servings_json']!, _servingsJsonMeta));
+    }
+    if (data.containsKey('is_user_corrected')) {
+      context.handle(
+          _isUserCorrectedMeta,
+          isUserCorrected.isAcceptableOrUnknown(
+              data['is_user_corrected']!, _isUserCorrectedMeta));
+    }
+    if (data.containsKey('cached_at')) {
+      context.handle(_cachedAtMeta,
+          cachedAt.isAcceptableOrUnknown(data['cached_at']!, _cachedAtMeta));
+    } else if (isInserting) {
+      context.missing(_cachedAtMeta);
+    }
+    if (data.containsKey('source')) {
+      context.handle(_sourceMeta,
+          source.isAcceptableOrUnknown(data['source']!, _sourceMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {barcode};
+  @override
+  BarcodeProduct map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return BarcodeProduct(
+      barcode: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}barcode'])!,
+      name: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      brand: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}brand']),
+      category: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}category']),
+      caloriesPer100g: attachedDatabase.typeMapping.read(
+          DriftSqlType.double, data['${effectivePrefix}calories_per100g'])!,
+      proteinPer100g: attachedDatabase.typeMapping.read(
+          DriftSqlType.double, data['${effectivePrefix}protein_per100g'])!,
+      carbsPer100g: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}carbs_per100g'])!,
+      fatPer100g: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}fat_per100g'])!,
+      imageUrl: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}image_url']),
+      servingsJson: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}servings_json']),
+      isUserCorrected: attachedDatabase.typeMapping.read(
+          DriftSqlType.bool, data['${effectivePrefix}is_user_corrected'])!,
+      cachedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}cached_at'])!,
+      source: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}source'])!,
+    );
+  }
+
+  @override
+  $BarcodeProductsTable createAlias(String alias) {
+    return $BarcodeProductsTable(attachedDatabase, alias);
+  }
+}
+
+class BarcodeProduct extends DataClass implements Insertable<BarcodeProduct> {
+  final String barcode;
+  final String name;
+  final String? brand;
+  final String? category;
+  final double caloriesPer100g;
+  final double proteinPer100g;
+  final double carbsPer100g;
+  final double fatPer100g;
+  final String? imageUrl;
+  final String? servingsJson;
+  final bool isUserCorrected;
+  final DateTime cachedAt;
+  final String source;
+  const BarcodeProduct(
+      {required this.barcode,
+      required this.name,
+      this.brand,
+      this.category,
+      required this.caloriesPer100g,
+      required this.proteinPer100g,
+      required this.carbsPer100g,
+      required this.fatPer100g,
+      this.imageUrl,
+      this.servingsJson,
+      required this.isUserCorrected,
+      required this.cachedAt,
+      required this.source});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['barcode'] = Variable<String>(barcode);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || brand != null) {
+      map['brand'] = Variable<String>(brand);
+    }
+    if (!nullToAbsent || category != null) {
+      map['category'] = Variable<String>(category);
+    }
+    map['calories_per100g'] = Variable<double>(caloriesPer100g);
+    map['protein_per100g'] = Variable<double>(proteinPer100g);
+    map['carbs_per100g'] = Variable<double>(carbsPer100g);
+    map['fat_per100g'] = Variable<double>(fatPer100g);
+    if (!nullToAbsent || imageUrl != null) {
+      map['image_url'] = Variable<String>(imageUrl);
+    }
+    if (!nullToAbsent || servingsJson != null) {
+      map['servings_json'] = Variable<String>(servingsJson);
+    }
+    map['is_user_corrected'] = Variable<bool>(isUserCorrected);
+    map['cached_at'] = Variable<DateTime>(cachedAt);
+    map['source'] = Variable<String>(source);
+    return map;
+  }
+
+  BarcodeProductsCompanion toCompanion(bool nullToAbsent) {
+    return BarcodeProductsCompanion(
+      barcode: Value(barcode),
+      name: Value(name),
+      brand:
+          brand == null && nullToAbsent ? const Value.absent() : Value(brand),
+      category: category == null && nullToAbsent
+          ? const Value.absent()
+          : Value(category),
+      caloriesPer100g: Value(caloriesPer100g),
+      proteinPer100g: Value(proteinPer100g),
+      carbsPer100g: Value(carbsPer100g),
+      fatPer100g: Value(fatPer100g),
+      imageUrl: imageUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(imageUrl),
+      servingsJson: servingsJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(servingsJson),
+      isUserCorrected: Value(isUserCorrected),
+      cachedAt: Value(cachedAt),
+      source: Value(source),
+    );
+  }
+
+  factory BarcodeProduct.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return BarcodeProduct(
+      barcode: serializer.fromJson<String>(json['barcode']),
+      name: serializer.fromJson<String>(json['name']),
+      brand: serializer.fromJson<String?>(json['brand']),
+      category: serializer.fromJson<String?>(json['category']),
+      caloriesPer100g: serializer.fromJson<double>(json['caloriesPer100g']),
+      proteinPer100g: serializer.fromJson<double>(json['proteinPer100g']),
+      carbsPer100g: serializer.fromJson<double>(json['carbsPer100g']),
+      fatPer100g: serializer.fromJson<double>(json['fatPer100g']),
+      imageUrl: serializer.fromJson<String?>(json['imageUrl']),
+      servingsJson: serializer.fromJson<String?>(json['servingsJson']),
+      isUserCorrected: serializer.fromJson<bool>(json['isUserCorrected']),
+      cachedAt: serializer.fromJson<DateTime>(json['cachedAt']),
+      source: serializer.fromJson<String>(json['source']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'barcode': serializer.toJson<String>(barcode),
+      'name': serializer.toJson<String>(name),
+      'brand': serializer.toJson<String?>(brand),
+      'category': serializer.toJson<String?>(category),
+      'caloriesPer100g': serializer.toJson<double>(caloriesPer100g),
+      'proteinPer100g': serializer.toJson<double>(proteinPer100g),
+      'carbsPer100g': serializer.toJson<double>(carbsPer100g),
+      'fatPer100g': serializer.toJson<double>(fatPer100g),
+      'imageUrl': serializer.toJson<String?>(imageUrl),
+      'servingsJson': serializer.toJson<String?>(servingsJson),
+      'isUserCorrected': serializer.toJson<bool>(isUserCorrected),
+      'cachedAt': serializer.toJson<DateTime>(cachedAt),
+      'source': serializer.toJson<String>(source),
+    };
+  }
+
+  BarcodeProduct copyWith(
+          {String? barcode,
+          String? name,
+          Value<String?> brand = const Value.absent(),
+          Value<String?> category = const Value.absent(),
+          double? caloriesPer100g,
+          double? proteinPer100g,
+          double? carbsPer100g,
+          double? fatPer100g,
+          Value<String?> imageUrl = const Value.absent(),
+          Value<String?> servingsJson = const Value.absent(),
+          bool? isUserCorrected,
+          DateTime? cachedAt,
+          String? source}) =>
+      BarcodeProduct(
+        barcode: barcode ?? this.barcode,
+        name: name ?? this.name,
+        brand: brand.present ? brand.value : this.brand,
+        category: category.present ? category.value : this.category,
+        caloriesPer100g: caloriesPer100g ?? this.caloriesPer100g,
+        proteinPer100g: proteinPer100g ?? this.proteinPer100g,
+        carbsPer100g: carbsPer100g ?? this.carbsPer100g,
+        fatPer100g: fatPer100g ?? this.fatPer100g,
+        imageUrl: imageUrl.present ? imageUrl.value : this.imageUrl,
+        servingsJson:
+            servingsJson.present ? servingsJson.value : this.servingsJson,
+        isUserCorrected: isUserCorrected ?? this.isUserCorrected,
+        cachedAt: cachedAt ?? this.cachedAt,
+        source: source ?? this.source,
+      );
+  BarcodeProduct copyWithCompanion(BarcodeProductsCompanion data) {
+    return BarcodeProduct(
+      barcode: data.barcode.present ? data.barcode.value : this.barcode,
+      name: data.name.present ? data.name.value : this.name,
+      brand: data.brand.present ? data.brand.value : this.brand,
+      category: data.category.present ? data.category.value : this.category,
+      caloriesPer100g: data.caloriesPer100g.present
+          ? data.caloriesPer100g.value
+          : this.caloriesPer100g,
+      proteinPer100g: data.proteinPer100g.present
+          ? data.proteinPer100g.value
+          : this.proteinPer100g,
+      carbsPer100g: data.carbsPer100g.present
+          ? data.carbsPer100g.value
+          : this.carbsPer100g,
+      fatPer100g:
+          data.fatPer100g.present ? data.fatPer100g.value : this.fatPer100g,
+      imageUrl: data.imageUrl.present ? data.imageUrl.value : this.imageUrl,
+      servingsJson: data.servingsJson.present
+          ? data.servingsJson.value
+          : this.servingsJson,
+      isUserCorrected: data.isUserCorrected.present
+          ? data.isUserCorrected.value
+          : this.isUserCorrected,
+      cachedAt: data.cachedAt.present ? data.cachedAt.value : this.cachedAt,
+      source: data.source.present ? data.source.value : this.source,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BarcodeProduct(')
+          ..write('barcode: $barcode, ')
+          ..write('name: $name, ')
+          ..write('brand: $brand, ')
+          ..write('category: $category, ')
+          ..write('caloriesPer100g: $caloriesPer100g, ')
+          ..write('proteinPer100g: $proteinPer100g, ')
+          ..write('carbsPer100g: $carbsPer100g, ')
+          ..write('fatPer100g: $fatPer100g, ')
+          ..write('imageUrl: $imageUrl, ')
+          ..write('servingsJson: $servingsJson, ')
+          ..write('isUserCorrected: $isUserCorrected, ')
+          ..write('cachedAt: $cachedAt, ')
+          ..write('source: $source')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      barcode,
+      name,
+      brand,
+      category,
+      caloriesPer100g,
+      proteinPer100g,
+      carbsPer100g,
+      fatPer100g,
+      imageUrl,
+      servingsJson,
+      isUserCorrected,
+      cachedAt,
+      source);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is BarcodeProduct &&
+          other.barcode == this.barcode &&
+          other.name == this.name &&
+          other.brand == this.brand &&
+          other.category == this.category &&
+          other.caloriesPer100g == this.caloriesPer100g &&
+          other.proteinPer100g == this.proteinPer100g &&
+          other.carbsPer100g == this.carbsPer100g &&
+          other.fatPer100g == this.fatPer100g &&
+          other.imageUrl == this.imageUrl &&
+          other.servingsJson == this.servingsJson &&
+          other.isUserCorrected == this.isUserCorrected &&
+          other.cachedAt == this.cachedAt &&
+          other.source == this.source);
+}
+
+class BarcodeProductsCompanion extends UpdateCompanion<BarcodeProduct> {
+  final Value<String> barcode;
+  final Value<String> name;
+  final Value<String?> brand;
+  final Value<String?> category;
+  final Value<double> caloriesPer100g;
+  final Value<double> proteinPer100g;
+  final Value<double> carbsPer100g;
+  final Value<double> fatPer100g;
+  final Value<String?> imageUrl;
+  final Value<String?> servingsJson;
+  final Value<bool> isUserCorrected;
+  final Value<DateTime> cachedAt;
+  final Value<String> source;
+  final Value<int> rowid;
+  const BarcodeProductsCompanion({
+    this.barcode = const Value.absent(),
+    this.name = const Value.absent(),
+    this.brand = const Value.absent(),
+    this.category = const Value.absent(),
+    this.caloriesPer100g = const Value.absent(),
+    this.proteinPer100g = const Value.absent(),
+    this.carbsPer100g = const Value.absent(),
+    this.fatPer100g = const Value.absent(),
+    this.imageUrl = const Value.absent(),
+    this.servingsJson = const Value.absent(),
+    this.isUserCorrected = const Value.absent(),
+    this.cachedAt = const Value.absent(),
+    this.source = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  BarcodeProductsCompanion.insert({
+    required String barcode,
+    required String name,
+    this.brand = const Value.absent(),
+    this.category = const Value.absent(),
+    required double caloriesPer100g,
+    required double proteinPer100g,
+    required double carbsPer100g,
+    required double fatPer100g,
+    this.imageUrl = const Value.absent(),
+    this.servingsJson = const Value.absent(),
+    this.isUserCorrected = const Value.absent(),
+    required DateTime cachedAt,
+    this.source = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : barcode = Value(barcode),
+        name = Value(name),
+        caloriesPer100g = Value(caloriesPer100g),
+        proteinPer100g = Value(proteinPer100g),
+        carbsPer100g = Value(carbsPer100g),
+        fatPer100g = Value(fatPer100g),
+        cachedAt = Value(cachedAt);
+  static Insertable<BarcodeProduct> custom({
+    Expression<String>? barcode,
+    Expression<String>? name,
+    Expression<String>? brand,
+    Expression<String>? category,
+    Expression<double>? caloriesPer100g,
+    Expression<double>? proteinPer100g,
+    Expression<double>? carbsPer100g,
+    Expression<double>? fatPer100g,
+    Expression<String>? imageUrl,
+    Expression<String>? servingsJson,
+    Expression<bool>? isUserCorrected,
+    Expression<DateTime>? cachedAt,
+    Expression<String>? source,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (barcode != null) 'barcode': barcode,
+      if (name != null) 'name': name,
+      if (brand != null) 'brand': brand,
+      if (category != null) 'category': category,
+      if (caloriesPer100g != null) 'calories_per100g': caloriesPer100g,
+      if (proteinPer100g != null) 'protein_per100g': proteinPer100g,
+      if (carbsPer100g != null) 'carbs_per100g': carbsPer100g,
+      if (fatPer100g != null) 'fat_per100g': fatPer100g,
+      if (imageUrl != null) 'image_url': imageUrl,
+      if (servingsJson != null) 'servings_json': servingsJson,
+      if (isUserCorrected != null) 'is_user_corrected': isUserCorrected,
+      if (cachedAt != null) 'cached_at': cachedAt,
+      if (source != null) 'source': source,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  BarcodeProductsCompanion copyWith(
+      {Value<String>? barcode,
+      Value<String>? name,
+      Value<String?>? brand,
+      Value<String?>? category,
+      Value<double>? caloriesPer100g,
+      Value<double>? proteinPer100g,
+      Value<double>? carbsPer100g,
+      Value<double>? fatPer100g,
+      Value<String?>? imageUrl,
+      Value<String?>? servingsJson,
+      Value<bool>? isUserCorrected,
+      Value<DateTime>? cachedAt,
+      Value<String>? source,
+      Value<int>? rowid}) {
+    return BarcodeProductsCompanion(
+      barcode: barcode ?? this.barcode,
+      name: name ?? this.name,
+      brand: brand ?? this.brand,
+      category: category ?? this.category,
+      caloriesPer100g: caloriesPer100g ?? this.caloriesPer100g,
+      proteinPer100g: proteinPer100g ?? this.proteinPer100g,
+      carbsPer100g: carbsPer100g ?? this.carbsPer100g,
+      fatPer100g: fatPer100g ?? this.fatPer100g,
+      imageUrl: imageUrl ?? this.imageUrl,
+      servingsJson: servingsJson ?? this.servingsJson,
+      isUserCorrected: isUserCorrected ?? this.isUserCorrected,
+      cachedAt: cachedAt ?? this.cachedAt,
+      source: source ?? this.source,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (barcode.present) {
+      map['barcode'] = Variable<String>(barcode.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (brand.present) {
+      map['brand'] = Variable<String>(brand.value);
+    }
+    if (category.present) {
+      map['category'] = Variable<String>(category.value);
+    }
+    if (caloriesPer100g.present) {
+      map['calories_per100g'] = Variable<double>(caloriesPer100g.value);
+    }
+    if (proteinPer100g.present) {
+      map['protein_per100g'] = Variable<double>(proteinPer100g.value);
+    }
+    if (carbsPer100g.present) {
+      map['carbs_per100g'] = Variable<double>(carbsPer100g.value);
+    }
+    if (fatPer100g.present) {
+      map['fat_per100g'] = Variable<double>(fatPer100g.value);
+    }
+    if (imageUrl.present) {
+      map['image_url'] = Variable<String>(imageUrl.value);
+    }
+    if (servingsJson.present) {
+      map['servings_json'] = Variable<String>(servingsJson.value);
+    }
+    if (isUserCorrected.present) {
+      map['is_user_corrected'] = Variable<bool>(isUserCorrected.value);
+    }
+    if (cachedAt.present) {
+      map['cached_at'] = Variable<DateTime>(cachedAt.value);
+    }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BarcodeProductsCompanion(')
+          ..write('barcode: $barcode, ')
+          ..write('name: $name, ')
+          ..write('brand: $brand, ')
+          ..write('category: $category, ')
+          ..write('caloriesPer100g: $caloriesPer100g, ')
+          ..write('proteinPer100g: $proteinPer100g, ')
+          ..write('carbsPer100g: $carbsPer100g, ')
+          ..write('fatPer100g: $fatPer100g, ')
+          ..write('imageUrl: $imageUrl, ')
+          ..write('servingsJson: $servingsJson, ')
+          ..write('isUserCorrected: $isUserCorrected, ')
+          ..write('cachedAt: $cachedAt, ')
+          ..write('source: $source, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$DatabaseService extends GeneratedDatabase {
   _$DatabaseService(QueryExecutor e) : super(e);
   $DatabaseServiceManager get managers => $DatabaseServiceManager(this);
@@ -1824,6 +2481,8 @@ abstract class _$DatabaseService extends GeneratedDatabase {
   late final $SupplementDefinitionsTable supplementDefinitions =
       $SupplementDefinitionsTable(this);
   late final $SupplementLogsTable supplementLogs = $SupplementLogsTable(this);
+  late final $BarcodeProductsTable barcodeProducts =
+      $BarcodeProductsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1834,7 +2493,8 @@ abstract class _$DatabaseService extends GeneratedDatabase {
         weightLogs,
         workoutLogs,
         supplementDefinitions,
-        supplementLogs
+        supplementLogs,
+        barcodeProducts
       ];
 }
 
@@ -2849,6 +3509,308 @@ typedef $$SupplementLogsTableProcessedTableManager = ProcessedTableManager<
     ),
     SupplementLog,
     PrefetchHooks Function()>;
+typedef $$BarcodeProductsTableCreateCompanionBuilder = BarcodeProductsCompanion
+    Function({
+  required String barcode,
+  required String name,
+  Value<String?> brand,
+  Value<String?> category,
+  required double caloriesPer100g,
+  required double proteinPer100g,
+  required double carbsPer100g,
+  required double fatPer100g,
+  Value<String?> imageUrl,
+  Value<String?> servingsJson,
+  Value<bool> isUserCorrected,
+  required DateTime cachedAt,
+  Value<String> source,
+  Value<int> rowid,
+});
+typedef $$BarcodeProductsTableUpdateCompanionBuilder = BarcodeProductsCompanion
+    Function({
+  Value<String> barcode,
+  Value<String> name,
+  Value<String?> brand,
+  Value<String?> category,
+  Value<double> caloriesPer100g,
+  Value<double> proteinPer100g,
+  Value<double> carbsPer100g,
+  Value<double> fatPer100g,
+  Value<String?> imageUrl,
+  Value<String?> servingsJson,
+  Value<bool> isUserCorrected,
+  Value<DateTime> cachedAt,
+  Value<String> source,
+  Value<int> rowid,
+});
+
+class $$BarcodeProductsTableFilterComposer
+    extends Composer<_$DatabaseService, $BarcodeProductsTable> {
+  $$BarcodeProductsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get barcode => $composableBuilder(
+      column: $table.barcode, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get brand => $composableBuilder(
+      column: $table.brand, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get category => $composableBuilder(
+      column: $table.category, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get caloriesPer100g => $composableBuilder(
+      column: $table.caloriesPer100g,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get proteinPer100g => $composableBuilder(
+      column: $table.proteinPer100g,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get carbsPer100g => $composableBuilder(
+      column: $table.carbsPer100g, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get fatPer100g => $composableBuilder(
+      column: $table.fatPer100g, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get imageUrl => $composableBuilder(
+      column: $table.imageUrl, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get servingsJson => $composableBuilder(
+      column: $table.servingsJson, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isUserCorrected => $composableBuilder(
+      column: $table.isUserCorrected,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get cachedAt => $composableBuilder(
+      column: $table.cachedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get source => $composableBuilder(
+      column: $table.source, builder: (column) => ColumnFilters(column));
+}
+
+class $$BarcodeProductsTableOrderingComposer
+    extends Composer<_$DatabaseService, $BarcodeProductsTable> {
+  $$BarcodeProductsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get barcode => $composableBuilder(
+      column: $table.barcode, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get brand => $composableBuilder(
+      column: $table.brand, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get category => $composableBuilder(
+      column: $table.category, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get caloriesPer100g => $composableBuilder(
+      column: $table.caloriesPer100g,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get proteinPer100g => $composableBuilder(
+      column: $table.proteinPer100g,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get carbsPer100g => $composableBuilder(
+      column: $table.carbsPer100g,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get fatPer100g => $composableBuilder(
+      column: $table.fatPer100g, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get imageUrl => $composableBuilder(
+      column: $table.imageUrl, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get servingsJson => $composableBuilder(
+      column: $table.servingsJson,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isUserCorrected => $composableBuilder(
+      column: $table.isUserCorrected,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get cachedAt => $composableBuilder(
+      column: $table.cachedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get source => $composableBuilder(
+      column: $table.source, builder: (column) => ColumnOrderings(column));
+}
+
+class $$BarcodeProductsTableAnnotationComposer
+    extends Composer<_$DatabaseService, $BarcodeProductsTable> {
+  $$BarcodeProductsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get barcode =>
+      $composableBuilder(column: $table.barcode, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get brand =>
+      $composableBuilder(column: $table.brand, builder: (column) => column);
+
+  GeneratedColumn<String> get category =>
+      $composableBuilder(column: $table.category, builder: (column) => column);
+
+  GeneratedColumn<double> get caloriesPer100g => $composableBuilder(
+      column: $table.caloriesPer100g, builder: (column) => column);
+
+  GeneratedColumn<double> get proteinPer100g => $composableBuilder(
+      column: $table.proteinPer100g, builder: (column) => column);
+
+  GeneratedColumn<double> get carbsPer100g => $composableBuilder(
+      column: $table.carbsPer100g, builder: (column) => column);
+
+  GeneratedColumn<double> get fatPer100g => $composableBuilder(
+      column: $table.fatPer100g, builder: (column) => column);
+
+  GeneratedColumn<String> get imageUrl =>
+      $composableBuilder(column: $table.imageUrl, builder: (column) => column);
+
+  GeneratedColumn<String> get servingsJson => $composableBuilder(
+      column: $table.servingsJson, builder: (column) => column);
+
+  GeneratedColumn<bool> get isUserCorrected => $composableBuilder(
+      column: $table.isUserCorrected, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get cachedAt =>
+      $composableBuilder(column: $table.cachedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+}
+
+class $$BarcodeProductsTableTableManager extends RootTableManager<
+    _$DatabaseService,
+    $BarcodeProductsTable,
+    BarcodeProduct,
+    $$BarcodeProductsTableFilterComposer,
+    $$BarcodeProductsTableOrderingComposer,
+    $$BarcodeProductsTableAnnotationComposer,
+    $$BarcodeProductsTableCreateCompanionBuilder,
+    $$BarcodeProductsTableUpdateCompanionBuilder,
+    (
+      BarcodeProduct,
+      BaseReferences<_$DatabaseService, $BarcodeProductsTable, BarcodeProduct>
+    ),
+    BarcodeProduct,
+    PrefetchHooks Function()> {
+  $$BarcodeProductsTableTableManager(
+      _$DatabaseService db, $BarcodeProductsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$BarcodeProductsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$BarcodeProductsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$BarcodeProductsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> barcode = const Value.absent(),
+            Value<String> name = const Value.absent(),
+            Value<String?> brand = const Value.absent(),
+            Value<String?> category = const Value.absent(),
+            Value<double> caloriesPer100g = const Value.absent(),
+            Value<double> proteinPer100g = const Value.absent(),
+            Value<double> carbsPer100g = const Value.absent(),
+            Value<double> fatPer100g = const Value.absent(),
+            Value<String?> imageUrl = const Value.absent(),
+            Value<String?> servingsJson = const Value.absent(),
+            Value<bool> isUserCorrected = const Value.absent(),
+            Value<DateTime> cachedAt = const Value.absent(),
+            Value<String> source = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              BarcodeProductsCompanion(
+            barcode: barcode,
+            name: name,
+            brand: brand,
+            category: category,
+            caloriesPer100g: caloriesPer100g,
+            proteinPer100g: proteinPer100g,
+            carbsPer100g: carbsPer100g,
+            fatPer100g: fatPer100g,
+            imageUrl: imageUrl,
+            servingsJson: servingsJson,
+            isUserCorrected: isUserCorrected,
+            cachedAt: cachedAt,
+            source: source,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String barcode,
+            required String name,
+            Value<String?> brand = const Value.absent(),
+            Value<String?> category = const Value.absent(),
+            required double caloriesPer100g,
+            required double proteinPer100g,
+            required double carbsPer100g,
+            required double fatPer100g,
+            Value<String?> imageUrl = const Value.absent(),
+            Value<String?> servingsJson = const Value.absent(),
+            Value<bool> isUserCorrected = const Value.absent(),
+            required DateTime cachedAt,
+            Value<String> source = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              BarcodeProductsCompanion.insert(
+            barcode: barcode,
+            name: name,
+            brand: brand,
+            category: category,
+            caloriesPer100g: caloriesPer100g,
+            proteinPer100g: proteinPer100g,
+            carbsPer100g: carbsPer100g,
+            fatPer100g: fatPer100g,
+            imageUrl: imageUrl,
+            servingsJson: servingsJson,
+            isUserCorrected: isUserCorrected,
+            cachedAt: cachedAt,
+            source: source,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$BarcodeProductsTableProcessedTableManager = ProcessedTableManager<
+    _$DatabaseService,
+    $BarcodeProductsTable,
+    BarcodeProduct,
+    $$BarcodeProductsTableFilterComposer,
+    $$BarcodeProductsTableOrderingComposer,
+    $$BarcodeProductsTableAnnotationComposer,
+    $$BarcodeProductsTableCreateCompanionBuilder,
+    $$BarcodeProductsTableUpdateCompanionBuilder,
+    (
+      BarcodeProduct,
+      BaseReferences<_$DatabaseService, $BarcodeProductsTable, BarcodeProduct>
+    ),
+    BarcodeProduct,
+    PrefetchHooks Function()>;
 
 class $DatabaseServiceManager {
   final _$DatabaseService _db;
@@ -2865,4 +3827,6 @@ class $DatabaseServiceManager {
       $$SupplementDefinitionsTableTableManager(_db, _db.supplementDefinitions);
   $$SupplementLogsTableTableManager get supplementLogs =>
       $$SupplementLogsTableTableManager(_db, _db.supplementLogs);
+  $$BarcodeProductsTableTableManager get barcodeProducts =>
+      $$BarcodeProductsTableTableManager(_db, _db.barcodeProducts);
 }
