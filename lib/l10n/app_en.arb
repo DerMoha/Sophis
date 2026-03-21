@@ -490,5 +490,14 @@
   "achievement7Days": "Week Warrior",
   "achievement14Days": "Two Weeks",
   "achievement30Days": "Monthly Master",
-  "achievement100Days": "Centurion"
+  "achievement100Days": "Centurion",
+  "productNotFoundTitle": "Product not found",
+  "searchByName": "Search by name",
+  "scanNutritionLabel": "Scan nutrition label",
+  "enterManually": "Enter manually",
+  "noAiRequestsLeft": "No AI requests remaining today",
+  "saveCorrection": "Save Correction",
+  "resetToApiData": "Reset to Original",
+  "editProduct": "Edit Product",
+  "productCorrectionSaved": "Product correction saved"
 }

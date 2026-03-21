@@ -364,5 +364,14 @@
   "achievement7Days": "Wochenkämpfer",
   "achievement14Days": "Zwei Wochen",
   "achievement30Days": "Monatsmeister",
-  "achievement100Days": "Zenturio"
+  "achievement100Days": "Zenturio",
+  "productNotFoundTitle": "Produkt nicht gefunden",
+  "searchByName": "Nach Name suchen",
+  "scanNutritionLabel": "Nährwerttabelle scannen",
+  "enterManually": "Manuell eingeben",
+  "noAiRequestsLeft": "Keine KI-Anfragen mehr heute übrig",
+  "saveCorrection": "Korrektur speichern",
+  "resetToApiData": "Zurücksetzen",
+  "editProduct": "Produkt bearbeiten",
+  "productCorrectionSaved": "Produktkorrektur gespeichert"
 }
