@@ -1,0 +1,233 @@
+import 'package:flutter/material.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:provider/provider.dart';
+
+import '../../../l10n/generated/app_localizations.dart';
+import '../../../models/food_item.dart';
+import '../../../models/shareable_meal.dart';
+import '../../../services/barcode_lookup_service.dart';
+import '../../../services/brocade_service.dart';
+import '../../../services/food_entry_factory.dart';
+import '../../../services/meal_sharing_service.dart';
+import '../../../services/openfoodfacts_service.dart';
+import '../../../services/nutrition_provider.dart';
+import '../theme/app_theme.dart';
+import '../components/barcode_not_found_sheet.dart';
+import '../components/portion_picker_sheet.dart';
+import 'food_search_screen.dart';
+import 'import_meal_screen.dart';
+
+class BarcodeScannerScreen extends StatefulWidget {
+  final String meal;
+
+  const BarcodeScannerScreen({super.key, required this.meal});
+
+  @override
+  State<BarcodeScannerScreen> createState() => _BarcodeScannerScreenState();
+}
+
+class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
+  final MobileScannerController _controller = MobileScannerController();
+  late final BarcodeLookupService _lookupService;
+
+  bool _isProcessing = false;
+  String? _lastScannedCode;
+
+  @override
+  void initState() {
+    super.initState();
+    final db = context.read<NutritionProvider>().databaseService;
+    _lookupService = BarcodeLookupService(
+      db: db,
+      offService: OpenFoodFactsService(),
+      brocadeService: BrocadeService(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _onBarcodeDetected(BarcodeCapture capture) async {
+    if (_isProcessing) return;
+
+    final barcode = capture.barcodes.firstOrNull?.rawValue;
+    if (barcode == null || barcode == _lastScannedCode) return;
+
+    setState(() {
+      _isProcessing = true;
+      _lastScannedCode = barcode;
+    });
+
+    // Pause scanning
+    _controller.stop();
+
+    // Check if this is a Sophis share link (QR code)
+    if (MealSharingService.isShareLink(barcode)) {
+      final meal = ShareableMeal.fromDeepLink(barcode);
+      if (meal != null && mounted) {
+        // Navigate to import screen and close scanner
+        Navigator.pushReplacement(
+          context,
+          AppTheme.slideRoute(ImportMealScreen(meal: meal)),
+        );
+        return;
+      } else if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.invalidShareData)),
+        );
+        _controller.start();
+        setState(() => _isProcessing = false);
+        return;
+      }
+    }
+
+    // Normal barcode - look up product via pipeline
+    try {
+      final result = await _lookupService.lookup(barcode);
+
+      if (!mounted) return;
+
+      if (result.item != null) {
+        _showProductDialog(result.item!, barcode);
+      } else {
+        _showNotFoundSheet(result);
+      }
+    } catch (e) {
+      if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.errorGeneric(e.toString()))),
+        );
+        _controller.start();
+        setState(() => _isProcessing = false);
+      }
+    }
+  }
+
+  void _showNotFoundSheet(BarcodeLookupResult result) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => BarcodeNotFoundSheet(
+        barcode: result.barcode,
+        partialName: result.partialName,
+        partialBrand: result.partialBrand,
+        meal: widget.meal,
+        lookupService: _lookupService,
+        onSearchByName: () {
+          Navigator.pushReplacement(
+            context,
+            AppTheme.slideRoute(
+              FoodSearchScreen(
+                meal: widget.meal,
+                initialQuery: result.partialName,
+              ),
+            ),
+          );
+        },
+        onProductResolved: (product) {
+          _showProductDialog(product, result.barcode);
+        },
+      ),
+    ).whenComplete(() {
+      _controller.start();
+      setState(() => _isProcessing = false);
+    });
+  }
+
+  void _showProductDialog(FoodItem product, String barcode) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => PortionPickerSheet(
+        item: product,
+        meal: widget.meal,
+        onAdd: (grams) => _addFoodEntry(product, grams),
+        barcode: barcode,
+        lookupService: _lookupService,
+        onProductUpdated: (updatedProduct) {
+          // Re-show portion picker with updated product
+          Navigator.pop(context);
+          _showProductDialog(updatedProduct, barcode);
+        },
+      ),
+    ).whenComplete(() {
+      // Resume scanning when sheet is closed
+      _controller.start();
+      setState(() => _isProcessing = false);
+    });
+  }
+
+  void _addFoodEntry(FoodItem product, double grams) {
+    final entry = FoodEntryFactory.fromFoodItem(
+      item: product,
+      grams: grams,
+      meal: widget.meal,
+    );
+
+    final provider = context.read<NutritionProvider>();
+    provider.addFoodEntry(entry);
+    provider.addRecentFood(product); // Save to recent foods
+    Navigator.pop(context); // Close barcode scanner
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(l10n.scanBarcode),
+        actions: [
+          IconButton(
+            icon: ValueListenableBuilder(
+              valueListenable: _controller,
+              builder: (context, state, _) {
+                return Icon(
+                  state.torchState == TorchState.on
+                      ? Icons.flash_on
+                      : Icons.flash_off,
+                );
+              },
+            ),
+            onPressed: () => _controller.toggleTorch(),
+          ),
+        ],
+      ),
+      body: Stack(
+        children: [
+          MobileScanner(
+            controller: _controller,
+            onDetect: _onBarcodeDetected,
+          ),
+          // Scan overlay
+          Center(
+            child: Container(
+              width: 250,
+              height: 250,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.white, width: 2),
+                borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+              ),
+            ),
+          ),
+          // Status indicator
+          if (_isProcessing)
+            const Positioned(
+              bottom: 50,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}

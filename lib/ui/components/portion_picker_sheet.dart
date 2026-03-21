@@ -4,22 +4,30 @@ import '../../models/food_item.dart';
 import '../../models/serving_size.dart';
 import '../../models/custom_portion.dart';
 import '../../models/nutrition_totals.dart';
+import '../../services/barcode_lookup_service.dart';
 import '../../services/nutrition_provider.dart';
 import '../../l10n/generated/app_localizations.dart';
 import 'package:uuid/uuid.dart';
 import '../theme/app_theme.dart';
+import 'edit_product_sheet.dart';
 
 /// A modal bottom sheet for selecting portion sizes
 class PortionPickerSheet extends StatefulWidget {
   final FoodItem item;
   final String meal;
   final Function(double grams) onAdd;
+  final String? barcode;
+  final dynamic lookupService; // BarcodeLookupService, nullable
+  final Function(FoodItem updatedProduct)? onProductUpdated;
 
   const PortionPickerSheet({
     super.key,
     required this.item,
     required this.meal,
     required this.onAdd,
+    this.barcode,
+    this.lookupService,
+    this.onProductUpdated,
   });
 
   @override
@@ -172,6 +180,9 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
                 item: widget.item,
                 grams: _selectedGrams,
                 nutrients: nutrients,
+                onEdit: widget.barcode != null && widget.lookupService != null
+                    ? () => _openEditSheet()
+                    : null,
               ),
 
               Expanded(
@@ -267,6 +278,34 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
     );
   }
 
+  void _openEditSheet() {
+    final lookupService = widget.lookupService as BarcodeLookupService;
+    final barcode = widget.barcode!;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => EditProductSheet(
+        barcode: barcode,
+        existingProduct: widget.item,
+        onSave: (product) async {
+          await lookupService.saveUserCorrection(barcode, product);
+          if (widget.onProductUpdated != null) {
+            widget.onProductUpdated!(product);
+          }
+        },
+        onReset: () async {
+          Navigator.pop(context);
+          final result = await lookupService.resetCorrection(barcode);
+          if (result.item != null && widget.onProductUpdated != null) {
+            widget.onProductUpdated!(result.item!);
+          }
+        },
+      ),
+    );
+  }
+
   void _showEditPortionsSheet(List<CustomPortion> portions) {
     final l10n = AppLocalizations.of(context)!;
 
@@ -322,11 +361,13 @@ class _ProductHeader extends StatelessWidget {
   final FoodItem item;
   final double grams;
   final NutritionTotals nutrients;
+  final VoidCallback? onEdit;
 
   const _ProductHeader({
     required this.item,
     required this.grams,
     required this.nutrients,
+    this.onEdit,
   });
 
   @override
@@ -400,6 +441,16 @@ class _ProductHeader extends StatelessWidget {
               ],
             ),
           ),
+          if (onEdit != null)
+            IconButton(
+              icon: Icon(
+                Icons.edit_outlined,
+                size: 20,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              onPressed: onEdit,
+              tooltip: 'Edit',
+            ),
         ],
       ),
     );
