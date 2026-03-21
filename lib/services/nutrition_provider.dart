@@ -49,6 +49,7 @@ class NutritionProvider extends ChangeNotifier {
 
   bool _isLoading = true;
   bool get isLoading => _isLoading;
+  DatabaseService get databaseService => _db;
 
   // Shared cache date tracking (used by food log, hydration, workout controllers)
   DateTime? _cacheDate;

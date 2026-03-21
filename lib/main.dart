@@ -13,7 +13,10 @@ import 'services/settings_provider.dart';
 import 'services/nutrition_provider.dart';
 import 'services/notification_service.dart';
 import 'services/meal_sharing_service.dart';
+import 'services/barcode_lookup_service.dart';
+import 'services/brocade_service.dart';
 import 'services/database_service.dart';
+import 'services/openfoodfacts_service.dart';
 import 'services/supplements_provider.dart';
 import 'ui/theme/app_theme.dart';
 import 'ui/screens/home_screen.dart';
@@ -39,6 +42,13 @@ void main() async {
 
   final nutritionProvider = NutritionProvider(storageService, databaseService);
   nutritionProvider.attachSettingsProvider(settingsProvider);
+
+  // Clean up expired barcode cache in background
+  BarcodeLookupService(
+    db: databaseService,
+    offService: OpenFoodFactsService(),
+    brocadeService: BrocadeService(),
+  ).cleanExpiredCache();
 
   runApp(
     MultiProvider(
