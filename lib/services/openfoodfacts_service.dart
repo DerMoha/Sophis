@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/food_item.dart';
 import '../models/serving_size.dart';
@@ -11,6 +13,7 @@ class OpenFoodFactsService {
   static const _apiV2Fields =
       'code,product_name,product_name_de,nutriments,brands,image_front_small_url,serving_size,serving_quantity,categories_tags';
   static const _cacheDuration = Duration(minutes: 10);
+  static const _timeout = Duration(seconds: 10);
 
   // In-memory cache: query -> (results, timestamp)
   final Map<String, _CacheEntry> _searchCache = {};
@@ -32,7 +35,7 @@ class OpenFoodFactsService {
         '$_baseUrl/cgi/search.pl?search_terms=$query&search_simple=1&action=process&json=1&page_size=20',
       );
 
-      final response = await http.get(url);
+      final response = await http.get(url).timeout(_timeout);
       if (response.statusCode != 200) return [];
 
       final data = jsonDecode(response.body) as Map<String, dynamic>;
@@ -52,6 +55,7 @@ class OpenFoodFactsService {
 
       return results;
     } catch (e) {
+      debugPrint('OpenFoodFacts search failed for "$query": $e');
       return [];
     }
   }
@@ -82,7 +86,7 @@ class OpenFoodFactsService {
       final url = Uri.parse(
         '$_baseUrlDe/api/v2/product/$barcode.json?lc=de&fields=$_apiV2Fields',
       );
-      final response = await http.get(url);
+      final response = await http.get(url).timeout(_timeout);
 
       if (response.statusCode != 200) return null;
 
@@ -95,6 +99,7 @@ class OpenFoodFactsService {
 
       return _parseProduct(data['product'] as Map<String, dynamic>?);
     } catch (e) {
+      debugPrint('OpenFoodFacts DE barcode lookup failed for "$barcode": $e');
       return null;
     }
   }
@@ -105,7 +110,7 @@ class OpenFoodFactsService {
       final url = Uri.parse(
         '$_baseUrl/api/v2/product/$barcode.json?lc=de&fields=$_apiV2Fields',
       );
-      final response = await http.get(url);
+      final response = await http.get(url).timeout(_timeout);
 
       if (response.statusCode != 200) return null;
 
@@ -118,6 +123,7 @@ class OpenFoodFactsService {
 
       return _parseProduct(data['product'] as Map<String, dynamic>?);
     } catch (e) {
+      debugPrint('OpenFoodFacts World barcode lookup failed for "$barcode": $e');
       return null;
     }
   }

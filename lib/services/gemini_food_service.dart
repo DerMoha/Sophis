@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -162,6 +163,7 @@ If no food is visible, return: {"foods": []}
       final results = _parseResponse(text);
       return results;
     } catch (e) {
+      debugPrint('Gemini food analysis failed: $e');
       throw Exception('Failed to analyze image: $e');
     }
   }
@@ -261,6 +263,7 @@ Respond ONLY with valid JSON in this exact format, no other text:
       if (results.isEmpty) return null;
       return results.first;
     } catch (e) {
+      debugPrint('Gemini re-analysis failed: $e');
       throw Exception('Failed to re-analyze image: $e');
     }
   }
@@ -293,6 +296,7 @@ Respond ONLY with valid JSON in this exact format, no other text:
         );
       }).toList();
     } catch (e) {
+      debugPrint('Failed to parse Gemini food response: $e');
       return [];
     }
   }
@@ -353,6 +357,7 @@ If the image is not a nutrition label or values are unreadable, return:
 
       return _parseNutritionLabelResponse(text);
     } catch (e) {
+      debugPrint('Gemini nutrition label analysis failed: $e');
       throw Exception('Failed to analyze nutrition label: $e');
     }
   }
@@ -390,6 +395,7 @@ If the image is not a nutrition label or values are unreadable, return:
         servingName: json['serving_name']?.toString(),
       );
     } catch (e) {
+      debugPrint('Failed to parse nutrition label response: $e');
       return null;
     }
   }
@@ -482,6 +488,7 @@ If no recipe is visible or readable, return:
       final result = _parseRecipeResponse(text);
       return result;
     } catch (e) {
+      debugPrint('Gemini recipe extraction failed: $e');
       throw Exception('Failed to extract recipe: $e');
     }
   }
@@ -526,6 +533,7 @@ If no recipe is visible or readable, return:
         totalFat: (nutrition['fat'] as num?)?.toDouble() ?? 0,
       );
     } catch (e) {
+      debugPrint('Failed to parse recipe response: $e');
       return RecipeExtraction.empty();
     }
   }

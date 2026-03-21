@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart';
 
 import '../models/food_item.dart';
 import '../models/serving_size.dart';
@@ -104,7 +105,7 @@ class BarcodeLookupService {
     return BarcodeLookupResult(
       item: null,
       barcode: barcode,
-      source: LookupSource.brocade,
+      source: LookupSource.manual,
     );
   }
 
@@ -181,7 +182,9 @@ class BarcodeLookupService {
         servings = list
             .map((s) => ServingSize.fromJson(s as Map<String, dynamic>))
             .toList();
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('Failed to parse cached servings JSON for ${cached.barcode}: $e');
+      }
     }
 
     return FoodItem(

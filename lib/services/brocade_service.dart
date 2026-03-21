@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 /// Service for looking up product names via Brocade.io
@@ -26,6 +27,7 @@ class BrocadeService {
         brand: data['brand']?.toString(),
       );
     } catch (e) {
+      debugPrint('Brocade lookup failed for "$barcode": $e');
       return null;
     }
   }
