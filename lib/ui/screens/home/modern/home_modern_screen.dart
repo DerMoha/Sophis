@@ -24,13 +24,11 @@ class HomeScreenModern extends StatefulWidget {
 
 class _HomeScreenModernState extends State<HomeScreenModern> {
   late ScrollController _scrollController;
-  final ValueNotifier<double> _scrollOffset = ValueNotifier(0.0);
 
   @override
   void initState() {
     super.initState();
-    _scrollController = ScrollController()
-      ..addListener(() => _scrollOffset.value = _scrollController.offset);
+    _scrollController = ScrollController();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       refreshBurnedCalories(context);
@@ -40,7 +38,6 @@ class _HomeScreenModernState extends State<HomeScreenModern> {
   @override
   void dispose() {
     _scrollController.dispose();
-    _scrollOffset.dispose();
     super.dispose();
   }
 
@@ -152,7 +149,63 @@ class _HomeScreenModernState extends State<HomeScreenModern> {
       controller: _scrollController,
       physics: const BouncingScrollPhysics(),
       slivers: [
-        _buildAppBar(l10n, theme),
+        SliverToBoxAdapter(
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.appTitle,
+                        style: theme.textTheme.headlineMedium,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        l10n.today,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surface,
+                        borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+                        border: Border.all(
+                          color:
+                              theme.colorScheme.outline.withValues(alpha: 0.1),
+                        ),
+                      ),
+                      child: const Icon(Icons.settings_outlined, size: 20),
+                    ),
+                    tooltip: l10n.settings,
+                    onPressed: () async {
+                      final settings = context.read<SettingsProvider>();
+                      final nutrition = context.read<NutritionProvider>();
+                      await Navigator.push(
+                        context,
+                        AppTheme.slideRoute(const SettingsScreen()),
+                      );
+                      if (!mounted) return;
+                      await nutrition.refreshBurnedCalories(
+                        enabled: settings.healthSyncEnabled,
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
         SliverPadding(
           padding: AppTheme.pagePaddingTop,
           sliver: SliverList(
@@ -160,99 +213,6 @@ class _HomeScreenModernState extends State<HomeScreenModern> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildAppBar(AppLocalizations l10n, ThemeData theme) {
-    return ValueListenableBuilder<double>(
-      valueListenable: _scrollOffset,
-      builder: (context, scrollOffset, _) {
-        return SliverAppBar(
-          expandedHeight: 100,
-          floating: true,
-          pinned: true,
-          backgroundColor: theme.scaffoldBackgroundColor.withValues(
-            alpha: (scrollOffset / 100).clamp(0.0, 1.0),
-          ),
-          elevation: 0,
-          centerTitle: false,
-          flexibleSpace: FlexibleSpaceBar(
-            titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
-            expandedTitleScale: 1.0,
-            title: AnimatedOpacity(
-              opacity: scrollOffset > 50 ? 1.0 : 0.0,
-              duration: AppTheme.animFaster,
-              child: Text(
-                l10n.appTitle,
-                style: theme.textTheme.headlineMedium,
-              ),
-            ),
-            background: SafeArea(
-              child: AnimatedOpacity(
-                opacity: scrollOffset > 50 ? 0.0 : 1.0,
-                duration: AppTheme.animFaster,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            l10n.appTitle,
-                            style: theme.textTheme.headlineMedium,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            l10n.today,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-          actions: [
-            Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: IconButton(
-                icon: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surface,
-                    borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-                    border: Border.all(
-                      color: theme.colorScheme.outline.withValues(alpha: 0.1),
-                    ),
-                  ),
-                  child: const Icon(Icons.settings_outlined, size: 20),
-                ),
-                tooltip: l10n.settings,
-                onPressed: () async {
-                  final settings = context.read<SettingsProvider>();
-                  final nutrition = context.read<NutritionProvider>();
-                  await Navigator.push(
-                    context,
-                    AppTheme.slideRoute(const SettingsScreen()),
-                  );
-                  if (!mounted) return;
-                  await nutrition.refreshBurnedCalories(
-                    enabled: settings.healthSyncEnabled,
-                  );
-                },
-              ),
-            ),
-          ],
-        );
-      },
     );
   }
 }
