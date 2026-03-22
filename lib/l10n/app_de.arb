@@ -28,6 +28,7 @@
   "add": "Hinzufügen",
   "save": "Speichern",
   "cancel": "Abbrechen",
+  "close": "Schließen",
   "delete": "Löschen",
   "welcomeTitle": "Willkommen bei Sophis",
   "welcomeSubtitle": "Setze deine Ziele um loszulegen",
@@ -417,5 +418,25 @@
     "placeholders": {
       "count": {"type": "int"}
     }
-  }
+  },
+  "networkError": "Überprüfe deine Internetverbindung und versuche es erneut",
+  "searchFailed": "Suche fehlgeschlagen. Bitte erneut versuchen.",
+  "noResultsFound": "Keine Ergebnisse gefunden",
+  "searching": "Suche...",
+  "enterValidPositiveNumber": "Gib eine gültige positive Zahl ein",
+  "offAccountTitle": "OpenFoodFacts",
+  "offAccountSubtitle": "Zur offenen Lebensmitteldatenbank beitragen",
+  "offUsername": "Benutzername",
+  "offUsernameHint": "Dein OpenFoodFacts Benutzername",
+  "offPassword": "Passwort",
+  "offPasswordHint": "Dein OpenFoodFacts Passwort",
+  "offAccountOptional": "Konto ist optional. Anonyme Beiträge funktionieren ohne Anmeldedaten.",
+  "offCreateAccount": "Konto erstellen",
+  "offCreateAccountInfo": "OpenFoodFacts ist eine kostenlose, quelloffene Datenbank. Erstelle ein Konto auf openfoodfacts.org um beizutragen und deine Einreichungen zu verfolgen.",
+  "contributeToOff": "Zu OpenFoodFacts beitragen",
+  "contributeToOffHint": "Dieses Produkt mit der offenen Lebensmitteldatenbank teilen",
+  "offSubmitSuccess": "Produkt zu OpenFoodFacts gesendet!",
+  "offSubmitFailed": "Konnte nicht zu OpenFoodFacts gesendet werden",
+  "offRateLimited": "Zu viele Anfragen, versuche es später erneut",
+  "savedLocallyCouldNotReachOff": "Lokal gespeichert, OpenFoodFacts konnte nicht erreicht werden"
 }
