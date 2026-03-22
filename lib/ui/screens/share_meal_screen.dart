@@ -28,9 +28,9 @@ class ShareMealScreen extends StatelessWidget {
             floating: true,
             pinned: true,
             backgroundColor: theme.scaffoldBackgroundColor,
-            centerTitle: false,
+            centerTitle: true,
             flexibleSpace: FlexibleSpaceBar(
-              titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
+              titlePadding: EdgeInsets.zero,
               title: Text(
                 l10n.shareMeal,
                 style: theme.appBarTheme.titleTextStyle,
@@ -132,15 +132,17 @@ class ShareMealScreen extends StatelessWidget {
                         ),
                       ),
                       const Divider(height: 1),
-                      ...meal.items.map((item) => ListTile(
-                            title: Text(item.name),
-                            trailing: Text(
-                              '${item.calories.round()} kcal',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.primary,
-                              ),
+                      ...meal.items.map(
+                        (item) => ListTile(
+                          title: Text(item.name),
+                          trailing: Text(
+                            '${item.calories.round()} kcal',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.primary,
                             ),
-                          ),),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),

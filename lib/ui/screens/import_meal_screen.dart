@@ -55,9 +55,9 @@ class _ImportMealScreenState extends State<ImportMealScreen> {
             floating: true,
             pinned: true,
             backgroundColor: theme.scaffoldBackgroundColor,
-            centerTitle: false,
+            centerTitle: true,
             flexibleSpace: FlexibleSpaceBar(
-              titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
+              titlePadding: EdgeInsets.zero,
               title: Text(
                 l10n.importMeal,
                 style: theme.appBarTheme.titleTextStyle,
@@ -182,29 +182,34 @@ class _ImportMealScreenState extends State<ImportMealScreen> {
                         const SizedBox(height: AppTheme.spaceSM),
                         Wrap(
                           spacing: AppTheme.spaceSM,
-                          children: context.read<SettingsProvider>().mealTypes
-                              .map((mealType) => ChoiceChip(
-                                    label: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          mealType.icon,
-                                          size: 18,
-                                          color: _selectedMeal == mealType.id
-                                              ? Colors.white
-                                              : theme.colorScheme.onSurface,
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Text(mealType.name),
-                                      ],
-                                    ),
-                                    selected: _selectedMeal == mealType.id,
-                                    onSelected: (selected) {
-                                      if (selected) {
-                                        setState(() => _selectedMeal = mealType.id);
-                                      }
-                                    },
-                                  ),)
+                          children: context
+                              .read<SettingsProvider>()
+                              .mealTypes
+                              .map(
+                                (mealType) => ChoiceChip(
+                                  label: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        mealType.icon,
+                                        size: 18,
+                                        color: _selectedMeal == mealType.id
+                                            ? Colors.white
+                                            : theme.colorScheme.onSurface,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(mealType.name),
+                                    ],
+                                  ),
+                                  selected: _selectedMeal == mealType.id,
+                                  onSelected: (selected) {
+                                    if (selected) {
+                                      setState(
+                                          () => _selectedMeal = mealType.id);
+                                    }
+                                  },
+                                ),
+                              )
                               .toList(),
                         ),
                       ],

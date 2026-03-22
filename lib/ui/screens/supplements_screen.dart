@@ -42,6 +42,7 @@ class _SupplementsScreenState extends State<SupplementsScreen> {
                 pinned: true,
                 elevation: 0,
                 backgroundColor: Colors.transparent,
+                centerTitle: true,
                 title: Text(l10n.supplements),
                 leading: IconButton(
                   icon: const Icon(Icons.arrow_back_rounded),

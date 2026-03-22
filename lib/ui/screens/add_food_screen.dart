@@ -116,9 +116,9 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
             floating: true,
             pinned: true,
             backgroundColor: theme.scaffoldBackgroundColor,
-            centerTitle: false,
+            centerTitle: true,
             flexibleSpace: FlexibleSpaceBar(
-              titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
+              titlePadding: EdgeInsets.zero,
               title: Text(
                 l10n.manualEntry,
                 style: theme.textTheme.headlineMedium,

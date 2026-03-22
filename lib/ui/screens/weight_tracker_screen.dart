@@ -61,9 +61,9 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
             floating: true,
             pinned: true,
             backgroundColor: theme.scaffoldBackgroundColor,
-            centerTitle: false,
+            centerTitle: true,
             flexibleSpace: FlexibleSpaceBar(
-              titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
+              titlePadding: EdgeInsets.zero,
               title: Text(
                 l10n.weight,
                 style: theme.textTheme.headlineMedium,
@@ -501,7 +501,9 @@ class _WeightEntryTile extends StatelessWidget {
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radiusMD),
         border: Border.all(
-          color: isDark ? CachedColors.surfaceTintDark06 : CachedColors.surfaceTintLight04,
+          color: isDark
+              ? CachedColors.surfaceTintDark06
+              : CachedColors.surfaceTintLight04,
         ),
       ),
       child: Row(
