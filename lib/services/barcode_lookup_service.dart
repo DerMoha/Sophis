@@ -7,6 +7,7 @@ import '../models/serving_size.dart';
 import 'database_service.dart';
 import 'openfoodfacts_service.dart';
 import 'brocade_service.dart';
+import 'service_result.dart';
 
 enum LookupSource { cache, offDe, offWorld, brocade, manual, gemini }
 
@@ -17,6 +18,7 @@ class BarcodeLookupResult {
   final bool isUserCorrected;
   final String? partialName;
   final String? partialBrand;
+  final ServiceErrorType? error;
 
   const BarcodeLookupResult({
     required this.item,
@@ -25,6 +27,7 @@ class BarcodeLookupResult {
     this.isUserCorrected = false,
     this.partialName,
     this.partialBrand,
+    this.error,
   });
 }
 
@@ -67,6 +70,9 @@ class BarcodeLookupService {
       }
     }
 
+    // Track whether all failures were network-related
+    bool allNetworkErrors = true;
+
     // 2. Try OpenFoodFacts DE
     var product = await _offService.lookupBarcodeDe(barcode);
     if (product != null) {
@@ -91,21 +97,28 @@ class BarcodeLookupService {
 
     // 4. Try Brocade (name/brand only)
     final brocadeResult = await _brocadeService.lookup(barcode);
-    if (brocadeResult != null) {
+    if (brocadeResult.isSuccess) {
+      final brocadeProduct = brocadeResult.value;
       return BarcodeLookupResult(
         item: null,
         barcode: barcode,
         source: LookupSource.brocade,
-        partialName: brocadeResult.name,
-        partialBrand: brocadeResult.brand,
+        partialName: brocadeProduct.name,
+        partialBrand: brocadeProduct.brand,
       );
     }
+    if (brocadeResult case Failure<BrocadeProduct>(errorType: final errorType)) {
+      if (errorType != ServiceErrorType.network) {
+        allNetworkErrors = false;
+      }
+    }
 
-    // 5. Nothing found
+    // 5. Nothing found — indicate network error if that was the cause
     return BarcodeLookupResult(
       item: null,
       barcode: barcode,
       source: LookupSource.manual,
+      error: allNetworkErrors ? ServiceErrorType.network : null,
     );
   }
 

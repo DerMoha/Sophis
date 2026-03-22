@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/food_item.dart';
 import '../models/serving_size.dart';
 import 'package:uuid/uuid.dart';
+import 'service_result.dart';
 
 /// Service for searching food products via OpenFoodFacts API
 class OpenFoodFactsService {
@@ -19,15 +21,15 @@ class OpenFoodFactsService {
   final Map<String, _CacheEntry> _searchCache = {};
 
   /// Search for food products by name
-  Future<List<FoodItem>> search(String query) async {
-    if (query.isEmpty) return [];
+  Future<ServiceResult<List<FoodItem>>> search(String query) async {
+    if (query.isEmpty) return const Success([]);
 
     final normalizedQuery = query.toLowerCase().trim();
 
     // Check cache first
     final cached = _searchCache[normalizedQuery];
     if (cached != null && !cached.isExpired) {
-      return cached.results;
+      return Success(cached.results);
     }
 
     try {
@@ -36,7 +38,12 @@ class OpenFoodFactsService {
       );
 
       final response = await http.get(url).timeout(_timeout);
-      if (response.statusCode != 200) return [];
+      if (response.statusCode != 200) {
+        return Failure(
+          ServiceErrorType.notFound,
+          'Search returned status ${response.statusCode}',
+        );
+      }
 
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       final products = data['products'] as List? ?? [];
@@ -53,10 +60,16 @@ class OpenFoodFactsService {
       // Clean old cache entries (keep max 50)
       _cleanCache();
 
-      return results;
+      return Success(results);
+    } on SocketException catch (e) {
+      debugPrint('OpenFoodFacts search network error for "$query": $e');
+      return Failure(ServiceErrorType.network, e.message);
+    } on TimeoutException {
+      debugPrint('OpenFoodFacts search timeout for "$query"');
+      return const Failure(ServiceErrorType.network, 'Request timed out');
     } catch (e) {
       debugPrint('OpenFoodFacts search failed for "$query": $e');
-      return [];
+      return Failure(ServiceErrorType.unknown, e.toString());
     }
   }
 
