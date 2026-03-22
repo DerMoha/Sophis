@@ -7,6 +7,7 @@ import '../../../models/food_item.dart';
 import '../../../services/food_entry_factory.dart';
 import '../../../services/openfoodfacts_service.dart';
 import '../../../services/nutrition_provider.dart';
+import '../../../services/service_result.dart';
 import '../components/food_search_result_tile.dart';
 import '../components/portion_picker_sheet.dart';
 import '../theme/app_theme.dart';
@@ -87,27 +88,25 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
     }
 
     // 2. Background API Search
-    try {
-      final apiResults = await _service.search(query);
+    final result = await _service.search(query);
 
-      // Only update if query hasn't changed and widget is still mounted
-      if (mounted && _searchController.text.trim() == query) {
-        setState(() {
-          // Re-fetch local to be safe (in case user added something while waiting
-          // technically unlikely in this flow, but good practice to keep consistent)
-          final customMatches =
-              context.read<NutritionProvider>().searchCustomFoods(query);
-          _results = [...customMatches, ...apiResults];
-          _isSearchingApi = false;
-        });
-      }
-    } catch (e) {
-      if (mounted && _searchController.text.trim() == query) {
-        setState(() {
-          _error = e.toString();
-          _isSearchingApi = false;
-        });
-      }
+    // Only update if query hasn't changed and widget is still mounted
+    if (mounted && _searchController.text.trim() == query) {
+      setState(() {
+        switch (result) {
+          case Success<List<FoodItem>>():
+            final customMatches =
+                context.read<NutritionProvider>().searchCustomFoods(query);
+            _results = [...customMatches, ...result.value];
+          case Failure<List<FoodItem>>():
+            if (result.errorType == ServiceErrorType.network) {
+              _error = AppLocalizations.of(context)!.networkError;
+            } else {
+              _error = AppLocalizations.of(context)!.searchFailed;
+            }
+        }
+        _isSearchingApi = false;
+      });
     }
   }
 
@@ -199,7 +198,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             child: Row(
               children: [
-                Icon(Icons.star_rounded, size: 18, color: AppTheme.warning),
+                const Icon(Icons.star_rounded, size: 18, color: AppTheme.warning),
                 const SizedBox(width: 6),
                 Text(
                   l10n.favorites,
@@ -327,7 +326,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
 
     if (_error != null) {
       return Center(
-        child: Text(_error!, style: TextStyle(color: AppTheme.error)),
+        child: Text(_error!, style: const TextStyle(color: AppTheme.error)),
       );
     }
 

@@ -12,6 +12,7 @@ import '../../../models/recipe.dart';
 import '../../../services/gemini_food_service.dart';
 import '../../../services/nutrition_provider.dart';
 import '../../../services/openfoodfacts_service.dart';
+import '../../../services/service_result.dart';
 import '../../../services/planned_meal_factory.dart';
 import '../../../services/settings_provider.dart';
 import '../components/organic/primitives.dart';
@@ -353,34 +354,77 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
         Expanded(
           child: _searchError != null
               ? Center(
-                  child: Text(
-                    _searchError!,
-                    style: TextStyle(color: theme.colorScheme.error),
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 40,
+                          color: theme.colorScheme.error.withValues(alpha: 0.7),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          _searchError!,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.error,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
                   ),
                 )
-              : _searchResults.isEmpty
+              : _isSearching
                   ? Center(
-                      child: Text(
-                        l10n.searchForFood,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const CircularProgressIndicator(),
+                          const SizedBox(height: 16),
+                          Text(
+                            l10n.searching,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
                       ),
                     )
-                  : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: _searchResults.length,
-                      itemBuilder: (context, index) {
-                        final food = _searchResults[index];
-                        return _buildFoodResultCard(
-                          context,
-                          theme,
-                          isDark,
-                          l10n,
-                          food,
-                        );
-                      },
-                    ),
+                  : _searchResults.isEmpty && _searchController.text.isNotEmpty
+                      ? Center(
+                          child: Text(
+                            l10n.noResultsFound,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        )
+                      : _searchResults.isEmpty
+                          ? Center(
+                              child: Text(
+                                l10n.searchForFood,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            )
+                          : ListView.builder(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
+                              itemCount: _searchResults.length,
+                              itemBuilder: (context, index) {
+                                final food = _searchResults[index];
+                                return _buildFoodResultCard(
+                                  context,
+                                  theme,
+                                  isDark,
+                                  l10n,
+                                  food,
+                                );
+                              },
+                            ),
         ),
       ],
     );
@@ -946,19 +990,24 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
       _searchError = null;
     });
 
-    try {
-      final results = await _foodService.search(query);
-      if (!mounted) return;
-      setState(() {
-        _searchResults = results;
-        _isSearching = false;
-      });
-    } catch (e) {
-      setState(() {
-        _searchError = e.toString();
-        _isSearching = false;
-      });
-    }
+    final result = await _foodService.search(query);
+    if (!mounted) return;
+
+    setState(() {
+      _isSearching = false;
+      switch (result) {
+        case Success<List<FoodItem>>():
+          _searchResults = result.value;
+          _searchError = null;
+        case Failure<List<FoodItem>>():
+          _searchResults = [];
+          if (result.errorType == ServiceErrorType.network) {
+            _searchError = AppLocalizations.of(context)!.networkError;
+          } else {
+            _searchError = AppLocalizations.of(context)!.searchFailed;
+          }
+      }
+    });
   }
 
   void _showServingsDialog(
@@ -1132,7 +1181,14 @@ class _ManualEntryFormState extends State<_ManualEntryForm> {
               suffixText: 'kcal',
             ),
             keyboardType: TextInputType.number,
-            validator: (v) => v == null || v.isEmpty ? l10n.required : null,
+            validator: (v) {
+              if (v == null || v.isEmpty) return l10n.required;
+              final parsed = double.tryParse(v);
+              if (parsed == null || parsed < 0) {
+                return l10n.enterValidPositiveNumber;
+              }
+              return null;
+            },
           ),
           const SizedBox(height: 16),
           Row(
@@ -1145,6 +1201,14 @@ class _ManualEntryFormState extends State<_ManualEntryForm> {
                     suffixText: 'g',
                   ),
                   keyboardType: TextInputType.number,
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return null;
+                    final parsed = double.tryParse(v);
+                    if (parsed == null || parsed < 0) {
+                      return l10n.enterValidPositiveNumber;
+                    }
+                    return null;
+                  },
                 ),
               ),
               const SizedBox(width: 12),
@@ -1156,6 +1220,14 @@ class _ManualEntryFormState extends State<_ManualEntryForm> {
                     suffixText: 'g',
                   ),
                   keyboardType: TextInputType.number,
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return null;
+                    final parsed = double.tryParse(v);
+                    if (parsed == null || parsed < 0) {
+                      return l10n.enterValidPositiveNumber;
+                    }
+                    return null;
+                  },
                 ),
               ),
               const SizedBox(width: 12),
@@ -1167,6 +1239,14 @@ class _ManualEntryFormState extends State<_ManualEntryForm> {
                     suffixText: 'g',
                   ),
                   keyboardType: TextInputType.number,
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return null;
+                    final parsed = double.tryParse(v);
+                    if (parsed == null || parsed < 0) {
+                      return l10n.enterValidPositiveNumber;
+                    }
+                    return null;
+                  },
                 ),
               ),
             ],
