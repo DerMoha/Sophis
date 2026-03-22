@@ -211,7 +211,7 @@ class NutritionProvider extends ChangeNotifier {
       await _storage.setMigrationComplete();
       await _storage.clearLegacyMigratedData();
     } catch (e) {
-      // Migration failed, will retry on next app start
+      debugPrint('Database migration failed, will retry on next app start: $e');
     }
   }
 
@@ -294,7 +294,7 @@ class NutritionProvider extends ChangeNotifier {
       _healthSyncBurnedCalories = await _healthService.getTodayBurnedCalories();
       notifyListeners();
     } catch (e) {
-      // Health sync failed silently
+      debugPrint('Health sync failed: $e');
     }
   }
 
@@ -388,7 +388,7 @@ class NutritionProvider extends ChangeNotifier {
       _weightEntries.sort((a, b) => b.timestamp.compareTo(a.timestamp));
       notifyListeners();
     } catch (e) {
-      // Weight sync failed silently
+      debugPrint('Weight sync from Health failed: $e');
     }
   }
 
