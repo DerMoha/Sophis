@@ -16,6 +16,7 @@ enum _SettingsSection {
   reminders,
   fitness,
   ai,
+  openfoodfacts,
   data,
 }
 
@@ -159,6 +160,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 16),
                     FadeInSlide(
                       index: 8,
+                      child: _buildSectionCard(
+                        context,
+                        section: _SettingsSection.openfoodfacts,
+                        title: l10n.offAccountTitle,
+                        icon: Icons.public_outlined,
+                        children: [OpenFoodFactsSection(settings: settings)],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    FadeInSlide(
+                      index: 9,
                       child: _buildSectionCard(
                         context,
                         section: _SettingsSection.data,

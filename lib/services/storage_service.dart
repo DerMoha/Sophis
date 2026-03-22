@@ -25,6 +25,8 @@ class StorageService {
   static const _recipesKey = 'recipes';
   static const _settingsKey = 'app_settings';
   static const _apiKeyStorageKey = 'gemini_api_key';
+  static const _offUserIdKey = 'off_user_id';
+  static const _offPasswordKey = 'off_password';
   static const _dbMigrationKey = 'db_migration_v1_complete';
   static const _plannedMealsKey = 'planned_meals';
   static const _shoppingListKey = 'shopping_list_checked';
@@ -256,6 +258,28 @@ class StorageService {
 
   Future<String?> loadApiKey() async {
     return await _secureStorage.read(key: _apiKeyStorageKey);
+  }
+
+  // OpenFoodFacts credentials
+  Future<void> saveOffCredentials(String? userId, String? password) async {
+    if (userId == null || userId.isEmpty) {
+      await _secureStorage.delete(key: _offUserIdKey);
+    } else {
+      await _secureStorage.write(key: _offUserIdKey, value: userId);
+    }
+    if (password == null || password.isEmpty) {
+      await _secureStorage.delete(key: _offPasswordKey);
+    } else {
+      await _secureStorage.write(key: _offPasswordKey, value: password);
+    }
+  }
+
+  Future<String?> loadOffUserId() async {
+    return await _secureStorage.read(key: _offUserIdKey);
+  }
+
+  Future<String?> loadOffPassword() async {
+    return await _secureStorage.read(key: _offPasswordKey);
   }
 
   // Migration Flags

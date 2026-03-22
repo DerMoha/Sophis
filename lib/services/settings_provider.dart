@@ -11,6 +11,8 @@ class SettingsProvider extends ChangeNotifier {
   final NotificationService _notifications = NotificationService();
   AppSettings _settings;
   String? _geminiApiKey;
+  String? _offUserId;
+  String? _offPassword;
 
   SettingsProvider(this._storage) : _settings = _storage.loadSettings() {
     _loadSecureData();
@@ -21,8 +23,12 @@ class SettingsProvider extends ChangeNotifier {
   Future<void> _loadSecureData() async {
     try {
       _geminiApiKey = await _storage.loadApiKey();
+      _offUserId = await _storage.loadOffUserId();
+      _offPassword = await _storage.loadOffPassword();
     } catch (e) {
       _geminiApiKey = null;
+      _offUserId = null;
+      _offPassword = null;
     }
     notifyListeners();
   }
@@ -35,6 +41,14 @@ class SettingsProvider extends ChangeNotifier {
   String? get geminiApiKey => _geminiApiKey;
   bool get hasGeminiApiKey =>
       _geminiApiKey != null && _geminiApiKey!.isNotEmpty;
+
+  String? get offUserId => _offUserId;
+  String? get offPassword => _offPassword;
+  bool get hasOffCredentials =>
+      _offUserId != null &&
+      _offUserId!.isNotEmpty &&
+      _offPassword != null &&
+      _offPassword!.isNotEmpty;
   double get waterGoalMl => _settings.waterGoalMl;
 
   // Accent color
@@ -85,6 +99,13 @@ class SettingsProvider extends ChangeNotifier {
   Future<void> setGeminiApiKey(String? key) async {
     _geminiApiKey = key;
     await _storage.saveApiKey(key);
+    notifyListeners();
+  }
+
+  Future<void> setOffCredentials(String? userId, String? password) async {
+    _offUserId = userId;
+    _offPassword = password;
+    await _storage.saveOffCredentials(userId, password);
     notifyListeners();
   }
 

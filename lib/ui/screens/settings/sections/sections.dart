@@ -6,4 +6,5 @@ export 'dashboard_section.dart';
 export 'reminders_section.dart';
 export 'fitness_section.dart';
 export 'ai_section.dart';
+export 'openfoodfacts_section.dart';
 export 'data_section.dart';
