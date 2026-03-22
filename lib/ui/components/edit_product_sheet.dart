@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
 import '../../l10n/generated/app_localizations.dart';
 import '../../models/food_item.dart';
+import '../../services/openfoodfacts_write_service.dart';
+import '../../services/service_result.dart';
+import '../../services/settings_provider.dart';
 import '../theme/app_theme.dart';
 
 /// Bottom sheet for editing/creating barcode product nutrition (per 100g).
@@ -13,6 +17,7 @@ class EditProductSheet extends StatefulWidget {
   final FoodItem? existingProduct;
   final Future<void> Function(FoodItem product) onSave;
   final VoidCallback? onReset;
+  final bool showSubmitToOff;
 
   const EditProductSheet({
     super.key,
@@ -22,6 +27,7 @@ class EditProductSheet extends StatefulWidget {
     this.existingProduct,
     required this.onSave,
     this.onReset,
+    this.showSubmitToOff = false,
   });
 
   @override
@@ -37,6 +43,7 @@ class _EditProductSheetState extends State<EditProductSheet> {
   late final TextEditingController _carbsController;
   late final TextEditingController _fatController;
   bool _isSaving = false;
+  bool _submitToOff = false;
 
   @override
   void initState() {
@@ -84,6 +91,60 @@ class _EditProductSheetState extends State<EditProductSheet> {
     return null;
   }
 
+  Widget _buildOffSubmitRow(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.1),
+        ),
+        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.public_outlined,
+              size: 18,
+              color: theme.colorScheme.primary,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.contributeToOff,
+                  style: theme.textTheme.titleSmall,
+                ),
+                Text(
+                  l10n.contributeToOffHint,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: _submitToOff,
+            onChanged: (value) => setState(() => _submitToOff = value),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
@@ -112,7 +173,77 @@ class _EditProductSheetState extends State<EditProductSheet> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.productCorrectionSaved)),
       );
+    }
+
+    if (_submitToOff && mounted) {
+      await _submitToOpenFoodFacts(product);
+    }
+
+    if (mounted) {
       Navigator.pop(context, product);
+    }
+  }
+
+  Future<void> _submitToOpenFoodFacts(FoodItem product) async {
+    final l10n = AppLocalizations.of(context)!;
+    final settings = context.read<SettingsProvider>();
+
+    final writeService = OpenFoodFactsWriteService();
+    final result = await writeService.submitProduct(
+      product,
+      userId: settings.offUserId,
+      password: settings.offPassword,
+    );
+
+    if (!mounted) return;
+
+    if (result.isSuccess) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.offSubmitSuccess)),
+      );
+      return;
+    }
+
+    final failure = result as Failure<void>;
+    switch (failure.errorType) {
+      case ServiceErrorType.authFailed:
+        if (settings.hasOffCredentials) {
+          await settings.setOffCredentials(null, null);
+          final anonResult = await writeService.submitProduct(
+            product,
+            userId: null,
+            password: null,
+          );
+          if (!mounted) return;
+          if (anonResult.isSuccess) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(l10n.offSubmitSuccess)),
+            );
+            return;
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(l10n.offSubmitFailed)),
+            );
+          }
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.offSubmitFailed)),
+          );
+        }
+      case ServiceErrorType.network:
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.savedLocallyCouldNotReachOff),
+          ),
+        );
+      case ServiceErrorType.rateLimited:
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.offRateLimited)),
+        );
+      default:
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.offSubmitFailed)),
+        );
     }
   }
 
@@ -153,10 +284,8 @@ class _EditProductSheetState extends State<EditProductSheet> {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color:
-                            theme.colorScheme.primary.withValues(alpha: 0.1),
-                        borderRadius:
-                            BorderRadius.circular(AppTheme.radiusSM),
+                        color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                       ),
                       child: Icon(
                         Icons.edit_outlined,
@@ -179,8 +308,7 @@ class _EditProductSheetState extends State<EditProductSheet> {
                       color: isDark
                           ? Colors.white.withValues(alpha: 0.1)
                           : Colors.black.withValues(alpha: 0.05),
-                      borderRadius:
-                          BorderRadius.circular(AppTheme.radiusXS),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusXS),
                     ),
                     child: const Icon(Icons.close, size: 18),
                   ),
@@ -210,8 +338,7 @@ class _EditProductSheetState extends State<EditProductSheet> {
                       controller: _nameController,
                       decoration: InputDecoration(
                         labelText: l10n.name,
-                        prefixIcon:
-                            const Icon(Icons.restaurant, size: 20),
+                        prefixIcon: const Icon(Icons.restaurant, size: 20),
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: AppTheme.spaceMD,
                           vertical: 14,
@@ -226,8 +353,7 @@ class _EditProductSheetState extends State<EditProductSheet> {
                       controller: _brandController,
                       decoration: const InputDecoration(
                         labelText: 'Brand',
-                        prefixIcon:
-                            Icon(Icons.storefront, size: 20),
+                        prefixIcon: Icon(Icons.storefront, size: 20),
                         contentPadding: EdgeInsets.symmetric(
                           horizontal: AppTheme.spaceMD,
                           vertical: 14,
@@ -238,7 +364,11 @@ class _EditProductSheetState extends State<EditProductSheet> {
 
                     // Per 100g header
                     Text(
-                      l10n.per100g('').replaceAll(': ', '').replaceAll(' kcal', '').trim(),
+                      l10n
+                          .per100g('')
+                          .replaceAll(': ', '')
+                          .replaceAll(' kcal', '')
+                          .trim(),
                       style: theme.textTheme.labelMedium?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                         letterSpacing: 0.5,
@@ -339,6 +469,11 @@ class _EditProductSheetState extends State<EditProductSheet> {
                       ],
                     ),
                     const SizedBox(height: 24),
+
+                    if (widget.showSubmitToOff) ...[
+                      _buildOffSubmitRow(context),
+                      const SizedBox(height: 24),
+                    ],
 
                     // Action buttons
                     Row(

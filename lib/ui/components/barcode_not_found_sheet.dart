@@ -93,12 +93,15 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
       List<ServingSize> servings = [];
       if (result.servingSizeG != null && result.servingSizeG! > 0) {
         final servingName = result.servingName ?? 'Portion';
-        servings = ServingSize.generateFractions(servingName, result.servingSizeG!);
+        servings =
+            ServingSize.generateFractions(servingName, result.servingSizeG!);
       }
 
       final product = FoodItem(
         id: widget.barcode,
-        name: result.productName ?? widget.partialName ?? l10n.productNotFoundTitle,
+        name: result.productName ??
+            widget.partialName ??
+            l10n.productNotFoundTitle,
         category: 'food',
         caloriesPer100g: result.caloriesPer100g,
         proteinPer100g: result.proteinPer100g,
@@ -155,6 +158,7 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
         barcode: widget.barcode,
         initialName: widget.partialName,
         initialBrand: widget.partialBrand,
+        showSubmitToOff: true,
         onSave: (product) async {
           await widget.lookupService.saveUserCorrection(
             widget.barcode,
@@ -199,8 +203,8 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
                   width: 56,
                   height: 56,
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.errorContainer
-                        .withValues(alpha: 0.3),
+                    color:
+                        theme.colorScheme.errorContainer.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                   ),
                   child: Icon(

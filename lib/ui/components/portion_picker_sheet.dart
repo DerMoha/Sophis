@@ -289,6 +289,7 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
       builder: (_) => EditProductSheet(
         barcode: barcode,
         existingProduct: widget.item,
+        showSubmitToOff: true,
         onSave: (product) async {
           await lookupService.saveUserCorrection(barcode, product);
           if (widget.onProductUpdated != null) {
