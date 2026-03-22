@@ -63,6 +63,19 @@ class GeminiFoodService {
     await prefs.setInt(_requestCountKey, count + 1);
   }
 
+  Future<void> _decrementRequestCount() async {
+    final prefs = await SharedPreferences.getInstance();
+    final today = _getTodayString();
+    final savedDate = prefs.getString(_requestDateKey);
+
+    if (savedDate == today) {
+      final count = prefs.getInt(_requestCountKey) ?? 0;
+      if (count > 0) {
+        await prefs.setInt(_requestCountKey, count - 1);
+      }
+    }
+  }
+
   /// Initialize with API key
   Future<void> initialize(String apiKey) async {
     if (apiKey.isEmpty) {
@@ -96,7 +109,6 @@ class GeminiFoodService {
     }
 
     // Check rate limit
-    final requestsToday = await getRequestsToday();
     if (!await canMakeRequest()) {
       throw Exception(
         'Daily limit reached (20 requests/day). Try again tomorrow.',
@@ -147,13 +159,13 @@ If no food is visible, return: {"foods": []}
 
     final prompt = TextPart(promptText);
 
+    // Increment counter before API call to prevent quota leak on failure
+    await _incrementRequestCount();
+
     try {
       final response = await _model!.generateContent([
         Content.multi([prompt, ...imageParts]),
       ]);
-
-      // Increment counter after successful request
-      await _incrementRequestCount();
 
       final text = response.text;
       if (text == null || text.isEmpty) {
@@ -163,6 +175,7 @@ If no food is visible, return: {"foods": []}
       final results = _parseResponse(text);
       return results;
     } catch (e) {
+      await _decrementRequestCount();
       debugPrint('Gemini food analysis failed: $e');
       throw Exception('Failed to analyze image: $e');
     }
@@ -184,7 +197,6 @@ If no food is visible, return: {"foods": []}
     }
 
     // Check rate limit
-    final requestsToday = await getRequestsToday();
     if (!await canMakeRequest()) {
       throw Exception(
         'Daily limit reached (20 requests/day). Try again tomorrow.',
@@ -246,13 +258,13 @@ Respond ONLY with valid JSON in this exact format, no other text:
 
     final prompt = TextPart(promptText);
 
+    // Increment counter before API call to prevent quota leak on failure
+    await _incrementRequestCount();
+
     try {
       final response = await _model!.generateContent([
         Content.multi([prompt, ...imageParts]),
       ]);
-
-      // Increment counter after successful request
-      await _incrementRequestCount();
 
       final text = response.text;
       if (text == null || text.isEmpty) {
@@ -263,6 +275,7 @@ Respond ONLY with valid JSON in this exact format, no other text:
       if (results.isEmpty) return null;
       return results.first;
     } catch (e) {
+      await _decrementRequestCount();
       debugPrint('Gemini re-analysis failed: $e');
       throw Exception('Failed to re-analyze image: $e');
     }
@@ -345,18 +358,20 @@ If the image is not a nutrition label or values are unreadable, return:
 
     final prompt = TextPart(promptText);
 
+    // Increment counter before API call to prevent quota leak on failure
+    await _incrementRequestCount();
+
     try {
       final response = await _model!.generateContent([
         Content.multi([prompt, imagePart]),
       ]);
-
-      await _incrementRequestCount();
 
       final text = response.text;
       if (text == null || text.isEmpty) return null;
 
       return _parseNutritionLabelResponse(text);
     } catch (e) {
+      await _decrementRequestCount();
       debugPrint('Gemini nutrition label analysis failed: $e');
       throw Exception('Failed to analyze nutrition label: $e');
     }
@@ -407,7 +422,6 @@ If the image is not a nutrition label or values are unreadable, return:
     }
 
     // Check rate limit
-    final requestsToday = await getRequestsToday();
     if (!await canMakeRequest()) {
       throw Exception(
         'Daily limit reached (20 requests/day). Try again tomorrow.',
@@ -472,13 +486,13 @@ If no recipe is visible or readable, return:
 
     final prompt = TextPart(promptText);
 
+    // Increment counter before API call to prevent quota leak on failure
+    await _incrementRequestCount();
+
     try {
       final response = await _model!.generateContent([
         Content.multi([prompt, imagePart]),
       ]);
-
-      // Increment counter after successful request
-      await _incrementRequestCount();
 
       final text = response.text;
       if (text == null || text.isEmpty) {
@@ -488,6 +502,7 @@ If no recipe is visible or readable, return:
       final result = _parseRecipeResponse(text);
       return result;
     } catch (e) {
+      await _decrementRequestCount();
       debugPrint('Gemini recipe extraction failed: $e');
       throw Exception('Failed to extract recipe: $e');
     }
