@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import '../../models/food_item.dart';
-import '../../models/serving_size.dart';
+import 'package:uuid/uuid.dart';
+
+import '../../l10n/generated/app_localizations.dart';
 import '../../models/custom_portion.dart';
+import '../../models/food_item.dart';
 import '../../models/nutrition_totals.dart';
+import '../../models/serving_size.dart';
 import '../../services/barcode_lookup_service.dart';
 import '../../services/nutrition_provider.dart';
-import '../../l10n/generated/app_localizations.dart';
-import 'package:uuid/uuid.dart';
+
 import '../theme/app_theme.dart';
 import 'edit_product_sheet.dart';
 
@@ -35,27 +38,59 @@ class PortionPickerSheet extends StatefulWidget {
 }
 
 class _PortionPickerSheetState extends State<PortionPickerSheet> {
+  static const List<double> _portionMultipliers = <double>[
+    0.25,
+    0.5,
+    0.75,
+    1.0,
+    1.25,
+    1.5,
+    1.75,
+    2.0,
+    2.25,
+    2.5,
+    2.75,
+    3.0,
+    3.25,
+    3.5,
+    3.75,
+    4.0,
+  ];
+
   double _selectedGrams = 100;
-  ServingSize? _selectedServing;
   final _customController = TextEditingController(text: '100');
   final _focusNode = FocusNode(); // For keyboard management
+  late final FixedExtentScrollController _portionWheelController;
 
   String get _productKey => CustomPortion.createProductKey(
         barcode: widget.item.barcode,
         name: widget.item.name,
       );
 
+  ServingSize? get _baseServing {
+    if (widget.item.servings.isEmpty) {
+      return null;
+    }
+
+    for (final serving in widget.item.servings) {
+      if ((serving.multiplier - 1.0).abs() < 0.001) {
+        return serving;
+      }
+    }
+
+    return widget.item.servings.first;
+  }
+
   @override
   void initState() {
     super.initState();
+    _portionWheelController = FixedExtentScrollController(
+      initialItem: _portionMultipliers.indexOf(1.0),
+    );
+
     // Select first serving by default if available
-    if (widget.item.servings.isNotEmpty) {
-      // Find the 1x serving (multiplier == 1.0)
-      final defaultServing = widget.item.servings.firstWhere(
-        (s) => s.multiplier == 1.0,
-        orElse: () => widget.item.servings.first,
-      );
-      _selectedServing = defaultServing;
+    final defaultServing = _baseServing;
+    if (defaultServing != null) {
       _selectedGrams = defaultServing.grams;
       _customController.text = defaultServing.grams.toStringAsFixed(0);
     }
@@ -65,6 +100,7 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
   void dispose() {
     _customController.dispose();
     _focusNode.dispose();
+    _portionWheelController.dispose();
     super.dispose();
   }
 
@@ -81,11 +117,15 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
   NutritionTotals get _calculatedNutrients =>
       widget.item.calculateFor(_selectedGrams);
 
-  void _onServingSelected(ServingSize serving) {
+  void _onPortionMultiplierSelected(double multiplier) {
+    final baseServing = _baseServing;
+    if (baseServing == null) {
+      return;
+    }
+
     setState(() {
-      _selectedServing = serving;
-      _selectedGrams = serving.grams;
-      _customController.text = serving.grams.toStringAsFixed(0);
+      _selectedGrams = baseServing.grams * multiplier;
+      _customController.text = _selectedGrams.toStringAsFixed(0);
     });
   }
 
@@ -93,9 +133,24 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
     final grams = double.tryParse(value);
     if (grams != null && grams > 0) {
       setState(() {
-        _selectedServing = null;
         _selectedGrams = grams;
       });
+      _syncWheelToGrams(grams);
+    }
+  }
+
+  void _syncWheelToGrams(double grams) {
+    final baseServing = _baseServing;
+    if (baseServing == null || !_portionWheelController.hasClients) {
+      return;
+    }
+
+    final multiplier = grams / baseServing.grams;
+    final index = _portionMultipliers.indexWhere(
+      (option) => (option - multiplier).abs() < 0.001,
+    );
+    if (index != -1) {
+      _portionWheelController.jumpToItem(index);
     }
   }
 
@@ -203,15 +258,17 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
                         ScrollViewKeyboardDismissBehavior.onDrag,
                     children: [
                       // Preset portions from API
-                      if (widget.item.servings.isNotEmpty) ...[
+                      if (_baseServing != null) ...[
                         _SectionTitle(title: l10n.portion),
                         const SizedBox(height: AppTheme.spaceSM2),
                         _PortionGrid(
-                          servings: widget.item.servings,
-                          selected: _selectedServing,
-                          onSelect: (serving) {
+                          controller: _portionWheelController,
+                          multipliers: _portionMultipliers,
+                          baseGrams: _baseServing!.grams,
+                          selectedGrams: _selectedGrams,
+                          onChanged: (multiplier) {
                             _dismissKeyboard();
-                            _onServingSelected(serving);
+                            _onPortionMultiplierSelected(multiplier);
                           },
                         ),
                         const SizedBox(height: 24),
@@ -234,11 +291,11 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
                           onSelect: (portion) {
                             _dismissKeyboard();
                             setState(() {
-                              _selectedServing = null;
                               _selectedGrams = portion.grams;
                               _customController.text =
                                   portion.grams.toStringAsFixed(0);
                             });
+                            _syncWheelToGrams(portion.grams);
                           },
                         ),
                         const SizedBox(height: 24),
@@ -492,110 +549,128 @@ class _SectionTitle extends StatelessWidget {
 }
 
 class _PortionGrid extends StatelessWidget {
-  final List<ServingSize> servings;
-  final ServingSize? selected;
-  final Function(ServingSize) onSelect;
+  final FixedExtentScrollController controller;
+  final List<double> multipliers;
+  final double baseGrams;
+  final double selectedGrams;
+  final ValueChanged<double> onChanged;
 
   const _PortionGrid({
-    required this.servings,
-    required this.selected,
-    required this.onSelect,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: AppTheme.spaceSM,
-      runSpacing: AppTheme.spaceSM,
-      children: servings
-          .map(
-            (s) => _PortionChip(
-              serving: s,
-              isSelected: selected == s,
-              onTap: () => onSelect(s),
-            ),
-          )
-          .toList(),
-    );
-  }
-}
-
-class _PortionChip extends StatelessWidget {
-  final ServingSize serving;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _PortionChip({
-    required this.serving,
-    required this.isSelected,
-    required this.onTap,
+    required this.controller,
+    required this.multipliers,
+    required this.baseGrams,
+    required this.selectedGrams,
+    required this.onChanged,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
+    final currentPortions = selectedGrams / baseGrams;
 
-    return Material(
-      color: isSelected
-          ? theme.colorScheme.primary.withValues(alpha: isDark ? 0.25 : 0.12)
-          : theme.colorScheme.surfaceContainerHighest,
-      borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppTheme.spaceMD,
-            vertical: AppTheme.spaceSM,
-          ),
+    return Column(
+      children: [
+        Container(
+          height: 188,
           decoration: BoxDecoration(
-            border: Border.all(
-              color: isSelected
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.outline.withValues(alpha: 0.2),
-              width: isSelected ? 2 : 1,
+            color: theme.colorScheme.surfaceContainerHighest.withValues(
+              alpha: 0.35,
             ),
-            borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+            borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+            border: Border.all(
+              color: theme.colorScheme.outline.withValues(alpha: 0.15),
+            ),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
+          child: Stack(
+            alignment: Alignment.center,
             children: [
-              // Portion name
-              Text(
-                serving.name,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                  color: isSelected
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.onSurface,
+              IgnorePointer(
+                child: Container(
+                  height: 60,
+                  margin: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                    border: Border.all(
+                      color: theme.colorScheme.primary.withValues(alpha: 0.18),
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(width: 8),
-              // Grams badge
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? theme.colorScheme.primary.withValues(alpha: 0.2)
-                      : theme.colorScheme.onSurface.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(AppTheme.radiusXS),
-                ),
-                child: Text(
-                  '${serving.grams.toStringAsFixed(0)}g',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: isSelected
-                        ? theme.colorScheme.primary
-                        : theme.colorScheme.onSurfaceVariant,
-                  ),
+              ListWheelScrollView.useDelegate(
+                controller: controller,
+                itemExtent: 60,
+                perspective: 0.003,
+                diameterRatio: 1.6,
+                physics: const FixedExtentScrollPhysics(),
+                useMagnifier: true,
+                magnification: 1.06,
+                overAndUnderCenterOpacity: 0.55,
+                onSelectedItemChanged: (index) => onChanged(multipliers[index]),
+                childDelegate: ListWheelChildBuilderDelegate(
+                  childCount: multipliers.length,
+                  builder: (context, index) {
+                    final multiplier = multipliers[index];
+                    final grams = baseGrams * multiplier;
+
+                    return Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          '${_formatPortionValue(context, multiplier)} ${l10n.portion}',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${grams.toStringAsFixed(0)}g',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
             ],
           ),
         ),
-      ),
+        const SizedBox(height: 12),
+        Text(
+          '${_formatPortionValue(context, currentPortions)} ${l10n.portion} • ${selectedGrams.toStringAsFixed(0)}g',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.primary,
+            fontWeight: FontWeight.w600,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '1 ${l10n.portion} = ${baseGrams.toStringAsFixed(0)}g',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
     );
+  }
+
+  String _formatPortionValue(BuildContext context, double value) {
+    final locale = Localizations.localeOf(context).toString();
+    final decimalDigits = (value - value.roundToDouble()).abs() < 0.001
+        ? 0
+        : ((value * 10) - (value * 10).roundToDouble()).abs() < 0.001
+            ? 1
+            : 2;
+
+    return NumberFormat.decimalPatternDigits(
+      locale: locale,
+      decimalDigits: decimalDigits,
+    ).format(value);
   }
 }
 
