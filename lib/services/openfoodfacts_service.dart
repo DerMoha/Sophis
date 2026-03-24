@@ -1,30 +1,44 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:uuid/uuid.dart';
+
 import '../models/food_item.dart';
 import '../models/serving_size.dart';
-import 'package:uuid/uuid.dart';
 import 'service_result.dart';
 
 /// Service for searching food products via OpenFoodFacts API
 class OpenFoodFactsService {
-  static const _baseUrl = 'https://world.openfoodfacts.org';
-  static const _baseUrlDe = 'https://de.openfoodfacts.org';
-  static const _apiV2Fields =
-      'code,product_name,product_name_de,nutriments,brands,image_front_small_url,serving_size,serving_quantity,categories_tags';
+  static const _worldHost = 'world.openfoodfacts.org';
+  static const _deHost = 'de.openfoodfacts.org';
+  static const _productFields =
+      'code,product_name,product_name_de,product_name_en,nutriments,brands,image_front_small_url,image_front_url,serving_size,serving_quantity,categories_tags';
   static const _cacheDuration = Duration(minutes: 10);
-  static const _timeout = Duration(seconds: 10);
+  static const _defaultHeaders = <String, String>{
+    'Accept': 'application/json',
+    'User-Agent': 'Sophis/1.0 (Flutter)',
+  };
 
   // In-memory cache: query -> (results, timestamp)
   final Map<String, _CacheEntry> _searchCache = {};
+  final http.Client _client;
+  final Duration _requestTimeout;
+
+  OpenFoodFactsService({
+    http.Client? client,
+    Duration requestTimeout = const Duration(seconds: 20),
+  })  : _client = client ?? http.Client(),
+        _requestTimeout = requestTimeout;
 
   /// Search for food products by name
   Future<ServiceResult<List<FoodItem>>> search(String query) async {
     if (query.isEmpty) return const Success([]);
 
     final normalizedQuery = query.toLowerCase().trim();
+    final trimmedQuery = query.trim();
 
     // Check cache first
     final cached = _searchCache[normalizedQuery];
@@ -32,12 +46,58 @@ class OpenFoodFactsService {
       return Success(cached.results);
     }
 
+    final deResult = await _searchHost(_deHost, trimmedQuery);
+    switch (deResult) {
+      case Success<List<FoodItem>>():
+        if (deResult.value.isNotEmpty) {
+          return _cacheSearchResults(normalizedQuery, deResult.value);
+        }
+
+        final worldResult = await _searchHost(_worldHost, trimmedQuery);
+        switch (worldResult) {
+          case Success<List<FoodItem>>():
+            return _cacheSearchResults(normalizedQuery, worldResult.value);
+          case Failure<List<FoodItem>>():
+            return worldResult;
+        }
+      case Failure<List<FoodItem>>():
+        return deResult;
+    }
+  }
+
+  Future<ServiceResult<List<FoodItem>>> _searchHost(
+    String host,
+    String query,
+  ) async {
     try {
-      final url = Uri.parse(
-        '$_baseUrl/cgi/search.pl?search_terms=$query&search_simple=1&action=process&json=1&page_size=20',
+      final url = Uri.https(
+        host,
+        '/cgi/search.pl',
+        <String, String>{
+          'search_terms': query,
+          'search_simple': '1',
+          'action': 'process',
+          'json': '1',
+          'page_size': '20',
+          'fields': _productFields,
+        },
       );
 
-      final response = await http.get(url).timeout(_timeout);
+      final response = await _client
+          .get(url, headers: _defaultHeaders)
+          .timeout(_requestTimeout);
+      if (response.statusCode == 429) {
+        return const Failure(
+          ServiceErrorType.rateLimited,
+          'Too many requests, try again later',
+        );
+      }
+      if (response.statusCode >= 500) {
+        return Failure(
+          ServiceErrorType.unknown,
+          'Search returned status ${response.statusCode}',
+        );
+      }
       if (response.statusCode != 200) {
         return Failure(
           ServiceErrorType.notFound,
@@ -54,23 +114,31 @@ class OpenFoodFactsService {
           .cast<FoodItem>()
           .toList();
 
-      // Store in cache
-      _searchCache[normalizedQuery] = _CacheEntry(results, DateTime.now());
-
-      // Clean old cache entries (keep max 50)
-      _cleanCache();
-
       return Success(results);
     } on SocketException catch (e) {
-      debugPrint('OpenFoodFacts search network error for "$query": $e');
+      debugPrint(
+        'OpenFoodFacts search network error for "$query" on $host: $e',
+      );
       return Failure(ServiceErrorType.network, e.message);
     } on TimeoutException {
-      debugPrint('OpenFoodFacts search timeout for "$query"');
+      debugPrint('OpenFoodFacts search timeout for "$query" on $host');
       return const Failure(ServiceErrorType.network, 'Request timed out');
+    } on FormatException catch (e) {
+      debugPrint('OpenFoodFacts search parse error for "$query" on $host: $e');
+      return Failure(ServiceErrorType.parseError, e.message);
     } catch (e) {
-      debugPrint('OpenFoodFacts search failed for "$query": $e');
+      debugPrint('OpenFoodFacts search failed for "$query" on $host: $e');
       return Failure(ServiceErrorType.unknown, e.toString());
     }
+  }
+
+  Success<List<FoodItem>> _cacheSearchResults(
+    String normalizedQuery,
+    List<FoodItem> results,
+  ) {
+    _searchCache[normalizedQuery] = _CacheEntry(results, DateTime.now());
+    _cleanCache();
+    return Success(results);
   }
 
   void _cleanCache() {
@@ -96,10 +164,17 @@ class OpenFoodFactsService {
   /// Lookup a product by barcode on the German OpenFoodFacts endpoint
   Future<FoodItem?> lookupBarcodeDe(String barcode) async {
     try {
-      final url = Uri.parse(
-        '$_baseUrlDe/api/v2/product/$barcode.json?lc=de&fields=$_apiV2Fields',
+      final url = Uri.https(
+        _deHost,
+        '/api/v2/product/$barcode.json',
+        <String, String>{
+          'lc': 'de',
+          'fields': _productFields,
+        },
       );
-      final response = await http.get(url).timeout(_timeout);
+      final response = await _client
+          .get(url, headers: _defaultHeaders)
+          .timeout(_requestTimeout);
 
       if (response.statusCode != 200) return null;
 
@@ -120,10 +195,17 @@ class OpenFoodFactsService {
   /// Lookup a product by barcode on the World OpenFoodFacts endpoint
   Future<FoodItem?> lookupBarcode(String barcode) async {
     try {
-      final url = Uri.parse(
-        '$_baseUrl/api/v2/product/$barcode.json?lc=de&fields=$_apiV2Fields',
+      final url = Uri.https(
+        _worldHost,
+        '/api/v2/product/$barcode.json',
+        <String, String>{
+          'lc': 'de',
+          'fields': _productFields,
+        },
       );
-      final response = await http.get(url).timeout(_timeout);
+      final response = await _client
+          .get(url, headers: _defaultHeaders)
+          .timeout(_requestTimeout);
 
       if (response.statusCode != 200) return null;
 
@@ -136,7 +218,9 @@ class OpenFoodFactsService {
 
       return _parseProduct(data['product'] as Map<String, dynamic>?);
     } catch (e) {
-      debugPrint('OpenFoodFacts World barcode lookup failed for "$barcode": $e');
+      debugPrint(
+        'OpenFoodFacts World barcode lookup failed for "$barcode": $e',
+      );
       return null;
     }
   }
@@ -184,8 +268,7 @@ class OpenFoodFactsService {
     return FoodItem(
       id: product['code'] ?? const Uuid().v4(),
       name: name.toString(),
-      category:
-          (product['categories_tags'] as List?)?.first?.toString() ?? 'food',
+      category: _firstListValue(product['categories_tags']) ?? 'food',
       caloriesPer100g: calories,
       proteinPer100g: protein,
       carbsPer100g: carbs,
@@ -204,7 +287,41 @@ class OpenFoodFactsService {
     var name = servingSize.replaceAll(RegExp(r'\s*\([^)]*\)\s*'), '').trim();
     // Remove leading numbers like "1 " or "2x "
     name = name.replaceAll(RegExp(r'^[\d.,]+\s*x?\s*'), '').trim();
+    if (_isMeasurementUnit(name)) return null;
     return name.isNotEmpty ? name : null;
+  }
+
+  bool _isMeasurementUnit(String value) {
+    final normalized = value.toLowerCase().replaceAll('.', '');
+    return const <String>{
+      'g',
+      'gr',
+      'gram',
+      'grams',
+      'gramm',
+      'kg',
+      'ml',
+      'cl',
+      'dl',
+      'l',
+      'liter',
+      'litre',
+      'oz',
+      'lb',
+    }.contains(normalized);
+  }
+
+  String? _firstListValue(Object? value) {
+    if (value is! List) return null;
+
+    for (final item in value) {
+      final text = item?.toString().trim();
+      if (text != null && text.isNotEmpty) {
+        return text;
+      }
+    }
+
+    return null;
   }
 
   double? _parseNutrient(Map<String, dynamic> nutrients, String key) {
