@@ -29,7 +29,9 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
   List<FoodItem> _results = [];
   bool _isSearchingApi = false;
   String? _error;
+  String? _apiNotice;
   Timer? _debounce;
+  int _searchRequestId = 0;
 
   @override
   void initState() {
@@ -61,10 +63,12 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
       _debounce = Timer(const Duration(milliseconds: 300), () {
         _search(query);
       });
-    } else if (query.isEmpty) {
+    } else {
+      _searchRequestId++;
       setState(() {
         _results = [];
         _error = null;
+        _apiNotice = null;
         _isSearchingApi = false;
       });
     }
@@ -73,15 +77,17 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
   Future<void> _search(String query) async {
     if (query.isEmpty) return;
 
+    final requestId = ++_searchRequestId;
+    final provider = context.read<NutritionProvider>();
+    final customMatches = provider.searchCustomFoods(query);
+
     // 1. Instant Local Search
     try {
-      final customMatches =
-          context.read<NutritionProvider>().searchCustomFoods(query);
-
       setState(() {
         _results = customMatches; // Show local results immediately
         _isSearchingApi = true; // Start showing API loading indicator
         _error = null;
+        _apiNotice = null;
       });
     } catch (e) {
       debugPrint('Local search error: $e');
@@ -91,23 +97,90 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
     final result = await _service.search(query);
 
     // Only update if query hasn't changed and widget is still mounted
-    if (mounted && _searchController.text.trim() == query) {
+    if (mounted &&
+        requestId == _searchRequestId &&
+        _searchController.text.trim() == query) {
+      final latestCustomMatches = provider.searchCustomFoods(query);
+      final l10n = AppLocalizations.of(context)!;
+
       setState(() {
         switch (result) {
           case Success<List<FoodItem>>():
-            final customMatches =
-                context.read<NutritionProvider>().searchCustomFoods(query);
-            _results = [...customMatches, ...result.value];
+            _results = _mergeResults(latestCustomMatches, result.value);
+            _error = null;
+            _apiNotice = null;
           case Failure<List<FoodItem>>():
-            if (result.errorType == ServiceErrorType.network) {
-              _error = AppLocalizations.of(context)!.networkError;
+            _results = latestCustomMatches;
+            final message = _searchMessageFor(result.errorType, l10n);
+            if (latestCustomMatches.isEmpty) {
+              _error = message;
+              _apiNotice = null;
             } else {
-              _error = AppLocalizations.of(context)!.searchFailed;
+              _error = null;
+              _apiNotice = message;
             }
         }
         _isSearchingApi = false;
       });
     }
+  }
+
+  List<FoodItem> _mergeResults(List<FoodItem> local, List<FoodItem> remote) {
+    final merged = <FoodItem>[];
+    final seenKeys = <String>{};
+
+    for (final item in [...local, ...remote]) {
+      final key = item.barcode ?? item.id;
+      if (seenKeys.add(key)) {
+        merged.add(item);
+      }
+    }
+
+    return merged;
+  }
+
+  String _searchMessageFor(
+    ServiceErrorType errorType,
+    AppLocalizations l10n,
+  ) {
+    return switch (errorType) {
+      ServiceErrorType.network => l10n.networkError,
+      _ => l10n.searchFailed,
+    };
+  }
+
+  Widget _buildApiNotice(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.error.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+        border: Border.all(
+          color: theme.colorScheme.error.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.info_outline,
+            size: 18,
+            color: theme.colorScheme.error,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              _apiNotice!,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.error,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showPortionPicker(FoodItem item) {
@@ -198,7 +271,11 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             child: Row(
               children: [
-                const Icon(Icons.star_rounded, size: 18, color: AppTheme.warning),
+                const Icon(
+                  Icons.star_rounded,
+                  size: 18,
+                  color: AppTheme.warning,
+                ),
                 const SizedBox(width: 6),
                 Text(
                   l10n.favorites,
@@ -345,18 +422,25 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
 
     final provider = context.watch<NutritionProvider>();
 
-    return ListView.builder(
-      itemCount: _results.length,
-      padding: const EdgeInsets.only(top: 8, bottom: 16),
-      itemBuilder: (context, index) {
-        final item = _results[index];
-        return FoodSearchResultTile(
-          item: item,
-          onTap: () => _showPortionPicker(item),
-          isFavorite: provider.isFavorite(item.id),
-          onFavoriteToggle: () => provider.toggleFavorite(item),
-        );
-      },
+    return Column(
+      children: [
+        if (_apiNotice != null) _buildApiNotice(context),
+        Expanded(
+          child: ListView.builder(
+            itemCount: _results.length,
+            padding: const EdgeInsets.only(top: 8, bottom: 16),
+            itemBuilder: (context, index) {
+              final item = _results[index];
+              return FoodSearchResultTile(
+                item: item,
+                onTap: () => _showPortionPicker(item),
+                isFavorite: provider.isFavorite(item.id),
+                onFavoriteToggle: () => provider.toggleFavorite(item),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }

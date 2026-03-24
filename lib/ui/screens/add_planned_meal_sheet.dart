@@ -44,6 +44,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
   List<FoodItem> _searchResults = [];
   bool _isSearching = false;
   String? _searchError;
+  int _searchRequestId = 0;
 
   // Recipe scan state
   File? _scannedImage;
@@ -256,7 +257,9 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radiusLG),
         border: Border.all(
-          color: isDark ? CachedColors.surfaceTintDark06 : CachedColors.surfaceTintLight04,
+          color: isDark
+              ? CachedColors.surfaceTintDark06
+              : CachedColors.surfaceTintLight04,
         ),
       ),
       child: InkWell(
@@ -337,9 +340,12 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
                       ? IconButton(
                           icon: const Icon(Icons.clear),
                           onPressed: () {
+                            _searchRequestId++;
                             _searchController.clear();
                             setState(() {
                               _searchResults = [];
+                              _searchError = null;
+                              _isSearching = false;
                             });
                           },
                         )
@@ -750,7 +756,9 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
             color: theme.colorScheme.surface,
             borderRadius: BorderRadius.circular(AppTheme.radiusMD),
             border: Border.all(
-              color: isDark ? CachedColors.surfaceTintDark06 : CachedColors.surfaceTintLight04,
+              color: isDark
+                  ? CachedColors.surfaceTintDark06
+                  : CachedColors.surfaceTintLight04,
             ),
           ),
           child: Column(
@@ -927,7 +935,9 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radiusMD),
         border: Border.all(
-          color: isDark ? CachedColors.surfaceTintDark06 : CachedColors.surfaceTintLight04,
+          color: isDark
+              ? CachedColors.surfaceTintDark06
+              : CachedColors.surfaceTintLight04,
         ),
       ),
       child: InkWell(
@@ -983,15 +993,32 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
 
   Future<void> _performSearch() async {
     final query = _searchController.text.trim();
-    if (query.length < 2) return;
+    if (query.length < 2) {
+      _searchRequestId++;
+      setState(() {
+        _searchResults = [];
+        _searchError = null;
+        _isSearching = false;
+      });
+      return;
+    }
+
+    final requestId = ++_searchRequestId;
 
     setState(() {
       _isSearching = true;
       _searchError = null;
+      _searchResults = [];
     });
 
     final result = await _foodService.search(query);
-    if (!mounted) return;
+    if (!mounted ||
+        requestId != _searchRequestId ||
+        _searchController.text.trim() != query) {
+      return;
+    }
+
+    final l10n = AppLocalizations.of(context)!;
 
     setState(() {
       _isSearching = false;
@@ -1001,13 +1028,19 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
           _searchError = null;
         case Failure<List<FoodItem>>():
           _searchResults = [];
-          if (result.errorType == ServiceErrorType.network) {
-            _searchError = AppLocalizations.of(context)!.networkError;
-          } else {
-            _searchError = AppLocalizations.of(context)!.searchFailed;
-          }
+          _searchError = _searchMessageFor(result.errorType, l10n);
       }
     });
+  }
+
+  String _searchMessageFor(
+    ServiceErrorType errorType,
+    AppLocalizations l10n,
+  ) {
+    return switch (errorType) {
+      ServiceErrorType.network => l10n.networkError,
+      _ => l10n.searchFailed,
+    };
   }
 
   void _showServingsDialog(
