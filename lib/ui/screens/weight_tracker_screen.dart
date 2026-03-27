@@ -31,7 +31,17 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
 
   void _addWeight() {
     final inputValue = double.tryParse(_weightController.text);
-    if (inputValue == null || inputValue <= 0) return;
+    if (inputValue == null || inputValue <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.enterValidPositiveNumber),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    FocusScope.of(context).unfocus();
 
     // Convert from display unit to kg for storage
     final unitSystem = context.read<SettingsProvider>().unitSystem;
@@ -44,6 +54,14 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
 
     _weightController.clear();
     _noteController.clear();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(AppLocalizations.of(context)!.entrySaved),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   @override

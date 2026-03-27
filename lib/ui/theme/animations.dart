@@ -100,8 +100,10 @@ class _FluidProgressBarState extends State<FluidProgressBar>
       vsync: this,
       duration: const Duration(milliseconds: 2000),
     );
-    if (widget.animate) {
+    if (widget.animate && widget.value < 1.0) {
       _waveController.repeat();
+    } else {
+      _waveController.stop();
     }
   }
 
@@ -251,10 +253,12 @@ class _FadeInSlideState extends State<FadeInSlide>
     _slideAnimation = Tween<Offset>(
       begin: widget.offset,
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: widget.curve,
-    ),);
+    ).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: widget.curve,
+      ),
+    );
 
     Future.delayed(widget.delay * widget.index, () {
       if (mounted) _controller.forward();
@@ -331,10 +335,12 @@ class _ScaleFadeInState extends State<ScaleFadeIn>
     _scaleAnimation = Tween<double>(
       begin: widget.beginScale,
       end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: widget.curve,
-    ),);
+    ).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: widget.curve,
+      ),
+    );
 
     Future.delayed(widget.delay, () {
       if (mounted) _controller.forward();
@@ -445,10 +451,12 @@ class _PulseAnimationState extends State<PulseAnimation>
     _scaleAnimation = Tween<double>(
       begin: widget.minScale,
       end: widget.maxScale,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    ),);
+    ).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeInOut,
+      ),
+    );
 
     if (widget.enabled) {
       _controller.repeat(reverse: true);
@@ -536,9 +544,13 @@ class _ShimmerEffectState extends State<ShimmerEffect>
     final isDark = theme.brightness == Brightness.dark;
 
     final baseColor = widget.baseColor ??
-        (isDark ? theme.colorScheme.surfaceContainerHighest : theme.colorScheme.surfaceContainerHighest);
+        (isDark
+            ? theme.colorScheme.surfaceContainerHighest
+            : theme.colorScheme.surfaceContainerHighest);
     final highlightColor = widget.highlightColor ??
-        (isDark ? theme.colorScheme.surfaceContainer : theme.colorScheme.surfaceContainerLowest);
+        (isDark
+            ? theme.colorScheme.surfaceContainer
+            : theme.colorScheme.surfaceContainerLowest);
 
     return AnimatedBuilder(
       animation: _controller,
@@ -605,10 +617,12 @@ class _BounceButtonState extends State<BounceButton>
     _scaleAnimation = Tween<double>(
       begin: 1.0,
       end: widget.scaleFactor,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    ),);
+    ).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeInOut,
+      ),
+    );
   }
 
   @override

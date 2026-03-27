@@ -73,38 +73,49 @@ class RecipesScreen extends StatelessWidget {
                 child: Card(
                   margin: const EdgeInsets.only(bottom: 12),
                   child: ListTile(
-                  title: Text(recipe.name),
-                  subtitle: Text(
-                    '${nutrients.calories.toStringAsFixed(0)} kcal/${l10n.serving} • '
-                    '${recipe.servings} ${recipe.servings > 1 ? l10n.servings : l10n.serving}',
+                    title: Text(recipe.name),
+                    subtitle: Text(
+                      '${nutrients.calories.toStringAsFixed(0)} kcal/${l10n.serving} • '
+                      '${recipe.servings} ${recipe.servings > 1 ? l10n.servings : l10n.serving}',
+                    ),
+                    trailing: PopupMenuButton(
+                      itemBuilder: (_) => [
+                        PopupMenuItem(
+                            value: 'add', child: Text(l10n.addToMeal)),
+                        PopupMenuItem(value: 'edit', child: Text(l10n.edit)),
+                        PopupMenuItem(
+                            value: 'delete', child: Text(l10n.delete)),
+                      ],
+                      onSelected: (value) {
+                        switch (value) {
+                          case 'add':
+                            _showAddToMealDialog(context, recipe);
+                            break;
+                          case 'edit':
+                            Navigator.push(
+                              context,
+                              AppTheme.slideRoute(
+                                RecipeCreateScreen(recipe: recipe),
+                              ),
+                            );
+                            break;
+                          case 'delete':
+                            nutrition.removeRecipe(recipe.id);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                      l10n.deleteConfirmation(recipe.name)),
+                                  behavior: SnackBarBehavior.floating,
+                                  duration: const Duration(seconds: 2),
+                                ),
+                              );
+                            }
+                            break;
+                        }
+                      },
+                    ),
                   ),
-                  trailing: PopupMenuButton(
-                    itemBuilder: (_) => [
-                      PopupMenuItem(value: 'add', child: Text(l10n.addToMeal)),
-                      PopupMenuItem(value: 'edit', child: Text(l10n.edit)),
-                      PopupMenuItem(value: 'delete', child: Text(l10n.delete)),
-                    ],
-                    onSelected: (value) {
-                      switch (value) {
-                        case 'add':
-                          _showAddToMealDialog(context, recipe);
-                          break;
-                        case 'edit':
-                          Navigator.push(
-                            context,
-                            AppTheme.slideRoute(
-                              RecipeCreateScreen(recipe: recipe),
-                            ),
-                          );
-                          break;
-                        case 'delete':
-                          nutrition.removeRecipe(recipe.id);
-                          break;
-                      }
-                    },
-                  ),
-                  onTap: () => _showAddToMealDialog(context, recipe),
-                ),
                 ),
               );
             },
@@ -281,7 +292,15 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
           ),
           ElevatedButton(
             onPressed: () {
-              if (nameController.text.isEmpty) return;
+              if (nameController.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(l10n.required),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+                return;
+              }
 
               final ingredient = RecipeIngredient(
                 id: const Uuid().v4(),
@@ -304,7 +323,18 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
   }
 
   Future<void> _save() async {
-    if (_nameController.text.isEmpty) return;
+    final l10n = AppLocalizations.of(context)!;
+    if (_nameController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.required),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    FocusScope.of(context).unfocus();
 
     final recipe = Recipe(
       id: widget.recipe?.id ?? const Uuid().v4(),
@@ -399,6 +429,7 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
             ..._ingredients.asMap().entries.map((entry) {
               final i = entry.value;
               return Card(
+                key: ValueKey(i.id),
                 child: ListTile(
                   dense: true,
                   title: Text(i.name),
