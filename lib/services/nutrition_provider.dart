@@ -157,13 +157,15 @@ class NutritionProvider extends ChangeNotifier {
 
     await _migrateToDbIfNeeded();
 
-    _foodLog.loadData(
-      await _db.getAllFoods(),
-      _storage.loadRecentFoods(),
-    );
-    _hydration.loadData(await _db.getAllWater());
-    _weightEntries = await _db.getAllWeights();
-    _workouts.loadData(await _db.getAllWorkouts());
+    final foods = await _db.getAllFoods();
+    final water = await _db.getAllWater();
+    final weights = await _db.getAllWeights();
+    final workouts = await _db.getAllWorkouts();
+
+    _foodLog.loadData(foods, _storage.loadRecentFoods());
+    _hydration.loadData(water);
+    _weightEntries = weights;
+    _workouts.loadData(workouts);
 
     _goals = _storage.loadGoals();
     _profile = _storage.loadProfile();

@@ -38,6 +38,7 @@ class HomeWidgetService {
     try {
       await _writeWidgetData(provider);
     } finally {
+      _pendingProvider = null;
       _isSyncing = false;
       if (_hasPendingSync) {
         _widgetSyncTimer?.cancel();

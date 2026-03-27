@@ -273,7 +273,8 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
               mealType.icon,
               mealType.color,
             ),
-            if (index < vm.mealTypes.length - 1) const SizedBox(height: AppTheme.spaceSM2),
+            if (index < vm.mealTypes.length - 1)
+              const SizedBox(height: AppTheme.spaceSM2),
           ];
         }),
 
@@ -477,7 +478,9 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radiusLG),
         border: Border.all(
-          color: isDark ? CachedColors.surfaceTintDark06 : CachedColors.surfaceTintLight04,
+          color: isDark
+              ? CachedColors.surfaceTintDark06
+              : CachedColors.surfaceTintLight04,
         ),
       ),
       child: Column(
@@ -531,9 +534,16 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
           if (mealEntries.isNotEmpty) ...[
             Divider(
               height: 1,
-              color: isDark ? CachedColors.surfaceTintDark06 : CachedColors.surfaceTintLight04,
+              color: isDark
+                  ? CachedColors.surfaceTintDark06
+                  : CachedColors.surfaceTintLight04,
             ),
-            ...mealEntries.map((entry) => _buildEntryTile(theme, entry)),
+            ...mealEntries.map(
+              (entry) => KeyedSubtree(
+                key: ValueKey(entry.id),
+                child: _buildEntryTile(theme, entry),
+              ),
+            ),
           ],
         ],
       ),
