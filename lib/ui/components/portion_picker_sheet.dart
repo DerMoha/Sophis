@@ -462,6 +462,8 @@ class _ProductHeader extends StatelessWidget {
                 ? Image.network(
                     item.imageUrl!,
                     fit: BoxFit.cover,
+                    cacheWidth: 112,
+                    cacheHeight: 112,
                     errorBuilder: (_, __, ___) => _placeholderIcon(theme),
                   )
                 : _placeholderIcon(theme),

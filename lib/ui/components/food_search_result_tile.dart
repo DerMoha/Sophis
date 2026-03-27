@@ -161,6 +161,8 @@ class _ProductImage extends StatelessWidget {
           ? Image.network(
               imageUrl!,
               fit: BoxFit.cover,
+              cacheWidth: 112,
+              cacheHeight: 112,
               errorBuilder: (_, __, ___) => const _PlaceholderIcon(),
               loadingBuilder: (context, child, loadingProgress) {
                 if (loadingProgress == null) return child;
