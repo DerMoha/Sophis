@@ -25,7 +25,6 @@ void main() {
     test('search requests only needed fields and parses products', () async {
       final client = MockClient((request) async {
         expect(request.method, equals('GET'));
-        expect(request.url.host, equals('de.openfoodfacts.org'));
         expect(request.url.path, equals('/cgi/search.pl'));
         expect(request.url.queryParameters['search_terms'], equals('apple'));
         expect(
@@ -118,10 +117,22 @@ void main() {
       expect(result.isSuccess, isTrue);
       expect(result.value, hasLength(1));
       expect(result.value.first.name, equals('Chocolate Pudding'));
-      expect(
-        requestedHosts,
-        equals(<String>['de.openfoodfacts.org', 'world.openfoodfacts.org']),
+      expect(requestedHosts, contains('de.openfoodfacts.org'));
+      expect(requestedHosts, contains('world.openfoodfacts.org'));
+    });
+
+    test('search returns DE failure when both DE and World endpoints fail',
+        () async {
+      final service = OpenFoodFactsService(
+        client: MockClient((_) async => http.Response('{}', 500)),
       );
+
+      final result = await service.search('apple');
+      final failure = result as Failure<List<FoodItem>>;
+
+      expect(result.isFailure, isTrue);
+      expect(failure.errorType, equals(ServiceErrorType.unknown));
+      expect(failure.message, equals('Search returned status 500'));
     });
 
     test('search tolerates empty categories tags lists', () async {

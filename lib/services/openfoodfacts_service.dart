@@ -22,14 +22,31 @@ class OpenFoodFactsService {
     'User-Agent': 'Sophis/1.0 (Flutter)',
   };
 
+  static OpenFoodFactsService? _instance;
+  factory OpenFoodFactsService({
+    http.Client? client,
+    Duration? requestTimeout,
+  }) {
+    if (client != null || requestTimeout != null) {
+      return OpenFoodFactsService._(
+        client: client,
+        requestTimeout: requestTimeout ?? const Duration(seconds: 8),
+      );
+    }
+    return _instance ??= OpenFoodFactsService._();
+  }
+
+  @visibleForTesting
+  static void resetInstance() => _instance = null;
+
   // In-memory cache: query -> (results, timestamp)
   final Map<String, _CacheEntry> _searchCache = {};
   final http.Client _client;
   final Duration _requestTimeout;
 
-  OpenFoodFactsService({
+  OpenFoodFactsService._({
     http.Client? client,
-    Duration requestTimeout = const Duration(seconds: 20),
+    Duration requestTimeout = const Duration(seconds: 8),
   })  : _client = client ?? http.Client(),
         _requestTimeout = requestTimeout;
 
@@ -46,23 +63,29 @@ class OpenFoodFactsService {
       return Success(cached.results);
     }
 
-    final deResult = await _searchHost(_deHost, trimmedQuery);
-    switch (deResult) {
-      case Success<List<FoodItem>>():
-        if (deResult.value.isNotEmpty) {
-          return _cacheSearchResults(normalizedQuery, deResult.value);
-        }
+    // Fire DE and World requests in parallel
+    final results = await Future.wait([
+      _searchHost(_deHost, trimmedQuery),
+      _searchHost(_worldHost, trimmedQuery),
+    ]);
 
-        final worldResult = await _searchHost(_worldHost, trimmedQuery);
-        switch (worldResult) {
-          case Success<List<FoodItem>>():
-            return _cacheSearchResults(normalizedQuery, worldResult.value);
-          case Failure<List<FoodItem>>():
-            return worldResult;
-        }
-      case Failure<List<FoodItem>>():
-        return deResult;
+    final deResult = results[0];
+    final worldResult = results[1];
+
+    // Prefer DE results if non-empty
+    if (deResult case Success<List<FoodItem>>(value: final items)) {
+      if (items.isNotEmpty) {
+        return _cacheSearchResults(normalizedQuery, items);
+      }
     }
+
+    // Fall back to World results
+    if (worldResult case Success<List<FoodItem>>(value: final items)) {
+      return _cacheSearchResults(normalizedQuery, items);
+    }
+
+    // If both failed, return the DE error (more relevant for German users)
+    return deResult;
   }
 
   Future<ServiceResult<List<FoodItem>>> _searchHost(
@@ -78,7 +101,7 @@ class OpenFoodFactsService {
           'search_simple': '1',
           'action': 'process',
           'json': '1',
-          'page_size': '20',
+          'page_size': '10',
           'fields': _productFields,
         },
       );
