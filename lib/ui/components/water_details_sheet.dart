@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/app_settings.dart';
+import '../../models/water_entry.dart';
 import '../../services/nutrition_provider.dart';
 import '../../services/settings_provider.dart';
 import '../theme/app_theme.dart';
@@ -235,10 +236,12 @@ class _WaterDetailsSheetState extends State<WaterDetailsSheet> {
             ),
             const SizedBox(height: 8),
 
-            Consumer2<NutritionProvider, SettingsProvider>(
-              builder: (context, nutrition, settings, _) {
-                final entries = nutrition.getTodayWaterEntries();
-                final unitSystem = settings.unitSystem;
+            Selector<NutritionProvider, List<WaterEntry>>(
+              selector: (_, n) => n.getTodayWaterEntries(),
+              builder: (context, entries, _) {
+                final unitSystem = context.select<SettingsProvider, UnitSystem>(
+                  (s) => s.unitSystem,
+                );
 
                 if (entries.isEmpty) {
                   return Padding(

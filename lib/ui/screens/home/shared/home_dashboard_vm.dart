@@ -1,11 +1,8 @@
-import 'package:flutter/widgets.dart';
-import 'package:provider/provider.dart';
 import '../../../../../models/nutrition_goals.dart';
 import '../../../../../models/nutrition_totals.dart';
 import '../../../../../models/app_settings.dart';
 import '../../../../../models/custom_meal_type.dart';
 import '../../../../../services/nutrition_provider.dart';
-import '../../../../../services/settings_provider.dart';
 
 /// Immutable view model containing all derived dashboard values.
 class HomeDashboardVM {
@@ -45,12 +42,17 @@ class HomeDashboardVM {
 }
 
 /// Builds a HomeDashboardVM from providers.
-/// Call this once at the top of your build method.
+/// Settings values must be pre-selected by the caller.
 HomeDashboardVM buildHomeDashboardVM(
-  BuildContext context,
-  NutritionProvider nutrition,
-) {
-  final settings = context.watch<SettingsProvider>();
+  NutritionProvider nutrition, {
+  required double waterGoalMl,
+  required UnitSystem unitSystem,
+  required List<CustomMealType> mealTypes,
+  required bool showMealMacros,
+  required bool healthSyncEnabled,
+  required List<DashboardCard> visibleDashboardCards,
+  required QuickActionSize quickActionSize,
+}) {
   final totals = nutrition.getTodayTotals();
   final goals = nutrition.goals!;
   final burned = nutrition.burnedCalories;
@@ -65,12 +67,12 @@ HomeDashboardVM buildHomeDashboardVM(
     effectiveGoal: effectiveGoal,
     calorieProgress: (totals.calories / effectiveGoal).clamp(0.0, 1.0),
     waterTotal: nutrition.getTodayWaterTotal(),
-    waterGoal: settings.waterGoalMl,
-    unitSystem: settings.unitSystem,
-    mealTypes: settings.mealTypes,
-    showMealMacros: settings.showMealMacros,
-    healthSyncEnabled: settings.healthSyncEnabled,
-    visibleDashboardCards: settings.visibleDashboardCards,
-    quickActionSize: settings.quickActionSize,
+    waterGoal: waterGoalMl,
+    unitSystem: unitSystem,
+    mealTypes: mealTypes,
+    showMealMacros: showMealMacros,
+    healthSyncEnabled: healthSyncEnabled,
+    visibleDashboardCards: visibleDashboardCards,
+    quickActionSize: quickActionSize,
   );
 }

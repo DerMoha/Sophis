@@ -13,8 +13,9 @@ class StreakCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final provider = context.watch<NutritionProvider>();
-    final stats = provider.userStats;
+    final stats = context.select<NutritionProvider, UserStats>(
+      (n) => n.userStats,
+    );
     final l10n = AppLocalizations.of(context)!;
 
     // Only show if streak >= 2

@@ -14,9 +14,11 @@ class SupplementsTodayCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final accentColor = theme.colorScheme.primary;
-    final settings = Provider.of<SettingsProvider>(context);
+    final showSupplements = context.select<SettingsProvider, bool>(
+      (s) => s.showSupplements,
+    );
 
-    if (!settings.showSupplements) {
+    if (!showSupplements) {
       return const SizedBox.shrink();
     }
 

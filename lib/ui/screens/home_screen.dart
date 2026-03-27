@@ -8,18 +8,17 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<NutritionProvider>(
-      builder: (context, nutrition, _) {
-        if (nutrition.isLoading) {
-          return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
-          );
-        }
-
-        return const HomeScreenModern();
-      },
+    final isLoading = context.select<NutritionProvider, bool>(
+      (n) => n.isLoading,
     );
+    if (isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    return const HomeScreenModern();
   }
 }

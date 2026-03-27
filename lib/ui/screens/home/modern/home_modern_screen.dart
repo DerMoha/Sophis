@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../../l10n/generated/app_localizations.dart';
+import '../../../../../models/app_settings.dart';
+import '../../../../../models/custom_meal_type.dart';
 import '../../../../../services/nutrition_provider.dart';
 import '../../../../../services/settings_provider.dart';
 import '../../../theme/app_theme.dart';
@@ -58,14 +60,55 @@ class _HomeScreenModernState extends State<HomeScreenModern> {
     );
   }
 
+  HomeDashboardVM _buildVM(
+    BuildContext context,
+    NutritionProvider nutrition,
+  ) {
+    final waterGoalMl = context.select<SettingsProvider, double>(
+      (s) => s.waterGoalMl,
+    );
+    final unitSystem = context.select<SettingsProvider, UnitSystem>(
+      (s) => s.unitSystem,
+    );
+    final mealTypes = context.select<SettingsProvider, List<CustomMealType>>(
+      (s) => s.mealTypes,
+    );
+    final showMealMacros = context.select<SettingsProvider, bool>(
+      (s) => s.showMealMacros,
+    );
+    final healthSyncEnabled = context.select<SettingsProvider, bool>(
+      (s) => s.healthSyncEnabled,
+    );
+    final visibleDashboardCards =
+        context.select<SettingsProvider, List<DashboardCard>>(
+      (s) => s.visibleDashboardCards,
+    );
+    final quickActionSize = context.select<SettingsProvider, QuickActionSize>(
+      (s) => s.quickActionSize,
+    );
+
+    return buildHomeDashboardVM(
+      nutrition,
+      waterGoalMl: waterGoalMl,
+      unitSystem: unitSystem,
+      mealTypes: mealTypes,
+      showMealMacros: showMealMacros,
+      healthSyncEnabled: healthSyncEnabled,
+      visibleDashboardCards: visibleDashboardCards,
+      quickActionSize: quickActionSize,
+    );
+  }
+
   Widget _buildDashboard(
     BuildContext context,
     AppLocalizations l10n,
     ThemeData theme,
     NutritionProvider nutrition,
   ) {
-    final vm = buildHomeDashboardVM(context, nutrition);
-    final showSupplements = context.watch<SettingsProvider>().showSupplements;
+    final vm = _buildVM(context, nutrition);
+    final showSupplements = context.select<SettingsProvider, bool>(
+      (s) => s.showSupplements,
+    );
     final actions = buildHomeActions(
       context,
       l10n,

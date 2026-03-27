@@ -70,9 +70,10 @@ class _MealSectionContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-    final settings = context.watch<SettingsProvider>();
     final mealColor = color ??
-        settings.getMealType(mealType)?.color ??
+        context.select<SettingsProvider, Color?>(
+          (s) => s.getMealType(mealType)?.color,
+        ) ??
         theme.colorScheme.primary;
 
     var total = 0.0;
