@@ -56,7 +56,12 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
-    _selectedMealType = widget.initialMealType ?? 'breakfast';
+    final mealTypes = context.read<SettingsProvider>().mealTypes;
+    final initialMealType = widget.initialMealType;
+    _selectedMealType =
+        mealTypes.any((mealType) => mealType.id == initialMealType)
+            ? initialMealType!
+            : mealTypes.first.id;
     _initGemini();
   }
 
@@ -83,6 +88,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
+    final mealTypes = context.watch<SettingsProvider>().mealTypes;
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
@@ -127,24 +133,14 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
                     child: DropdownButton<String>(
                       value: _selectedMealType,
                       isDense: true,
-                      items: [
-                        DropdownMenuItem(
-                          value: 'breakfast',
-                          child: Text(l10n.breakfast),
-                        ),
-                        DropdownMenuItem(
-                          value: 'lunch',
-                          child: Text(l10n.lunch),
-                        ),
-                        DropdownMenuItem(
-                          value: 'dinner',
-                          child: Text(l10n.dinner),
-                        ),
-                        DropdownMenuItem(
-                          value: 'snack',
-                          child: Text(l10n.snacks),
-                        ),
-                      ],
+                      items: mealTypes
+                          .map(
+                            (mealType) => DropdownMenuItem(
+                              value: mealType.id,
+                              child: Text(mealType.name),
+                            ),
+                          )
+                          .toList(),
                       onChanged: (value) {
                         setState(() {
                           _selectedMealType = value!;

@@ -6,6 +6,7 @@ import '../../../models/food_item.dart';
 import 'package:uuid/uuid.dart';
 import '../../../models/shareable_meal.dart';
 import '../../../services/nutrition_provider.dart';
+import '../../../services/settings_provider.dart';
 import '../theme/app_theme.dart';
 import '../components/organic_components.dart';
 import '../theme/animations.dart';
@@ -85,14 +86,15 @@ class MealDetailScreen extends StatelessWidget {
                                 children: [
                                   Text(
                                     totalCalories.toStringAsFixed(0),
-                                    style:
-                                        theme.textTheme.headlineMedium?.copyWith(
+                                    style: theme.textTheme.headlineMedium
+                                        ?.copyWith(
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                   Text(
                                     ' kcal',
-                                    style: theme.textTheme.titleMedium?.copyWith(
+                                    style:
+                                        theme.textTheme.titleMedium?.copyWith(
                                       color: theme.colorScheme.onSurfaceVariant,
                                     ),
                                   ),
@@ -100,7 +102,8 @@ class MealDetailScreen extends StatelessWidget {
                               ),
                               const SizedBox(height: AppTheme.spaceSM2),
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
                                 children: [
                                   _MacroSummary(
                                     label: l10n.protein,
@@ -292,7 +295,9 @@ class _MealEntryCard extends StatelessWidget {
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radiusMD),
         border: Border.all(
-          color: isDark ? CachedColors.surfaceTintDark06 : CachedColors.surfaceTintLight04,
+          color: isDark
+              ? CachedColors.surfaceTintDark06
+              : CachedColors.surfaceTintLight04,
         ),
       ),
       child: Column(
@@ -540,13 +545,13 @@ class _MealEntryCard extends StatelessWidget {
   }
 
   void _showMoveToMealDialog(BuildContext context, AppLocalizations l10n) {
-    final theme = Theme.of(context);
-    final meals = [
-      ('breakfast', l10n.breakfast, Icons.wb_twilight_rounded),
-      ('lunch', l10n.lunch, Icons.wb_sunny_rounded),
-      ('dinner', l10n.dinner, Icons.nights_stay_rounded),
-      ('snack', l10n.snacks, Icons.cookie_outlined),
-    ];
+    final meals = context
+        .read<SettingsProvider>()
+        .mealTypes
+        .where((configuredMeal) => configuredMeal.id != mealType)
+        .toList();
+
+    if (meals.isEmpty) return;
 
     showDialog(
       context: context,
@@ -554,17 +559,17 @@ class _MealEntryCard extends StatelessWidget {
         title: Text(l10n.moveTo),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: meals.where((m) => m.$1 != mealType).map((meal) {
+          children: meals.map((meal) {
             return ListTile(
-              leading: Icon(meal.$3, color: theme.colorScheme.primary),
-              title: Text(meal.$2),
+              leading: Icon(meal.icon, color: meal.color),
+              title: Text(meal.name),
               onTap: () {
                 Navigator.pop(ctx);
                 final nutrition = context.read<NutritionProvider>();
-                final updatedEntry = entry.copyWith(meal: meal.$1);
+                final updatedEntry = entry.copyWith(meal: meal.id);
                 nutrition.updateFoodEntry(updatedEntry);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(l10n.movedTo(meal.$2))),
+                  SnackBar(content: Text(l10n.movedTo(meal.name))),
                 );
               },
             );

@@ -18,7 +18,18 @@ class ImportMealScreen extends StatefulWidget {
 }
 
 class _ImportMealScreenState extends State<ImportMealScreen> {
-  String _selectedMeal = 'lunch';
+  String _selectedMeal = '';
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_selectedMeal.isNotEmpty) return;
+
+    final mealTypes = context.read<SettingsProvider>().mealTypes;
+    if (mealTypes.isNotEmpty) {
+      _selectedMeal = mealTypes.first.id;
+    }
+  }
 
   void _importMeal() {
     final entries = widget.meal.toFoodEntries(_selectedMeal);
@@ -44,6 +55,7 @@ class _ImportMealScreenState extends State<ImportMealScreen> {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final meal = widget.meal;
+    final mealTypes = context.watch<SettingsProvider>().mealTypes;
 
     return Scaffold(
       body: CustomScrollView(
@@ -182,9 +194,7 @@ class _ImportMealScreenState extends State<ImportMealScreen> {
                         const SizedBox(height: AppTheme.spaceSM),
                         Wrap(
                           spacing: AppTheme.spaceSM,
-                          children: context
-                              .read<SettingsProvider>()
-                              .mealTypes
+                          children: mealTypes
                               .map(
                                 (mealType) => ChoiceChip(
                                   label: Row(
@@ -205,7 +215,8 @@ class _ImportMealScreenState extends State<ImportMealScreen> {
                                   onSelected: (selected) {
                                     if (selected) {
                                       setState(
-                                          () => _selectedMeal = mealType.id);
+                                        () => _selectedMeal = mealType.id,
+                                      );
                                     }
                                   },
                                 ),

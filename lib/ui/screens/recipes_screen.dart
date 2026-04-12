@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../models/recipe.dart';
 import '../../../services/nutrition_provider.dart';
+import '../../../services/settings_provider.dart';
 import '../theme/app_theme.dart';
 import '../theme/animations.dart';
 import 'package:uuid/uuid.dart';
@@ -81,10 +82,14 @@ class RecipesScreen extends StatelessWidget {
                     trailing: PopupMenuButton(
                       itemBuilder: (_) => [
                         PopupMenuItem(
-                            value: 'add', child: Text(l10n.addToMeal)),
+                          value: 'add',
+                          child: Text(l10n.addToMeal),
+                        ),
                         PopupMenuItem(value: 'edit', child: Text(l10n.edit)),
                         PopupMenuItem(
-                            value: 'delete', child: Text(l10n.delete)),
+                          value: 'delete',
+                          child: Text(l10n.delete),
+                        ),
                       ],
                       onSelected: (value) {
                         switch (value) {
@@ -105,7 +110,8 @@ class RecipesScreen extends StatelessWidget {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
-                                      l10n.deleteConfirmation(recipe.name)),
+                                    l10n.deleteConfirmation(recipe.name),
+                                  ),
                                   behavior: SnackBarBehavior.floating,
                                   duration: const Duration(seconds: 2),
                                 ),
@@ -127,8 +133,9 @@ class RecipesScreen extends StatelessWidget {
 
   void _showAddToMealDialog(BuildContext context, Recipe recipe) {
     final l10n = AppLocalizations.of(context)!;
+    final mealTypes = context.read<SettingsProvider>().mealTypes;
     final servingsController = TextEditingController(text: '1');
-    String selectedMeal = 'lunch';
+    String selectedMeal = mealTypes.first.id;
 
     showDialog(
       context: context,
@@ -149,15 +156,14 @@ class RecipesScreen extends StatelessWidget {
               DropdownButtonFormField<String>(
                 initialValue: selectedMeal,
                 decoration: InputDecoration(labelText: l10n.meal),
-                items: [
-                  DropdownMenuItem(
-                    value: 'breakfast',
-                    child: Text(l10n.breakfast),
-                  ),
-                  DropdownMenuItem(value: 'lunch', child: Text(l10n.lunch)),
-                  DropdownMenuItem(value: 'dinner', child: Text(l10n.dinner)),
-                  DropdownMenuItem(value: 'snack', child: Text(l10n.snacks)),
-                ],
+                items: mealTypes
+                    .map(
+                      (mealType) => DropdownMenuItem(
+                        value: mealType.id,
+                        child: Text(mealType.name),
+                      ),
+                    )
+                    .toList(),
                 onChanged: (v) => setState(() => selectedMeal = v!),
               ),
             ],
