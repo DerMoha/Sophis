@@ -20,6 +20,20 @@ enum _SettingsSection {
   data,
 }
 
+class _SettingsSectionConfig {
+  final _SettingsSection section;
+  final String title;
+  final IconData icon;
+  final Widget child;
+
+  const _SettingsSectionConfig({
+    required this.section,
+    required this.title,
+    required this.icon,
+    required this.child,
+  });
+}
+
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -68,120 +82,93 @@ class _SettingsScreenState extends State<SettingsScreen> {
             padding: AppTheme.pagePadding,
             sliver: Consumer<SettingsProvider>(
               builder: (context, settings, _) {
+                final sectionConfigs = <_SettingsSectionConfig>[
+                  _SettingsSectionConfig(
+                    section: _SettingsSection.appearance,
+                    title: l10n.appearance,
+                    icon: Icons.palette_outlined,
+                    child: AppearanceSection(settings: settings),
+                  ),
+                  _SettingsSectionConfig(
+                    section: _SettingsSection.nutrition,
+                    title: l10n.nutrition,
+                    icon: Icons.restaurant_outlined,
+                    child: NutritionSection(settings: settings),
+                  ),
+                  _SettingsSectionConfig(
+                    section: _SettingsSection.language,
+                    title: l10n.language,
+                    icon: Icons.language_outlined,
+                    child: LanguageSection(settings: settings),
+                  ),
+                  _SettingsSectionConfig(
+                    section: _SettingsSection.units,
+                    title: l10n.units,
+                    icon: Icons.straighten_outlined,
+                    child: UnitsSection(settings: settings),
+                  ),
+                  _SettingsSectionConfig(
+                    section: _SettingsSection.dashboard,
+                    title: l10n.quickActions,
+                    icon: Icons.dashboard_customize_outlined,
+                    child: const DashboardSection(),
+                  ),
+                  _SettingsSectionConfig(
+                    section: _SettingsSection.reminders,
+                    title: l10n.mealReminders,
+                    icon: Icons.notifications_outlined,
+                    child: RemindersSection(settings: settings),
+                  ),
+                  _SettingsSectionConfig(
+                    section: _SettingsSection.fitness,
+                    title: l10n.fitnessSync,
+                    icon: Icons.fitness_center_outlined,
+                    child: FitnessSection(settings: settings),
+                  ),
+                  _SettingsSectionConfig(
+                    section: _SettingsSection.ai,
+                    title: l10n.aiSection,
+                    icon: Icons.auto_awesome_outlined,
+                    child: AiSection(settings: settings),
+                  ),
+                  _SettingsSectionConfig(
+                    section: _SettingsSection.openfoodfacts,
+                    title: l10n.offAccountTitle,
+                    icon: Icons.public_outlined,
+                    child: OpenFoodFactsSection(settings: settings),
+                  ),
+                  _SettingsSectionConfig(
+                    section: _SettingsSection.data,
+                    title: l10n.dataSection,
+                    icon: Icons.folder_outlined,
+                    child: const DataSection(),
+                  ),
+                ];
+
                 return SliverList(
                   delegate: SliverChildListDelegate([
-                    FadeInSlide(
-                      index: 0,
-                      child: _buildSectionCard(
-                        context,
-                        section: _SettingsSection.appearance,
-                        title: l10n.appearance,
-                        icon: Icons.palette_outlined,
-                        children: [AppearanceSection(settings: settings)],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    FadeInSlide(
-                      index: 1,
-                      child: _buildSectionCard(
-                        context,
-                        section: _SettingsSection.nutrition,
-                        title: l10n.nutrition,
-                        icon: Icons.restaurant_outlined,
-                        children: [NutritionSection(settings: settings)],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    FadeInSlide(
-                      index: 2,
-                      child: _buildSectionCard(
-                        context,
-                        section: _SettingsSection.language,
-                        title: l10n.language,
-                        icon: Icons.language_outlined,
-                        children: [LanguageSection(settings: settings)],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    FadeInSlide(
-                      index: 3,
-                      child: _buildSectionCard(
-                        context,
-                        section: _SettingsSection.units,
-                        title: l10n.units,
-                        icon: Icons.straighten_outlined,
-                        children: [UnitsSection(settings: settings)],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    FadeInSlide(
-                      index: 4,
-                      child: _buildSectionCard(
-                        context,
-                        section: _SettingsSection.dashboard,
-                        title: l10n.quickActions,
-                        icon: Icons.dashboard_customize_outlined,
-                        children: const [DashboardSection()],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    FadeInSlide(
-                      index: 5,
-                      child: _buildSectionCard(
-                        context,
-                        section: _SettingsSection.reminders,
-                        title: l10n.mealReminders,
-                        icon: Icons.notifications_outlined,
-                        children: [RemindersSection(settings: settings)],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    FadeInSlide(
-                      index: 6,
-                      child: _buildSectionCard(
-                        context,
-                        section: _SettingsSection.fitness,
-                        title: l10n.fitnessSync,
-                        icon: Icons.fitness_center_outlined,
-                        children: [FitnessSection(settings: settings)],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    FadeInSlide(
-                      index: 7,
-                      child: _buildSectionCard(
-                        context,
-                        section: _SettingsSection.ai,
-                        title: l10n.aiSection,
-                        icon: Icons.auto_awesome_outlined,
-                        children: [AiSection(settings: settings)],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    FadeInSlide(
-                      index: 8,
-                      child: _buildSectionCard(
-                        context,
-                        section: _SettingsSection.openfoodfacts,
-                        title: l10n.offAccountTitle,
-                        icon: Icons.public_outlined,
-                        children: [OpenFoodFactsSection(settings: settings)],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    FadeInSlide(
-                      index: 9,
-                      child: _buildSectionCard(
-                        context,
-                        section: _SettingsSection.data,
-                        title: l10n.dataSection,
-                        icon: Icons.folder_outlined,
-                        children: const [DataSection()],
-                      ),
-                    ),
+                    ...sectionConfigs.asMap().entries.expand((entry) {
+                      final index = entry.key;
+                      final config = entry.value;
+
+                      return [
+                        FadeInSlide(
+                          index: index,
+                          child: _buildSectionCard(
+                            context,
+                            section: config.section,
+                            title: config.title,
+                            icon: config.icon,
+                            child: config.child,
+                          ),
+                        ),
+                        if (index < sectionConfigs.length - 1)
+                          const SizedBox(height: 16),
+                      ];
+                    }),
                     const SizedBox(height: 32),
                     FadeInSlide(
-                      index: 9,
+                      index: sectionConfigs.length,
                       child: Center(
                         child: Column(
                           children: [
@@ -212,7 +199,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required _SettingsSection section,
     required String title,
     required IconData icon,
-    required List<Widget> children,
+    required Widget child,
   }) {
     final theme = Theme.of(context);
     final isExpanded = _isSectionExpanded(section);
@@ -267,10 +254,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: isExpanded
                 ? Padding(
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: children,
-                    ),
+                    child: child,
                   )
                 : const SizedBox.shrink(),
           ),
