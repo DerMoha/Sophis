@@ -7,6 +7,7 @@ import '../../models/food_item.dart';
 import '../../services/openfoodfacts_write_service.dart';
 import '../../services/service_result.dart';
 import '../../services/settings_provider.dart';
+import 'settings/settings_tiles.dart';
 import '../theme/app_theme.dart';
 
 /// Bottom sheet for editing/creating barcode product nutrition (per 100g).
@@ -92,56 +93,14 @@ class _EditProductSheetState extends State<EditProductSheet> {
   }
 
   Widget _buildOffSubmitRow(BuildContext context) {
-    final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: theme.colorScheme.outline.withValues(alpha: 0.1),
-        ),
-        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              Icons.public_outlined,
-              size: 18,
-              color: theme.colorScheme.primary,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.contributeToOff,
-                  style: theme.textTheme.titleSmall,
-                ),
-                Text(
-                  l10n.contributeToOffHint,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Switch(
-            value: _submitToOff,
-            onChanged: (value) => setState(() => _submitToOff = value),
-          ),
-        ],
-      ),
+    return SwitchTile(
+      title: l10n.contributeToOff,
+      subtitle: l10n.contributeToOffHint,
+      icon: Icons.public_outlined,
+      value: _submitToOff,
+      onChanged: (value) => setState(() => _submitToOff = value),
     );
   }
 
