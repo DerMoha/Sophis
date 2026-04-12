@@ -3,10 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../../models/custom_meal_type.dart';
 import '../../../models/meal_plan.dart';
-import '../../../models/nutrition_goals.dart';
-import '../../../models/nutrition_totals.dart';
 import '../../../services/nutrition_provider.dart';
+import '../../../services/settings_provider.dart';
 import '../theme/app_theme.dart';
 import '../theme/animations.dart';
 import '../components/organic_components.dart';
@@ -119,32 +119,31 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
               child: FadeInSlide(
                 index: 1,
                 child: PageView.builder(
-                controller: _dayPageController,
-                onPageChanged: (page) {
-                  setState(() {
-                    _selectedDayOffset = page - _daysRange;
-                  });
-                  _scrollToSelectedDay();
-                  HapticFeedback.selectionClick();
-                },
-                itemBuilder: (context, index) {
-                  final dayOffset = index - _daysRange;
-                  final date = _getDateForOffset(dayOffset);
+                  controller: _dayPageController,
+                  onPageChanged: (page) {
+                    setState(() {
+                      _selectedDayOffset = page - _daysRange;
+                    });
+                    _scrollToSelectedDay();
+                    HapticFeedback.selectionClick();
+                  },
+                  itemBuilder: (context, index) {
+                    final dayOffset = index - _daysRange;
+                    final date = _getDateForOffset(dayOffset);
 
-                  return Consumer<NutritionProvider>(
+                    return Consumer<NutritionProvider>(
                       builder: (context, nutrition, _) {
                         return _buildDayContent(
                           context,
                           theme,
-                          isDark,
                           l10n,
                           nutrition,
                           date,
                         );
                       },
                     );
-                },
-              ),
+                  },
+                ),
               ),
             ),
           ],
@@ -350,7 +349,6 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
   Widget _buildDayContent(
     BuildContext context,
     ThemeData theme,
-    bool isDark,
     AppLocalizations l10n,
     NutritionProvider nutrition,
     DateTime date,
@@ -358,64 +356,43 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
     final totals = nutrition.getPlannedTotalsForDate(date);
     final goals = nutrition.goals;
     final meals = nutrition.getPlannedMealsForDate(date);
+    final mealTypes = context.select<SettingsProvider, List<CustomMealType>>(
+      (settings) => settings.mealTypes,
+    );
 
     return ListView(
       padding: AppTheme.pagePaddingTop,
       children: [
         // Nutrition summary (only if there are meals)
         if (meals.isNotEmpty)
-          _buildNutritionSummary(theme, isDark, l10n, totals, goals),
+          NutritionSummaryCard(
+            title: l10n.plannedNutrition,
+            proteinLabel: l10n.protein,
+            carbsLabel: l10n.carbs,
+            fatLabel: l10n.fat,
+            overGoalLabel: l10n.over,
+            totals: totals,
+            goals: goals,
+          ),
 
         if (meals.isNotEmpty) const SizedBox(height: 24),
 
-        // Meal sections
-        _buildMealSection(
-          context,
-          theme,
-          isDark,
-          l10n,
-          nutrition,
-          date,
-          'breakfast',
-          l10n.breakfast,
-          Icons.wb_sunny_outlined,
-        ),
-        const SizedBox(height: AppTheme.spaceSM2),
-        _buildMealSection(
-          context,
-          theme,
-          isDark,
-          l10n,
-          nutrition,
-          date,
-          'lunch',
-          l10n.lunch,
-          Icons.restaurant_outlined,
-        ),
-        const SizedBox(height: AppTheme.spaceSM2),
-        _buildMealSection(
-          context,
-          theme,
-          isDark,
-          l10n,
-          nutrition,
-          date,
-          'dinner',
-          l10n.dinner,
-          Icons.nightlight_outlined,
-        ),
-        const SizedBox(height: AppTheme.spaceSM2),
-        _buildMealSection(
-          context,
-          theme,
-          isDark,
-          l10n,
-          nutrition,
-          date,
-          'snack',
-          l10n.snacks,
-          Icons.cookie_outlined,
-        ),
+        ...mealTypes.asMap().entries.expand((entry) {
+          final index = entry.key;
+          final mealType = entry.value;
+
+          return [
+            _buildMealSection(
+              context,
+              l10n,
+              nutrition,
+              date,
+              mealType,
+            ),
+            if (index < mealTypes.length - 1)
+              const SizedBox(height: AppTheme.spaceSM2),
+          ];
+        }),
 
         // Helpful tip when empty
         if (meals.isEmpty) ...[
@@ -460,286 +437,39 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
     );
   }
 
-  Widget _buildNutritionSummary(
-    ThemeData theme,
-    bool isDark,
-    AppLocalizations l10n,
-    NutritionTotals totals,
-    NutritionGoals? goals,
-  ) {
-    final calorieGoal = goals?.calories ?? 2000;
-    final calorieProgress = (totals.calories / calorieGoal).clamp(0.0, 1.5);
-    final isOverGoal = totals.calories > calorieGoal;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            theme.colorScheme.primary.withValues(alpha: 0.1),
-            theme.colorScheme.primary.withValues(alpha: 0.05),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-        border: Border.all(
-          color: theme.colorScheme.primary.withValues(alpha: 0.2),
-        ),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              // Calorie ring
-              SizedBox(
-                width: 80,
-                height: 80,
-                child: RadialProgress(
-                  value: calorieProgress,
-                  size: 80,
-                  strokeWidth: 8,
-                  color:
-                      isOverGoal ? AppTheme.error : theme.colorScheme.primary,
-                  showGlow: true,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        totals.calories.toStringAsFixed(0),
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: isOverGoal ? AppTheme.error : null,
-                        ),
-                      ),
-                      Text(
-                        'kcal',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 20),
-              // Macros
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.plannedNutrition,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: AppTheme.spaceSM2),
-                    Row(
-                      children: [
-                        _buildMiniMacro(
-                          theme,
-                          l10n.protein,
-                          totals.protein,
-                          AppTheme.protein,
-                        ),
-                        const SizedBox(width: 16),
-                        _buildMiniMacro(
-                          theme,
-                          l10n.carbs,
-                          totals.carbs,
-                          AppTheme.carbs,
-                        ),
-                        const SizedBox(width: 16),
-                        _buildMiniMacro(
-                          theme,
-                          l10n.fat,
-                          totals.fat,
-                          AppTheme.fat,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          if (isOverGoal) ...[
-            const SizedBox(height: AppTheme.spaceSM2),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppTheme.error.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(AppTheme.radiusFull),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.warning_amber_rounded,
-                    size: 16,
-                    color: AppTheme.error,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    '${(totals.calories - calorieGoal).toStringAsFixed(0)} ${l10n.over}',
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: AppTheme.error,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMiniMacro(
-    ThemeData theme,
-    String label,
-    double value,
-    Color color,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                color: color,
-                shape: BoxShape.circle,
-              ),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              '${value.toStringAsFixed(0)}g',
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildMealSection(
     BuildContext context,
-    ThemeData theme,
-    bool isDark,
     AppLocalizations l10n,
     NutritionProvider nutrition,
     DateTime date,
-    String mealType,
-    String title,
-    IconData icon,
+    CustomMealType mealType,
   ) {
-    final meals = nutrition.getPlannedMealsByType(date, mealType);
+    final meals = nutrition.getPlannedMealsByType(date, mealType.id);
     final totalCal = meals.fold(0.0, (sum, m) => sum + m.calories);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-        border: Border.all(
-          color: isDark ? CachedColors.surfaceTintDark06 : CachedColors.surfaceTintLight04,
-        ),
-      ),
-      child: Column(
-        children: [
-          // Header
-          InkWell(
-            onTap: () => _showAddMealSheet(context, mealType: mealType),
-            borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-                    ),
-                    child: Icon(
-                      icon,
-                      color: theme.colorScheme.primary,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(title, style: theme.textTheme.titleMedium),
-                        if (totalCal > 0)
-                          Text(
-                            '${totalCal.toStringAsFixed(0)} kcal',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.primary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          )
-                        else
-                          Text(
-                            l10n.tapToAdd,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  Icon(
-                    Icons.add_circle_outline,
-                    color: theme.colorScheme.primary,
-                  ),
-                ],
-              ),
+    return MealCard(
+      title: mealType.name,
+      icon: mealType.icon,
+      calories: totalCal,
+      color: mealType.color,
+      emptyLabel: l10n.tapToAdd,
+      onHeaderTap: () => _showAddMealSheet(context, mealType: mealType.id),
+      onAddPressed: () => _showAddMealSheet(context, mealType: mealType.id),
+      showHeaderChevron: false,
+      entries: meals
+          .map(
+            (meal) => _buildPlannedMealTile(
+              context,
+              nutrition,
+              meal,
             ),
-          ),
-          // Meals
-          if (meals.isNotEmpty) ...[
-            Divider(
-              height: 1,
-              color: isDark ? CachedColors.surfaceTintDark06 : CachedColors.surfaceTintLight04,
-            ),
-            ...meals.map(
-              (meal) => _buildPlannedMealTile(
-                context,
-                theme,
-                isDark,
-                l10n,
-                nutrition,
-                meal,
-              ),
-            ),
-          ],
-        ],
-      ),
+          )
+          .toList(),
     );
   }
 
   Widget _buildPlannedMealTile(
     BuildContext context,
-    ThemeData theme,
-    bool isDark,
-    AppLocalizations l10n,
     NutritionProvider nutrition,
     PlannedMeal meal,
   ) {
@@ -753,63 +483,14 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
         child: const Icon(Icons.delete_outline, color: Colors.white),
       ),
       onDismissed: (_) => nutrition.removePlannedMeal(meal.id),
-      child: InkWell(
+      child: FoodEntryTile(
+        name: meal.name,
+        calories: meal.calories,
+        protein: meal.protein,
+        carbs: meal.carbs,
+        fat: meal.fat,
         onTap: () => _showMealOptions(context, meal, nutrition),
         onLongPress: () => _showCopyDialog(context, meal),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      meal.name,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w500,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        _MacroChip(
-                          label: 'P',
-                          value: meal.protein,
-                          color: AppTheme.protein,
-                        ),
-                        const SizedBox(width: 8),
-                        _MacroChip(
-                          label: 'C',
-                          value: meal.carbs,
-                          color: AppTheme.carbs,
-                        ),
-                        const SizedBox(width: 8),
-                        _MacroChip(
-                          label: 'F',
-                          value: meal.fat,
-                          color: AppTheme.fat,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              Text(
-                meal.calories.toStringAsFixed(0),
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                ' kcal',
-                style: theme.textTheme.bodySmall,
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -908,41 +589,5 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
         SnackBar(content: Text(l10n.mealCopied)),
       );
     }
-  }
-}
-
-class _MacroChip extends StatelessWidget {
-  final String label;
-  final double value;
-  final Color color;
-
-  const _MacroChip({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 6,
-          height: 6,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(width: 4),
-        Text(
-          '${value.toStringAsFixed(0)}g',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
-        ),
-      ],
-    );
   }
 }

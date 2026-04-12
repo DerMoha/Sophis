@@ -4,8 +4,6 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../models/food_entry.dart';
-import '../../../models/nutrition_goals.dart';
-import '../../../models/nutrition_totals.dart';
 import '../../../services/nutrition_provider.dart';
 import 'food_diary/food_diary_vm.dart';
 import '../theme/app_theme.dart';
@@ -90,7 +88,6 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final selectedDate = _getDateForOffset(_selectedDayOffset);
     final locale = Localizations.localeOf(context).toString();
 
@@ -123,7 +120,6 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
                         return _buildDayContent(
                           context,
                           theme,
-                          isDark,
                           l10n,
                           nutrition,
                           date,
@@ -239,7 +235,6 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
   Widget _buildDayContent(
     BuildContext context,
     ThemeData theme,
-    bool isDark,
     AppLocalizations l10n,
     NutritionProvider nutrition,
     DateTime date,
@@ -251,7 +246,14 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
       children: [
         // Nutrition summary (only if there are entries)
         if (!vm.isEmpty)
-          _buildNutritionSummary(theme, isDark, l10n, vm.totals, vm.goals),
+          NutritionSummaryCard(
+            title: l10n.summary,
+            proteinLabel: l10n.protein,
+            carbsLabel: l10n.carbs,
+            fatLabel: l10n.fat,
+            totals: vm.totals,
+            goals: vm.goals,
+          ),
 
         if (!vm.isEmpty) const SizedBox(height: 24),
 
@@ -264,9 +266,7 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
 
           return [
             _buildMealSection(
-              context,
               theme,
-              isDark,
               l10n,
               mealEntries,
               mealType.name,
@@ -316,153 +316,8 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
     );
   }
 
-  Widget _buildNutritionSummary(
-    ThemeData theme,
-    bool isDark,
-    AppLocalizations l10n,
-    NutritionTotals totals,
-    NutritionGoals? goals,
-  ) {
-    final calorieGoal = goals?.calories ?? 2000;
-    final calorieProgress = (totals.calories / calorieGoal).clamp(0.0, 1.5);
-    final isOverGoal = totals.calories > calorieGoal;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            theme.colorScheme.primary.withValues(alpha: 0.1),
-            theme.colorScheme.primary.withValues(alpha: 0.05),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-        border: Border.all(
-          color: theme.colorScheme.primary.withValues(alpha: 0.2),
-        ),
-      ),
-      child: Row(
-        children: [
-          // Calorie ring
-          SizedBox(
-            width: 80,
-            height: 80,
-            child: RadialProgress(
-              value: calorieProgress,
-              size: 80,
-              strokeWidth: 8,
-              color: isOverGoal ? AppTheme.error : theme.colorScheme.primary,
-              showGlow: true,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    totals.calories.toStringAsFixed(0),
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: isOverGoal ? AppTheme.error : null,
-                    ),
-                  ),
-                  Text(
-                    'kcal',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(width: 20),
-          // Macros
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.summary,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: AppTheme.spaceSM2),
-                Row(
-                  children: [
-                    _buildMiniMacro(
-                      theme,
-                      l10n.protein,
-                      totals.protein,
-                      AppTheme.protein,
-                    ),
-                    const SizedBox(width: 16),
-                    _buildMiniMacro(
-                      theme,
-                      l10n.carbs,
-                      totals.carbs,
-                      AppTheme.carbs,
-                    ),
-                    const SizedBox(width: 16),
-                    _buildMiniMacro(
-                      theme,
-                      l10n.fat,
-                      totals.fat,
-                      AppTheme.fat,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMiniMacro(
-    ThemeData theme,
-    String label,
-    double value,
-    Color color,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                color: color,
-                shape: BoxShape.circle,
-              ),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              '${value.toStringAsFixed(0)}g',
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildMealSection(
-    BuildContext context,
     ThemeData theme,
-    bool isDark,
     AppLocalizations l10n,
     List<FoodEntry> mealEntries,
     String title,
@@ -473,181 +328,30 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
         mealEntries.fold(0.0, (double sum, FoodEntry e) => sum + e.calories);
     final mealColor = color ?? theme.colorScheme.primary;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-        border: Border.all(
-          color: isDark
-              ? CachedColors.surfaceTintDark06
-              : CachedColors.surfaceTintLight04,
-        ),
-      ),
-      child: Column(
-        children: [
-          // Header
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: mealColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-                  ),
-                  child: Icon(
-                    icon,
-                    color: mealColor,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(title, style: theme.textTheme.titleMedium),
-                      if (totalCal > 0)
-                        Text(
-                          '${totalCal.toStringAsFixed(0)} kcal',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: mealColor,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        )
-                      else
-                        Text(
-                          l10n.noEntries,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
+    return MealCard(
+      title: title,
+      icon: icon,
+      calories: totalCal,
+      color: mealColor,
+      emptyLabel: l10n.noEntries,
+      entries: mealEntries
+          .map(
+            (entry) => KeyedSubtree(
+              key: ValueKey(entry.id),
+              child: _buildEntryTile(entry),
             ),
-          ),
-          // Entries
-          if (mealEntries.isNotEmpty) ...[
-            Divider(
-              height: 1,
-              color: isDark
-                  ? CachedColors.surfaceTintDark06
-                  : CachedColors.surfaceTintLight04,
-            ),
-            ...mealEntries.map(
-              (entry) => KeyedSubtree(
-                key: ValueKey(entry.id),
-                child: _buildEntryTile(theme, entry),
-              ),
-            ),
-          ],
-        ],
-      ),
+          )
+          .toList(),
     );
   }
 
-  Widget _buildEntryTile(ThemeData theme, FoodEntry entry) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  entry.name,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    _MacroChip(
-                      label: 'P',
-                      value: entry.protein,
-                      color: AppTheme.protein,
-                    ),
-                    const SizedBox(width: 8),
-                    _MacroChip(
-                      label: 'C',
-                      value: entry.carbs,
-                      color: AppTheme.carbs,
-                    ),
-                    const SizedBox(width: 8),
-                    _MacroChip(
-                      label: 'F',
-                      value: entry.fat,
-                      color: AppTheme.fat,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          Text(
-            entry.calories.toStringAsFixed(0),
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Text(
-            ' kcal',
-            style: theme.textTheme.bodySmall,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Small macro label chip
-class _MacroChip extends StatelessWidget {
-  final String label;
-  final double value;
-  final Color color;
-
-  const _MacroChip({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(AppTheme.radiusXS),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            label,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: color,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(width: 2),
-          Text(
-            value.toStringAsFixed(0),
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: color,
-            ),
-          ),
-        ],
-      ),
+  Widget _buildEntryTile(FoodEntry entry) {
+    return FoodEntryTile(
+      name: entry.name,
+      calories: entry.calories,
+      protein: entry.protein,
+      carbs: entry.carbs,
+      fat: entry.fat,
     );
   }
 }
