@@ -7,7 +7,6 @@ import 'package:sophis/services/brocade_service.dart';
 import 'package:sophis/services/database_service.dart';
 import 'package:sophis/services/openfoodfacts_service.dart';
 import 'package:sophis/services/service_result.dart';
-import 'package:drift/drift.dart' hide isNull, isNotNull;
 
 class MockDatabaseService extends Mock implements DatabaseService {}
 
@@ -89,8 +88,7 @@ void main() {
           .thenAnswer((_) async => null);
       when(() => mockOff.lookupBarcodeDe(testBarcode))
           .thenAnswer((_) async => testFoodItem);
-      when(() => mockDb.upsertBarcodeCache(any()))
-          .thenAnswer((_) async {});
+      when(() => mockDb.upsertBarcodeCache(any())).thenAnswer((_) async {});
 
       final result = await service.lookup(testBarcode);
 
@@ -107,8 +105,7 @@ void main() {
           .thenAnswer((_) async => null);
       when(() => mockOff.lookupBarcode(testBarcode))
           .thenAnswer((_) async => testFoodItem);
-      when(() => mockDb.upsertBarcodeCache(any()))
-          .thenAnswer((_) async {});
+      when(() => mockDb.upsertBarcodeCache(any())).thenAnswer((_) async {});
 
       final result = await service.lookup(testBarcode);
 
@@ -164,8 +161,7 @@ void main() {
       when(() => mockOff.lookupBarcode(testBarcode))
           .thenAnswer((_) async => null);
       when(() => mockBrocade.lookup(testBarcode)).thenAnswer(
-        (_) async =>
-            const Failure(ServiceErrorType.network, 'No connection'),
+        (_) async => const Failure(ServiceErrorType.network, 'No connection'),
       );
 
       final result = await service.lookup(testBarcode);

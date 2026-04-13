@@ -96,17 +96,15 @@ void main() {
       const todayTotals = NutritionTotals(calories: 1500);
       const burnedCalories = 300.0;
 
-      final remaining =
-          goals.calories - todayTotals.calories + burnedCalories;
+      final remaining = goals.calories - todayTotals.calories + burnedCalories;
       expect(remaining, equals(800));
     });
 
     test('remaining calories when no goals returns zero equivalent', () {
       // Simulates NutritionProvider.getRemainingCalories() when _goals is null
-      NutritionGoals? goals;
-      double result;
-      result = 0;
-          expect(result, equals(0));
+      const result = 0.0;
+
+      expect(result, equals(0));
     });
   });
 }

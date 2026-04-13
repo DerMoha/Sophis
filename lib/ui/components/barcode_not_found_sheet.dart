@@ -9,6 +9,7 @@ import '../../models/serving_size.dart';
 import '../../services/barcode_lookup_service.dart';
 import '../../services/gemini_food_service.dart';
 import '../../services/settings_provider.dart';
+import 'settings/settings_tiles.dart';
 import '../theme/app_theme.dart';
 import 'edit_product_sheet.dart';
 
@@ -242,10 +243,9 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
             child: Column(
               children: [
                 // Search by name
-                _buildOptionTile(
-                  context,
-                  icon: Icons.search_outlined,
+                NavigationTile(
                   title: l10n.searchByName,
+                  icon: Icons.search_outlined,
                   onTap: () {
                     Navigator.pop(context);
                     widget.onSearchByName();
@@ -254,20 +254,18 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
                 const SizedBox(height: AppTheme.spaceSM2),
 
                 // Scan nutrition label
-                _buildOptionTile(
-                  context,
-                  icon: Icons.document_scanner_outlined,
+                DataActionTile(
                   title: l10n.scanNutritionLabel,
+                  icon: Icons.document_scanner_outlined,
                   isLoading: _isAnalyzing,
-                  onTap: _isAnalyzing ? null : _scanNutritionLabel,
+                  onTap: _scanNutritionLabel,
                 ),
                 const SizedBox(height: AppTheme.spaceSM2),
 
                 // Enter manually
-                _buildOptionTile(
-                  context,
-                  icon: Icons.edit_outlined,
+                NavigationTile(
                   title: l10n.enterManually,
+                  icon: Icons.edit_outlined,
                   onTap: _enterManually,
                 ),
               ],
@@ -278,65 +276,6 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
             height: MediaQuery.of(context).padding.bottom + 24,
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildOptionTile(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    VoidCallback? onTap,
-    bool isLoading = false,
-  }) {
-    final theme = Theme.of(context);
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: theme.colorScheme.outline.withValues(alpha: 0.1),
-            ),
-            borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(AppTheme.radiusXS),
-                ),
-                child: isLoading
-                    ? Padding(
-                        padding: const EdgeInsets.all(6),
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: theme.colorScheme.primary,
-                        ),
-                      )
-                    : Icon(icon, size: 18, color: theme.colorScheme.primary),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  title,
-                  style: theme.textTheme.titleSmall,
-                ),
-              ),
-              Icon(
-                Icons.chevron_right,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
