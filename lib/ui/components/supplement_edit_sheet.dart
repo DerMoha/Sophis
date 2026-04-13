@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../l10n/generated/app_localizations.dart';
 import '../../models/supplement.dart';
 import '../../services/supplements_provider.dart';
 import '../../utils/time_utils.dart';
@@ -49,6 +50,7 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final accentColor = theme.colorScheme.primary;
     final safeAreaBottom = MediaQuery.of(context).padding.bottom;
@@ -64,9 +66,21 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
               iconColor: accentColor,
               iconBoxSize: 48,
               iconSize: 24,
-              title: isEditing ? 'Edit Supplement' : 'Add Supplement',
+              title: l10n.supplements,
             ),
-            const SizedBox(height: 24),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 10, 24, 0),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  isEditing ? l10n.saveChanges : l10n.trackSupplementsSubtitle,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
 
             // Form
             Padding(
@@ -75,175 +89,284 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Name field
-                  Text(
-                    'Name',
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest
+                          .withValues(alpha: 0.28),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+                      border: Border.all(
+                        color:
+                            theme.colorScheme.outline.withValues(alpha: 0.08),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l10n.name,
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        TextField(
+                          controller: _nameController,
+                          autofocus: !isEditing,
+                          decoration: InputDecoration(
+                            hintText: 'e.g., Omega-3, Vitamin C',
+                            filled: true,
+                            fillColor: theme.colorScheme.surface,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(
+                                AppTheme.radiusMD,
+                              ),
+                              borderSide: BorderSide(
+                                color: _hasError
+                                    ? theme.colorScheme.error
+                                    : Colors.transparent,
+                                width: 2,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(
+                                AppTheme.radiusMD,
+                              ),
+                              borderSide: BorderSide(
+                                color: _hasError
+                                    ? theme.colorScheme.error
+                                    : Colors.transparent,
+                                width: 2,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(
+                                AppTheme.radiusMD,
+                              ),
+                              borderSide: BorderSide(
+                                color: _hasError
+                                    ? theme.colorScheme.error
+                                    : accentColor,
+                                width: 2,
+                              ),
+                            ),
+                          ),
+                          onChanged: (value) {
+                            if (_hasError && value.isNotEmpty) {
+                              setState(() => _hasError = false);
+                            }
+                          },
+                        ),
+                        if (_hasError)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8, left: 12),
+                            child: Text(
+                              'Name cannot be empty',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.error,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _nameController,
-                    autofocus: !isEditing,
-                    decoration: InputDecoration(
-                      hintText: 'e.g., Omega-3, Vitamin C',
-                      filled: true,
-                      fillColor: theme.colorScheme.surfaceContainerHighest,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                        borderSide: BorderSide(
-                          color: _hasError
-                              ? theme.colorScheme.error
-                              : Colors.transparent,
-                          width: 2,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                        borderSide: BorderSide(
-                          color: _hasError
-                              ? theme.colorScheme.error
-                              : Colors.transparent,
-                          width: 2,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                        borderSide: BorderSide(
-                          color:
-                              _hasError ? theme.colorScheme.error : accentColor,
-                          width: 2,
-                        ),
-                      ),
-                    ),
-                    onChanged: (value) {
-                      if (_hasError && value.isNotEmpty) {
-                        setState(() => _hasError = false);
-                      }
-                    },
-                  ),
-                  if (_hasError)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8, left: 12),
-                      child: Text(
-                        'Name cannot be empty',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.error,
-                        ),
-                      ),
-                    ),
                   const SizedBox(height: 24),
 
                   // Reminder time
-                  Text(
-                    'Reminder Time',
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  GestureDetector(
-                    onTap: _pickTime,
-                    child: Container(
-                      padding: const EdgeInsets.all(AppTheme.spaceMD),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.alarm_rounded,
-                            color: accentColor,
-                            size: 24,
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: _pickTime,
+                      borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+                      child: AnimatedContainer(
+                        duration: AppTheme.animFast,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: accentColor.withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.radiusLG,
                           ),
-                          const SizedBox(width: 12),
-                          Text(
-                            TimeUtils.formatTimeOfDay(
-                              context,
-                              _reminderTime,
+                          border: Border.all(
+                            color: accentColor.withValues(alpha: 0.14),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: accentColor.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(
+                                  AppTheme.radiusSM,
+                                ),
+                              ),
+                              child: Icon(
+                                Icons.alarm_rounded,
+                                color: accentColor,
+                                size: 20,
+                              ),
                             ),
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.w600,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    l10n.reminderTime,
+                                    style:
+                                        theme.textTheme.labelMedium?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    TimeUtils.formatTimeOfDay(
+                                      context,
+                                      _reminderTime,
+                                    ),
+                                    style:
+                                        theme.textTheme.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                          const Spacer(),
-                          Icon(
-                            Icons.edit_rounded,
-                            color: theme.textTheme.bodySmall?.color,
-                            size: 20,
-                          ),
-                        ],
+                            Icon(
+                              Icons.chevron_right_rounded,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 24),
 
                   // Enabled switch
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Enable Reminder',
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
+                  AnimatedContainer(
+                    duration: AppTheme.animFast,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: _enabled
+                          ? accentColor.withValues(alpha: 0.08)
+                          : theme.colorScheme.surfaceContainerHighest
+                              .withValues(alpha: 0.25),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+                      border: Border.all(
+                        color:
+                            (_enabled ? accentColor : theme.colorScheme.outline)
+                                .withValues(alpha: 0.12),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: (_enabled
+                                    ? accentColor
+                                    : theme.colorScheme.onSurfaceVariant)
+                                .withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(
+                              AppTheme.radiusSM,
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Get daily notifications',
-                              style: theme.textTheme.bodySmall,
-                            ),
-                          ],
+                          ),
+                          child: Icon(
+                            _enabled
+                                ? Icons.notifications_active_outlined
+                                : Icons.notifications_off_outlined,
+                            color: _enabled
+                                ? accentColor
+                                : theme.colorScheme.onSurfaceVariant,
+                            size: 20,
+                          ),
                         ),
-                      ),
-                      Switch(
-                        value: _enabled,
-                        onChanged: (value) {
-                          setState(() => _enabled = value);
-                        },
-                        activeThumbColor: accentColor,
-                      ),
-                    ],
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Enable Reminder',
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Get daily notifications',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Switch(
+                          value: _enabled,
+                          onChanged: (value) {
+                            setState(() => _enabled = value);
+                          },
+                          activeThumbColor: accentColor,
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 32),
 
-                  // Save button
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: _save,
-                      style: FilledButton.styleFrom(
-                        backgroundColor: accentColor,
-                        foregroundColor: theme.colorScheme.onPrimary,
-                        padding: const EdgeInsets.symmetric(
-                          vertical: AppTheme.spaceMD,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(AppTheme.radiusMD),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: AppTheme.spaceMD,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(
+                                AppTheme.radiusMD,
+                              ),
+                            ),
+                            side: BorderSide(
+                              color: theme.colorScheme.outline.withValues(
+                                alpha: 0.18,
+                              ),
+                            ),
+                          ),
+                          child: Text(l10n.cancel),
                         ),
                       ),
-                      child: Text(
-                        isEditing ? 'Save Changes' : 'Add Supplement',
-                        style: theme.textTheme.labelLarge,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 2,
+                        child: FilledButton(
+                          onPressed: _save,
+                          style: FilledButton.styleFrom(
+                            backgroundColor: accentColor,
+                            foregroundColor: theme.colorScheme.onPrimary,
+                            padding: const EdgeInsets.symmetric(
+                              vertical: AppTheme.spaceMD,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(
+                                AppTheme.radiusMD,
+                              ),
+                            ),
+                          ),
+                          child: Text(
+                            isEditing ? l10n.saveChanges : l10n.save,
+                            style: theme.textTheme.labelLarge,
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-
-                  // Cancel button
-                  if (!isEditing)
-                    SizedBox(
-                      width: double.infinity,
-                      child: TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('Cancel'),
-                      ),
-                    ),
                 ],
               ),
             ),

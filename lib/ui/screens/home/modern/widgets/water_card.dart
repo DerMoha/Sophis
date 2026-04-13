@@ -29,8 +29,15 @@ class WaterCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final progress = (waterTotal / waterGoal).clamp(0.0, 1.0);
+    final remainingWater = (waterGoal - waterTotal).clamp(0.0, double.infinity);
     final totalDisplay = UnitConverter.formatWater(waterTotal, unitSystem);
     final goalDisplay = UnitConverter.formatWater(waterGoal, unitSystem);
+    final remainingDisplay = UnitConverter.formatWaterShort(
+      remainingWater,
+      unitSystem,
+    );
+    final helperText =
+        progress >= 1 ? l10n.allDone : '$remainingDisplay ${l10n.remaining}';
 
     return GlassCard(
       onTap: () => _showWaterDetails(context),
@@ -41,6 +48,8 @@ class WaterCard extends StatelessWidget {
           _buildHeader(theme, l10n, totalDisplay, goalDisplay),
           const SizedBox(height: 16),
           FluidProgressBar(value: progress, color: AppTheme.water, height: 10),
+          const SizedBox(height: 10),
+          _buildProgressMeta(theme, progress, helperText),
           const SizedBox(height: 16),
           _buildButtons(context),
         ],
@@ -81,6 +90,43 @@ class WaterCard extends StatelessWidget {
           style: theme.textTheme.titleSmall?.copyWith(
             color: AppTheme.water,
             fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProgressMeta(
+    ThemeData theme,
+    double progress,
+    String helperText,
+  ) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: AppTheme.water.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(AppTheme.radiusFull),
+          ),
+          child: Text(
+            '${(progress * 100).round()}%',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: AppTheme.water,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            helperText,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w500,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],

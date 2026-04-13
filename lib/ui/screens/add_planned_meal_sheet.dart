@@ -107,12 +107,20 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                  border: Border.all(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.12),
+                  ),
                   borderRadius: BorderRadius.circular(AppTheme.radiusFull),
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
                     value: _selectedMealType,
                     isDense: true,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                    icon: Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: theme.colorScheme.primary,
+                    ),
                     items: mealTypes
                         .map(
                           (mealType) => DropdownMenuItem(
@@ -132,18 +140,38 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
             ),
 
             // Tabs
-            TabBar(
-              controller: _tabController,
-              tabs: [
-                Tab(text: l10n.recipes),
-                Tab(text: l10n.searchFood),
-                Tab(text: '📷 ${l10n.scan}'),
-                Tab(text: l10n.manualEntry),
-              ],
-              labelColor: theme.colorScheme.primary,
-              unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
-              indicatorColor: theme.colorScheme.primary,
-              isScrollable: true,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest.withValues(
+                    alpha: 0.45,
+                  ),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+                ),
+                child: TabBar(
+                  controller: _tabController,
+                  tabs: [
+                    Tab(text: l10n.recipes),
+                    Tab(text: l10n.searchFood),
+                    Tab(text: '📷 ${l10n.scan}'),
+                    Tab(text: l10n.manualEntry),
+                  ],
+                  labelColor: theme.colorScheme.primary,
+                  unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
+                  labelStyle: theme.textTheme.labelMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                  dividerColor: Colors.transparent,
+                  indicator: BoxDecoration(
+                    color: theme.colorScheme.surface,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                  ),
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  isScrollable: true,
+                ),
+              ),
             ),
 
             // Tab content
