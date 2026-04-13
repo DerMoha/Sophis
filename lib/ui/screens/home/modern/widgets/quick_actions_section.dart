@@ -99,13 +99,15 @@ class QuickActionsSection extends StatelessWidget {
           ? _buildCard(theme, actions[i + 1])
           : const SizedBox.shrink();
 
-      rows.add(Row(
-        children: [
-          Expanded(child: first),
-          const SizedBox(width: 12),
-          Expanded(child: second is SizedBox ? second : second),
-        ],
-      ),);
+      rows.add(
+        Row(
+          children: [
+            Expanded(child: first),
+            const SizedBox(width: 12),
+            Expanded(child: second is SizedBox ? second : second),
+          ],
+        ),
+      );
 
       if (i + 2 < actions.length) {
         rows.add(const SizedBox(height: AppTheme.spaceSM2));

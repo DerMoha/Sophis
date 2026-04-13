@@ -58,7 +58,7 @@ class Achievements {
   static const weekWarrior = 'week_warrior';
   static const twoWeekStreak = 'two_week_streak';
   static const monthlyMaster = 'monthly_master';
-  static const centurion = 'centurion';  // 100 days total
+  static const centurion = 'centurion'; // 100 days total
 
   static const List<String> all = [
     firstLog,

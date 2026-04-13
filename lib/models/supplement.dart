@@ -1,7 +1,7 @@
 class Supplement {
   final String id;
   final String name;
-  final String? reminderTime;  // "HH:mm" format
+  final String? reminderTime; // "HH:mm" format
   final bool enabled;
   final int sortOrder;
   final DateTime createdAt;

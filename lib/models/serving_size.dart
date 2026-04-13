@@ -27,7 +27,10 @@ class ServingSize {
       );
 
   /// Generate fractional serving options from a base serving
-  static List<ServingSize> generateFractions(String baseName, double baseGrams) {
+  static List<ServingSize> generateFractions(
+    String baseName,
+    double baseGrams,
+  ) {
     final multipliers = [0.25, 0.5, 0.75, 1.0, 1.5, 2.0];
     final fractionNames = {
       0.25: '1/4',

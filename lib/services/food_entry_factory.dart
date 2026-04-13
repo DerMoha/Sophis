@@ -51,4 +51,34 @@ class FoodEntryFactory {
       timestamp: timestamp,
     );
   }
+
+  static FoodItem createCustomFood({
+    required String name,
+    required double calories,
+    required double protein,
+    required double carbs,
+    required double fat,
+    String? id,
+  }) {
+    return FoodItem(
+      id: id ?? 'custom_${_uuid.v4()}',
+      name: name,
+      category: 'custom',
+      caloriesPer100g: calories,
+      proteinPer100g: protein,
+      carbsPer100g: carbs,
+      fatPer100g: fat,
+    );
+  }
+
+  static FoodItem customFoodFromEntry(FoodEntry entry, {String? id}) {
+    return createCustomFood(
+      id: id,
+      name: entry.name,
+      calories: entry.calories,
+      protein: entry.protein,
+      carbs: entry.carbs,
+      fat: entry.fat,
+    );
+  }
 }

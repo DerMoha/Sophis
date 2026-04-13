@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+
 import '../models/app_settings.dart';
 import '../models/custom_meal_type.dart';
+import '../utils/time_utils.dart';
 import 'storage_service.dart';
 import 'notification_service.dart';
 import 'health_service.dart';
@@ -75,25 +77,33 @@ class SettingsProvider extends ChangeNotifier {
     return Locale(_settings.localeOverride!);
   }
 
-  Future<void> setThemeMode(ThemeMode mode) async {
-    _settings = _settings.copyWith(themeMode: mode);
+  Future<void> _persistSettings({
+    required AppSettings settings,
+    bool updateNotifications = false,
+  }) async {
+    _settings = settings;
     await _storage.saveSettings(_settings);
+    if (updateNotifications) {
+      await _updateNotifications();
+    }
     notifyListeners();
+  }
+
+  Future<void> setThemeMode(ThemeMode mode) async {
+    await _persistSettings(settings: _settings.copyWith(themeMode: mode));
   }
 
   Future<void> setLocale(String? localeCode) async {
-    _settings = _settings.copyWith(
-      localeOverride: localeCode,
-      clearLocale: localeCode == null,
+    await _persistSettings(
+      settings: _settings.copyWith(
+        localeOverride: localeCode,
+        clearLocale: localeCode == null,
+      ),
     );
-    await _storage.saveSettings(_settings);
-    notifyListeners();
   }
 
   Future<void> setAIMode(AIMode mode) async {
-    _settings = _settings.copyWith(aiMode: mode);
-    await _storage.saveSettings(_settings);
-    notifyListeners();
+    await _persistSettings(settings: _settings.copyWith(aiMode: mode));
   }
 
   Future<void> setGeminiApiKey(String? key) async {
@@ -110,44 +120,40 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   Future<void> setWaterGoal(double ml) async {
-    _settings = _settings.copyWith(waterGoalMl: ml);
-    await _storage.saveSettings(_settings);
-    notifyListeners();
+    await _persistSettings(settings: _settings.copyWith(waterGoalMl: ml));
   }
 
   Future<void> setUnitSystem(UnitSystem system) async {
-    _settings = _settings.copyWith(unitSystem: system);
-    await _storage.saveSettings(_settings);
-    notifyListeners();
+    await _persistSettings(settings: _settings.copyWith(unitSystem: system));
   }
 
   Future<void> setAccentColor(int colorValue) async {
-    _settings = _settings.copyWith(accentColorValue: colorValue);
-    await _storage.saveSettings(_settings);
-    notifyListeners();
+    await _persistSettings(
+      settings: _settings.copyWith(accentColorValue: colorValue),
+    );
   }
 
   bool get showMealMacros => _settings.showMealMacros;
   bool get showSupplements => _settings.showSupplements;
 
   Future<void> setShowMealMacros(bool enabled) async {
-    _settings = _settings.copyWith(showMealMacros: enabled);
-    await _storage.saveSettings(_settings);
-    notifyListeners();
+    await _persistSettings(
+      settings: _settings.copyWith(showMealMacros: enabled),
+    );
   }
 
   Future<void> setShowSupplements(bool enabled) async {
-    _settings = _settings.copyWith(showSupplements: enabled);
-    await _storage.saveSettings(_settings);
-    notifyListeners();
+    await _persistSettings(
+      settings: _settings.copyWith(showSupplements: enabled),
+    );
   }
 
   QuickActionSize get quickActionSize => _settings.quickActionSize;
 
   Future<void> setQuickActionSize(QuickActionSize size) async {
-    _settings = _settings.copyWith(quickActionSize: size);
-    await _storage.saveSettings(_settings);
-    notifyListeners();
+    await _persistSettings(
+      settings: _settings.copyWith(quickActionSize: size),
+    );
   }
 
   Future<void> setRemindersEnabled(bool enabled) async {
@@ -160,40 +166,50 @@ class SettingsProvider extends ChangeNotifier {
       }
     }
 
-    _settings = _settings.copyWith(remindersEnabled: enabled);
-    await _storage.saveSettings(_settings);
-    await _updateNotifications();
-    notifyListeners();
+    await _persistSettings(
+      settings: _settings.copyWith(remindersEnabled: enabled),
+      updateNotifications: true,
+    );
   }
 
-  Future<void> setBreakfastReminder(String? time) async {
-    _settings = _settings.copyWith(
-      breakfastReminderTime: time,
-      clearBreakfast: time == null,
+  Future<void> _setMealReminder({
+    required String? time,
+    required AppSettings Function(AppSettings settings) buildSettings,
+  }) async {
+    await _persistSettings(
+      settings: buildSettings(_settings),
+      updateNotifications: true,
     );
-    await _storage.saveSettings(_settings);
-    await _updateNotifications();
-    notifyListeners();
+  }
+
+  Future<void> setBreakfastReminder(String? time) {
+    return _setMealReminder(
+      time: time,
+      buildSettings: (settings) => settings.copyWith(
+        breakfastReminderTime: time,
+        clearBreakfast: time == null,
+      ),
+    );
   }
 
   Future<void> setLunchReminder(String? time) async {
-    _settings = _settings.copyWith(
-      lunchReminderTime: time,
-      clearLunch: time == null,
+    await _setMealReminder(
+      time: time,
+      buildSettings: (settings) => settings.copyWith(
+        lunchReminderTime: time,
+        clearLunch: time == null,
+      ),
     );
-    await _storage.saveSettings(_settings);
-    await _updateNotifications();
-    notifyListeners();
   }
 
   Future<void> setDinnerReminder(String? time) async {
-    _settings = _settings.copyWith(
-      dinnerReminderTime: time,
-      clearDinner: time == null,
+    await _setMealReminder(
+      time: time,
+      buildSettings: (settings) => settings.copyWith(
+        dinnerReminderTime: time,
+        clearDinner: time == null,
+      ),
     );
-    await _storage.saveSettings(_settings);
-    await _updateNotifications();
-    notifyListeners();
   }
 
   /// Update scheduled notifications based on current settings
@@ -218,9 +234,9 @@ class SettingsProvider extends ChangeNotifier {
       }
     }
 
-    _settings = _settings.copyWith(healthSyncEnabled: enabled);
-    await _storage.saveSettings(_settings);
-    notifyListeners();
+    await _persistSettings(
+      settings: _settings.copyWith(healthSyncEnabled: enabled),
+    );
     return true;
   }
 
@@ -231,9 +247,9 @@ class SettingsProvider extends ChangeNotifier {
       if (!granted) return false;
     }
 
-    _settings = _settings.copyWith(healthWeightSyncEnabled: enabled);
-    await _storage.saveSettings(_settings);
-    notifyListeners();
+    await _persistSettings(
+      settings: _settings.copyWith(healthWeightSyncEnabled: enabled),
+    );
     return true;
   }
 
@@ -244,9 +260,9 @@ class SettingsProvider extends ChangeNotifier {
       if (!granted) return false;
     }
 
-    _settings = _settings.copyWith(healthNutritionSyncEnabled: enabled);
-    await _storage.saveSettings(_settings);
-    notifyListeners();
+    await _persistSettings(
+      settings: _settings.copyWith(healthNutritionSyncEnabled: enabled),
+    );
     return true;
   }
 
@@ -259,14 +275,14 @@ class SettingsProvider extends ChangeNotifier {
       ];
 
   Future<void> setWaterSizes(int size1, int size2, int size3, int size4) async {
-    _settings = _settings.copyWith(
-      waterSize1: size1,
-      waterSize2: size2,
-      waterSize3: size3,
-      waterSize4: size4,
+    await _persistSettings(
+      settings: _settings.copyWith(
+        waterSize1: size1,
+        waterSize2: size2,
+        waterSize3: size3,
+        waterSize4: size4,
+      ),
     );
-    await _storage.saveSettings(_settings);
-    notifyListeners();
   }
 
   // Dashboard card customization
@@ -282,9 +298,7 @@ class SettingsProvider extends ChangeNotifier {
       dashboardCards.where((c) => c.visible).toList();
 
   Future<void> setDashboardCards(List<DashboardCard> cards) async {
-    _settings = _settings.copyWith(dashboardCards: cards);
-    await _storage.saveSettings(_settings);
-    notifyListeners();
+    await _persistSettings(settings: _settings.copyWith(dashboardCards: cards));
   }
 
   Future<void> toggleDashboardCardVisibility(String id) async {
@@ -410,17 +424,15 @@ class SettingsProvider extends ChangeNotifier {
     final types = mealTypes;
     for (var i = 0; i < types.length; i++) {
       final meal = types[i];
-      if (meal.reminderTime != null) {
-        final parts = meal.reminderTime!.split(':');
-        if (parts.length == 2) {
-          await _notifications.scheduleMealReminder(
-            id: i,
-            title: 'Time for ${meal.name}!',
-            body: 'Don\'t forget to log your ${meal.name.toLowerCase()}',
-            hour: int.tryParse(parts[0]) ?? 0,
-            minute: int.tryParse(parts[1]) ?? 0,
-          );
-        }
+      final reminderTime = TimeUtils.parseStoredTime(meal.reminderTime);
+      if (reminderTime != null) {
+        await _notifications.scheduleMealReminder(
+          id: i,
+          title: 'Time for ${meal.name}!',
+          body: 'Don\'t forget to log your ${meal.name.toLowerCase()}',
+          hour: reminderTime.hour,
+          minute: reminderTime.minute,
+        );
       }
     }
   }

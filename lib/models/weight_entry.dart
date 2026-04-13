@@ -20,27 +20,28 @@ class WeightEntry {
     DateTime? timestamp,
     String? note,
     String? source,
-  }) => WeightEntry(
-    id: id ?? this.id,
-    weightKg: weightKg ?? this.weightKg,
-    timestamp: timestamp ?? this.timestamp,
-    note: note ?? this.note,
-    source: source ?? this.source,
-  );
+  }) =>
+      WeightEntry(
+        id: id ?? this.id,
+        weightKg: weightKg ?? this.weightKg,
+        timestamp: timestamp ?? this.timestamp,
+        note: note ?? this.note,
+        source: source ?? this.source,
+      );
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'weightKg': weightKg,
-    'timestamp': timestamp.toIso8601String(),
-    'note': note,
-    'source': source,
-  };
+        'id': id,
+        'weightKg': weightKg,
+        'timestamp': timestamp.toIso8601String(),
+        'note': note,
+        'source': source,
+      };
 
   factory WeightEntry.fromJson(Map<String, dynamic> json) => WeightEntry(
-    id: json['id'],
-    weightKg: (json['weightKg'] as num).toDouble(),
-    timestamp: DateTime.parse(json['timestamp']),
-    note: json['note'],
-    source: json['source'] as String? ?? 'manual',
-  );
+        id: json['id'],
+        weightKg: (json['weightKg'] as num).toDouble(),
+        timestamp: DateTime.parse(json['timestamp']),
+        note: json['note'],
+        source: json['source'] as String? ?? 'manual',
+      );
 }

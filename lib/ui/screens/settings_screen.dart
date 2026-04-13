@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
+
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../services/settings_provider.dart';
 import '../theme/app_theme.dart';
@@ -45,6 +47,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final Map<_SettingsSection, bool> _expandedSections = {
     for (final section in _SettingsSection.values) section: false,
   };
+  late final Future<String> _versionLabelFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _versionLabelFuture = _loadVersionLabel();
+  }
+
+  Future<String> _loadVersionLabel() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    if (packageInfo.buildNumber.isEmpty) {
+      return 'v${packageInfo.version}';
+    }
+    return 'v${packageInfo.version}+${packageInfo.buildNumber}';
+  }
 
   bool _isSectionExpanded(_SettingsSection section) =>
       _expandedSections[section] ?? false;
@@ -179,7 +196,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text('v1.0.0', style: theme.textTheme.bodySmall),
+                            FutureBuilder<String>(
+                              future: _versionLabelFuture,
+                              builder: (context, snapshot) {
+                                final versionLabel = snapshot.data ??
+                                    'v${const String.fromEnvironment('APP_VERSION', defaultValue: '1.0.0')}';
+                                return Text(
+                                  versionLabel,
+                                  style: theme.textTheme.bodySmall,
+                                );
+                              },
+                            ),
                           ],
                         ),
                       ),

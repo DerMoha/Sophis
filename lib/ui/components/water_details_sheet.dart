@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+import '../../l10n/generated/app_localizations.dart';
 import '../../models/app_settings.dart';
 import '../../models/water_entry.dart';
 import '../../services/nutrition_provider.dart';
 import '../../services/settings_provider.dart';
+import '../../utils/time_utils.dart';
 import '../theme/app_theme.dart';
 import '../theme/animations.dart';
+import 'modal_sheet.dart';
 import '../../utils/unit_converter.dart';
-import '../../l10n/generated/app_localizations.dart';
 
 class WaterDetailsSheet extends StatefulWidget {
   const WaterDetailsSheet({super.key});
@@ -47,72 +50,17 @@ class _WaterDetailsSheetState extends State<WaterDetailsSheet> {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
 
-    final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      padding: EdgeInsets.only(bottom: bottomPadding),
+    return ModalSheetSurface(
+      useSafeArea: false,
       child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Drag handle
-            Container(
-              margin: const EdgeInsets.only(top: 12),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.outline.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(AppTheme.radiusXS),
-              ),
-            ),
-
-            // Header
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 20, 16, 0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: AppTheme.water.withValues(alpha: 0.1),
-                          borderRadius:
-                              BorderRadius.circular(AppTheme.radiusSM),
-                        ),
-                        child: const Icon(
-                          Icons.water_drop_rounded,
-                          color: AppTheme.water,
-                          size: 22,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        l10n.water,
-                        style: theme.textTheme.headlineSmall,
-                      ),
-                    ],
-                  ),
-                  IconButton(
-                    icon: Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(AppTheme.radiusXS),
-                      ),
-                      child: const Icon(Icons.close, size: 18),
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
+            const ModalSheetHandle(),
+            ModalSheetHeader(
+              icon: Icons.water_drop_rounded,
+              iconColor: AppTheme.water,
+              title: l10n.water,
             ),
             const SizedBox(height: 24),
 
@@ -326,7 +274,10 @@ class _WaterDetailsSheetState extends State<WaterDetailsSheet> {
                                     ),
                                   ),
                                   Text(
-                                    _formatTime(entry.timestamp),
+                                    TimeUtils.formatDateTimeTime(
+                                      context,
+                                      entry.timestamp,
+                                    ),
                                     style: theme.textTheme.bodySmall?.copyWith(
                                       color: theme.colorScheme.onSurfaceVariant,
                                     ),
@@ -355,14 +306,6 @@ class _WaterDetailsSheetState extends State<WaterDetailsSheet> {
         ),
       ),
     );
-  }
-
-  String _formatTime(DateTime time) {
-    final hour =
-        time.hour > 12 ? time.hour - 12 : (time.hour == 0 ? 12 : time.hour);
-    final minute = time.minute.toString().padLeft(2, '0');
-    final period = time.hour >= 12 ? 'PM' : 'AM';
-    return '$hour:$minute $period';
   }
 }
 

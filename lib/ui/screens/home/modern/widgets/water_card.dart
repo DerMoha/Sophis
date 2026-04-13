@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../../../../../l10n/generated/app_localizations.dart';
 import '../../../../../../models/app_settings.dart';
+import '../../../../../../services/settings_provider.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../theme/animations.dart';
 import '../../../../../../utils/unit_converter.dart';
@@ -86,22 +88,27 @@ class WaterCard extends StatelessWidget {
   }
 
   Widget _buildButtons(BuildContext context) {
+    final quickAddSizes = context.select<SettingsProvider, List<int>>(
+      (settings) => settings.waterSizes,
+    );
+
     return Row(
-      children: [
-        Expanded(
-          child: WaterDropButton(
-            label: '+250ml',
-            onPressed: () => context.read<NutritionProvider>().addWater(250),
+      children: quickAddSizes.take(2).map((amountMl) {
+        return Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(
+              right: amountMl == quickAddSizes.first ? AppTheme.spaceSM : 0,
+            ),
+            child: WaterDropButton(
+              label:
+                  '+${UnitConverter.formatWaterShort(amountMl.toDouble(), unitSystem)}',
+              onPressed: () => context
+                  .read<NutritionProvider>()
+                  .addWater(amountMl.toDouble()),
+            ),
           ),
-        ),
-        const SizedBox(width: AppTheme.spaceSM),
-        Expanded(
-          child: WaterDropButton(
-            label: '+500ml',
-            onPressed: () => context.read<NutritionProvider>().addWater(500),
-          ),
-        ),
-      ],
+        );
+      }).toList(),
     );
   }
 

@@ -242,7 +242,10 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
                         final day = data[groupIndex];
                         return BarTooltipItem(
                           '${DateFormat('MMM d').format(day.date)}\n${getValue(day).toStringAsFixed(0)} $unit',
-                          TextStyle(color: theme.colorScheme.onPrimary, fontSize: 12),
+                          TextStyle(
+                            color: theme.colorScheme.onPrimary,
+                            fontSize: 12,
+                          ),
                         );
                       },
                     ),

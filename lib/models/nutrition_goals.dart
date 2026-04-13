@@ -20,28 +20,29 @@ class NutritionGoals {
   static double _defaultFat(double cal) => (cal * 0.30) / 9;
 
   Map<String, dynamic> toJson() => {
-    'calories': calories,
-    'protein': protein,
-    'carbs': carbs,
-    'fat': fat,
-  };
+        'calories': calories,
+        'protein': protein,
+        'carbs': carbs,
+        'fat': fat,
+      };
 
   factory NutritionGoals.fromJson(Map<String, dynamic> json) => NutritionGoals(
-    calories: (json['calories'] as num).toDouble(),
-    protein: (json['protein'] as num?)?.toDouble(),
-    carbs: (json['carbs'] as num?)?.toDouble(),
-    fat: (json['fat'] as num?)?.toDouble(),
-  );
+        calories: (json['calories'] as num).toDouble(),
+        protein: (json['protein'] as num?)?.toDouble(),
+        carbs: (json['carbs'] as num?)?.toDouble(),
+        fat: (json['fat'] as num?)?.toDouble(),
+      );
 
   NutritionGoals copyWith({
     double? calories,
     double? protein,
     double? carbs,
     double? fat,
-  }) => NutritionGoals(
-    calories: calories ?? this.calories,
-    protein: protein ?? this.protein,
-    carbs: carbs ?? this.carbs,
-    fat: fat ?? this.fat,
-  );
+  }) =>
+      NutritionGoals(
+        calories: calories ?? this.calories,
+        protein: protein ?? this.protein,
+        carbs: carbs ?? this.carbs,
+        fat: fat ?? this.fat,
+      );
 }

@@ -1,5 +1,7 @@
 enum Gender { male, female, other }
+
 enum ActivityLevel { sedentary, light, moderate, active, veryActive }
+
 enum Goal { lose, maintain, gain }
 
 /// User profile for TDEE calculation
@@ -65,26 +67,26 @@ class UserProfile {
   }
 
   Map<String, dynamic> toJson() => {
-    'weight': weight,
-    'height': height,
-    'age': age,
-    'gender': gender?.index,
-    'activityLevel': activityLevel?.index,
-    'goal': goal?.index,
-    'targetWeight': targetWeight,
-  };
+        'weight': weight,
+        'height': height,
+        'age': age,
+        'gender': gender?.index,
+        'activityLevel': activityLevel?.index,
+        'goal': goal?.index,
+        'targetWeight': targetWeight,
+      };
 
   factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
-    weight: (json['weight'] as num?)?.toDouble(),
-    height: (json['height'] as num?)?.toDouble(),
-    age: json['age'] as int?,
-    gender: json['gender'] != null ? Gender.values[json['gender']] : null,
-    activityLevel: json['activityLevel'] != null
-        ? ActivityLevel.values[json['activityLevel']]
-        : null,
-    goal: json['goal'] != null ? Goal.values[json['goal']] : null,
-    targetWeight: (json['targetWeight'] as num?)?.toDouble(),
-  );
+        weight: (json['weight'] as num?)?.toDouble(),
+        height: (json['height'] as num?)?.toDouble(),
+        age: json['age'] as int?,
+        gender: json['gender'] != null ? Gender.values[json['gender']] : null,
+        activityLevel: json['activityLevel'] != null
+            ? ActivityLevel.values[json['activityLevel']]
+            : null,
+        goal: json['goal'] != null ? Goal.values[json['goal']] : null,
+        targetWeight: (json['targetWeight'] as num?)?.toDouble(),
+      );
 
   UserProfile copyWith({
     double? weight,
@@ -94,13 +96,14 @@ class UserProfile {
     ActivityLevel? activityLevel,
     Goal? goal,
     double? targetWeight,
-  }) => UserProfile(
-    weight: weight ?? this.weight,
-    height: height ?? this.height,
-    age: age ?? this.age,
-    gender: gender ?? this.gender,
-    activityLevel: activityLevel ?? this.activityLevel,
-    goal: goal ?? this.goal,
-    targetWeight: targetWeight ?? this.targetWeight,
-  );
+  }) =>
+      UserProfile(
+        weight: weight ?? this.weight,
+        height: height ?? this.height,
+        age: age ?? this.age,
+        gender: gender ?? this.gender,
+        activityLevel: activityLevel ?? this.activityLevel,
+        goal: goal ?? this.goal,
+        targetWeight: targetWeight ?? this.targetWeight,
+      );
 }

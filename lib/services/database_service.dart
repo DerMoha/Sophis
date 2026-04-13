@@ -95,8 +95,7 @@ class BarcodeProducts extends Table {
   BoolColumn get isUserCorrected =>
       boolean().withDefault(const Constant(false))();
   DateTimeColumn get cachedAt => dateTime()();
-  TextColumn get source =>
-      text().withDefault(const Constant('api'))();
+  TextColumn get source => text().withDefault(const Constant('api'))();
 
   @override
   Set<Column> get primaryKey => {barcode};
@@ -545,8 +544,7 @@ class DatabaseService extends _$DatabaseService {
   }
 
   Future<void> deleteBarcodeCache(String barcode) async {
-    await (delete(barcodeProducts)
-          ..where((t) => t.barcode.equals(barcode)))
+    await (delete(barcodeProducts)..where((t) => t.barcode.equals(barcode)))
         .go();
   }
 

@@ -14,7 +14,8 @@ class AppTheme {
   static const Color accent = Color(0xFF6366F1); // Indigo - default
 
   // Semantic Colors - Organic, food-inspired
-  static const Color success = Color(0xFF059669); // Emerald green - fresh vegetables
+  static const Color success =
+      Color(0xFF059669); // Emerald green - fresh vegetables
   static const Color warning = Color(0xFFD97706); // Amber - honey, grains
   static const Color error = Color(0xFFDC2626); // Tomato red
   static const Color water = Color(0xFF0891B2); // Cyan - fresh water
@@ -295,8 +296,10 @@ class AppTheme {
         ),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        hintStyle:
-            GoogleFonts.plusJakartaSans(color: _lightTextSecondary, fontSize: 15),
+        hintStyle: GoogleFonts.plusJakartaSans(
+          color: _lightTextSecondary,
+          fontSize: 15,
+        ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -317,7 +320,8 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: accentColor,
-          side: BorderSide(color: accentColor.withValues(alpha: 0.3), width: 1.5),
+          side:
+              BorderSide(color: accentColor.withValues(alpha: 0.3), width: 1.5),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(radiusFull),
@@ -484,8 +488,10 @@ class AppTheme {
         ),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        hintStyle:
-            GoogleFonts.plusJakartaSans(color: _darkTextSecondary, fontSize: 15),
+        hintStyle: GoogleFonts.plusJakartaSans(
+          color: _darkTextSecondary,
+          fontSize: 15,
+        ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -506,7 +512,8 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: accentColor,
-          side: BorderSide(color: accentColor.withValues(alpha: 0.3), width: 1.5),
+          side:
+              BorderSide(color: accentColor.withValues(alpha: 0.3), width: 1.5),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(radiusFull),

@@ -107,7 +107,8 @@ class BarcodeLookupService {
         partialBrand: brocadeProduct.brand,
       );
     }
-    if (brocadeResult case Failure<BrocadeProduct>(errorType: final errorType)) {
+    if (brocadeResult
+        case Failure<BrocadeProduct>(errorType: final errorType)) {
       if (errorType != ServiceErrorType.network) {
         allNetworkErrors = false;
       }
@@ -196,7 +197,9 @@ class BarcodeLookupService {
             .map((s) => ServingSize.fromJson(s as Map<String, dynamic>))
             .toList();
       } catch (e) {
-        debugPrint('Failed to parse cached servings JSON for ${cached.barcode}: $e');
+        debugPrint(
+          'Failed to parse cached servings JSON for ${cached.barcode}: $e',
+        );
       }
     }
 

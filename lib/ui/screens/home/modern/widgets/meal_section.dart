@@ -1,18 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../../../../../l10n/generated/app_localizations.dart';
 import '../../../../../../models/food_entry.dart';
-import '../../../../../../models/shareable_meal.dart';
+import '../../../../../../services/nutrition_provider.dart';
 import '../../../../../../services/settings_provider.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../components/organic_components.dart';
-import '../../../../../../services/nutrition_provider.dart';
-import '../../../add_food_screen.dart';
-import '../../../food_search_screen.dart';
-import '../../../barcode_scanner_screen.dart';
-import '../../../ai_food_camera_screen.dart';
 import '../../../meal_detail_screen.dart';
-import '../../../share_meal_screen.dart';
+import '../../../shared/meal_action_helpers.dart';
 
 /// A meal section (e.g., Breakfast, Lunch) with food entries.
 class MealSection extends StatelessWidget {
@@ -130,7 +126,7 @@ class _MealSectionContent extends StatelessWidget {
               Icons.share_outlined,
               color: theme.colorScheme.onSurfaceVariant,
             ),
-            onPressed: () => _shareMeal(context, entries),
+            onPressed: () => shareMealEntries(context, entries, title: title),
             tooltip: l10n.share,
           ),
         PopupMenuButton<String>(
@@ -206,29 +202,7 @@ class _MealSectionContent extends StatelessWidget {
   }
 
   void _handleAction(BuildContext context, String action) {
-    Widget screen;
-    switch (action) {
-      case 'manual':
-        screen = AddFoodScreen(meal: mealType);
-        break;
-      case 'search':
-        screen = FoodSearchScreen(meal: mealType);
-        break;
-      case 'barcode':
-        screen = BarcodeScannerScreen(meal: mealType);
-        break;
-      case 'ai':
-        screen = AIFoodCameraScreen(meal: mealType);
-        break;
-      default:
-        return;
-    }
-    Navigator.push(context, AppTheme.slideRoute(screen));
-  }
-
-  void _shareMeal(BuildContext context, List<FoodEntry> entries) {
-    final meal = ShareableMeal.fromFoodEntries(entries, title: title);
-    Navigator.push(context, AppTheme.slideRoute(ShareMealScreen(meal: meal)));
+    handleMealAddAction(context, mealType: mealType, action: action);
   }
 
   void _showEntryOptions(
@@ -262,7 +236,7 @@ class _MealSectionContent extends StatelessWidget {
               ),
               onTap: () {
                 Navigator.pop(ctx);
-                _showDeleteConfirmation(context, l10n, entry);
+                showDeleteFoodEntryConfirmation(context, entry: entry);
               },
             ),
           ],
@@ -272,38 +246,6 @@ class _MealSectionContent extends StatelessWidget {
   }
 
   void _shareSingleItem(BuildContext context, FoodEntry entry) {
-    final meal = ShareableMeal.fromFoodEntries([entry]);
-    Navigator.push(context, AppTheme.slideRoute(ShareMealScreen(meal: meal)));
-  }
-
-  void _showDeleteConfirmation(
-    BuildContext context,
-    AppLocalizations l10n,
-    FoodEntry entry,
-  ) {
-    final theme = Theme.of(context);
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.delete),
-        content: Text(l10n.deleteConfirmation(entry.name)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () {
-              context.read<NutritionProvider>().removeFoodEntry(entry.id);
-              Navigator.pop(ctx);
-            },
-            style:
-                TextButton.styleFrom(foregroundColor: theme.colorScheme.error),
-            child: Text(l10n.delete),
-          ),
-        ],
-      ),
-    );
+    shareMealEntries(context, [entry]);
   }
 }

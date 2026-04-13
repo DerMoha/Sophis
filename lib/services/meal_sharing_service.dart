@@ -47,9 +47,11 @@ class MealSharingService {
 
     String text;
     if (meal.title != null) {
-      text = '${meal.title} ($itemCount ${itemCount == 1 ? 'item' : 'items'}, $totalCal kcal)\n\n$link';
+      text =
+          '${meal.title} ($itemCount ${itemCount == 1 ? 'item' : 'items'}, $totalCal kcal)\n\n$link';
     } else {
-      text = 'Shared meal ($itemCount ${itemCount == 1 ? 'item' : 'items'}, $totalCal kcal)\n\n$link';
+      text =
+          'Shared meal ($itemCount ${itemCount == 1 ? 'item' : 'items'}, $totalCal kcal)\n\n$link';
     }
 
     await Share.share(text, subject: meal.title ?? 'Shared Meal');

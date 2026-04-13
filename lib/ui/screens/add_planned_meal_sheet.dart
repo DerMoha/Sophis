@@ -16,6 +16,7 @@ import '../../../services/planned_meal_factory.dart';
 import '../../../services/settings_provider.dart';
 import '../components/add_planned_meal_extracted_recipe_view.dart';
 import '../components/add_planned_meal_manual_entry_form.dart';
+import '../components/modal_sheet.dart';
 import '../components/organic/primitives.dart';
 import '../theme/app_theme.dart';
 
@@ -91,100 +92,77 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
     final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
     final mealTypes = context.watch<SettingsProvider>().mealTypes;
 
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
-      decoration: BoxDecoration(
-        color: theme.scaffoldBackgroundColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      child: Column(
-        children: [
-          // Drag handle
-          Center(
-            child: Container(
-              margin: const EdgeInsets.only(top: 12),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: theme.dividerColor,
-                borderRadius: BorderRadius.circular(AppTheme.radiusXS),
+    return ModalSheetSurface(
+      backgroundColor: theme.scaffoldBackgroundColor,
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.85,
+        child: Column(
+          children: [
+            ModalSheetHandle(color: theme.dividerColor),
+            ModalSheetHeader(
+              title: l10n.addMeal,
+              padding: const EdgeInsets.fromLTRB(20, 16, 16, 8),
+              trailing: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusFull),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _selectedMealType,
+                    isDense: true,
+                    items: mealTypes
+                        .map(
+                          (mealType) => DropdownMenuItem(
+                            value: mealType.id,
+                            child: Text(mealType.name),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedMealType = value!;
+                      });
+                    },
+                  ),
+                ),
               ),
             ),
-          ),
 
-          // Header
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-            child: Row(
-              children: [
-                Text(
-                  l10n.addMeal,
-                  style: theme.textTheme.headlineSmall,
-                ),
-                const Spacer(),
-                // Meal type selector
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(AppTheme.radiusFull),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: _selectedMealType,
-                      isDense: true,
-                      items: mealTypes
-                          .map(
-                            (mealType) => DropdownMenuItem(
-                              value: mealType.id,
-                              child: Text(mealType.name),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedMealType = value!;
-                        });
-                      },
-                    ),
-                  ),
-                ),
+            // Tabs
+            TabBar(
+              controller: _tabController,
+              tabs: [
+                Tab(text: l10n.recipes),
+                Tab(text: l10n.searchFood),
+                Tab(text: '📷 ${l10n.scan}'),
+                Tab(text: l10n.manualEntry),
               ],
+              labelColor: theme.colorScheme.primary,
+              unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
+              indicatorColor: theme.colorScheme.primary,
+              isScrollable: true,
             ),
-          ),
 
-          // Tabs
-          TabBar(
-            controller: _tabController,
-            tabs: [
-              Tab(text: l10n.recipes),
-              Tab(text: l10n.searchFood),
-              Tab(text: '📷 ${l10n.scan}'),
-              Tab(text: l10n.manualEntry),
-            ],
-            labelColor: theme.colorScheme.primary,
-            unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
-            indicatorColor: theme.colorScheme.primary,
-            isScrollable: true,
-          ),
-
-          // Tab content
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(bottom: bottomPadding),
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildRecipesTab(context, theme, isDark, l10n),
-                  _buildSearchTab(context, theme, isDark, l10n),
-                  _buildScanRecipeTab(context, theme, isDark, l10n),
-                  _buildManualTab(context, theme, isDark, l10n),
-                ],
+            // Tab content
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(bottom: bottomPadding),
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildRecipesTab(context, theme, isDark, l10n),
+                    _buildSearchTab(context, theme, isDark, l10n),
+                    _buildScanRecipeTab(context, theme, isDark, l10n),
+                    _buildManualTab(context, theme, isDark, l10n),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

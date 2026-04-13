@@ -29,10 +29,12 @@ class DataExportService {
         'profile': nutrition.profile?.toJson(),
         'foodEntries': nutrition.entries.map((e) => e.toJson()).toList(),
         'waterEntries': nutrition.waterEntries.map((e) => e.toJson()).toList(),
-        'weightEntries': nutrition.weightEntries.map((e) => e.toJson()).toList(),
+        'weightEntries':
+            nutrition.weightEntries.map((e) => e.toJson()).toList(),
         'recipes': nutrition.recipes.map((e) => e.toJson()).toList(),
         'plannedMeals': nutrition.plannedMeals.map((e) => e.toJson()).toList(),
-        'workoutEntries': nutrition.workoutEntries.map((e) => e.toJson()).toList(),
+        'workoutEntries':
+            nutrition.workoutEntries.map((e) => e.toJson()).toList(),
       };
 
       // Convert to formatted JSON
@@ -40,7 +42,11 @@ class DataExportService {
 
       // Create temp file
       final tempDir = await getTemporaryDirectory();
-      final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-').split('.').first;
+      final timestamp = DateTime.now()
+          .toIso8601String()
+          .replaceAll(':', '-')
+          .split('.')
+          .first;
       final fileName = 'sophis_backup_$timestamp.json';
       final file = File('${tempDir.path}/$fileName');
       await file.writeAsString(jsonString);
@@ -78,7 +84,10 @@ class DataExportService {
       // Validate version
       final version = data['version'] as String?;
       if (version == null) {
-        return ImportResult(success: false, message: 'Invalid backup file format');
+        return ImportResult(
+          success: false,
+          message: 'Invalid backup file format',
+        );
       }
 
       // Clear existing data before import
@@ -89,14 +98,16 @@ class DataExportService {
 
       // Goals
       if (data['goals'] != null) {
-        final goals = NutritionGoals.fromJson(data['goals'] as Map<String, dynamic>);
+        final goals =
+            NutritionGoals.fromJson(data['goals'] as Map<String, dynamic>);
         await nutrition.setGoals(goals);
         itemsImported++;
       }
 
       // Profile
       if (data['profile'] != null) {
-        final profile = UserProfile.fromJson(data['profile'] as Map<String, dynamic>);
+        final profile =
+            UserProfile.fromJson(data['profile'] as Map<String, dynamic>);
         await nutrition.setProfile(profile);
         itemsImported++;
       }
@@ -107,7 +118,7 @@ class DataExportService {
             .map((e) => FoodEntry.fromJson(e as Map<String, dynamic>))
             .toList();
         for (final entry in entries) {
-           await nutrition.addFoodEntry(entry);
+          await nutrition.addFoodEntry(entry);
         }
         itemsImported += entries.length;
       }
@@ -117,10 +128,10 @@ class DataExportService {
         final entries = (data['waterEntries'] as List)
             .map((e) => WaterEntry.fromJson(e as Map<String, dynamic>))
             .toList();
-         for (final entry in entries) {
-           await nutrition.restoreWaterEntry(entry);
-         }
-         itemsImported += entries.length;
+        for (final entry in entries) {
+          await nutrition.restoreWaterEntry(entry);
+        }
+        itemsImported += entries.length;
       }
 
       // Weight entries
@@ -128,10 +139,10 @@ class DataExportService {
         final entries = (data['weightEntries'] as List)
             .map((e) => WeightEntry.fromJson(e as Map<String, dynamic>))
             .toList();
-         for (final entry in entries) {
-            await nutrition.restoreWeightEntry(entry);
-         }
-         itemsImported += entries.length;
+        for (final entry in entries) {
+          await nutrition.restoreWeightEntry(entry);
+        }
+        itemsImported += entries.length;
       }
 
       // Recipes
@@ -140,7 +151,7 @@ class DataExportService {
             .map((e) => Recipe.fromJson(e as Map<String, dynamic>))
             .toList();
         for (final recipe in recipes) {
-           await nutrition.addRecipe(recipe);
+          await nutrition.addRecipe(recipe);
         }
         itemsImported += recipes.length;
       }
@@ -151,7 +162,7 @@ class DataExportService {
             .map((e) => PlannedMeal.fromJson(e as Map<String, dynamic>))
             .toList();
         for (final meal in meals) {
-           await nutrition.addPlannedMeal(meal);
+          await nutrition.addPlannedMeal(meal);
         }
         itemsImported += meals.length;
       }
@@ -162,7 +173,7 @@ class DataExportService {
             .map((e) => WorkoutEntry.fromJson(e as Map<String, dynamic>))
             .toList();
         for (final entry in entries) {
-           await nutrition.restoreWorkoutEntry(entry);
+          await nutrition.restoreWorkoutEntry(entry);
         }
         itemsImported += entries.length;
       }

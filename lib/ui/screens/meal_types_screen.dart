@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
+
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../models/custom_meal_type.dart';
 import '../../../services/settings_provider.dart';
+import '../../../utils/time_utils.dart';
 import '../theme/app_theme.dart';
 import '../theme/animations.dart';
-import 'package:uuid/uuid.dart';
 
 class MealTypesScreen extends StatefulWidget {
   const MealTypesScreen({super.key});
@@ -42,6 +44,7 @@ class _MealTypesScreenState extends State<MealTypesScreen> {
           final mealType = mealTypes[index];
           return _MealTypeTile(
             key: ValueKey(mealType.id),
+            index: index,
             mealType: mealType,
             onEdit: () => _showEditMealTypeSheet(context, mealType),
             onDelete: mealType.isDefault
@@ -99,12 +102,14 @@ class _MealTypesScreenState extends State<MealTypesScreen> {
 }
 
 class _MealTypeTile extends StatelessWidget {
+  final int index;
   final CustomMealType mealType;
   final VoidCallback onEdit;
   final VoidCallback? onDelete;
 
   const _MealTypeTile({
     super.key,
+    required this.index,
     required this.mealType,
     required this.onEdit,
     this.onDelete,
@@ -116,52 +121,54 @@ class _MealTypeTile extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
 
     return FadeInSlide(
-      index: 0,
+      index: index,
       child: Card(
         margin: const EdgeInsets.symmetric(
           horizontal: AppTheme.spaceMD,
           vertical: AppTheme.spaceXS,
         ),
         child: ListTile(
-        leading: Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: mealType.color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-          ),
-          child: Icon(
-            mealType.icon,
-            color: mealType.color,
-          ),
-        ),
-        title: Text(mealType.name),
-        subtitle: mealType.reminderTime != null
-            ? Text('${l10n.reminderTime}: ${mealType.reminderTime}')
-            : null,
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.edit_outlined),
-              onPressed: onEdit,
+          leading: Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: mealType.color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(AppTheme.radiusSM),
             ),
-            if (onDelete != null)
+            child: Icon(
+              mealType.icon,
+              color: mealType.color,
+            ),
+          ),
+          title: Text(mealType.name),
+          subtitle: mealType.reminderTime != null
+              ? Text(
+                  '${l10n.reminderTime}: ${TimeUtils.formatStoredTimeForDisplay(context, mealType.reminderTime)}',
+                )
+              : null,
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
               IconButton(
-                icon: const Icon(Icons.delete_outline, color: AppTheme.error),
-                onPressed: onDelete,
-              )
-            else
-              const SizedBox(width: 48), // Placeholder to keep alignment
-            ReorderableDragStartListener(
-              index: 0, // Index is handled by parent
-              child: Icon(
-                Icons.drag_handle,
-                color: theme.colorScheme.onSurfaceVariant,
+                icon: const Icon(Icons.edit_outlined),
+                onPressed: onEdit,
               ),
-            ),
-          ],
-        ),
+              if (onDelete != null)
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, color: AppTheme.error),
+                  onPressed: onDelete,
+                )
+              else
+                const SizedBox(width: 48), // Placeholder to keep alignment
+              ReorderableDragStartListener(
+                index: index,
+                child: Icon(
+                  Icons.drag_handle,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -206,16 +213,7 @@ class _EditMealTypeSheetState extends State<_EditMealTypeSheet> {
         : 0;
     if (_selectedColorIndex < 0) _selectedColorIndex = 0;
 
-    // Parse reminder time
-    if (widget.mealType?.reminderTime != null) {
-      final parts = widget.mealType!.reminderTime!.split(':');
-      if (parts.length == 2) {
-        _reminderTime = TimeOfDay(
-          hour: int.tryParse(parts[0]) ?? 0,
-          minute: int.tryParse(parts[1]) ?? 0,
-        );
-      }
-    }
+    _reminderTime = TimeUtils.parseStoredTime(widget.mealType?.reminderTime);
   }
 
   @override
@@ -440,7 +438,7 @@ class _EditMealTypeSheetState extends State<_EditMealTypeSheet> {
     final selectedIcon = CustomMealType.availableIcons[_selectedIconIndex];
     final selectedColor = CustomMealType.availableColors[_selectedColorIndex];
     final reminderTimeString = _reminderTime != null
-        ? '${_reminderTime!.hour.toString().padLeft(2, '0')}:${_reminderTime!.minute.toString().padLeft(2, '0')}'
+        ? TimeUtils.formatStoredTime(_reminderTime!)
         : null;
 
     if (isEditing) {

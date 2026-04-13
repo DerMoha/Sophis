@@ -392,21 +392,17 @@ If the image is not a nutrition label or values are unreadable, return:
 
       final json = jsonDecode(cleaned) as Map<String, dynamic>;
 
-      final calories =
-          (json['calories_per_100g'] as num?)?.toDouble() ?? 0;
+      final calories = (json['calories_per_100g'] as num?)?.toDouble() ?? 0;
       if (calories == 0) return null;
 
       return NutritionLabelResult(
         productName: json['product_name']?.toString(),
         brand: json['brand']?.toString(),
         caloriesPer100g: calories,
-        proteinPer100g:
-            (json['protein_per_100g'] as num?)?.toDouble() ?? 0,
-        carbsPer100g:
-            (json['carbs_per_100g'] as num?)?.toDouble() ?? 0,
+        proteinPer100g: (json['protein_per_100g'] as num?)?.toDouble() ?? 0,
+        carbsPer100g: (json['carbs_per_100g'] as num?)?.toDouble() ?? 0,
         fatPer100g: (json['fat_per_100g'] as num?)?.toDouble() ?? 0,
-        servingSizeG:
-            (json['serving_size_g'] as num?)?.toDouble(),
+        servingSizeG: (json['serving_size_g'] as num?)?.toDouble(),
         servingName: json['serving_name']?.toString(),
       );
     } catch (e) {

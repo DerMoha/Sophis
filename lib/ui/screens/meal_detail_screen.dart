@@ -1,21 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
+
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../models/food_entry.dart';
-import '../../../models/food_item.dart';
-import 'package:uuid/uuid.dart';
-import '../../../models/shareable_meal.dart';
+import '../../../services/food_entry_factory.dart';
 import '../../../services/nutrition_provider.dart';
 import '../../../services/settings_provider.dart';
 import '../components/nutrition_entry_fields.dart';
 import '../theme/app_theme.dart';
 import '../components/organic_components.dart';
 import '../theme/animations.dart';
-import 'add_food_screen.dart';
-import 'food_search_screen.dart';
-import 'barcode_scanner_screen.dart';
-import 'ai_food_camera_screen.dart';
-import 'share_meal_screen.dart';
+import 'shared/meal_action_helpers.dart';
 
 /// Full-screen detail view for a single meal (breakfast, lunch, etc.)
 class MealDetailScreen extends StatelessWidget {
@@ -65,7 +61,11 @@ class MealDetailScreen extends StatelessWidget {
                 IconButton(
                   icon: const Icon(Icons.share_outlined),
                   tooltip: l10n.share,
-                  onPressed: () => _shareMeal(context, entries),
+                  onPressed: () => shareMealEntries(
+                    context,
+                    entries,
+                    title: mealTitle,
+                  ),
                 ),
             ],
           ),
@@ -198,80 +198,8 @@ class MealDetailScreen extends StatelessWidget {
     );
   }
 
-  void _shareMeal(BuildContext context, List<FoodEntry> entries) {
-    final meal = ShareableMeal.fromFoodEntries(entries, title: mealTitle);
-    Navigator.push(
-      context,
-      AppTheme.slideRoute(ShareMealScreen(meal: meal)),
-    );
-  }
-
   void _showAddOptions(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-
-    showModalBottomSheet(
-      context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading:
-                  Icon(Icons.edit_outlined, color: theme.colorScheme.primary),
-              title: Text(l10n.manualEntry),
-              onTap: () {
-                Navigator.pop(ctx);
-                Navigator.push(
-                  context,
-                  AppTheme.slideRoute(AddFoodScreen(meal: mealType)),
-                );
-              },
-            ),
-            ListTile(
-              leading:
-                  Icon(Icons.search_outlined, color: theme.colorScheme.primary),
-              title: Text(l10n.searchFood),
-              onTap: () {
-                Navigator.pop(ctx);
-                Navigator.push(
-                  context,
-                  AppTheme.slideRoute(FoodSearchScreen(meal: mealType)),
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(
-                Icons.qr_code_scanner_outlined,
-                color: theme.colorScheme.primary,
-              ),
-              title: Text(l10n.scanBarcode),
-              onTap: () {
-                Navigator.pop(ctx);
-                Navigator.push(
-                  context,
-                  AppTheme.slideRoute(BarcodeScannerScreen(meal: mealType)),
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(
-                Icons.auto_awesome_outlined,
-                color: theme.colorScheme.primary,
-              ),
-              title: Text(l10n.aiRecognition),
-              onTap: () {
-                Navigator.pop(ctx);
-                Navigator.push(
-                  context,
-                  AppTheme.slideRoute(AIFoodCameraScreen(meal: mealType)),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
+    showMealAddOptionsSheet(context, mealType: mealType);
   }
 }
 
@@ -645,14 +573,9 @@ class _MealEntryCard extends StatelessWidget {
   }
 
   void _saveToMyFoods(BuildContext context, AppLocalizations l10n) {
-    final customFood = FoodItem(
+    final customFood = FoodEntryFactory.customFoodFromEntry(
+      entry,
       id: 'custom_${const Uuid().v4()}',
-      name: entry.name,
-      category: 'custom',
-      caloriesPer100g: entry.calories,
-      proteinPer100g: entry.protein,
-      carbsPer100g: entry.carbs,
-      fatPer100g: entry.fat,
     );
     context.read<NutritionProvider>().addCustomFood(customFood);
     ScaffoldMessenger.of(context).showSnackBar(
@@ -661,38 +584,11 @@ class _MealEntryCard extends StatelessWidget {
   }
 
   void _shareEntry(BuildContext context) {
-    final meal = ShareableMeal.fromFoodEntries([entry]);
-    Navigator.push(
-      context,
-      AppTheme.slideRoute(ShareMealScreen(meal: meal)),
-    );
+    shareMealEntries(context, [entry]);
   }
 
   void _showDeleteConfirmation(BuildContext context, AppLocalizations l10n) {
-    final theme = Theme.of(context);
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.delete),
-        content: Text(l10n.deleteConfirmation(entry.name)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () {
-              context.read<NutritionProvider>().removeFoodEntry(entry.id);
-              Navigator.pop(ctx);
-            },
-            style:
-                TextButton.styleFrom(foregroundColor: theme.colorScheme.error),
-            child: Text(l10n.delete),
-          ),
-        ],
-      ),
-    );
+    showDeleteFoodEntryConfirmation(context, entry: entry);
   }
 }
 

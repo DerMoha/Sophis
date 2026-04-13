@@ -54,24 +54,24 @@ class FoodEntry {
   }
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-    'calories': calories,
-    'protein': protein,
-    'carbs': carbs,
-    'fat': fat,
-    'timestamp': timestamp.toIso8601String(),
-    'meal': meal,
-  };
+        'id': id,
+        'name': name,
+        'calories': calories,
+        'protein': protein,
+        'carbs': carbs,
+        'fat': fat,
+        'timestamp': timestamp.toIso8601String(),
+        'meal': meal,
+      };
 
   factory FoodEntry.fromJson(Map<String, dynamic> json) => FoodEntry(
-    id: json['id'],
-    name: json['name'],
-    calories: (json['calories'] as num).toDouble(),
-    protein: (json['protein'] as num).toDouble(),
-    carbs: (json['carbs'] as num).toDouble(),
-    fat: (json['fat'] as num).toDouble(),
-    timestamp: DateTime.parse(json['timestamp']),
-    meal: json['meal'] ?? 'snack',
-  );
+        id: json['id'],
+        name: json['name'],
+        calories: (json['calories'] as num).toDouble(),
+        protein: (json['protein'] as num).toDouble(),
+        carbs: (json['carbs'] as num).toDouble(),
+        fat: (json['fat'] as num).toDouble(),
+        timestamp: DateTime.parse(json['timestamp']),
+        meal: json['meal'] ?? 'snack',
+      );
 }

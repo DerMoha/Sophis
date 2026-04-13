@@ -52,8 +52,10 @@ class SharedFoodItem {
       );
 
   /// Create from a FoodAnalysis (AI result)
-  factory SharedFoodItem.fromFoodAnalysis(FoodAnalysis analysis,
-          {String? customName,}) =>
+  factory SharedFoodItem.fromFoodAnalysis(
+    FoodAnalysis analysis, {
+    String? customName,
+  }) =>
       SharedFoodItem(
         name: customName ?? '${analysis.name} (${analysis.portionDisplay})',
         calories: analysis.calories,

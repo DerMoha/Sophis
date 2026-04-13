@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:uuid/uuid.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
-import '../../../models/food_item.dart';
 import '../../../services/food_entry_factory.dart';
 import '../../../services/nutrition_provider.dart';
 import '../../../services/settings_provider.dart';
@@ -81,14 +79,12 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
 
     // Also save as custom food if checkbox is checked
     if (_saveAsCustomFood) {
-      final customFood = FoodItem(
-        id: 'custom_${const Uuid().v4()}',
+      final customFood = FoodEntryFactory.createCustomFood(
         name: name,
-        category: 'custom',
-        caloriesPer100g: calories,
-        proteinPer100g: protein,
-        carbsPer100g: carbs,
-        fatPer100g: fat,
+        calories: calories,
+        protein: protein,
+        carbs: carbs,
+        fat: fat,
       );
       await provider.addCustomFood(customFood);
       if (mounted) {

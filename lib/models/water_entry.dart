@@ -11,14 +11,14 @@ class WaterEntry {
   });
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'amountMl': amountMl,
-    'timestamp': timestamp.toIso8601String(),
-  };
+        'id': id,
+        'amountMl': amountMl,
+        'timestamp': timestamp.toIso8601String(),
+      };
 
   factory WaterEntry.fromJson(Map<String, dynamic> json) => WaterEntry(
-    id: json['id'],
-    amountMl: (json['amountMl'] as num).toDouble(),
-    timestamp: DateTime.parse(json['timestamp']),
-  );
+        id: json['id'],
+        amountMl: (json['amountMl'] as num).toDouble(),
+        timestamp: DateTime.parse(json['timestamp']),
+      );
 }

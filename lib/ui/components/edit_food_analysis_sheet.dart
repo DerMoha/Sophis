@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 
 import '../../l10n/generated/app_localizations.dart';
 import 'ai_food_result.dart';
+import 'modal_sheet.dart';
+import 'settings/settings_tiles.dart';
 import '../theme/app_theme.dart';
 
 class EditFoodAnalysisSheet extends StatefulWidget {
@@ -194,73 +196,20 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
-    final isDark = theme.brightness == Brightness.dark;
     final showLowRequestWarning =
         widget.remainingRequests < 5 && widget.remainingRequests > 0;
     final canReAnalyze = widget.remainingRequests > 0;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-      ),
+    return ModalSheetSurface(
+      useSafeArea: false,
+      useAnimatedInsets: false,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            margin: const EdgeInsets.only(top: 12),
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.outline.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(AppTheme.radiusXS),
-            ),
-          ),
-
-          // Header
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 20, 16, 0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-                      ),
-                      child: Icon(
-                        Icons.edit_outlined,
-                        color: theme.colorScheme.primary,
-                        size: 22,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      l10n.editFoodAnalysis,
-                      style: theme.textTheme.headlineSmall,
-                    ),
-                  ],
-                ),
-                IconButton(
-                  icon: Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? Colors.white.withValues(alpha: 0.1)
-                          : Colors.black.withValues(alpha: 0.05),
-                      borderRadius: BorderRadius.circular(AppTheme.radiusXS),
-                    ),
-                    child: const Icon(Icons.close, size: 18),
-                  ),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
-            ),
+          const ModalSheetHandle(),
+          ModalSheetHeader(
+            icon: Icons.edit_outlined,
+            title: l10n.editFoodAnalysis,
           ),
 
           // Low request warning
@@ -351,13 +300,13 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                     const SizedBox(height: 16),
 
                     // Auto-scale toggle
-                    SwitchListTile(
+                    SwitchTile(
+                      title: l10n.autoScaleNutrition,
+                      subtitle: l10n.autoScaleNutritionSubtitle,
+                      icon: Icons.scale_outlined,
                       value: _autoScaleEnabled,
                       onChanged: (value) =>
                           setState(() => _autoScaleEnabled = value),
-                      title: Text(l10n.autoScaleNutrition),
-                      subtitle: Text(l10n.autoScaleNutritionSubtitle),
-                      contentPadding: EdgeInsets.zero,
                     ),
                     const SizedBox(height: 8),
 

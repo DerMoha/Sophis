@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
-import '../../services/supplements_provider.dart';
+
 import '../../models/supplement.dart';
+import '../../services/supplements_provider.dart';
+import '../../utils/time_utils.dart';
+import 'modal_sheet.dart';
 import '../theme/app_theme.dart';
 
 class SupplementEditSheet extends StatefulWidget {
@@ -28,16 +31,10 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
       text: widget.supplement?.name ?? '',
     );
 
-    // Parse reminder time or default to 9:00 AM
-    if (widget.supplement?.reminderTime != null) {
-      final parts = widget.supplement!.reminderTime!.split(':');
-      _reminderTime = TimeOfDay(
-        hour: int.tryParse(parts[0]) ?? 0,
-        minute: int.tryParse(parts[1]) ?? 0,
-      );
-    } else {
-      _reminderTime = const TimeOfDay(hour: 9, minute: 0);
-    }
+    _reminderTime = TimeUtils.parseStoredTimeOrDefault(
+      widget.supplement?.reminderTime,
+      const TimeOfDay(hour: 9, minute: 0),
+    );
 
     _enabled = widget.supplement?.enabled ?? true;
   }
@@ -53,252 +50,205 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final mediaQuery = MediaQuery.of(context);
     final accentColor = theme.colorScheme.primary;
+    final safeAreaBottom = MediaQuery.of(context).padding.bottom;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: AnimatedPadding(
-          duration: const Duration(milliseconds: 150),
-          curve: Curves.easeOut,
-          padding: EdgeInsets.only(bottom: mediaQuery.viewInsets.bottom),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Drag handle
-                const SizedBox(height: AppTheme.spaceSM2),
-                Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(AppTheme.radiusXS),
+    return ModalSheetSurface(
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const ModalSheetHandle(),
+            ModalSheetHeader(
+              icon: Icons.medication_liquid_rounded,
+              iconColor: accentColor,
+              iconBoxSize: 48,
+              iconSize: 24,
+              title: isEditing ? 'Edit Supplement' : 'Add Supplement',
+            ),
+            const SizedBox(height: 24),
+
+            // Form
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Name field
+                  Text(
+                    'Name',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                const SizedBox(height: AppTheme.spaceLG2),
-
-                // Header
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Row(
-                    children: [
-                      // Icon
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: accentColor.withValues(alpha: 0.1),
-                          borderRadius:
-                              BorderRadius.circular(AppTheme.radiusMD),
-                        ),
-                        child: Icon(
-                          Icons.medication_liquid_rounded,
-                          color: accentColor,
-                          size: 24,
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _nameController,
+                    autofocus: !isEditing,
+                    decoration: InputDecoration(
+                      hintText: 'e.g., Omega-3, Vitamin C',
+                      filled: true,
+                      fillColor: theme.colorScheme.surfaceContainerHighest,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                        borderSide: BorderSide(
+                          color: _hasError
+                              ? theme.colorScheme.error
+                              : Colors.transparent,
+                          width: 2,
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      // Title
-                      Text(
-                        isEditing ? 'Edit Supplement' : 'Add Supplement',
-                        style: theme.textTheme.headlineSmall,
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                        borderSide: BorderSide(
+                          color: _hasError
+                              ? theme.colorScheme.error
+                              : Colors.transparent,
+                          width: 2,
+                        ),
                       ),
-                    ],
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                        borderSide: BorderSide(
+                          color:
+                              _hasError ? theme.colorScheme.error : accentColor,
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                    onChanged: (value) {
+                      if (_hasError && value.isNotEmpty) {
+                        setState(() => _hasError = false);
+                      }
+                    },
                   ),
-                ),
-                const SizedBox(height: 24),
+                  if (_hasError)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8, left: 12),
+                      child: Text(
+                        'Name cannot be empty',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.error,
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 24),
 
-                // Form
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Name field
-                      Text(
-                        'Name',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                  // Reminder time
+                  Text(
+                    'Reminder Time',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: _pickTime,
+                    child: Container(
+                      padding: const EdgeInsets.all(AppTheme.spaceMD),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                       ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: _nameController,
-                        autofocus: !isEditing,
-                        decoration: InputDecoration(
-                          hintText: 'e.g., Omega-3, Vitamin C',
-                          filled: true,
-                          fillColor: theme.colorScheme.surfaceContainerHighest,
-                          border: OutlineInputBorder(
-                            borderRadius:
-                                BorderRadius.circular(AppTheme.radiusMD),
-                            borderSide: BorderSide(
-                              color: _hasError
-                                  ? theme.colorScheme.error
-                                  : Colors.transparent,
-                              width: 2,
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius:
-                                BorderRadius.circular(AppTheme.radiusMD),
-                            borderSide: BorderSide(
-                              color: _hasError
-                                  ? theme.colorScheme.error
-                                  : Colors.transparent,
-                              width: 2,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius:
-                                BorderRadius.circular(AppTheme.radiusMD),
-                            borderSide: BorderSide(
-                              color: _hasError
-                                  ? theme.colorScheme.error
-                                  : accentColor,
-                              width: 2,
-                            ),
-                          ),
-                        ),
-                        onChanged: (value) {
-                          if (_hasError && value.isNotEmpty) {
-                            setState(() => _hasError = false);
-                          }
-                        },
-                      ),
-                      if (_hasError)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8, left: 12),
-                          child: Text(
-                            'Name cannot be empty',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.error,
-                            ),
-                          ),
-                        ),
-                      const SizedBox(height: 24),
-
-                      // Reminder time
-                      Text(
-                        'Reminder Time',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      GestureDetector(
-                        onTap: _pickTime,
-                        child: Container(
-                          padding: const EdgeInsets.all(AppTheme.spaceMD),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.surfaceContainerHighest,
-                            borderRadius:
-                                BorderRadius.circular(AppTheme.radiusMD),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.alarm_rounded,
-                                color: accentColor,
-                                size: 24,
-                              ),
-                              const SizedBox(width: 12),
-                              Text(
-                                _formatTime(_reminderTime),
-                                style: theme.textTheme.bodyLarge?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const Spacer(),
-                              Icon(
-                                Icons.edit_rounded,
-                                color: theme.textTheme.bodySmall?.color,
-                                size: 20,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Enabled switch
-                      Row(
+                      child: Row(
                         children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Enable Reminder',
-                                  style: theme.textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Get daily notifications',
-                                  style: theme.textTheme.bodySmall,
-                                ),
-                              ],
+                          Icon(
+                            Icons.alarm_rounded,
+                            color: accentColor,
+                            size: 24,
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            TimeUtils.formatTimeOfDay(
+                              context,
+                              _reminderTime,
+                            ),
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                          Switch(
-                            value: _enabled,
-                            onChanged: (value) {
-                              setState(() => _enabled = value);
-                            },
-                            activeThumbColor: accentColor,
+                          const Spacer(),
+                          Icon(
+                            Icons.edit_rounded,
+                            color: theme.textTheme.bodySmall?.color,
+                            size: 20,
                           ),
                         ],
                       ),
-                      const SizedBox(height: 32),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
 
-                      // Save button
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton(
-                          onPressed: _save,
-                          style: FilledButton.styleFrom(
-                            backgroundColor: accentColor,
-                            foregroundColor: theme.colorScheme.onPrimary,
-                            padding: const EdgeInsets.symmetric(
-                              vertical: AppTheme.spaceMD,
+                  // Enabled switch
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Enable Reminder',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.circular(AppTheme.radiusMD),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Get daily notifications',
+                              style: theme.textTheme.bodySmall,
                             ),
-                          ),
-                          child: Text(
-                            isEditing ? 'Save Changes' : 'Add Supplement',
-                            style: theme.textTheme.labelLarge,
-                          ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 16),
-
-                      // Cancel button
-                      if (!isEditing)
-                        SizedBox(
-                          width: double.infinity,
-                          child: TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('Cancel'),
-                          ),
-                        ),
+                      Switch(
+                        value: _enabled,
+                        onChanged: (value) {
+                          setState(() => _enabled = value);
+                        },
+                        activeThumbColor: accentColor,
+                      ),
                     ],
                   ),
-                ),
-                SizedBox(height: mediaQuery.padding.bottom + 16),
-              ],
+                  const SizedBox(height: 32),
+
+                  // Save button
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: _save,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: accentColor,
+                        foregroundColor: theme.colorScheme.onPrimary,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: AppTheme.spaceMD,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(AppTheme.radiusMD),
+                        ),
+                      ),
+                      child: Text(
+                        isEditing ? 'Save Changes' : 'Add Supplement',
+                        style: theme.textTheme.labelLarge,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Cancel button
+                  if (!isEditing)
+                    SizedBox(
+                      width: double.infinity,
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Cancel'),
+                      ),
+                    ),
+                ],
+              ),
             ),
-          ),
+            SizedBox(height: safeAreaBottom + 16),
+          ],
         ),
       ),
     );
@@ -332,12 +282,6 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
     }
   }
 
-  String _formatTime(TimeOfDay time) {
-    final hour = time.hour.toString().padLeft(2, '0');
-    final minute = time.minute.toString().padLeft(2, '0');
-    return '$hour:$minute';
-  }
-
   void _save() {
     final name = _nameController.text.trim();
 
@@ -366,7 +310,7 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
       return;
     }
 
-    final reminderTime = _formatTime(_reminderTime);
+    final reminderTime = TimeUtils.formatStoredTime(_reminderTime);
 
     if (isEditing) {
       // Update existing supplement

@@ -2,6 +2,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
+import '../utils/time_utils.dart';
+
 /// Service for handling local push notifications
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -127,36 +129,36 @@ class NotificationService {
 
     if (!enabled) return;
 
-    if (breakfastTime != null) {
-      final parts = breakfastTime.split(':');
+    final breakfast = TimeUtils.parseStoredTime(breakfastTime);
+    if (breakfast != null) {
       await scheduleMealReminder(
         id: 0,
         title: 'Time for Breakfast! 🍳',
         body: 'Don\'t forget to log your breakfast',
-        hour: int.tryParse(parts[0]) ?? 0,
-        minute: int.tryParse(parts[1]) ?? 0,
+        hour: breakfast.hour,
+        minute: breakfast.minute,
       );
     }
 
-    if (lunchTime != null) {
-      final parts = lunchTime.split(':');
+    final lunch = TimeUtils.parseStoredTime(lunchTime);
+    if (lunch != null) {
       await scheduleMealReminder(
         id: 1,
         title: 'Time for Lunch! 🥗',
         body: 'Don\'t forget to log your lunch',
-        hour: int.tryParse(parts[0]) ?? 0,
-        minute: int.tryParse(parts[1]) ?? 0,
+        hour: lunch.hour,
+        minute: lunch.minute,
       );
     }
 
-    if (dinnerTime != null) {
-      final parts = dinnerTime.split(':');
+    final dinner = TimeUtils.parseStoredTime(dinnerTime);
+    if (dinner != null) {
       await scheduleMealReminder(
         id: 2,
         title: 'Time for Dinner! 🍽️',
         body: 'Don\'t forget to log your dinner',
-        hour: int.tryParse(parts[0]) ?? 0,
-        minute: int.tryParse(parts[1]) ?? 0,
+        hour: dinner.hour,
+        minute: dinner.minute,
       );
     }
   }

@@ -29,10 +29,12 @@ class BrocadeService {
         return const Failure(ServiceErrorType.notFound, 'Product not found');
       }
 
-      return Success(BrocadeProduct(
-        name: name,
-        brand: data['brand']?.toString(),
-      ),);
+      return Success(
+        BrocadeProduct(
+          name: name,
+          brand: data['brand']?.toString(),
+        ),
+      );
     } on SocketException catch (e) {
       debugPrint('Brocade lookup network error for "$barcode": $e');
       return Failure(ServiceErrorType.network, e.message);

@@ -63,8 +63,7 @@ class FitnessSection extends StatelessWidget {
           icon: Icons.restaurant_outlined,
           value: settings.healthNutritionSyncEnabled,
           onChanged: (value) async {
-            final success =
-                await settings.setHealthNutritionSyncEnabled(value);
+            final success = await settings.setHealthNutritionSyncEnabled(value);
             if (!success && value && context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text(l10n.healthPermissionError)),
