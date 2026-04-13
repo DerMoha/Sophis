@@ -7,7 +7,6 @@ import 'package:provider/provider.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../models/food_item.dart';
-import '../../../models/meal_plan.dart';
 import '../../../models/recipe.dart';
 import '../../../services/gemini_food_service.dart';
 import '../../../services/nutrition_provider.dart';
@@ -15,6 +14,8 @@ import '../../../services/openfoodfacts_service.dart';
 import '../../../services/service_result.dart';
 import '../../../services/planned_meal_factory.dart';
 import '../../../services/settings_provider.dart';
+import '../components/add_planned_meal_extracted_recipe_view.dart';
+import '../components/add_planned_meal_manual_entry_form.dart';
 import '../components/organic/primitives.dart';
 import '../theme/app_theme.dart';
 
@@ -474,7 +475,16 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
 
     // Show extracted recipe results
     if (_extractedRecipe != null && _extractedRecipe!.isNotEmpty) {
-      return _buildExtractedRecipeView(context, theme, isDark, l10n);
+      return AddPlannedMealExtractedRecipeView(
+        recipe: _extractedRecipe!,
+        isDark: isDark,
+        onScanAgain: () {
+          setState(() {
+            _extractedRecipe = null;
+          });
+        },
+        onAddToMeal: () => _addExtractedRecipeAsMeal(_extractedRecipe!),
+      );
     }
 
     // Show scanning state
@@ -652,198 +662,6 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
     );
   }
 
-  Widget _buildExtractedRecipeView(
-    BuildContext context,
-    ThemeData theme,
-    bool isDark,
-    AppLocalizations l10n,
-  ) {
-    final recipe = _extractedRecipe!;
-
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        // Recipe header
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                theme.colorScheme.primary.withValues(alpha: 0.15),
-                theme.colorScheme.primary.withValues(alpha: 0.05),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Icon(
-                    Icons.check_circle,
-                    color: AppTheme.success,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      recipe.recipeName ?? l10n.extractedRecipe,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.refresh),
-                    onPressed: () {
-                      setState(() {
-                        _extractedRecipe = null;
-                      });
-                    },
-                    tooltip: l10n.scanAgain,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '${recipe.servings} ${l10n.servings} • ${recipe.caloriesPerServing.toStringAsFixed(0)} kcal/${l10n.serving}',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              // Macros row
-              Row(
-                children: [
-                  _buildMacroChip(
-                    l10n.protein,
-                    recipe.proteinPerServing,
-                    AppTheme.protein,
-                  ),
-                  const SizedBox(width: 8),
-                  _buildMacroChip(
-                    l10n.carbs,
-                    recipe.carbsPerServing,
-                    AppTheme.carbs,
-                  ),
-                  const SizedBox(width: 8),
-                  _buildMacroChip(
-                    l10n.fat,
-                    recipe.fatPerServing,
-                    AppTheme.fat,
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Ingredients list
-        Text(
-          '${l10n.ingredients} (${recipe.ingredients.length})',
-          style: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-            border: Border.all(
-              color: isDark
-                  ? CachedColors.surfaceTintDark06
-                  : CachedColors.surfaceTintLight04,
-            ),
-          ),
-          child: Column(
-            children: recipe.ingredients.map((ing) {
-              final emoji = ShoppingCategory.getIcon(ing.category);
-              return Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                child: Row(
-                  children: [
-                    Text(emoji, style: const TextStyle(fontSize: 16)),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        ing.name,
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                        borderRadius:
-                            BorderRadius.circular(AppTheme.radiusFull),
-                      ),
-                      child: Text(
-                        ing.displayAmount,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-        const SizedBox(height: 24),
-
-        // Add button
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: () => _addExtractedRecipeAsMeal(recipe),
-            icon: const Icon(Icons.add),
-            label: Text(l10n.addToMealPlan),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 14),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMacroChip(String label, double value, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(AppTheme.radiusFull),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 6,
-            height: 6,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: 4),
-          Text(
-            '${value.toStringAsFixed(0)}g',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Future<void> _pickRecipeImage(ImageSource source) async {
     try {
       final image = await _imagePicker.pickImage(
@@ -980,7 +798,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
     bool isDark,
     AppLocalizations l10n,
   ) {
-    return _ManualEntryForm(
+    return AddPlannedMealManualEntryForm(
       date: widget.date,
       mealType: _selectedMealType,
       onSaved: () => Navigator.pop(context),
@@ -1146,170 +964,6 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
 
     nutrition.addPlannedMeal(plannedMeal);
     Navigator.pop(context);
-    HapticFeedback.mediumImpact();
-  }
-}
-
-class _ManualEntryForm extends StatefulWidget {
-  final DateTime date;
-  final String mealType;
-  final VoidCallback onSaved;
-
-  const _ManualEntryForm({
-    required this.date,
-    required this.mealType,
-    required this.onSaved,
-  });
-
-  @override
-  State<_ManualEntryForm> createState() => _ManualEntryFormState();
-}
-
-class _ManualEntryFormState extends State<_ManualEntryForm> {
-  final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _caloriesController = TextEditingController();
-  final _proteinController = TextEditingController();
-  final _carbsController = TextEditingController();
-  final _fatController = TextEditingController();
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _caloriesController.dispose();
-    _proteinController.dispose();
-    _carbsController.dispose();
-    _fatController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-
-    return Form(
-      key: _formKey,
-      child: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          TextFormField(
-            controller: _nameController,
-            decoration: InputDecoration(
-              labelText: l10n.foodName,
-              prefixIcon: const Icon(Icons.restaurant_outlined),
-            ),
-            validator: (v) => v == null || v.isEmpty ? l10n.required : null,
-            textCapitalization: TextCapitalization.sentences,
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _caloriesController,
-            decoration: InputDecoration(
-              labelText: l10n.calories,
-              prefixIcon: const Icon(Icons.local_fire_department_outlined),
-              suffixText: 'kcal',
-            ),
-            keyboardType: TextInputType.number,
-            validator: (v) {
-              if (v == null || v.isEmpty) return l10n.required;
-              final parsed = double.tryParse(v);
-              if (parsed == null || parsed < 0) {
-                return l10n.enterValidPositiveNumber;
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: TextFormField(
-                  controller: _proteinController,
-                  decoration: InputDecoration(
-                    labelText: l10n.protein,
-                    suffixText: 'g',
-                  ),
-                  keyboardType: TextInputType.number,
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return null;
-                    final parsed = double.tryParse(v);
-                    if (parsed == null || parsed < 0) {
-                      return l10n.enterValidPositiveNumber;
-                    }
-                    return null;
-                  },
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextFormField(
-                  controller: _carbsController,
-                  decoration: InputDecoration(
-                    labelText: l10n.carbs,
-                    suffixText: 'g',
-                  ),
-                  keyboardType: TextInputType.number,
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return null;
-                    final parsed = double.tryParse(v);
-                    if (parsed == null || parsed < 0) {
-                      return l10n.enterValidPositiveNumber;
-                    }
-                    return null;
-                  },
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextFormField(
-                  controller: _fatController,
-                  decoration: InputDecoration(
-                    labelText: l10n.fat,
-                    suffixText: 'g',
-                  ),
-                  keyboardType: TextInputType.number,
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return null;
-                    final parsed = double.tryParse(v);
-                    if (parsed == null || parsed < 0) {
-                      return l10n.enterValidPositiveNumber;
-                    }
-                    return null;
-                  },
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 32),
-          ElevatedButton(
-            onPressed: _submit,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Text(l10n.addMeal),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _submit() {
-    if (!_formKey.currentState!.validate()) return;
-
-    final nutrition = context.read<NutritionProvider>();
-
-    final plannedMeal = PlannedMealFactory.manual(
-      date: widget.date,
-      meal: widget.mealType,
-      name: _nameController.text,
-      calories: double.tryParse(_caloriesController.text) ?? 0,
-      protein: double.tryParse(_proteinController.text) ?? 0,
-      carbs: double.tryParse(_carbsController.text) ?? 0,
-      fat: double.tryParse(_fatController.text) ?? 0,
-    );
-
-    nutrition.addPlannedMeal(plannedMeal);
-    widget.onSaved();
     HapticFeedback.mediumImpact();
   }
 }

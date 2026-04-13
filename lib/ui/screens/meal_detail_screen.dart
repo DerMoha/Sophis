@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 import '../../../models/shareable_meal.dart';
 import '../../../services/nutrition_provider.dart';
 import '../../../services/settings_provider.dart';
+import '../components/nutrition_entry_fields.dart';
 import '../theme/app_theme.dart';
 import '../components/organic_components.dart';
 import '../theme/animations.dart';
@@ -603,78 +604,15 @@ class _MealEntryCard extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         title: Text(l10n.editEntry),
         content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: InputDecoration(
-                  labelText: l10n.name,
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: AppTheme.spaceSM2),
-              TextField(
-                controller: caloriesController,
-                decoration: InputDecoration(
-                  labelText: l10n.calories,
-                  suffixText: 'kcal',
-                  border: const OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: AppTheme.spaceSM2),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: proteinController,
-                      decoration: InputDecoration(
-                        labelText: l10n.protein,
-                        suffixText: 'g',
-                        border: const OutlineInputBorder(),
-                      ),
-                      keyboardType:
-                          const TextInputType.numberWithOptions(decimal: true),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppTheme.spaceSM2),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: carbsController,
-                      decoration: InputDecoration(
-                        labelText: l10n.carbs,
-                        suffixText: 'g',
-                        border: const OutlineInputBorder(),
-                      ),
-                      keyboardType:
-                          const TextInputType.numberWithOptions(decimal: true),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppTheme.spaceSM2),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: fatController,
-                      decoration: InputDecoration(
-                        labelText: l10n.fat,
-                        suffixText: 'g',
-                        border: const OutlineInputBorder(),
-                      ),
-                      keyboardType:
-                          const TextInputType.numberWithOptions(decimal: true),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+          child: NutritionEntryFields(
+            nameController: nameController,
+            caloriesController: caloriesController,
+            proteinController: proteinController,
+            carbsController: carbsController,
+            fatController: fatController,
+            nameLabel: l10n.name,
+            nameTextCapitalization: TextCapitalization.sentences,
+            border: const OutlineInputBorder(),
           ),
         ),
         actions: [

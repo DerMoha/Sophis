@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../../l10n/generated/app_localizations.dart';
-import '../screens/ai_food_camera_screen.dart';
+import 'ai_food_result.dart';
 import '../theme/app_theme.dart';
 
 class EditFoodAnalysisSheet extends StatefulWidget {
@@ -125,7 +126,8 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
         builder: (ctx) => AlertDialog(
           title: Text(AppLocalizations.of(ctx)!.confirmReanalysis),
           content: Text(
-            AppLocalizations.of(ctx)!.reanalysisConfirmation(widget.remainingRequests),
+            AppLocalizations.of(ctx)!
+                .reanalysisConfirmation(widget.remainingRequests),
           ),
           actions: [
             TextButton(
@@ -343,7 +345,8 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                           vertical: 14,
                         ),
                       ),
-                      validator: (v) => _validatePositiveNumber(v, l10n.portionSize),
+                      validator: (v) =>
+                          _validatePositiveNumber(v, l10n.portionSize),
                     ),
                     const SizedBox(height: 16),
 
@@ -353,8 +356,7 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                       onChanged: (value) =>
                           setState(() => _autoScaleEnabled = value),
                       title: Text(l10n.autoScaleNutrition),
-                      subtitle:
-                          Text(l10n.autoScaleNutritionSubtitle),
+                      subtitle: Text(l10n.autoScaleNutritionSubtitle),
                       contentPadding: EdgeInsets.zero,
                     ),
                     const SizedBox(height: 8),
@@ -391,7 +393,8 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                           vertical: 14,
                         ),
                       ),
-                      validator: (v) => _validatePositiveNumber(v, l10n.calories),
+                      validator: (v) =>
+                          _validatePositiveNumber(v, l10n.calories),
                     ),
                     const SizedBox(height: 16),
 
@@ -465,7 +468,8 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                                 vertical: 14,
                               ),
                             ),
-                            validator: (v) => _validatePositiveNumber(v, l10n.fat),
+                            validator: (v) =>
+                                _validatePositiveNumber(v, l10n.fat),
                           ),
                         ),
                       ],

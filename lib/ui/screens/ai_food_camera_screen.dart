@@ -10,6 +10,9 @@ import '../../../services/food_entry_factory.dart';
 import '../../../services/nutrition_provider.dart';
 import '../../../services/settings_provider.dart';
 import '../../../models/shareable_meal.dart';
+import '../components/ai_food_image_tile.dart';
+import '../components/ai_food_result.dart';
+import '../components/ai_food_result_card.dart';
 import '../theme/app_theme.dart';
 import '../components/edit_food_analysis_sheet.dart';
 import 'share_meal_screen.dart';
@@ -468,7 +471,10 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.all(8),
                     itemCount: _images.length,
-                    itemBuilder: (context, index) => _buildImageTile(index),
+                    itemBuilder: (context, index) => AiFoodImageTile(
+                      image: _images[index],
+                      onRemove: () => _removeImage(index),
+                    ),
                   ),
           ),
           Padding(
@@ -521,39 +527,6 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildImageTile(int index) {
-    return Stack(
-      children: [
-        Container(
-          width: 120,
-          margin: const EdgeInsets.only(right: 8),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-            image: DecorationImage(
-              image: FileImage(_images[index]),
-              fit: BoxFit.cover,
-            ),
-          ),
-        ),
-        Positioned(
-          top: 4,
-          right: 12,
-          child: GestureDetector(
-            onTap: () => _removeImage(index),
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.54),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.close, color: Colors.white, size: 16),
-            ),
-          ),
-        ),
-      ],
     );
   }
 
@@ -625,235 +598,13 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       itemCount: _results!.length,
       itemBuilder: (context, index) {
         final result = _results![index];
-        return _buildFoodResultCard(result, theme);
+        return AiFoodResultCard(
+          result: result,
+          onEdit: () => _showEditSheet(result),
+          onShare: () => _shareSingleFood(result),
+          onAdd: () => _addFood(result),
+        );
       },
     );
-  }
-
-  Widget _buildFoodResultCard(EditableFoodResult result, ThemeData theme) {
-    final food = result.currentAnalysis;
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Food name with edit button
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    food.name,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(
-                    result.isModified ? Icons.edit : Icons.edit_outlined,
-                    size: 20,
-                    color: result.isModified
-                        ? theme.colorScheme.primary
-                        : theme.colorScheme.onSurfaceVariant,
-                  ),
-                  onPressed: () => _showEditSheet(result),
-                  tooltip: 'Edit values',
-                ),
-              ],
-            ),
-
-            // Modified badge
-            if (result.isModified)
-              Container(
-                margin: const EdgeInsets.only(top: 4, bottom: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(AppTheme.radiusXS),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.edit,
-                      size: 12,
-                      color: theme.colorScheme.primary,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Modified',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: theme.colorScheme.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            const SizedBox(height: AppTheme.spaceSM2),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${food.portionDisplay} • ${food.caloriesDisplay}',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(food.macrosDisplay, style: theme.textTheme.bodySmall),
-                  ],
-                ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Share button
-                    IconButton(
-                      icon: Icon(
-                        Icons.share_outlined,
-                        size: 20,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                      onPressed: () => _shareSingleFood(result),
-                      tooltip: AppLocalizations.of(context)!.share,
-                    ),
-                    // Add button or Added indicator
-                    result.isAdded
-                        ? Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppTheme.success,
-                              borderRadius:
-                                  BorderRadius.circular(AppTheme.radiusMD),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.check,
-                                  color: theme.colorScheme.onPrimary,
-                                  size: 18,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  AppLocalizations.of(context)!.added,
-                                  style: TextStyle(color: theme.colorScheme.onPrimary),
-                                ),
-                              ],
-                            ),
-                          )
-                        : ElevatedButton.icon(
-                            onPressed: () => _addFood(result),
-                            icon: const Icon(Icons.add, size: 18),
-                            label: Text(AppLocalizations.of(context)!.add),
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                            ),
-                          ),
-                  ],
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class EditableFoodResult {
-  FoodAnalysis originalAnalysis; // Keep for reset functionality
-  FoodAnalysis currentAnalysis; // Current (possibly edited) values
-
-  // Controllers for all editable fields
-  final TextEditingController nameController;
-  final TextEditingController portionController;
-  final TextEditingController caloriesController;
-  final TextEditingController proteinController;
-  final TextEditingController carbsController;
-  final TextEditingController fatController;
-
-  bool isAdded = false;
-  bool isModified = false; // Track if user made edits
-
-  EditableFoodResult({required FoodAnalysis analysis})
-      : originalAnalysis = analysis,
-        currentAnalysis = analysis,
-        nameController = TextEditingController(text: analysis.name),
-        portionController = TextEditingController(
-          text: analysis.portionGrams.toStringAsFixed(0),
-        ),
-        caloriesController =
-            TextEditingController(text: analysis.calories.toStringAsFixed(0)),
-        proteinController =
-            TextEditingController(text: analysis.protein.toStringAsFixed(1)),
-        carbsController =
-            TextEditingController(text: analysis.carbs.toStringAsFixed(1)),
-        fatController =
-            TextEditingController(text: analysis.fat.toStringAsFixed(1));
-
-  // Backward compatibility - map to nameController
-  TextEditingController get controller => nameController;
-  FoodAnalysis get analysis => currentAnalysis;
-
-  /// Apply controller values to create edited analysis
-  FoodAnalysis getEditedAnalysis() {
-    return FoodAnalysis(
-      name: nameController.text.trim(),
-      portionGrams: double.tryParse(portionController.text) ??
-          currentAnalysis.portionGrams,
-      calories:
-          double.tryParse(caloriesController.text) ?? currentAnalysis.calories,
-      protein:
-          double.tryParse(proteinController.text) ?? currentAnalysis.protein,
-      carbs: double.tryParse(carbsController.text) ?? currentAnalysis.carbs,
-      fat: double.tryParse(fatController.text) ?? currentAnalysis.fat,
-    );
-  }
-
-  /// Generate correction hint for AI re-analysis
-  String generateCorrectionHint() {
-    final parts = <String>[];
-
-    if (nameController.text.trim() != originalAnalysis.name) {
-      parts.add('The food is actually "${nameController.text.trim()}"');
-    }
-
-    final portion = double.tryParse(portionController.text);
-    if (portion != null &&
-        (portion - originalAnalysis.portionGrams).abs() > 5) {
-      parts.add('portion should be ${portion.toStringAsFixed(0)}g');
-    }
-
-    if (parts.isEmpty) {
-      parts.add(
-        'Re-evaluate the nutrition values for "${nameController.text.trim()}"',
-      );
-    }
-
-    return '${parts.join(', ')}.';
-  }
-
-  /// Dispose all controllers
-  void dispose() {
-    nameController.dispose();
-    portionController.dispose();
-    caloriesController.dispose();
-    proteinController.dispose();
-    carbsController.dispose();
-    fatController.dispose();
   }
 }
