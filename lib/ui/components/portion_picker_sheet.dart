@@ -3,16 +3,16 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../l10n/generated/app_localizations.dart';
-import '../../models/custom_portion.dart';
-import '../../models/food_item.dart';
-import '../../models/nutrition_totals.dart';
-import '../../models/serving_size.dart';
-import '../../services/barcode_lookup_service.dart';
-import '../../services/nutrition_provider.dart';
+import 'package:sophis/l10n/generated/app_localizations.dart';
+import 'package:sophis/models/custom_portion.dart';
+import 'package:sophis/models/food_item.dart';
+import 'package:sophis/models/nutrition_totals.dart';
+import 'package:sophis/models/serving_size.dart';
+import 'package:sophis/services/barcode_lookup_service.dart';
+import 'package:sophis/services/nutrition_provider.dart';
 
-import '../theme/app_theme.dart';
-import 'edit_product_sheet.dart';
+import 'package:sophis/ui/theme/app_theme.dart';
+import 'package:sophis/ui/components/edit_product_sheet.dart';
 
 /// A modal bottom sheet for selecting portion sizes
 class PortionPickerSheet extends StatefulWidget {

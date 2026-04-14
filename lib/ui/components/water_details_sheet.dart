@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../l10n/generated/app_localizations.dart';
-import '../../models/app_settings.dart';
-import '../../models/water_entry.dart';
-import '../../services/nutrition_provider.dart';
-import '../../services/settings_provider.dart';
-import '../../utils/time_utils.dart';
-import '../theme/app_theme.dart';
-import '../theme/animations.dart';
-import 'modal_sheet.dart';
-import '../../utils/unit_converter.dart';
+import 'package:sophis/l10n/generated/app_localizations.dart';
+import 'package:sophis/models/app_settings.dart';
+import 'package:sophis/models/water_entry.dart';
+import 'package:sophis/services/nutrition_provider.dart';
+import 'package:sophis/services/settings_provider.dart';
+import 'package:sophis/utils/time_utils.dart';
+import 'package:sophis/ui/theme/app_theme.dart';
+import 'package:sophis/ui/theme/animations.dart';
+import 'package:sophis/ui/components/modal_sheet.dart';
+import 'package:sophis/utils/unit_converter.dart';
 
 class WaterDetailsSheet extends StatefulWidget {
   const WaterDetailsSheet({super.key});

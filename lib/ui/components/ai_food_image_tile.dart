@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
-import '../theme/app_theme.dart';
+import 'package:sophis/ui/theme/app_theme.dart';
 
 class AiFoodImageTile extends StatelessWidget {
   final File image;

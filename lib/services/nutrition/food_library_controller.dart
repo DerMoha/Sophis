@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
-import '../../models/food_item.dart';
-import '../../models/recipe.dart';
-import '../../models/custom_portion.dart';
-import '../storage_service.dart';
+import 'package:sophis/models/food_item.dart';
+import 'package:sophis/models/recipe.dart';
+import 'package:sophis/models/custom_portion.dart';
+import 'package:sophis/services/storage_service.dart';
 
 /// Manages recipes, custom foods, favorites, and custom portions.
 class FoodLibraryController {

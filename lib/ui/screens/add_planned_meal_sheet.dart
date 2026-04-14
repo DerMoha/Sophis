@@ -5,20 +5,20 @@ import 'package:gal/gal.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
-import '../../../l10n/generated/app_localizations.dart';
-import '../../../models/food_item.dart';
-import '../../../models/recipe.dart';
-import '../../../services/gemini_food_service.dart';
-import '../../../services/nutrition_provider.dart';
-import '../../../services/openfoodfacts_service.dart';
-import '../../../services/service_result.dart';
-import '../../../services/planned_meal_factory.dart';
-import '../../../services/settings_provider.dart';
-import '../components/add_planned_meal_extracted_recipe_view.dart';
-import '../components/add_planned_meal_manual_entry_form.dart';
-import '../components/modal_sheet.dart';
-import '../components/organic/primitives.dart';
-import '../theme/app_theme.dart';
+import 'package:sophis/l10n/generated/app_localizations.dart';
+import 'package:sophis/models/food_item.dart';
+import 'package:sophis/models/recipe.dart';
+import 'package:sophis/services/gemini_food_service.dart';
+import 'package:sophis/services/nutrition_provider.dart';
+import 'package:sophis/services/openfoodfacts_service.dart';
+import 'package:sophis/services/service_result.dart';
+import 'package:sophis/services/planned_meal_factory.dart';
+import 'package:sophis/services/settings_provider.dart';
+import 'package:sophis/ui/components/add_planned_meal_extracted_recipe_view.dart';
+import 'package:sophis/ui/components/add_planned_meal_manual_entry_form.dart';
+import 'package:sophis/ui/components/modal_sheet.dart';
+import 'package:sophis/ui/components/organic/primitives.dart';
+import 'package:sophis/ui/theme/app_theme.dart';
 
 class AddPlannedMealSheet extends StatefulWidget {
   final DateTime date;

@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import '../../../l10n/generated/app_localizations.dart';
-import '../../../models/food_entry.dart';
-import '../../../services/nutrition_provider.dart';
-import 'food_diary/food_diary_vm.dart';
-import '../theme/app_theme.dart';
-import '../theme/animations.dart';
-import '../components/organic_components.dart';
+import 'package:sophis/l10n/generated/app_localizations.dart';
+import 'package:sophis/models/food_entry.dart';
+import 'package:sophis/services/nutrition_provider.dart';
+import 'package:sophis/ui/screens/food_diary/food_diary_vm.dart';
+import 'package:sophis/ui/theme/app_theme.dart';
+import 'package:sophis/ui/theme/animations.dart';
+import 'package:sophis/ui/components/organic_components.dart';
 
 /// Screen for browsing food diary entries across different dates
 class FoodDiaryScreen extends StatefulWidget {

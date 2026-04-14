@@ -1,7 +1,7 @@
 import 'package:uuid/uuid.dart';
 
-import '../models/food_entry.dart';
-import '../models/food_item.dart';
+import 'package:sophis/models/food_entry.dart';
+import 'package:sophis/models/food_item.dart';
 
 class FoodEntryFactory {
   static const Uuid _uuid = Uuid();

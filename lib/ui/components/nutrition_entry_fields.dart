@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../l10n/generated/app_localizations.dart';
-import '../theme/app_theme.dart';
+import 'package:sophis/l10n/generated/app_localizations.dart';
+import 'package:sophis/ui/theme/app_theme.dart';
 
 class NutritionEntryFields extends StatelessWidget {
   final TextEditingController nameController;

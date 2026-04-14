@@ -1,4 +1,4 @@
-import '../models/app_settings.dart';
+import 'package:sophis/models/app_settings.dart';
 
 /// Utility class for converting between metric and imperial units.
 /// All data is stored in metric internally; this class converts for display.

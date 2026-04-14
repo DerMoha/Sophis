@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
-import '../models/supplement.dart';
-import '../models/supplement_log.dart';
-import 'database_service.dart';
-import 'notification_service.dart';
+import 'package:sophis/models/supplement.dart';
+import 'package:sophis/models/supplement_log.dart';
+import 'package:sophis/services/database_service.dart';
+import 'package:sophis/services/notification_service.dart';
 
 /// Provider for managing supplement tracking, including completion logging
 /// and daily reminder notifications.

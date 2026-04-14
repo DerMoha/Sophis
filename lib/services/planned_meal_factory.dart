@@ -1,9 +1,9 @@
 import 'package:uuid/uuid.dart';
 
-import '../models/food_item.dart';
-import '../models/meal_plan.dart';
-import '../models/recipe.dart';
-import 'gemini_food_service.dart';
+import 'package:sophis/models/food_item.dart';
+import 'package:sophis/models/meal_plan.dart';
+import 'package:sophis/models/recipe.dart';
+import 'package:sophis/services/gemini_food_service.dart';
 
 class PlannedMealFactory {
   static const Uuid _uuid = Uuid();

@@ -2,7 +2,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
-import '../utils/time_utils.dart';
+import 'package:sophis/utils/time_utils.dart';
 
 /// Service for handling local push notifications
 class NotificationService {

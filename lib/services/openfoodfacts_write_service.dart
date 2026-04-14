@@ -4,8 +4,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/http.dart' show Response;
-import '../models/food_item.dart';
-import 'service_result.dart';
+import 'package:sophis/models/food_item.dart';
+import 'package:sophis/services/service_result.dart';
 
 class OpenFoodFactsWriteService {
   static const _submitUrl =

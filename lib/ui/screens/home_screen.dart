@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../services/nutrition_provider.dart';
-import 'home/modern/home_modern_screen.dart';
+import 'package:sophis/services/nutrition_provider.dart';
+import 'package:sophis/ui/screens/home/modern/home_modern_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});

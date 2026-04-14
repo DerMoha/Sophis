@@ -4,18 +4,18 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:gal/gal.dart';
 
-import '../../../l10n/generated/app_localizations.dart';
-import '../../../services/gemini_food_service.dart';
-import '../../../services/food_entry_factory.dart';
-import '../../../services/nutrition_provider.dart';
-import '../../../services/settings_provider.dart';
-import '../../../models/shareable_meal.dart';
-import '../components/ai_food_image_tile.dart';
-import '../components/ai_food_result.dart';
-import '../components/ai_food_result_card.dart';
-import '../theme/app_theme.dart';
-import '../components/edit_food_analysis_sheet.dart';
-import 'share_meal_screen.dart';
+import 'package:sophis/l10n/generated/app_localizations.dart';
+import 'package:sophis/services/gemini_food_service.dart';
+import 'package:sophis/services/food_entry_factory.dart';
+import 'package:sophis/services/nutrition_provider.dart';
+import 'package:sophis/services/settings_provider.dart';
+import 'package:sophis/models/shareable_meal.dart';
+import 'package:sophis/ui/components/ai_food_image_tile.dart';
+import 'package:sophis/ui/components/ai_food_result.dart';
+import 'package:sophis/ui/components/ai_food_result_card.dart';
+import 'package:sophis/ui/theme/app_theme.dart';
+import 'package:sophis/ui/components/edit_food_analysis_sheet.dart';
+import 'package:sophis/ui/screens/share_meal_screen.dart';
 
 class AIFoodCameraScreen extends StatefulWidget {
   final String meal;

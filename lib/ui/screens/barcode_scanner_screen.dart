@@ -2,20 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 
-import '../../../l10n/generated/app_localizations.dart';
-import '../../../models/food_item.dart';
-import '../../../models/shareable_meal.dart';
-import '../../../services/barcode_lookup_service.dart';
-import '../../../services/brocade_service.dart';
-import '../../../services/food_entry_factory.dart';
-import '../../../services/meal_sharing_service.dart';
-import '../../../services/openfoodfacts_service.dart';
-import '../../../services/nutrition_provider.dart';
-import '../theme/app_theme.dart';
-import '../components/barcode_not_found_sheet.dart';
-import '../components/portion_picker_sheet.dart';
-import 'food_search_screen.dart';
-import 'import_meal_screen.dart';
+import 'package:sophis/l10n/generated/app_localizations.dart';
+import 'package:sophis/models/food_item.dart';
+import 'package:sophis/models/shareable_meal.dart';
+import 'package:sophis/services/barcode_lookup_service.dart';
+import 'package:sophis/services/brocade_service.dart';
+import 'package:sophis/services/food_entry_factory.dart';
+import 'package:sophis/services/meal_sharing_service.dart';
+import 'package:sophis/services/openfoodfacts_service.dart';
+import 'package:sophis/services/nutrition_provider.dart';
+import 'package:sophis/ui/theme/app_theme.dart';
+import 'package:sophis/ui/components/barcode_not_found_sheet.dart';
+import 'package:sophis/ui/components/portion_picker_sheet.dart';
+import 'package:sophis/ui/screens/food_search_screen.dart';
+import 'package:sophis/ui/screens/import_meal_screen.dart';
 
 class BarcodeScannerScreen extends StatefulWidget {
   final String meal;

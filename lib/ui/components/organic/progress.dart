@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
-import '../../theme/app_theme.dart';
+import 'package:sophis/ui/theme/app_theme.dart';
 
 class RadialProgress extends StatelessWidget {
   final double value;

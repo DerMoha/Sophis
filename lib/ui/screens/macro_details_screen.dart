@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../../l10n/generated/app_localizations.dart';
-import '../../../models/nutrition_goals.dart';
-import '../../../models/nutrition_totals.dart';
-import '../theme/app_theme.dart';
-import '../components/organic_components.dart';
-import '../theme/animations.dart';
+import 'package:sophis/l10n/generated/app_localizations.dart';
+import 'package:sophis/models/nutrition_goals.dart';
+import 'package:sophis/models/nutrition_totals.dart';
+import 'package:sophis/ui/theme/app_theme.dart';
+import 'package:sophis/ui/components/organic_components.dart';
+import 'package:sophis/ui/theme/animations.dart';
 
 class MacroDetailsScreen extends StatelessWidget {
   final NutritionTotals totals;

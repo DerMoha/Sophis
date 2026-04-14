@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'service_result.dart';
+import 'package:sophis/services/service_result.dart';
 
 /// Service for looking up product names via Brocade.io
 /// Used as a fallback when OpenFoodFacts has no match.

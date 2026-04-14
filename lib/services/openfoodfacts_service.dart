@@ -6,9 +6,9 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 
-import '../models/food_item.dart';
-import '../models/serving_size.dart';
-import 'service_result.dart';
+import 'package:sophis/models/food_item.dart';
+import 'package:sophis/models/serving_size.dart';
+import 'package:sophis/services/service_result.dart';
 
 /// Service for searching food products via OpenFoodFacts API
 class OpenFoodFactsService {

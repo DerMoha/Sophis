@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../l10n/generated/app_localizations.dart';
-import '../../../../models/food_entry.dart';
-import '../../../../models/shareable_meal.dart';
-import '../../../../services/nutrition_provider.dart';
-import '../../theme/app_theme.dart';
-import '../add_food_screen.dart';
-import '../ai_food_camera_screen.dart';
-import '../barcode_scanner_screen.dart';
-import '../food_search_screen.dart';
-import '../share_meal_screen.dart';
+import 'package:sophis/l10n/generated/app_localizations.dart';
+import 'package:sophis/models/food_entry.dart';
+import 'package:sophis/models/shareable_meal.dart';
+import 'package:sophis/services/nutrition_provider.dart';
+import 'package:sophis/ui/theme/app_theme.dart';
+import 'package:sophis/ui/screens/add_food_screen.dart';
+import 'package:sophis/ui/screens/ai_food_camera_screen.dart';
+import 'package:sophis/ui/screens/barcode_scanner_screen.dart';
+import 'package:sophis/ui/screens/food_search_screen.dart';
+import 'package:sophis/ui/screens/share_meal_screen.dart';
 
 void handleMealAddAction(
   BuildContext context, {

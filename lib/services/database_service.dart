@@ -4,12 +4,12 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
-import '../models/food_entry.dart';
-import '../models/water_entry.dart';
-import '../models/weight_entry.dart';
-import '../models/workout_entry.dart';
-import '../models/supplement.dart';
-import '../models/supplement_log.dart';
+import 'package:sophis/models/food_entry.dart';
+import 'package:sophis/models/water_entry.dart';
+import 'package:sophis/models/weight_entry.dart';
+import 'package:sophis/models/workout_entry.dart';
+import 'package:sophis/models/supplement.dart';
+import 'package:sophis/models/supplement_log.dart';
 part 'database_service.g.dart';
 
 // -----------------------------------------------------------------------------

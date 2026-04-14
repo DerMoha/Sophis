@@ -4,15 +4,15 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
-import '../models/food_entry.dart';
-import '../models/water_entry.dart';
-import '../models/weight_entry.dart';
-import '../models/recipe.dart';
-import '../models/meal_plan.dart';
-import '../models/nutrition_goals.dart';
-import '../models/user_profile.dart';
-import '../models/workout_entry.dart';
-import 'nutrition_provider.dart';
+import 'package:sophis/models/food_entry.dart';
+import 'package:sophis/models/water_entry.dart';
+import 'package:sophis/models/weight_entry.dart';
+import 'package:sophis/models/recipe.dart';
+import 'package:sophis/models/meal_plan.dart';
+import 'package:sophis/models/nutrition_goals.dart';
+import 'package:sophis/models/user_profile.dart';
+import 'package:sophis/models/workout_entry.dart';
+import 'package:sophis/services/nutrition_provider.dart';
 
 /// Service for exporting and importing all app data as JSON
 class DataExportService {

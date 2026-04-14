@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../l10n/generated/app_localizations.dart';
-import '../../../services/settings_provider.dart';
-import '../theme/app_theme.dart';
-import '../components/organic_components.dart';
+import 'package:sophis/l10n/generated/app_localizations.dart';
+import 'package:sophis/services/settings_provider.dart';
+import 'package:sophis/ui/theme/app_theme.dart';
+import 'package:sophis/ui/components/organic_components.dart';
 
 class MealMacrosSettingsScreen extends StatelessWidget {
   const MealMacrosSettingsScreen({super.key});

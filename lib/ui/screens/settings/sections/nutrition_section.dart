@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../../../l10n/generated/app_localizations.dart';
-import '../../../../../services/settings_provider.dart';
-import '../../../../../services/supplements_provider.dart';
-import '../../../theme/app_theme.dart';
-import '../../../components/settings/settings_tiles.dart';
-import '../../../components/settings/water_sizes_dialog.dart';
-import '../../goals_setup_screen.dart';
-import '../../meal_macros_settings_screen.dart';
-import '../../supplements_screen.dart';
+import 'package:sophis/l10n/generated/app_localizations.dart';
+import 'package:sophis/services/settings_provider.dart';
+import 'package:sophis/services/supplements_provider.dart';
+import 'package:sophis/ui/theme/app_theme.dart';
+import 'package:sophis/ui/components/settings/settings_tiles.dart';
+import 'package:sophis/ui/components/settings/water_sizes_dialog.dart';
+import 'package:sophis/ui/screens/goals_setup_screen.dart';
+import 'package:sophis/ui/screens/meal_macros_settings_screen.dart';
+import 'package:sophis/ui/screens/supplements_screen.dart';
 
 class NutritionSection extends StatelessWidget {
   final SettingsProvider settings;

@@ -1,5 +1,5 @@
-import 'nutrition_totals.dart';
-import 'serving_size.dart';
+import 'package:sophis/models/nutrition_totals.dart';
+import 'package:sophis/models/serving_size.dart';
 
 /// Food item template with nutrition per 100g
 class FoodItem {

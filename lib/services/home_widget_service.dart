@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:home_widget/home_widget.dart';
 
-import '../services/nutrition_provider.dart';
+import 'package:sophis/services/nutrition_provider.dart';
 
 class HomeWidgetService {
   static const String appGroupId = 'group.sophis.sophis';

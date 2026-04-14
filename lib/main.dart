@@ -5,22 +5,22 @@ import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
-import 'l10n/generated/app_localizations.dart';
+import 'package:sophis/l10n/generated/app_localizations.dart';
 
-import 'models/shareable_meal.dart';
-import 'services/storage_service.dart';
-import 'services/settings_provider.dart';
-import 'services/nutrition_provider.dart';
-import 'services/notification_service.dart';
-import 'services/meal_sharing_service.dart';
-import 'services/barcode_lookup_service.dart';
-import 'services/brocade_service.dart';
-import 'services/database_service.dart';
-import 'services/openfoodfacts_service.dart';
-import 'services/supplements_provider.dart';
-import 'ui/theme/app_theme.dart';
-import 'ui/screens/home_screen.dart';
-import 'ui/screens/import_meal_screen.dart';
+import 'package:sophis/models/shareable_meal.dart';
+import 'package:sophis/services/storage_service.dart';
+import 'package:sophis/services/settings_provider.dart';
+import 'package:sophis/services/nutrition_provider.dart';
+import 'package:sophis/services/notification_service.dart';
+import 'package:sophis/services/meal_sharing_service.dart';
+import 'package:sophis/services/barcode_lookup_service.dart';
+import 'package:sophis/services/brocade_service.dart';
+import 'package:sophis/services/database_service.dart';
+import 'package:sophis/services/openfoodfacts_service.dart';
+import 'package:sophis/services/supplements_provider.dart';
+import 'package:sophis/ui/theme/app_theme.dart';
+import 'package:sophis/ui/screens/home_screen.dart';
+import 'package:sophis/ui/screens/import_meal_screen.dart';
 
 /// Global navigator key for deep link navigation
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();

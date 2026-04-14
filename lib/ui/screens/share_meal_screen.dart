@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
-import '../../../l10n/generated/app_localizations.dart';
-import '../../../models/shareable_meal.dart';
-import '../../../services/meal_sharing_service.dart';
-import '../theme/app_theme.dart';
-import '../components/organic_components.dart';
+import 'package:sophis/l10n/generated/app_localizations.dart';
+import 'package:sophis/models/shareable_meal.dart';
+import 'package:sophis/services/meal_sharing_service.dart';
+import 'package:sophis/ui/theme/app_theme.dart';
+import 'package:sophis/ui/components/organic_components.dart';
 
 class ShareMealScreen extends StatelessWidget {
   final ShareableMeal meal;

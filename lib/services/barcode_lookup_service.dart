@@ -2,12 +2,12 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 
-import '../models/food_item.dart';
-import '../models/serving_size.dart';
-import 'database_service.dart';
-import 'openfoodfacts_service.dart';
-import 'brocade_service.dart';
-import 'service_result.dart';
+import 'package:sophis/models/food_item.dart';
+import 'package:sophis/models/serving_size.dart';
+import 'package:sophis/services/database_service.dart';
+import 'package:sophis/services/openfoodfacts_service.dart';
+import 'package:sophis/services/brocade_service.dart';
+import 'package:sophis/services/service_result.dart';
 
 enum LookupSource { cache, offDe, offWorld, brocade, manual, gemini }
 

@@ -3,15 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
-import '../../l10n/generated/app_localizations.dart';
-import '../../models/food_item.dart';
-import '../../models/serving_size.dart';
-import '../../services/barcode_lookup_service.dart';
-import '../../services/gemini_food_service.dart';
-import '../../services/settings_provider.dart';
-import 'settings/settings_tiles.dart';
-import '../theme/app_theme.dart';
-import 'edit_product_sheet.dart';
+import 'package:sophis/l10n/generated/app_localizations.dart';
+import 'package:sophis/models/food_item.dart';
+import 'package:sophis/models/serving_size.dart';
+import 'package:sophis/services/barcode_lookup_service.dart';
+import 'package:sophis/services/gemini_food_service.dart';
+import 'package:sophis/services/settings_provider.dart';
+import 'package:sophis/ui/components/settings/settings_tiles.dart';
+import 'package:sophis/ui/theme/app_theme.dart';
+import 'package:sophis/ui/components/edit_product_sheet.dart';
 
 /// Recovery bottom sheet shown when a barcode product is not found.
 /// Offers: search by name, scan nutrition label, enter manually.

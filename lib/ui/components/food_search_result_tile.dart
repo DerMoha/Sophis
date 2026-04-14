@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../models/food_item.dart';
-import '../theme/app_theme.dart';
-import 'organic_components.dart';
+import 'package:sophis/models/food_item.dart';
+import 'package:sophis/ui/theme/app_theme.dart';
+import 'package:sophis/ui/components/organic_components.dart';
 
 class FoodSearchResultTile extends StatelessWidget {
   final FoodItem item;

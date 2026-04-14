@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
-import '../../models/meal_plan.dart';
-import '../../models/nutrition_totals.dart';
-import '../storage_service.dart';
+import 'package:sophis/models/meal_plan.dart';
+import 'package:sophis/models/nutrition_totals.dart';
+import 'package:sophis/services/storage_service.dart';
 
 /// Manages planned meals, shopping list, and planned meal cache.
 class MealPlanController {

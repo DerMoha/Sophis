@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../../../../l10n/generated/app_localizations.dart';
-import '../../../theme/app_theme.dart';
-import '../../../components/settings/settings_tiles.dart';
-import '../../dashboard_settings_screen.dart';
-import '../../meal_types_screen.dart';
+import 'package:sophis/l10n/generated/app_localizations.dart';
+import 'package:sophis/ui/theme/app_theme.dart';
+import 'package:sophis/ui/components/settings/settings_tiles.dart';
+import 'package:sophis/ui/screens/dashboard_settings_screen.dart';
+import 'package:sophis/ui/screens/meal_types_screen.dart';
 
 class DashboardSection extends StatelessWidget {
   const DashboardSection({super.key});

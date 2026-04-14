@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../theme/app_theme.dart';
+import 'package:sophis/ui/theme/app_theme.dart';
 
 /// Displays the calorie goal with visual indicator when exercise has boosted it.
 class BoostedGoalDisplay extends StatefulWidget {

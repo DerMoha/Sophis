@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'custom_meal_type.dart';
+import 'package:sophis/models/custom_meal_type.dart';
 
 enum AIMode { offlineBasic, offlinePro, cloud }
 

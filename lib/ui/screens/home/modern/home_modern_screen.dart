@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../../../l10n/generated/app_localizations.dart';
-import '../../../../../models/app_settings.dart';
-import '../../../../../models/custom_meal_type.dart';
-import '../../../../../services/nutrition_provider.dart';
-import '../../../../../services/settings_provider.dart';
-import '../../../theme/app_theme.dart';
-import '../../../theme/animations.dart';
-import '../../../components/organic_components.dart';
-import '../../../components/streak_card.dart';
-import '../../../components/supplements_today_card.dart';
-import '../../goals_setup_screen.dart';
-import '../../settings_screen.dart';
-import '../shared/home_refresh.dart';
-import '../shared/home_dashboard_vm.dart';
-import '../shared/home_actions.dart';
-import 'widgets/widgets.dart';
+import 'package:sophis/l10n/generated/app_localizations.dart';
+import 'package:sophis/models/app_settings.dart';
+import 'package:sophis/models/custom_meal_type.dart';
+import 'package:sophis/services/nutrition_provider.dart';
+import 'package:sophis/services/settings_provider.dart';
+import 'package:sophis/ui/theme/app_theme.dart';
+import 'package:sophis/ui/theme/animations.dart';
+import 'package:sophis/ui/components/organic_components.dart';
+import 'package:sophis/ui/components/streak_card.dart';
+import 'package:sophis/ui/components/supplements_today_card.dart';
+import 'package:sophis/ui/screens/goals_setup_screen.dart';
+import 'package:sophis/ui/screens/settings_screen.dart';
+import 'package:sophis/ui/screens/home/shared/home_refresh.dart';
+import 'package:sophis/ui/screens/home/shared/home_dashboard_vm.dart';
+import 'package:sophis/ui/screens/home/shared/home_actions.dart';
+import 'package:sophis/ui/screens/home/modern/widgets/widgets.dart';
 
 class HomeScreenModern extends StatefulWidget {
   const HomeScreenModern({super.key});

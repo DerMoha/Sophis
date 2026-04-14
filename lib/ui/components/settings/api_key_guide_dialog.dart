@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../theme/app_theme.dart';
+import 'package:sophis/ui/theme/app_theme.dart';
 
 class ApiKeyGuideDialog extends StatelessWidget {
   const ApiKeyGuideDialog({super.key});

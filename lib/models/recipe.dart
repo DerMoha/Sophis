@@ -1,4 +1,4 @@
-import 'nutrition_totals.dart';
+import 'package:sophis/models/nutrition_totals.dart';
 
 /// Recipe ingredient
 class RecipeIngredient {

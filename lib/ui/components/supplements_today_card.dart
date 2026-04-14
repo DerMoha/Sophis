@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../../services/supplements_provider.dart';
-import '../../services/settings_provider.dart';
-import '../theme/app_theme.dart';
-import 'organic_components.dart';
-import '../screens/supplements_screen.dart';
+import 'package:sophis/services/supplements_provider.dart';
+import 'package:sophis/services/settings_provider.dart';
+import 'package:sophis/ui/theme/app_theme.dart';
+import 'package:sophis/ui/components/organic_components.dart';
+import 'package:sophis/ui/screens/supplements_screen.dart';
 
 class SupplementsTodayCard extends StatelessWidget {
   const SupplementsTodayCard({super.key});

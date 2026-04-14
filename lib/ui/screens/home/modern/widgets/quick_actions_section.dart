@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../../../../../l10n/generated/app_localizations.dart';
-import '../../../../../../models/app_settings.dart';
-import '../../../../components/organic_components.dart';
-import '../../../../theme/app_theme.dart';
-import '../../shared/home_actions.dart';
+import 'package:sophis/l10n/generated/app_localizations.dart';
+import 'package:sophis/models/app_settings.dart';
+import 'package:sophis/ui/components/organic_components.dart';
+import 'package:sophis/ui/theme/app_theme.dart';
+import 'package:sophis/ui/screens/home/shared/home_actions.dart';
 
 /// Displays quick action buttons either as a horizontal row of chips or a grid.
 class QuickActionsSection extends StatelessWidget {

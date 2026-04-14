@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../l10n/generated/app_localizations.dart';
-import '../../models/workout_entry.dart';
-import '../../services/nutrition_provider.dart';
-import '../../utils/time_utils.dart';
-import 'modal_sheet.dart';
-import '../theme/app_theme.dart';
-import '../theme/animations.dart';
+import 'package:sophis/l10n/generated/app_localizations.dart';
+import 'package:sophis/models/workout_entry.dart';
+import 'package:sophis/services/nutrition_provider.dart';
+import 'package:sophis/utils/time_utils.dart';
+import 'package:sophis/ui/components/modal_sheet.dart';
+import 'package:sophis/ui/theme/app_theme.dart';
+import 'package:sophis/ui/theme/animations.dart';
 
 class WorkoutBottomSheet extends StatefulWidget {
   final WorkoutEntry? editEntry;

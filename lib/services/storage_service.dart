@@ -1,18 +1,18 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import '../models/nutrition_goals.dart';
-import '../models/food_entry.dart';
-import '../models/user_profile.dart';
-import '../models/water_entry.dart';
-import '../models/weight_entry.dart';
-import '../models/recipe.dart';
-import '../models/app_settings.dart';
-import '../models/meal_plan.dart';
-import '../models/custom_portion.dart';
-import '../models/food_item.dart';
-import '../models/workout_entry.dart';
-import '../models/user_stats.dart';
+import 'package:sophis/models/nutrition_goals.dart';
+import 'package:sophis/models/food_entry.dart';
+import 'package:sophis/models/user_profile.dart';
+import 'package:sophis/models/water_entry.dart';
+import 'package:sophis/models/weight_entry.dart';
+import 'package:sophis/models/recipe.dart';
+import 'package:sophis/models/app_settings.dart';
+import 'package:sophis/models/meal_plan.dart';
+import 'package:sophis/models/custom_portion.dart';
+import 'package:sophis/models/food_item.dart';
+import 'package:sophis/models/workout_entry.dart';
+import 'package:sophis/models/user_stats.dart';
 import 'package:flutter/foundation.dart';
 
 /// Local storage service using SharedPreferences

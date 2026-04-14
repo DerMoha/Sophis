@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../../../l10n/generated/app_localizations.dart';
-import '../../../../../models/app_settings.dart';
-import '../../../../../services/settings_provider.dart';
-import '../../../components/settings/settings_tiles.dart';
+import 'package:sophis/l10n/generated/app_localizations.dart';
+import 'package:sophis/models/app_settings.dart';
+import 'package:sophis/services/settings_provider.dart';
+import 'package:sophis/ui/components/settings/settings_tiles.dart';
 
 class UnitsSection extends StatelessWidget {
   final SettingsProvider settings;

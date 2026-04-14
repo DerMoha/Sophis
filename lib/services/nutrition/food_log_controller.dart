@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
-import '../../models/food_entry.dart';
-import '../../models/food_item.dart';
-import '../../models/nutrition_totals.dart';
-import '../database_service.dart';
+import 'package:sophis/models/food_entry.dart';
+import 'package:sophis/models/food_item.dart';
+import 'package:sophis/models/nutrition_totals.dart';
+import 'package:sophis/services/database_service.dart';
 
 /// Manages food entries, today's cache, and food history cache.
 class FoodLogController {

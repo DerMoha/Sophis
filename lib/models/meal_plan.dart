@@ -1,4 +1,4 @@
-import '../l10n/generated/app_localizations.dart';
+import 'package:sophis/l10n/generated/app_localizations.dart';
 
 /// A single planned meal for a specific day and meal slot
 class PlannedMeal {

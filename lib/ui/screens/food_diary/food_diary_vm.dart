@@ -1,12 +1,12 @@
 import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import '../../../../models/food_entry.dart';
-import '../../../../models/nutrition_goals.dart';
-import '../../../../models/nutrition_totals.dart';
-import '../../../../services/nutrition_provider.dart';
-import '../../../../services/settings_provider.dart';
-import '../../../../models/custom_meal_type.dart';
+import 'package:sophis/models/food_entry.dart';
+import 'package:sophis/models/nutrition_goals.dart';
+import 'package:sophis/models/nutrition_totals.dart';
+import 'package:sophis/services/nutrition_provider.dart';
+import 'package:sophis/services/settings_provider.dart';
+import 'package:sophis/models/custom_meal_type.dart';
 
 /// View model for the FoodDiaryScreen.
 class FoodDiaryVM {

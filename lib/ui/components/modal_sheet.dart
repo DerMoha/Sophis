@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_theme.dart';
+import 'package:sophis/ui/theme/app_theme.dart';
 
 class ModalSheetSurface extends StatelessWidget {
   final Widget child;

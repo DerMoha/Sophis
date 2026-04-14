@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../l10n/generated/app_localizations.dart';
-import 'ai_food_result.dart';
-import 'modal_sheet.dart';
-import 'settings/settings_tiles.dart';
-import '../theme/app_theme.dart';
+import 'package:sophis/l10n/generated/app_localizations.dart';
+import 'package:sophis/ui/components/ai_food_result.dart';
+import 'package:sophis/ui/components/modal_sheet.dart';
+import 'package:sophis/ui/components/settings/settings_tiles.dart';
+import 'package:sophis/ui/theme/app_theme.dart';
 
 class EditFoodAnalysisSheet extends StatefulWidget {
   final EditableFoodResult result;

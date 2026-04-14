@@ -1,8 +1,8 @@
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../models/food_entry.dart';
-import '../models/shareable_meal.dart';
+import 'package:sophis/models/food_entry.dart';
+import 'package:sophis/models/shareable_meal.dart';
 
 /// Service for sharing and receiving meals between users
 class MealSharingService {

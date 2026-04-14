@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../../../l10n/generated/app_localizations.dart';
-import '../../../../../../models/food_entry.dart';
-import '../../../../../../services/nutrition_provider.dart';
-import '../../../../../../services/settings_provider.dart';
-import '../../../../theme/app_theme.dart';
-import '../../../../components/organic_components.dart';
-import '../../../meal_detail_screen.dart';
-import '../../../shared/meal_action_helpers.dart';
+import 'package:sophis/l10n/generated/app_localizations.dart';
+import 'package:sophis/models/food_entry.dart';
+import 'package:sophis/services/nutrition_provider.dart';
+import 'package:sophis/services/settings_provider.dart';
+import 'package:sophis/ui/theme/app_theme.dart';
+import 'package:sophis/ui/components/organic_components.dart';
+import 'package:sophis/ui/screens/meal_detail_screen.dart';
+import 'package:sophis/ui/screens/shared/meal_action_helpers.dart';
 
 /// A meal section (e.g., Breakfast, Lunch) with food entries.
 class MealSection extends StatelessWidget {

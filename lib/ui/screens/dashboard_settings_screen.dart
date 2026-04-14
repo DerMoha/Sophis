@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../l10n/generated/app_localizations.dart';
-import '../../../models/app_settings.dart';
-import '../../../services/settings_provider.dart';
-import '../theme/app_theme.dart';
-import '../theme/animations.dart';
+import 'package:sophis/l10n/generated/app_localizations.dart';
+import 'package:sophis/models/app_settings.dart';
+import 'package:sophis/services/settings_provider.dart';
+import 'package:sophis/ui/theme/app_theme.dart';
+import 'package:sophis/ui/theme/animations.dart';
 
 class DashboardSettingsScreen extends StatelessWidget {
   const DashboardSettingsScreen({super.key});

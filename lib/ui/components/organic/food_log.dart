@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../../models/nutrition_goals.dart';
-import '../../../models/nutrition_totals.dart';
-import '../../theme/app_theme.dart';
-import 'progress.dart';
-import 'primitives.dart';
+import 'package:sophis/models/nutrition_goals.dart';
+import 'package:sophis/models/nutrition_totals.dart';
+import 'package:sophis/ui/theme/app_theme.dart';
+import 'package:sophis/ui/components/organic/progress.dart';
+import 'package:sophis/ui/components/organic/primitives.dart';
 
 class NutritionSummaryCard extends StatelessWidget {
   final String title;

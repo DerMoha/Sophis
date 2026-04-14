@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../models/app_settings.dart';
-import '../models/custom_meal_type.dart';
-import '../utils/time_utils.dart';
-import 'storage_service.dart';
-import 'notification_service.dart';
-import 'health_service.dart';
+import 'package:sophis/models/app_settings.dart';
+import 'package:sophis/models/custom_meal_type.dart';
+import 'package:sophis/utils/time_utils.dart';
+import 'package:sophis/services/storage_service.dart';
+import 'package:sophis/services/notification_service.dart';
+import 'package:sophis/services/health_service.dart';
 
 /// Settings provider for theme, locale, and AI mode
 class SettingsProvider extends ChangeNotifier {

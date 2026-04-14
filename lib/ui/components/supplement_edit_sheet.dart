@@ -3,12 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../l10n/generated/app_localizations.dart';
-import '../../models/supplement.dart';
-import '../../services/supplements_provider.dart';
-import '../../utils/time_utils.dart';
-import 'modal_sheet.dart';
-import '../theme/app_theme.dart';
+import 'package:sophis/l10n/generated/app_localizations.dart';
+import 'package:sophis/models/supplement.dart';
+import 'package:sophis/services/supplements_provider.dart';
+import 'package:sophis/utils/time_utils.dart';
+import 'package:sophis/ui/components/modal_sheet.dart';
+import 'package:sophis/ui/theme/app_theme.dart';
 
 class SupplementEditSheet extends StatefulWidget {
   final Supplement? supplement;

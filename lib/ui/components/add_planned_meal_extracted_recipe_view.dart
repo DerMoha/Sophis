@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../l10n/generated/app_localizations.dart';
-import '../../models/meal_plan.dart';
-import '../../services/gemini_food_service.dart';
-import 'organic/primitives.dart';
-import '../theme/app_theme.dart';
+import 'package:sophis/l10n/generated/app_localizations.dart';
+import 'package:sophis/models/meal_plan.dart';
+import 'package:sophis/services/gemini_food_service.dart';
+import 'package:sophis/ui/components/organic/primitives.dart';
+import 'package:sophis/ui/theme/app_theme.dart';
 
 class AddPlannedMealExtractedRecipeView extends StatelessWidget {
   final RecipeExtraction recipe;

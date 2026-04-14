@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
-import '../../../l10n/generated/app_localizations.dart';
-import '../../../services/supplements_provider.dart';
-import '../../../models/supplement.dart';
-import '../theme/animations.dart';
-import '../theme/app_theme.dart';
-import '../components/organic_components.dart';
-import '../components/supplement_edit_sheet.dart';
+import 'package:sophis/l10n/generated/app_localizations.dart';
+import 'package:sophis/services/supplements_provider.dart';
+import 'package:sophis/models/supplement.dart';
+import 'package:sophis/ui/theme/animations.dart';
+import 'package:sophis/ui/theme/app_theme.dart';
+import 'package:sophis/ui/components/organic_components.dart';
+import 'package:sophis/ui/components/supplement_edit_sheet.dart';
 
 class SupplementsScreen extends StatefulWidget {
   const SupplementsScreen({super.key});

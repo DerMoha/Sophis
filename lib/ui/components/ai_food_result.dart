@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../services/gemini_food_service.dart';
+import 'package:sophis/services/gemini_food_service.dart';
 
 class EditableFoodResult {
   FoodAnalysis originalAnalysis;

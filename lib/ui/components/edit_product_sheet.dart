@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import '../../l10n/generated/app_localizations.dart';
-import '../../models/food_item.dart';
-import '../../services/openfoodfacts_write_service.dart';
-import '../../services/service_result.dart';
-import '../../services/settings_provider.dart';
-import 'modal_sheet.dart';
-import 'settings/settings_tiles.dart';
-import '../theme/app_theme.dart';
+import 'package:sophis/l10n/generated/app_localizations.dart';
+import 'package:sophis/models/food_item.dart';
+import 'package:sophis/services/openfoodfacts_write_service.dart';
+import 'package:sophis/services/service_result.dart';
+import 'package:sophis/services/settings_provider.dart';
+import 'package:sophis/ui/components/modal_sheet.dart';
+import 'package:sophis/ui/components/settings/settings_tiles.dart';
+import 'package:sophis/ui/theme/app_theme.dart';
 
 /// Bottom sheet for editing/creating barcode product nutrition (per 100g).
 class EditProductSheet extends StatefulWidget {

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import '../../../../../l10n/generated/app_localizations.dart';
-import '../../../../../models/app_settings.dart';
-import '../../../theme/app_theme.dart';
-import '../../food_diary_screen.dart';
-import '../../meal_planner_screen.dart';
-import '../../weight_tracker_screen.dart';
-import '../../recipes_screen.dart';
-import '../../activity_graph_screen.dart';
-import '../../../components/workout_bottom_sheet.dart';
+import 'package:sophis/l10n/generated/app_localizations.dart';
+import 'package:sophis/models/app_settings.dart';
+import 'package:sophis/ui/theme/app_theme.dart';
+import 'package:sophis/ui/screens/food_diary_screen.dart';
+import 'package:sophis/ui/screens/meal_planner_screen.dart';
+import 'package:sophis/ui/screens/weight_tracker_screen.dart';
+import 'package:sophis/ui/screens/recipes_screen.dart';
+import 'package:sophis/ui/screens/activity_graph_screen.dart';
+import 'package:sophis/ui/components/workout_bottom_sheet.dart';
 
 /// Represents a home screen quick action.
 class HomeAction {

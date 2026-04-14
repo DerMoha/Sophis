@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
-import '../../models/workout_entry.dart';
-import '../database_service.dart';
+import 'package:sophis/models/workout_entry.dart';
+import 'package:sophis/services/database_service.dart';
 
 /// Manages workout entries and today's workout cache.
 class WorkoutController {

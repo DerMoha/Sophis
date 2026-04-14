@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../../../../../l10n/generated/app_localizations.dart';
-import '../../../../theme/app_theme.dart';
-import '../../../../components/organic_components.dart';
-import 'boosted_goal_display.dart';
-import 'compact_stat_row.dart';
+import 'package:sophis/l10n/generated/app_localizations.dart';
+import 'package:sophis/ui/theme/app_theme.dart';
+import 'package:sophis/ui/components/organic_components.dart';
+import 'package:sophis/ui/screens/home/modern/widgets/boosted_goal_display.dart';
+import 'package:sophis/ui/screens/home/modern/widgets/compact_stat_row.dart';
 
 /// The main calorie display card for the modern home screen.
 class CalorieHeroCard extends StatelessWidget {
