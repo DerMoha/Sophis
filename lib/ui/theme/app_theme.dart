@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'dart:math' as math;
+
+export 'blob_painter.dart';
+export 'gradient_mesh_painter.dart';
 
 /// Liquid Vitality Design System for Sophis
 /// A warm, organic aesthetic that celebrates nourishment
@@ -815,84 +817,4 @@ class AppTheme {
       ],
     );
   }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// CUSTOM PAINTERS - Organic shapes and effects
-// ═══════════════════════════════════════════════════════════════════════════
-
-/// Painter for organic blob shapes
-class BlobPainter extends CustomPainter {
-  final Color color;
-  final double animationValue;
-
-  BlobPainter({required this.color, this.animationValue = 0});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-
-    final path = Path();
-    final w = size.width;
-    final h = size.height;
-
-    // Create organic blob shape with slight animation
-    final offset = math.sin(animationValue * math.pi * 2) * 5;
-
-    path.moveTo(w * 0.2, 0);
-    path.quadraticBezierTo(w * 0.5, -10 + offset, w * 0.8, 0);
-    path.quadraticBezierTo(w + 10, h * 0.3, w, h * 0.7);
-    path.quadraticBezierTo(w * 0.7, h + 5 - offset, w * 0.3, h);
-    path.quadraticBezierTo(-5, h * 0.6, 0, h * 0.3);
-    path.quadraticBezierTo(w * 0.1, -5 + offset, w * 0.2, 0);
-
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(BlobPainter oldDelegate) =>
-      color != oldDelegate.color ||
-      animationValue != oldDelegate.animationValue;
-}
-
-/// Painter for gradient mesh background
-class GradientMeshPainter extends CustomPainter {
-  final List<Color> colors;
-  final double animationValue;
-
-  GradientMeshPainter({required this.colors, this.animationValue = 0});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rect = Offset.zero & size;
-
-    // Create multiple overlapping radial gradients for mesh effect
-    for (int i = 0; i < colors.length; i++) {
-      final angle = (i / colors.length) * math.pi * 2 + animationValue;
-      final centerX = size.width * (0.5 + 0.3 * math.cos(angle));
-      final centerY = size.height * (0.5 + 0.3 * math.sin(angle));
-
-      final gradient = RadialGradient(
-        center: Alignment(
-          (centerX / size.width) * 2 - 1,
-          (centerY / size.height) * 2 - 1,
-        ),
-        radius: 1.2,
-        colors: [
-          colors[i].withValues(alpha: 0.4),
-          colors[i].withValues(alpha: 0.0),
-        ],
-      );
-
-      final paint = Paint()..shader = gradient.createShader(rect);
-      canvas.drawRect(rect, paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(GradientMeshPainter oldDelegate) =>
-      colors != oldDelegate.colors ||
-      animationValue != oldDelegate.animationValue;
 }
