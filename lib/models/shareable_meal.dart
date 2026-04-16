@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:uuid/uuid.dart';
 
 import 'package:sophis/models/food_entry.dart';
-import 'package:sophis/services/gemini_food_service.dart';
+import 'package:sophis/services/gemini/models/models.dart';
 
 /// A food item that can be shared between users
 class SharedFoodItem {

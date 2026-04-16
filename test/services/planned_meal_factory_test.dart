@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sophis/models/food_item.dart';
 import 'package:sophis/models/meal_plan.dart';
 import 'package:sophis/models/recipe.dart';
-import 'package:sophis/services/gemini_food_service.dart';
+import 'package:sophis/services/gemini/models/models.dart';
 import 'package:sophis/services/planned_meal_factory.dart';
 
 void main() {

@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/food_item.dart';
 import 'package:sophis/models/recipe.dart';
+import 'package:sophis/services/gemini/models/models.dart';
 import 'package:sophis/services/gemini_food_service.dart';
 import 'package:sophis/services/nutrition_provider.dart';
 import 'package:sophis/services/openfoodfacts_service.dart';

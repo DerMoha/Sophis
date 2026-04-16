@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/meal_plan.dart';
-import 'package:sophis/services/gemini_food_service.dart';
+import 'package:sophis/services/gemini/models/models.dart';
 import 'package:sophis/ui/components/organic/primitives.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 
