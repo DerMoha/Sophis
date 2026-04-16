@@ -28,6 +28,7 @@ class StorageService {
   static const _offUserIdKey = 'off_user_id';
   static const _offPasswordKey = 'off_password';
   static const _dbMigrationKey = 'db_migration_v1_complete';
+  static const _dbMigrationV2Key = 'db_migration_v2_complete';
   static const _plannedMealsKey = 'planned_meals';
   static const _shoppingListKey = 'shopping_list_checked';
   static const _customPortionsKey = 'custom_portions';
@@ -291,6 +292,14 @@ class StorageService {
     return _prefs.getBool(_dbMigrationKey) ?? false;
   }
 
+  Future<void> setMigrationV2Complete({bool complete = true}) async {
+    await _prefs.setBool(_dbMigrationV2Key, complete);
+  }
+
+  bool isMigrationV2Complete() {
+    return _prefs.getBool(_dbMigrationV2Key) ?? false;
+  }
+
   /// Remove legacy SharedPreferences data that has been migrated to SQLite
   Future<void> clearLegacyMigratedData() async {
     if (!isMigrationComplete()) return;
@@ -298,5 +307,18 @@ class StorageService {
     await _prefs.remove(_waterEntriesKey);
     await _prefs.remove(_weightEntriesKey);
     await _prefs.remove(_workoutEntriesKey);
+  }
+
+  /// Remove legacy SharedPreferences v2 data that has been migrated to SQLite
+  Future<void> clearLegacyMigratedV2Data() async {
+    if (!isMigrationV2Complete()) return;
+    await _prefs.remove(_recipesKey);
+    await _prefs.remove(_customFoodsKey);
+    await _prefs.remove(_favoriteFoodsKey);
+    await _prefs.remove(_plannedMealsKey);
+    await _prefs.remove(_customPortionsKey);
+    await _prefs.remove(_recentFoodsKey);
+    await _prefs.remove(_userStatsKey);
+    await _prefs.remove(_shoppingListKey);
   }
 }
