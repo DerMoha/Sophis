@@ -1,6 +1,29 @@
 import 'package:health/health.dart';
 
-class HealthService {
+abstract class HealthServiceProtocol {
+  Future<void> initialize();
+  bool isAvailable();
+  Future<bool> requestPermissions();
+  Future<bool> hasPermissions();
+  Future<bool> requestWeightPermissions();
+  Future<bool> requestNutritionPermissions();
+  Future<double> getTodayBurnedCalories();
+  Future<double> getBurnedCaloriesForDate(DateTime date);
+  Future<List<({double kg, DateTime timestamp})>> getWeightEntries(
+    DateTime start,
+    DateTime end,
+  );
+  Future<bool> writeWeight(double kg, DateTime timestamp);
+  Future<void> writeNutritionForDay(
+    DateTime date, {
+    required double calories,
+    required double protein,
+    required double carbs,
+    required double fat,
+  });
+}
+
+class HealthService implements HealthServiceProtocol {
   static final HealthService _instance = HealthService._internal();
   factory HealthService() => _instance;
   HealthService._internal();
@@ -27,14 +50,17 @@ class HealthService {
     HealthDataAccess.WRITE,
   ];
 
+  @override
   Future<void> initialize() async {
     if (_initialized) return;
     await _health.configure();
     _initialized = true;
   }
 
+  @override
   bool isAvailable() => true;
 
+  @override
   Future<bool> requestPermissions() async {
     try {
       await initialize();
@@ -47,6 +73,7 @@ class HealthService {
     }
   }
 
+  @override
   Future<bool> hasPermissions() async {
     try {
       await initialize();
@@ -60,6 +87,7 @@ class HealthService {
     }
   }
 
+  @override
   Future<bool> requestWeightPermissions() async {
     try {
       await initialize();
@@ -72,6 +100,7 @@ class HealthService {
     }
   }
 
+  @override
   Future<bool> requestNutritionPermissions() async {
     try {
       await initialize();
@@ -84,10 +113,12 @@ class HealthService {
     }
   }
 
+  @override
   Future<double> getTodayBurnedCalories() async {
     return getBurnedCaloriesForDate(DateTime.now());
   }
 
+  @override
   Future<double> getBurnedCaloriesForDate(DateTime date) async {
     try {
       await initialize();
@@ -111,6 +142,7 @@ class HealthService {
     }
   }
 
+  @override
   Future<List<({double kg, DateTime timestamp})>> getWeightEntries(
     DateTime start,
     DateTime end,
@@ -137,6 +169,7 @@ class HealthService {
     }
   }
 
+  @override
   Future<bool> writeWeight(double kg, DateTime timestamp) async {
     try {
       await initialize();
@@ -151,6 +184,7 @@ class HealthService {
     }
   }
 
+  @override
   Future<void> writeNutritionForDay(
     DateTime date, {
     required double calories,
@@ -163,13 +197,10 @@ class HealthService {
       final start = DateTime(date.year, date.month, date.day);
       final end = DateTime(date.year, date.month, date.day, 23, 59, 59);
 
-      // Delete existing entries for the day before rewriting
       for (final type in _nutritionTypes) {
         try {
           await _health.delete(type: type, startTime: start, endTime: end);
-        } catch (_) {
-          // Ignore delete errors, proceed with write
-        }
+        } catch (_) {}
       }
 
       await _health.writeHealthData(
@@ -196,8 +227,6 @@ class HealthService {
         startTime: start,
         endTime: end,
       );
-    } catch (_) {
-      // Best-effort write
-    }
+    } catch (_) {}
   }
 }

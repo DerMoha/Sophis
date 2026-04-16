@@ -44,7 +44,7 @@ class NutritionProvider extends ChangeNotifier {
   UserStats _userStats = const UserStats();
 
   double _healthSyncBurnedCalories = 0.0;
-  final HealthService _healthService = HealthService();
+  final HealthServiceProtocol _healthService;
   SettingsProvider? _settingsProvider;
 
   bool _isLoading = true;
@@ -54,7 +54,11 @@ class NutritionProvider extends ChangeNotifier {
   // Shared cache date tracking (used by food log, hydration, workout controllers)
   DateTime? _cacheDate;
 
-  NutritionProvider(this._storage, this._db) {
+  NutritionProvider(
+    this._storage,
+    this._db, {
+    HealthServiceProtocol? healthService,
+  }) : _healthService = healthService ?? HealthService() {
     _foodLog = FoodLogController(
       _db,
       _onFoodChanged,
@@ -194,6 +198,10 @@ class NutritionProvider extends ChangeNotifier {
   Future<void> _migrateToDbIfNeeded() async {
     if (_storage.isMigrationComplete()) {
       await _storage.clearLegacyMigratedData();
+    }
+
+    if (_storage.isMigrationV2Complete()) {
+      await _storage.clearLegacyMigratedV2Data();
       return;
     }
 
@@ -214,6 +222,52 @@ class NutritionProvider extends ChangeNotifier {
       await _storage.clearLegacyMigratedData();
     } catch (e) {
       debugPrint('Database migration failed, will retry on next app start: $e');
+    }
+
+    await _migrateV2Data();
+  }
+
+  Future<void> _migrateV2Data() async {
+    if (_storage.isMigrationV2Complete()) {
+      await _storage.clearLegacyMigratedV2Data();
+      return;
+    }
+
+    try {
+      final legacyRecipes = _storage.loadRecipes();
+      final legacyCustomFoods = _storage.loadCustomFoods();
+      final legacyFavoriteFoods = _storage.loadFavoriteFoods();
+      final legacyPlannedMeals = _storage.loadPlannedMeals();
+      final legacyCustomPortions = _storage.loadCustomPortions();
+      final legacyRecentFoods = _storage.loadRecentFoods();
+      final legacyUserStats = _storage.loadUserStats();
+      final legacyShoppingChecked = _storage.loadShoppingListChecked();
+
+      if (legacyRecipes.isNotEmpty) await _db.migrateRecipes(legacyRecipes);
+      if (legacyCustomFoods.isNotEmpty) {
+        await _db.migrateCustomFoods(legacyCustomFoods);
+      }
+      if (legacyFavoriteFoods.isNotEmpty) {
+        await _db.migrateFavoriteFoods(legacyFavoriteFoods);
+      }
+      if (legacyPlannedMeals.isNotEmpty) {
+        await _db.migratePlannedMeals(legacyPlannedMeals);
+      }
+      if (legacyCustomPortions.isNotEmpty) {
+        await _db.migrateCustomPortions(legacyCustomPortions);
+      }
+      if (legacyRecentFoods.isNotEmpty) {
+        await _db.migrateRecentFoods(legacyRecentFoods);
+      }
+      await _db.migrateUserStats(legacyUserStats);
+      await _db.migratePlannedMealsChecked(legacyShoppingChecked);
+
+      await _storage.setMigrationV2Complete();
+      await _storage.clearLegacyMigratedV2Data();
+    } catch (e) {
+      debugPrint(
+        'Database v2 migration failed, will retry on next app start: $e',
+      );
     }
   }
 

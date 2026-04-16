@@ -6,7 +6,7 @@ import 'package:sophis/services/health_service.dart';
 
 class WeightStore extends ChangeNotifier {
   final DatabaseService _db;
-  final HealthService _healthService;
+  final HealthServiceProtocol _healthService;
 
   List<WeightEntry> _weightEntries = [];
 
