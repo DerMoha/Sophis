@@ -5,6 +5,7 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:sophis/services/gemini/models/models.dart';
+import 'package:sophis/services/service_result.dart';
 
 /// Gemini AI service for accurate food recognition and nutrition estimation
 class GeminiFoodService {
@@ -79,9 +80,9 @@ class GeminiFoodService {
   }
 
   /// Initialize with API key
-  Future<void> initialize(String apiKey) async {
+  ServiceResult<void> initialize(String apiKey) {
     if (apiKey.isEmpty) {
-      throw Exception('API key is required');
+      return const Failure(ServiceErrorType.authFailed, 'API key is required');
     }
 
     _apiKey = apiKey;
@@ -90,29 +91,34 @@ class GeminiFoodService {
       apiKey: apiKey,
     );
     _isInitialized = true;
+    return const Success(null);
   }
 
   /// Analyze a single food image
-  Future<List<FoodAnalysis>> analyzeFood(File imageFile) async {
+  Future<ServiceResult<List<FoodAnalysis>>> analyzeFood(File imageFile) async {
     return analyzeFoodMultiple([imageFile]);
   }
 
   /// Analyze multiple food images with optional correction hint
-  Future<List<FoodAnalysis>> analyzeFoodMultiple(
+  Future<ServiceResult<List<FoodAnalysis>>> analyzeFoodMultiple(
     List<File> imageFiles, {
     String? correctionHint,
   }) async {
     if (!_isInitialized || _model == null) {
-      throw Exception('Gemini service not initialized');
+      return const Failure(
+        ServiceErrorType.unknown,
+        'Gemini service not initialized',
+      );
     }
 
     if (imageFiles.isEmpty) {
-      return [];
+      return const Success([]);
     }
 
     // Check rate limit
     if (!await canMakeRequest()) {
-      throw Exception(
+      return const Failure(
+        ServiceErrorType.rateLimited,
         'Daily limit reached (20 requests/day). Try again tomorrow.',
       );
     }
@@ -171,36 +177,40 @@ If no food is visible, return: {"foods": []}
 
       final text = response.text;
       if (text == null || text.isEmpty) {
-        return [];
+        return const Success([]);
       }
 
       final results = _parseResponse(text);
-      return results;
+      return Success(results);
     } catch (e) {
       await _decrementRequestCount();
       debugPrint('Gemini food analysis failed: $e');
-      throw Exception('Failed to analyze image: $e');
+      return Failure(ServiceErrorType.unknown, 'Failed to analyze image: $e');
     }
   }
 
   /// Re-analyze a single food item while keeping other items unchanged
-  Future<FoodAnalysis?> reanalyzeSingleFood(
+  Future<ServiceResult<FoodAnalysis?>> reanalyzeSingleFood(
     List<File> imageFiles, {
     required FoodAnalysis currentFood,
     required String correctionHint,
     List<FoodAnalysis> confirmedFoods = const [],
   }) async {
     if (!_isInitialized || _model == null) {
-      throw Exception('Gemini service not initialized');
+      return const Failure(
+        ServiceErrorType.unknown,
+        'Gemini service not initialized',
+      );
     }
 
     if (imageFiles.isEmpty) {
-      return null;
+      return const Success(null);
     }
 
     // Check rate limit
     if (!await canMakeRequest()) {
-      throw Exception(
+      return const Failure(
+        ServiceErrorType.rateLimited,
         'Daily limit reached (20 requests/day). Try again tomorrow.',
       );
     }
@@ -270,16 +280,16 @@ Respond ONLY with valid JSON in this exact format, no other text:
 
       final text = response.text;
       if (text == null || text.isEmpty) {
-        return null;
+        return const Success(null);
       }
 
       final results = _parseResponse(text);
-      if (results.isEmpty) return null;
-      return results.first;
+      if (results.isEmpty) return const Success(null);
+      return Success(results.first);
     } catch (e) {
       await _decrementRequestCount();
       debugPrint('Gemini re-analysis failed: $e');
-      throw Exception('Failed to re-analyze image: $e');
+      return Failure(ServiceErrorType.unknown, 'Failed to re-analyze image: $e');
     }
   }
 
@@ -317,13 +327,19 @@ Respond ONLY with valid JSON in this exact format, no other text:
   }
 
   /// Analyze a nutrition label photo and extract per-100g values
-  Future<NutritionLabelResult?> analyzeNutritionLabel(File imageFile) async {
+  Future<ServiceResult<NutritionLabelResult?>> analyzeNutritionLabel(
+    File imageFile,
+  ) async {
     if (!_isInitialized || _model == null) {
-      throw Exception('Gemini service not initialized');
+      return const Failure(
+        ServiceErrorType.unknown,
+        'Gemini service not initialized',
+      );
     }
 
     if (!await canMakeRequest()) {
-      throw Exception(
+      return const Failure(
+        ServiceErrorType.rateLimited,
         'Daily limit reached (20 requests/day). Try again tomorrow.',
       );
     }
@@ -369,13 +385,16 @@ If the image is not a nutrition label or values are unreadable, return:
       ]);
 
       final text = response.text;
-      if (text == null || text.isEmpty) return null;
+      if (text == null || text.isEmpty) return const Success(null);
 
-      return _parseNutritionLabelResponse(text);
+      return Success(_parseNutritionLabelResponse(text));
     } catch (e) {
       await _decrementRequestCount();
       debugPrint('Gemini nutrition label analysis failed: $e');
-      throw Exception('Failed to analyze nutrition label: $e');
+      return Failure(
+        ServiceErrorType.unknown,
+        'Failed to analyze nutrition label: $e',
+      );
     }
   }
 
@@ -414,14 +433,20 @@ If the image is not a nutrition label or values are unreadable, return:
   }
 
   /// Extract recipe ingredients from an image of a recipe (cookbook, screenshot, etc.)
-  Future<RecipeExtraction> extractRecipeFromImage(File imageFile) async {
+  Future<ServiceResult<RecipeExtraction>> extractRecipeFromImage(
+    File imageFile,
+  ) async {
     if (!_isInitialized || _model == null) {
-      throw Exception('Gemini service not initialized');
+      return const Failure(
+        ServiceErrorType.unknown,
+        'Gemini service not initialized',
+      );
     }
 
     // Check rate limit
     if (!await canMakeRequest()) {
-      throw Exception(
+      return const Failure(
+        ServiceErrorType.rateLimited,
         'Daily limit reached (20 requests/day). Try again tomorrow.',
       );
     }
@@ -494,15 +519,15 @@ If no recipe is visible or readable, return:
 
       final text = response.text;
       if (text == null || text.isEmpty) {
-        return RecipeExtraction.empty();
+        return Success(RecipeExtraction.empty());
       }
 
       final result = _parseRecipeResponse(text);
-      return result;
+      return Success(result);
     } catch (e) {
       await _decrementRequestCount();
       debugPrint('Gemini recipe extraction failed: $e');
-      throw Exception('Failed to extract recipe: $e');
+      return Failure(ServiceErrorType.unknown, 'Failed to extract recipe: $e');
     }
   }
 

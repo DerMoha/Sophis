@@ -73,7 +73,10 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
     final apiKey = settings.geminiApiKey;
     if (apiKey != null && apiKey.isNotEmpty) {
       _geminiService = GeminiFoodService();
-      await _geminiService!.initialize(apiKey);
+      final initResult = _geminiService!.initialize(apiKey);
+      if (!initResult.isSuccess) {
+        _geminiService = null;
+      }
       if (!mounted) return;
     }
   }
@@ -707,23 +710,25 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
       _scanError = null;
     });
 
-    try {
-      final result =
-          await _geminiService!.extractRecipeFromImage(_scannedImage!);
-      if (!mounted) return;
-      setState(() {
-        _extractedRecipe = result;
-        _isScanning = false;
-        if (result.isEmpty) {
-          _scanError = AppLocalizations.of(context)!.noRecipeFoundInImage;
-          _extractedRecipe = null;
-        }
-      });
-    } catch (e) {
-      setState(() {
-        _scanError = e.toString();
-        _isScanning = false;
-      });
+    final extractionResult =
+        await _geminiService!.extractRecipeFromImage(_scannedImage!);
+    if (!mounted) return;
+
+    switch (extractionResult) {
+      case Success<RecipeExtraction>(value: final result):
+        setState(() {
+          _extractedRecipe = result;
+          _isScanning = false;
+          if (result.isEmpty) {
+            _scanError = AppLocalizations.of(context)!.noRecipeFoundInImage;
+            _extractedRecipe = null;
+          }
+        });
+      case Failure<RecipeExtraction>(message: final message):
+        setState(() {
+          _scanError = message;
+          _isScanning = false;
+        });
     }
   }
 

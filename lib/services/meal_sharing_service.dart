@@ -3,18 +3,22 @@ import 'package:share_plus/share_plus.dart';
 
 import 'package:sophis/models/food_entry.dart';
 import 'package:sophis/models/shareable_meal.dart';
+import 'package:sophis/services/service_result.dart';
 
 /// Service for sharing and receiving meals between users
 class MealSharingService {
   /// Create a shareable meal from food entries
-  static ShareableMeal createShareableMeal(
+  static ServiceResult<ShareableMeal> createShareableMeal(
     List<FoodEntry> entries, {
     String? title,
   }) {
     if (entries.isEmpty) {
-      throw ArgumentError('Cannot share an empty meal');
+      return const Failure(
+        ServiceErrorType.unknown,
+        'Cannot share an empty meal',
+      );
     }
-    return ShareableMeal.fromFoodEntries(entries, title: title);
+    return Success(ShareableMeal.fromFoodEntries(entries, title: title));
   }
 
   /// Generate a deep link for sharing
@@ -64,27 +68,24 @@ class MealSharingService {
   }
 
   /// Validate incoming share data
-  static ShareableMealValidation validateMeal(ShareableMeal? meal) {
+  static ServiceResult<ShareableMeal> validateMeal(ShareableMeal? meal) {
     if (meal == null) {
-      return const ShareableMealValidation(
-        isValid: false,
-        error: 'Invalid share data',
-      );
+      return const Failure(ServiceErrorType.parseError, 'Invalid share data');
     }
 
     if (meal.items.isEmpty) {
-      return const ShareableMealValidation(
-        isValid: false,
-        error: 'Shared meal contains no items',
+      return const Failure(
+        ServiceErrorType.parseError,
+        'Shared meal contains no items',
       );
     }
 
     // Check for reasonable values
     for (final item in meal.items) {
       if (item.calories < 0 || item.calories > 10000) {
-        return ShareableMealValidation(
-          isValid: false,
-          error: 'Invalid calorie value for ${item.name}',
+        return Failure(
+          ServiceErrorType.parseError,
+          'Invalid calorie value for ${item.name}',
         );
       }
       if (item.protein < 0 ||
@@ -93,26 +94,13 @@ class MealSharingService {
           item.protein > 1000 ||
           item.carbs > 1000 ||
           item.fat > 1000) {
-        return ShareableMealValidation(
-          isValid: false,
-          error: 'Invalid macro values for ${item.name}',
+        return Failure(
+          ServiceErrorType.parseError,
+          'Invalid macro values for ${item.name}',
         );
       }
     }
 
-    return ShareableMealValidation(isValid: true, meal: meal);
+    return Success(meal);
   }
-}
-
-/// Result of meal validation
-class ShareableMealValidation {
-  final bool isValid;
-  final String? error;
-  final ShareableMeal? meal;
-
-  const ShareableMealValidation({
-    required this.isValid,
-    this.error,
-    this.meal,
-  });
 }

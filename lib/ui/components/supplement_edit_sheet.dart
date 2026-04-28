@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/supplement.dart';
+import 'package:sophis/services/service_result.dart';
 import 'package:sophis/services/supplements_provider.dart';
 import 'package:sophis/utils/time_utils.dart';
 import 'package:sophis/ui/components/modal_sheet.dart';
@@ -453,7 +454,13 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
         sortOrder: provider.supplements.length,
         createdAt: DateTime.now(),
       );
-      provider.addSupplement(supplement);
+      final result = provider.addSupplement(supplement);
+      if (result.isFailure) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text((result as Failure).message)),
+        );
+        return;
+      }
     }
 
     HapticFeedback.mediumImpact();

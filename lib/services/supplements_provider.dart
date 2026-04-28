@@ -4,6 +4,7 @@ import 'package:sophis/models/supplement.dart';
 import 'package:sophis/models/supplement_log.dart';
 import 'package:sophis/services/database_service.dart';
 import 'package:sophis/services/notification_service.dart';
+import 'package:sophis/services/service_result.dart';
 
 /// Provider for managing supplement tracking, including completion logging
 /// and daily reminder notifications.
@@ -24,6 +25,7 @@ class SupplementsProvider extends ChangeNotifier {
   List<Supplement> _supplements = [];
   List<SupplementLogEntry> _logs = [];
   bool _isLoading = true;
+  String? _lastError;
   List<Supplement>? _enabledSupplementsCache;
   Set<String>? _todayCompletedIdsCache;
   DateTime? _todayCompletedCacheDate;
@@ -39,6 +41,7 @@ class SupplementsProvider extends ChangeNotifier {
   List<Supplement> get supplements => _supplements;
   List<SupplementLogEntry> get logs => _logs;
   bool get isLoading => _isLoading;
+  String? get lastError => _lastError;
 
   List<Supplement> get enabledSupplements {
     if (_enabledSupplementsCache != null) {
@@ -132,6 +135,12 @@ class SupplementsProvider extends ChangeNotifier {
     await _loadData();
   }
 
+  /// Clear the last error state
+  void clearError() {
+    _lastError = null;
+    notifyListeners();
+  }
+
   // ---------------------------------------------------------------------------
   // COMPLETION TRACKING
   // ---------------------------------------------------------------------------
@@ -190,60 +199,80 @@ class SupplementsProvider extends ChangeNotifier {
   // ---------------------------------------------------------------------------
 
   /// Add a new supplement
-  ///
-  /// Throws an exception if adding would exceed the maximum supplement limit.
-  Future<void> addSupplement(Supplement supplement) async {
+  ServiceResult<void> addSupplement(Supplement supplement) {
     // Validate max supplements limit (notification ID constraint)
     if (_supplements.length >= _maxSupplements) {
-      throw Exception(
-        'Cannot add more than $_maxSupplements supplements. '
-        'This limit exists to prevent notification ID conflicts.',
-      );
+      const message =
+          'Cannot add more than $_maxSupplements supplements. '
+          'This limit exists to prevent notification ID conflicts.';
+      _lastError = message;
+      notifyListeners();
+      return const Failure(ServiceErrorType.unknown, message);
     }
 
-    await _db.insertSupplement(supplement);
-    _supplements.add(supplement);
-    _supplements.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
-    _invalidateDerivedCaches();
+    _db.insertSupplement(supplement).then((_) async {
+      _supplements.add(supplement);
+      _supplements.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+      _invalidateDerivedCaches();
 
-    if (supplement.enabled && supplement.reminderTime != null) {
-      await _scheduleNotification(
-        supplement,
-        skipToday: isCompletedToday(supplement.id),
-      );
-    }
+      if (supplement.enabled && supplement.reminderTime != null) {
+        await _scheduleNotification(
+          supplement,
+          skipToday: isCompletedToday(supplement.id),
+        );
+      }
 
-    notifyListeners();
+      _lastError = null;
+      notifyListeners();
+    });
+
+    return const Success(null);
   }
 
   /// Update an existing supplement
-  Future<void> updateSupplement(Supplement supplement) async {
-    await _db.updateSupplement(supplement);
+  Future<ServiceResult<void>> updateSupplement(Supplement supplement) async {
+    try {
+      await _db.updateSupplement(supplement);
 
-    final index = _supplements.indexWhere((s) => s.id == supplement.id);
-    if (index != -1) {
-      _supplements[index] = supplement;
-      _invalidateDerivedCaches();
+      final index = _supplements.indexWhere((s) => s.id == supplement.id);
+      if (index != -1) {
+        _supplements[index] = supplement;
+        _invalidateDerivedCaches();
+      }
+
+      // Reschedule notification
+      await _cancelNotification(supplement);
+      if (supplement.enabled && supplement.reminderTime != null) {
+        await _scheduleNotification(
+          supplement,
+          skipToday: isCompletedToday(supplement.id),
+        );
+      }
+
+      _lastError = null;
+      notifyListeners();
+      return const Success(null);
+    } catch (e) {
+      final message = 'Failed to update supplement: $e';
+      _lastError = message;
+      notifyListeners();
+      return Failure(ServiceErrorType.unknown, message);
     }
-
-    // Reschedule notification
-    await _cancelNotification(supplement);
-    if (supplement.enabled && supplement.reminderTime != null) {
-      await _scheduleNotification(
-        supplement,
-        skipToday: isCompletedToday(supplement.id),
-      );
-    }
-
-    notifyListeners();
   }
 
   /// Delete a supplement
-  Future<void> deleteSupplement(String id) async {
-    try {
-      final supplement = _supplements.firstWhere((s) => s.id == id);
+  ServiceResult<void> deleteSupplement(String id) {
+    final index = _supplements.indexWhere((s) => s.id == id);
+    if (index == -1) {
+      const message = 'Supplement not found';
+      _lastError = message;
+      notifyListeners();
+      return const Failure(ServiceErrorType.notFound, message);
+    }
 
-      await _db.deleteSupplement(id);
+    final supplement = _supplements[index];
+
+    _db.deleteSupplement(id).then((_) async {
       _supplements.removeWhere((s) => s.id == id);
 
       // Delete associated logs
@@ -253,37 +282,47 @@ class SupplementsProvider extends ChangeNotifier {
       // Cancel notification
       await _cancelNotification(supplement);
 
+      _lastError = null;
       notifyListeners();
-    } catch (e) {
-      throw Exception('Supplement not found');
-    }
+    });
+
+    return const Success(null);
   }
 
   /// Reorder supplements by moving from oldIndex to newIndex
   ///
   /// Updates sortOrder for all supplements and performs a batch database update
   /// for optimal performance (single transaction instead of N individual updates).
-  Future<void> reorderSupplements(int oldIndex, int newIndex) async {
-    if (oldIndex < newIndex) {
-      newIndex -= 1;
+  Future<ServiceResult<void>> reorderSupplements(int oldIndex, int newIndex) async {
+    try {
+      if (oldIndex < newIndex) {
+        newIndex -= 1;
+      }
+
+      final supplement = _supplements.removeAt(oldIndex);
+      _supplements.insert(newIndex, supplement);
+
+      // Update sortOrder for all supplements in batch
+      for (var i = 0; i < _supplements.length; i++) {
+        _supplements[i] = _supplements[i].copyWith(sortOrder: i);
+      }
+      _invalidateDerivedCaches();
+
+      // Batch update to database for better performance
+      await _db.batchUpdateSupplements(_supplements);
+
+      // Update all notifications to reflect new indices after reordering
+      await updateAllNotifications();
+
+      _lastError = null;
+      notifyListeners();
+      return const Success(null);
+    } catch (e) {
+      final message = 'Failed to reorder supplements: $e';
+      _lastError = message;
+      notifyListeners();
+      return Failure(ServiceErrorType.unknown, message);
     }
-
-    final supplement = _supplements.removeAt(oldIndex);
-    _supplements.insert(newIndex, supplement);
-
-    // Update sortOrder for all supplements in batch
-    for (var i = 0; i < _supplements.length; i++) {
-      _supplements[i] = _supplements[i].copyWith(sortOrder: i);
-    }
-    _invalidateDerivedCaches();
-
-    // Batch update to database for better performance
-    await _db.batchUpdateSupplements(_supplements);
-
-    // Update all notifications to reflect new indices after reordering
-    await updateAllNotifications();
-
-    notifyListeners();
   }
 
   // ---------------------------------------------------------------------------

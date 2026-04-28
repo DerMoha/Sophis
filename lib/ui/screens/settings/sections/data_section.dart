@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/services/data_export_service.dart';
 import 'package:sophis/services/nutrition_provider.dart';
+import 'package:sophis/services/service_result.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/components/settings/settings_tiles.dart';
 
@@ -23,23 +24,26 @@ class _DataSectionState extends State<DataSection> {
   ) async {
     setState(() => _isExporting = true);
 
-    try {
-      final nutritionProvider = context.read<NutritionProvider>();
-      final messenger = ScaffoldMessenger.of(context);
-      final success = await DataExportService.exportData(nutritionProvider);
+    final nutritionProvider = context.read<NutritionProvider>();
+    final messenger = ScaffoldMessenger.of(context);
+    final exportResult = await DataExportService.exportData(nutritionProvider);
 
-      if (!mounted) return;
+    if (!mounted) return;
 
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(success ? l10n.exportSuccess : l10n.exportFailed),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _isExporting = false);
-      }
+    final message = switch (exportResult) {
+      Success<void>() => l10n.exportSuccess,
+      Failure<void>() => l10n.exportFailed,
+    };
+
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+
+    if (mounted) {
+      setState(() => _isExporting = false);
     }
   }
 
@@ -72,27 +76,35 @@ class _DataSectionState extends State<DataSection> {
 
     setState(() => _isImporting = true);
 
-    try {
-      final result = await DataExportService.importData(nutritionProvider);
+    final importResult = await DataExportService.importData(nutritionProvider);
 
-      if (!mounted) return;
+    if (!mounted) return;
 
-      if (result.success) {
-        await nutritionProvider.reloadAll();
-      }
+    switch (importResult) {
+      case Success<ImportResult>(value: final result):
+        if (result.success) {
+          await nutritionProvider.reloadAll();
+        }
 
-      if (!mounted) return;
+        if (!mounted) return;
 
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(result.message),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _isImporting = false);
-      }
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(result.message),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      case Failure<ImportResult>(message: final message):
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(message),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+    }
+
+    if (mounted) {
+      setState(() => _isImporting = false);
     }
   }
 

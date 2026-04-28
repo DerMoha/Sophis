@@ -11,6 +11,7 @@ import 'package:sophis/services/food_entry_factory.dart';
 import 'package:sophis/services/meal_sharing_service.dart';
 import 'package:sophis/services/openfoodfacts_service.dart';
 import 'package:sophis/services/nutrition_provider.dart';
+import 'package:sophis/services/service_result.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/components/barcode_not_found_sheet.dart';
 import 'package:sophis/ui/components/portion_picker_sheet.dart';
@@ -86,29 +87,28 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
     }
 
     // Normal barcode - look up product via pipeline
-    try {
-      final result = await _lookupService.lookup(barcode);
+    final lookupResult = await _lookupService.lookup(barcode);
 
-      if (!mounted) return;
+    if (!mounted) return;
 
-      if (result.item != null) {
-        _showProductDialog(result.item!, barcode);
-      } else {
-        _showNotFoundSheet(result);
-      }
-    } catch (e) {
-      if (mounted) {
+    switch (lookupResult) {
+      case Success<BarcodeLookupData>(value: final data):
+        if (data.item != null) {
+          _showProductDialog(data.item!, barcode);
+        } else {
+          _showNotFoundSheet(data);
+        }
+      case Failure<BarcodeLookupData>(message: final message):
         final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.errorGeneric(e.toString()))),
+          SnackBar(content: Text(l10n.errorGeneric(message))),
         );
         _controller.start();
         setState(() => _isProcessing = false);
-      }
     }
   }
 
-  void _showNotFoundSheet(BarcodeLookupResult result) {
+  void _showNotFoundSheet(BarcodeLookupData result) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,

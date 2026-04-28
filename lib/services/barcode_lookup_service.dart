@@ -11,7 +11,8 @@ import 'package:sophis/services/service_result.dart';
 
 enum LookupSource { cache, offDe, offWorld, brocade, manual, gemini }
 
-class BarcodeLookupResult {
+/// Data class representing the result of a barcode lookup
+class BarcodeLookupData {
   final FoodItem? item;
   final String barcode;
   final LookupSource source;
@@ -20,7 +21,7 @@ class BarcodeLookupResult {
   final String? partialBrand;
   final ServiceErrorType? error;
 
-  const BarcodeLookupResult({
+  const BarcodeLookupData({
     required this.item,
     required this.barcode,
     required this.source,
@@ -47,26 +48,26 @@ class BarcodeLookupService {
         _brocadeService = brocadeService;
 
   /// Run the full lookup chain for a barcode
-  Future<BarcodeLookupResult> lookup(String barcode) async {
+  Future<ServiceResult<BarcodeLookupData>> lookup(String barcode) async {
     // 1. Check local cache
     final cached = await _db.getCachedBarcode(barcode);
     if (cached != null) {
       if (cached.isUserCorrected) {
-        return BarcodeLookupResult(
+        return Success(BarcodeLookupData(
           item: _barcodeProductToFoodItem(cached),
           barcode: barcode,
           source: LookupSource.cache,
           isUserCorrected: true,
-        );
+        ),);
       }
       // Check if cache is still valid
       final age = DateTime.now().difference(cached.cachedAt);
       if (age < _cacheMaxAge) {
-        return BarcodeLookupResult(
+        return Success(BarcodeLookupData(
           item: _barcodeProductToFoodItem(cached),
           barcode: barcode,
           source: LookupSource.cache,
-        );
+        ),);
       }
     }
 
@@ -77,35 +78,35 @@ class BarcodeLookupService {
     var product = await _offService.lookupBarcodeDe(barcode);
     if (product != null) {
       await cacheResult(barcode, product, LookupSource.offDe);
-      return BarcodeLookupResult(
+      return Success(BarcodeLookupData(
         item: product,
         barcode: barcode,
         source: LookupSource.offDe,
-      );
+      ),);
     }
 
     // 3. Try OpenFoodFacts World
     product = await _offService.lookupBarcode(barcode);
     if (product != null) {
       await cacheResult(barcode, product, LookupSource.offWorld);
-      return BarcodeLookupResult(
+      return Success(BarcodeLookupData(
         item: product,
         barcode: barcode,
         source: LookupSource.offWorld,
-      );
+      ),);
     }
 
     // 4. Try Brocade (name/brand only)
     final brocadeResult = await _brocadeService.lookup(barcode);
     if (brocadeResult.isSuccess) {
       final brocadeProduct = brocadeResult.value;
-      return BarcodeLookupResult(
+      return Success(BarcodeLookupData(
         item: null,
         barcode: barcode,
         source: LookupSource.brocade,
         partialName: brocadeProduct.name,
         partialBrand: brocadeProduct.brand,
-      );
+      ),);
     }
     if (brocadeResult
         case Failure<BrocadeProduct>(errorType: final errorType)) {
@@ -115,12 +116,12 @@ class BarcodeLookupService {
     }
 
     // 5. Nothing found — indicate network error if that was the cause
-    return BarcodeLookupResult(
+    return Success(BarcodeLookupData(
       item: null,
       barcode: barcode,
       source: LookupSource.manual,
       error: allNetworkErrors ? ServiceErrorType.network : null,
-    );
+    ),);
   }
 
   /// Cache a lookup result to SQLite
@@ -178,7 +179,7 @@ class BarcodeLookupService {
   }
 
   /// Remove user override and re-fetch from API
-  Future<BarcodeLookupResult> resetCorrection(String barcode) async {
+  Future<ServiceResult<BarcodeLookupData>> resetCorrection(String barcode) async {
     await _db.deleteBarcodeCache(barcode);
     return lookup(barcode);
   }

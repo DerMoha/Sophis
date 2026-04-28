@@ -6,6 +6,8 @@ import 'package:gal/gal.dart';
 
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/services/gemini_food_service.dart';
+import 'package:sophis/services/gemini/models/models.dart';
+import 'package:sophis/services/service_result.dart';
 import 'package:sophis/services/food_entry_factory.dart';
 import 'package:sophis/services/nutrition_provider.dart';
 import 'package:sophis/services/settings_provider.dart';
@@ -102,18 +104,18 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       });
     }
 
-    try {
-      await _geminiService.initialize(apiKey);
+    final initResult = _geminiService.initialize(apiKey);
+    if (initResult.isSuccess) {
       if (mounted) setState(() => _serviceInitialized = true);
-    } catch (e) {
+    } else {
       if (mounted) {
         setState(
-          () => _error = AppLocalizations.of(context)!.errorInit(e.toString()),
+          () => _error = AppLocalizations.of(context)!
+              .errorInit((initResult as Failure).message),
         );
       }
-    } finally {
-      if (mounted) setState(() => _isInitializing = false);
     }
+    if (mounted) setState(() => _isInitializing = false);
   }
 
   @override
@@ -183,30 +185,29 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       _error = null;
     });
 
-    try {
-      final results = await _geminiService.analyzeFoodMultiple(
-        _images,
-        correctionHint: correctionHint,
-      );
+    final analysisResult = await _geminiService.analyzeFoodMultiple(
+      _images,
+      correctionHint: correctionHint,
+    );
 
-      // Update remaining requests count
-      final remaining = await GeminiFoodService.getRemainingRequests();
+    // Update remaining requests count
+    final remaining = await GeminiFoodService.getRemainingRequests();
 
-      if (mounted) {
+    if (!mounted) return;
+
+    switch (analysisResult) {
+      case Success<List<FoodAnalysis>>(value: final results):
         setState(() {
           _results =
               results.map((r) => EditableFoodResult(analysis: r)).toList();
           _remainingRequests = remaining;
           _isLoading = false;
         });
-      }
-    } catch (e) {
-      if (mounted) {
+      case Failure<List<FoodAnalysis>>(message: final message):
         setState(() {
-          _error = _getUserFriendlyError(e);
+          _error = _getUserFriendlyError(message);
           _isLoading = false;
         });
-      }
     }
   }
 
@@ -239,64 +240,64 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
   ) async {
     setState(() => _isLoading = true);
 
-    try {
-      final confirmedFoods = (_results ?? [])
-          .where((r) => r != result)
-          .map((r) => r.currentAnalysis)
-          .toList();
+    final confirmedFoods = (_results ?? [])
+        .where((r) => r != result)
+        .map((r) => r.currentAnalysis)
+        .toList();
 
-      final updatedAnalysis = await _geminiService.reanalyzeSingleFood(
-        _images,
-        currentFood: result.getEditedAnalysis(),
-        correctionHint: correctionHint,
-        confirmedFoods: confirmedFoods,
-      );
+    final reanalysisResult = await _geminiService.reanalyzeSingleFood(
+      _images,
+      currentFood: result.getEditedAnalysis(),
+      correctionHint: correctionHint,
+      confirmedFoods: confirmedFoods,
+    );
 
-      // Update remaining requests count
-      final remaining = await GeminiFoodService.getRemainingRequests();
+    // Update remaining requests count
+    final remaining = await GeminiFoodService.getRemainingRequests();
 
-      if (!mounted) return;
+    if (!mounted) return;
 
-      if (updatedAnalysis == null) {
-        final l10n = AppLocalizations.of(context)!;
+    switch (reanalysisResult) {
+      case Success<FoodAnalysis?>(value: final updatedAnalysis):
+        if (updatedAnalysis == null) {
+          final l10n = AppLocalizations.of(context)!;
+          setState(() {
+            _error = l10n.unableToReanalyzeFood;
+            _remainingRequests = remaining;
+            _isLoading = false;
+          });
+          return;
+        }
+
         setState(() {
-          _error = l10n.unableToReanalyzeFood;
+          result.originalAnalysis = updatedAnalysis;
+          result.currentAnalysis = updatedAnalysis;
+          result.isModified = false;
+
+          // Update all controllers with new values
+          result.nameController.text = updatedAnalysis.name;
+          result.portionController.text =
+              updatedAnalysis.portionGrams.toStringAsFixed(0);
+          result.caloriesController.text =
+              updatedAnalysis.calories.toStringAsFixed(0);
+          result.proteinController.text =
+              updatedAnalysis.protein.toStringAsFixed(1);
+          result.carbsController.text =
+              updatedAnalysis.carbs.toStringAsFixed(1);
+          result.fatController.text = updatedAnalysis.fat.toStringAsFixed(1);
+
           _remainingRequests = remaining;
           _isLoading = false;
         });
-        return;
-      }
 
-      setState(() {
-        result.originalAnalysis = updatedAnalysis;
-        result.currentAnalysis = updatedAnalysis;
-        result.isModified = false;
-
-        // Update all controllers with new values
-        result.nameController.text = updatedAnalysis.name;
-        result.portionController.text =
-            updatedAnalysis.portionGrams.toStringAsFixed(0);
-        result.caloriesController.text =
-            updatedAnalysis.calories.toStringAsFixed(0);
-        result.proteinController.text =
-            updatedAnalysis.protein.toStringAsFixed(1);
-        result.carbsController.text = updatedAnalysis.carbs.toStringAsFixed(1);
-        result.fatController.text = updatedAnalysis.fat.toStringAsFixed(1);
-
-        _remainingRequests = remaining;
-        _isLoading = false;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.foodReanalyzed)),
-      );
-    } catch (e) {
-      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context)!.foodReanalyzed)),
+        );
+      case Failure<FoodAnalysis?>(message: final message):
         setState(() {
-          _error = _getUserFriendlyError(e);
+          _error = _getUserFriendlyError(message);
           _isLoading = false;
         });
-      }
     }
   }
 

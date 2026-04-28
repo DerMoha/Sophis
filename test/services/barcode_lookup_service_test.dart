@@ -74,9 +74,11 @@ void main() {
 
       final result = await service.lookup(testBarcode);
 
-      expect(result.source, equals(LookupSource.cache));
-      expect(result.item, isNotNull);
-      expect(result.item!.name, equals('Cached Product'));
+      expect(result, isA<Success<BarcodeLookupData>>());
+      final data = (result as Success<BarcodeLookupData>).value;
+      expect(data.source, equals(LookupSource.cache));
+      expect(data.item, isNotNull);
+      expect(data.item!.name, equals('Cached Product'));
 
       verifyNever(() => mockOff.lookupBarcodeDe(any()));
       verifyNever(() => mockOff.lookupBarcode(any()));
@@ -92,8 +94,10 @@ void main() {
 
       final result = await service.lookup(testBarcode);
 
-      expect(result.source, equals(LookupSource.offDe));
-      expect(result.item, isNotNull);
+      expect(result, isA<Success<BarcodeLookupData>>());
+      final data = (result as Success<BarcodeLookupData>).value;
+      expect(data.source, equals(LookupSource.offDe));
+      expect(data.item, isNotNull);
       verifyNever(() => mockOff.lookupBarcode(any()));
       verifyNever(() => mockBrocade.lookup(any()));
     });
@@ -109,8 +113,10 @@ void main() {
 
       final result = await service.lookup(testBarcode);
 
-      expect(result.source, equals(LookupSource.offWorld));
-      expect(result.item, isNotNull);
+      expect(result, isA<Success<BarcodeLookupData>>());
+      final data = (result as Success<BarcodeLookupData>).value;
+      expect(data.source, equals(LookupSource.offWorld));
+      expect(data.item, isNotNull);
       verifyNever(() => mockBrocade.lookup(any()));
     });
 
@@ -129,10 +135,12 @@ void main() {
 
       final result = await service.lookup(testBarcode);
 
-      expect(result.source, equals(LookupSource.brocade));
-      expect(result.item, isNull);
-      expect(result.partialName, equals('Brocade Product'));
-      expect(result.partialBrand, equals('TestBrand'));
+      expect(result, isA<Success<BarcodeLookupData>>());
+      final data = (result as Success<BarcodeLookupData>).value;
+      expect(data.source, equals(LookupSource.brocade));
+      expect(data.item, isNull);
+      expect(data.partialName, equals('Brocade Product'));
+      expect(data.partialBrand, equals('TestBrand'));
     });
 
     test('returns manual source when all lookups fail', () async {
@@ -148,9 +156,11 @@ void main() {
 
       final result = await service.lookup(testBarcode);
 
-      expect(result.source, equals(LookupSource.manual));
-      expect(result.item, isNull);
-      expect(result.error, isNull);
+      expect(result, isA<Success<BarcodeLookupData>>());
+      final data = (result as Success<BarcodeLookupData>).value;
+      expect(data.source, equals(LookupSource.manual));
+      expect(data.item, isNull);
+      expect(data.error, isNull);
     });
 
     test('propagates network error when Brocade fails with network', () async {
@@ -166,8 +176,10 @@ void main() {
 
       final result = await service.lookup(testBarcode);
 
-      expect(result.source, equals(LookupSource.manual));
-      expect(result.error, equals(ServiceErrorType.network));
+      expect(result, isA<Success<BarcodeLookupData>>());
+      final data = (result as Success<BarcodeLookupData>).value;
+      expect(data.source, equals(LookupSource.manual));
+      expect(data.error, equals(ServiceErrorType.network));
     });
   });
 }

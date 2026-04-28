@@ -7,7 +7,9 @@ import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/food_item.dart';
 import 'package:sophis/models/serving_size.dart';
 import 'package:sophis/services/barcode_lookup_service.dart';
+import 'package:sophis/services/gemini/models/models.dart';
 import 'package:sophis/services/gemini_food_service.dart';
+import 'package:sophis/services/service_result.dart';
 import 'package:sophis/services/settings_provider.dart';
 import 'package:sophis/ui/components/settings/settings_tiles.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
@@ -65,88 +67,87 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
 
     setState(() => _isAnalyzing = true);
 
-    try {
-      final geminiService = await _getGeminiService();
-      if (geminiService == null) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.errorApiKey)),
-          );
-        }
-        setState(() => _isAnalyzing = false);
-        return;
+    final geminiService = await _getGeminiService();
+    if (geminiService == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.errorApiKey)),
+        );
       }
+      setState(() => _isAnalyzing = false);
+      return;
+    }
 
-      final result =
-          await geminiService.analyzeNutritionLabel(File(image.path));
+    final analysisResult =
+        await geminiService.analyzeNutritionLabel(File(image.path));
 
-      if (result == null || result.caloriesPer100g == 0) {
-        if (mounted) {
+    if (!mounted) return;
+
+    switch (analysisResult) {
+      case Success<NutritionLabelResult?>(value: final result):
+        if (result == null || result.caloriesPer100g == 0) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(l10n.noFoodDetected)),
           );
+          setState(() => _isAnalyzing = false);
+          return;
         }
-        setState(() => _isAnalyzing = false);
-        return;
-      }
 
-      // Build servings from label data
-      List<ServingSize> servings = [];
-      if (result.servingSizeG != null && result.servingSizeG! > 0) {
-        final servingName = result.servingName ?? 'Portion';
-        servings =
-            ServingSize.generateFractions(servingName, result.servingSizeG!);
-      }
+        // Build servings from label data
+        List<ServingSize> servings = [];
+        final servingSizeG = result.servingSizeG;
+        if (servingSizeG != null && servingSizeG > 0) {
+          final servingName = result.servingName ?? 'Portion';
+          servings =
+              ServingSize.generateFractions(servingName, servingSizeG);
+        }
 
-      final product = FoodItem(
-        id: widget.barcode,
-        name: result.productName ??
-            widget.partialName ??
-            l10n.productNotFoundTitle,
-        category: 'food',
-        caloriesPer100g: result.caloriesPer100g,
-        proteinPer100g: result.proteinPer100g,
-        carbsPer100g: result.carbsPer100g,
-        fatPer100g: result.fatPer100g,
-        barcode: widget.barcode,
-        brand: result.brand ?? widget.partialBrand,
-        servings: servings,
-      );
-
-      // Cache the result
-      await widget.lookupService.cacheResult(
-        widget.barcode,
-        product,
-        LookupSource.gemini,
-      );
-
-      if (mounted) {
-        Navigator.pop(context);
-        widget.onProductResolved(product);
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.errorGeneric(e.toString()))),
+        final product = FoodItem(
+          id: widget.barcode,
+          name: result.productName ??
+              widget.partialName ??
+              l10n.productNotFoundTitle,
+          category: 'food',
+          caloriesPer100g: result.caloriesPer100g,
+          proteinPer100g: result.proteinPer100g,
+          carbsPer100g: result.carbsPer100g,
+          fatPer100g: result.fatPer100g,
+          barcode: widget.barcode,
+          brand: result.brand ?? widget.partialBrand,
+          servings: servings,
         );
-      }
-    } finally {
-      if (mounted) setState(() => _isAnalyzing = false);
+
+        // Cache the result
+        await widget.lookupService.cacheResult(
+          widget.barcode,
+          product,
+          LookupSource.gemini,
+        );
+
+        if (mounted) {
+          Navigator.pop(context);
+          widget.onProductResolved(product);
+        }
+      case Failure<NutritionLabelResult?>(message: final message):
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.errorGeneric(message))),
+        );
     }
+
+    if (mounted) setState(() => _isAnalyzing = false);
   }
 
   Future<GeminiFoodService?> _getGeminiService() async {
-    try {
-      final settings = context.read<SettingsProvider>();
-      final apiKey = settings.geminiApiKey;
-      if (apiKey == null || apiKey.isEmpty) return null;
+    final settings = context.read<SettingsProvider>();
+    final apiKey = settings.geminiApiKey;
+    if (apiKey == null || apiKey.isEmpty) return null;
 
-      final service = GeminiFoodService();
-      await service.initialize(apiKey);
+    final service = GeminiFoodService();
+    final result = service.initialize(apiKey);
+    if (result.isSuccess) {
       return service;
-    } catch (_) {
-      return null;
     }
+    return null;
   }
 
   void _enterManually() {

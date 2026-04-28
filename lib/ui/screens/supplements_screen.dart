@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:sophis/l10n/generated/app_localizations.dart';
+import 'package:sophis/services/service_result.dart';
 import 'package:sophis/services/supplements_provider.dart';
 import 'package:sophis/models/supplement.dart';
 import 'package:sophis/ui/theme/animations.dart';
@@ -229,7 +230,13 @@ class _SupplementsScreenState extends State<SupplementsScreen> {
                               );
                             },
                             onDismissed: (direction) {
-                              provider.deleteSupplement(supplement.id);
+                              final result = provider.deleteSupplement(supplement.id);
+                              if (result.isFailure) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text((result as Failure).message)),
+                                );
+                                return;
+                              }
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(

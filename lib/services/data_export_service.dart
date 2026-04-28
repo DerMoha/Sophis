@@ -13,13 +13,14 @@ import 'package:sophis/models/nutrition_goals.dart';
 import 'package:sophis/models/user_profile.dart';
 import 'package:sophis/models/workout_entry.dart';
 import 'package:sophis/services/nutrition_provider.dart';
+import 'package:sophis/services/service_result.dart';
 
 /// Service for exporting and importing all app data as JSON
 class DataExportService {
   static const String _exportVersion = '1.0';
 
   /// Export all app data to a shareable JSON file
-  static Future<bool> exportData(NutritionProvider nutrition) async {
+  static Future<ServiceResult<void>> exportData(NutritionProvider nutrition) async {
     try {
       // Gather all data
       final exportData = {
@@ -57,15 +58,15 @@ class DataExportService {
         subject: 'Sophis Data Backup',
       );
 
-      return true;
+      return const Success(null);
     } catch (e) {
       debugPrint('Export failed: $e');
-      return false;
+      return Failure(ServiceErrorType.unknown, 'Export failed: $e');
     }
   }
 
   /// Import data from a JSON file, replacing all current data
-  static Future<ImportResult> importData(NutritionProvider nutrition) async {
+  static Future<ServiceResult<ImportResult>> importData(NutritionProvider nutrition) async {
     try {
       // Pick a JSON file
       final result = await FilePicker.platform.pickFiles(
@@ -74,7 +75,10 @@ class DataExportService {
       );
 
       if (result == null || result.files.isEmpty) {
-        return ImportResult(success: false, message: 'No file selected');
+        return const Success(ImportResult(
+          success: false,
+          message: 'No file selected',
+        ),);
       }
 
       final file = File(result.files.single.path!);
@@ -84,10 +88,10 @@ class DataExportService {
       // Validate version
       final version = data['version'] as String?;
       if (version == null) {
-        return ImportResult(
+        return const Success(ImportResult(
           success: false,
           message: 'Invalid backup file format',
-        );
+        ),);
       }
 
       // Clear existing data before import
@@ -178,14 +182,14 @@ class DataExportService {
         itemsImported += entries.length;
       }
 
-      return ImportResult(
+      return Success(ImportResult(
         success: true,
         message: 'Imported $itemsImported items',
         itemsImported: itemsImported,
-      );
+      ),);
     } catch (e) {
       debugPrint('Import failed: $e');
-      return ImportResult(success: false, message: 'Import failed: $e');
+      return Failure(ServiceErrorType.unknown, 'Import failed: $e');
     }
   }
 }
@@ -195,7 +199,7 @@ class ImportResult {
   final String message;
   final int itemsImported;
 
-  ImportResult({
+  const ImportResult({
     required this.success,
     required this.message,
     this.itemsImported = 0,

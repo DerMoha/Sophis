@@ -9,6 +9,7 @@ import 'package:sophis/models/food_item.dart';
 import 'package:sophis/models/nutrition_totals.dart';
 import 'package:sophis/models/serving_size.dart';
 import 'package:sophis/services/barcode_lookup_service.dart';
+import 'package:sophis/services/service_result.dart';
 import 'package:sophis/services/nutrition_provider.dart';
 
 import 'package:sophis/ui/theme/app_theme.dart';
@@ -355,9 +356,11 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
         },
         onReset: () async {
           Navigator.pop(context);
-          final result = await lookupService.resetCorrection(barcode);
-          if (result.item != null && widget.onProductUpdated != null) {
-            widget.onProductUpdated!(result.item!);
+          final resetResult = await lookupService.resetCorrection(barcode);
+          if (resetResult case Success<BarcodeLookupData>(value: final data)) {
+            if (data.item != null && widget.onProductUpdated != null) {
+              widget.onProductUpdated!(data.item!);
+            }
           }
         },
       ),
