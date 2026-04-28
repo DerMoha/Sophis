@@ -34,30 +34,33 @@ class RecipesScreen extends StatelessWidget {
           final recipes = nutrition.recipes;
 
           if (recipes.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.restaurant_outlined,
-                    size: AppTheme.iconHero,
-                    color: theme.disabledColor,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    l10n.noEntries,
-                    style: TextStyle(color: theme.disabledColor),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: () => Navigator.push(
-                      context,
-                      AppTheme.slideRoute(const RecipeCreateScreen()),
+            return FadeInSlide(
+              index: 0,
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.restaurant_outlined,
+                      size: AppTheme.iconHero,
+                      color: theme.disabledColor,
                     ),
-                    icon: const Icon(Icons.add),
-                    label: Text(l10n.createRecipe),
-                  ),
-                ],
+                    const SizedBox(height: 16),
+                    Text(
+                      l10n.noEntries,
+                      style: TextStyle(color: theme.disabledColor),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: () => Navigator.push(
+                        context,
+                        AppTheme.slideRoute(const RecipeCreateScreen()),
+                      ),
+                      icon: const Icon(Icons.add),
+                      label: Text(l10n.createRecipe),
+                    ),
+                  ],
+                ),
               ),
             );
           }

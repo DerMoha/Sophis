@@ -17,6 +17,7 @@ import 'package:sophis/ui/components/ai_food_result.dart';
 import 'package:sophis/ui/components/ai_food_result_card.dart';
 import 'package:sophis/ui/components/common/ui_primitives.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
+import 'package:sophis/ui/theme/animations.dart';
 import 'package:sophis/ui/components/edit_food_analysis_sheet.dart';
 import 'package:sophis/ui/screens/share_meal_screen.dart';
 
@@ -535,23 +536,30 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
   Widget _buildResultsArea(AppLocalizations l10n, ThemeData theme) {
     if (_error != null) {
       final isApiKeyError = _error!.contains('API key');
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 48, color: AppTheme.error),
-              const SizedBox(height: 16),
-              Text(_error!, textAlign: TextAlign.center),
-              if (isApiKeyError) ...[
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(l10n.goToSettings),
+      return FadeInSlide(
+        index: 0,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.error_outline,
+                  size: 48,
+                  color: AppTheme.error,
                 ),
+                const SizedBox(height: 16),
+                Text(_error!, textAlign: TextAlign.center),
+                if (isApiKeyError) ...[
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text(l10n.goToSettings),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       );
@@ -562,26 +570,34 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     }
 
     if (_results == null) {
-      return Center(
-        child: Text(
-          _serviceInitialized ? l10n.takePhotosAndAnalyze : l10n.initializingAI,
-          style: TextStyle(color: theme.disabledColor),
+      return FadeInSlide(
+        index: 0,
+        child: Center(
+          child: Text(
+            _serviceInitialized
+                ? l10n.takePhotosAndAnalyze
+                : l10n.initializingAI,
+            style: TextStyle(color: theme.disabledColor),
+          ),
         ),
       );
     }
 
     if (_results!.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.no_food, size: 48, color: theme.disabledColor),
-            const SizedBox(height: 16),
-            Text(
-              l10n.noFoodDetected,
-              style: TextStyle(color: theme.disabledColor),
-            ),
-          ],
+      return FadeInSlide(
+        index: 0,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.no_food, size: 48, color: theme.disabledColor),
+              const SizedBox(height: 16),
+              Text(
+                l10n.noFoodDetected,
+                style: TextStyle(color: theme.disabledColor),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -591,11 +607,14 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       itemCount: _results!.length,
       itemBuilder: (context, index) {
         final result = _results![index];
-        return AiFoodResultCard(
-          result: result,
-          onEdit: () => _showEditSheet(result),
-          onShare: () => _shareSingleFood(result),
-          onAdd: () => _addFood(result),
+        return FadeInSlide(
+          index: index,
+          child: AiFoodResultCard(
+            result: result,
+            onEdit: () => _showEditSheet(result),
+            onShare: () => _shareSingleFood(result),
+            onAdd: () => _addFood(result),
+          ),
         );
       },
     );

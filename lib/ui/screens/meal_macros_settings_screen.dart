@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
-import 'package:sophis/ui/components/organic_components.dart';
+import 'package:sophis/ui/components/settings/settings_tiles.dart';
 
 class MealMacrosSettingsScreen extends StatelessWidget {
   const MealMacrosSettingsScreen({super.key});
@@ -26,50 +26,12 @@ class MealMacrosSettingsScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Toggle Card
-                GlassCard(
-                  padding: const EdgeInsets.all(20),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color:
-                              theme.colorScheme.primary.withValues(alpha: 0.1),
-                          borderRadius:
-                              BorderRadius.circular(AppTheme.radiusSM),
-                        ),
-                        child: Icon(
-                          Icons.pie_chart_outline,
-                          color: theme.colorScheme.primary,
-                          size: 24,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              l10n.showMealMacros,
-                              style: theme.textTheme.titleMedium,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              l10n.showMealMacrosSubtitle,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Switch(
-                        value: settings.showMealMacros,
-                        onChanged: settings.setShowMealMacros,
-                      ),
-                    ],
-                  ),
+                SwitchTile(
+                  title: l10n.showMealMacros,
+                  subtitle: l10n.showMealMacrosSubtitle,
+                  icon: Icons.pie_chart_outline,
+                  value: settings.showMealMacros,
+                  onChanged: settings.setShowMealMacros,
                 ),
                 const SizedBox(height: 32),
 

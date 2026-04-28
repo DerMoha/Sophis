@@ -12,6 +12,7 @@ import 'package:sophis/ui/components/food_search_result_tile.dart';
 import 'package:sophis/ui/components/portion_picker_sheet.dart';
 import 'package:sophis/ui/components/common/ui_primitives.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
+import 'package:sophis/ui/theme/animations.dart';
 
 class FoodSearchScreen extends StatefulWidget {
   final String meal;
@@ -244,21 +245,24 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
     final recentFoods = provider.recentFoods;
 
     if (favoriteFoods.isEmpty && customFoods.isEmpty && recentFoods.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.search,
-              size: AppTheme.iconXL,
-              color: Theme.of(context).disabledColor,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              l10n.searchForFood,
-              style: TextStyle(color: Theme.of(context).disabledColor),
-            ),
-          ],
+      return FadeInSlide(
+        index: 0,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.search,
+                size: AppTheme.iconXL,
+                color: Theme.of(context).disabledColor,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                l10n.searchForFood,
+                style: TextStyle(color: Theme.of(context).disabledColor),
+              ),
+            ],
+          ),
         ),
       );
     }

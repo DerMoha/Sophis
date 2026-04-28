@@ -8,6 +8,7 @@ import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/theme/animations.dart';
 import 'package:sophis/ui/components/organic_components.dart';
+import 'package:sophis/ui/components/settings/settings_tiles.dart';
 
 class AddFoodScreen extends StatefulWidget {
   final String meal;
@@ -287,26 +288,13 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                             horizontal: 16,
                             vertical: 8,
                           ),
-                          child: CheckboxListTile(
+                          child: CheckboxTile(
+                            title: l10n.saveAsCustomFood,
+                            subtitle: l10n.saveAsCustomFoodHint,
+                            icon: Icons.bookmark_add_outlined,
                             value: _saveAsCustomFood,
                             onChanged: (v) =>
-                                setState(() => _saveAsCustomFood = v ?? false),
-                            title: Text(
-                              l10n.saveAsCustomFood,
-                              style: theme.textTheme.bodyMedium,
-                            ),
-                            subtitle: Text(
-                              l10n.saveAsCustomFoodHint,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                            secondary: Icon(
-                              Icons.bookmark_add_outlined,
-                              color: theme.colorScheme.primary,
-                            ),
-                            contentPadding: EdgeInsets.zero,
-                            controlAffinity: ListTileControlAffinity.trailing,
+                                setState(() => _saveAsCustomFood = v),
                           ),
                         ),
                       ),

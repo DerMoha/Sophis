@@ -6,6 +6,7 @@ import 'package:sophis/models/shareable_meal.dart';
 import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
+import 'package:sophis/ui/theme/animations.dart';
 import 'package:sophis/ui/components/organic_components.dart';
 
 class ImportMealScreen extends StatefulWidget {
@@ -72,30 +73,33 @@ class _ImportMealScreenState extends State<ImportMealScreen> {
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 // Shared meal header
-                OrganicCard(
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppTheme.spaceMD),
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.restaurant_menu_rounded,
-                          size: AppTheme.iconXL,
-                          color: theme.colorScheme.primary,
-                        ),
-                        const SizedBox(height: AppTheme.spaceSM),
-                        Text(
-                          meal.title ?? l10n.sharedMeal,
-                          style: theme.textTheme.headlineSmall,
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: AppTheme.spaceXS),
-                        Text(
-                          '${meal.items.length} ${meal.items.length == 1 ? 'item' : 'items'}',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
+                FadeInSlide(
+                  index: 0,
+                  child: OrganicCard(
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppTheme.spaceMD),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.restaurant_menu_rounded,
+                            size: AppTheme.iconXL,
+                            color: theme.colorScheme.primary,
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: AppTheme.spaceSM),
+                          Text(
+                            meal.title ?? l10n.sharedMeal,
+                            style: theme.textTheme.headlineSmall,
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: AppTheme.spaceXS),
+                          Text(
+                            '${meal.items.length} ${meal.items.length == 1 ? 'item' : 'items'}',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -103,66 +107,21 @@ class _ImportMealScreenState extends State<ImportMealScreen> {
                 const SizedBox(height: AppTheme.spaceMD),
 
                 // Items list
-                OrganicCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(AppTheme.spaceMD),
-                        child: Text(
-                          l10n.foods,
-                          style: theme.textTheme.titleMedium,
-                        ),
-                      ),
-                      const Divider(height: 1),
-                      ...meal.items.map((item) => _buildItemTile(theme, item)),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: AppTheme.spaceMD),
-
-                // Totals
-                OrganicCard(
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppTheme.spaceMD),
+                FadeInSlide(
+                  index: 1,
+                  child: OrganicCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          l10n.total,
-                          style: theme.textTheme.titleMedium,
+                        Padding(
+                          padding: const EdgeInsets.all(AppTheme.spaceMD),
+                          child: Text(
+                            l10n.foods,
+                            style: theme.textTheme.titleMedium,
+                          ),
                         ),
-                        const SizedBox(height: AppTheme.spaceSM),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            _buildMacroChip(
-                              theme,
-                              '${meal.totalCalories.round()}',
-                              'kcal',
-                              theme.colorScheme.primary,
-                            ),
-                            _buildMacroChip(
-                              theme,
-                              '${meal.totalProtein.round()}g',
-                              l10n.proteinShort,
-                              AppTheme.protein,
-                            ),
-                            _buildMacroChip(
-                              theme,
-                              '${meal.totalCarbs.round()}g',
-                              l10n.carbsShort,
-                              AppTheme.carbs,
-                            ),
-                            _buildMacroChip(
-                              theme,
-                              '${meal.totalFat.round()}g',
-                              l10n.fatShort,
-                              AppTheme.fat,
-                            ),
-                          ],
-                        ),
+                        const Divider(height: 1),
+                        ...meal.items.map((item) => _buildItemTile(theme, item)),
                       ],
                     ),
                   ),
@@ -170,21 +129,74 @@ class _ImportMealScreenState extends State<ImportMealScreen> {
 
                 const SizedBox(height: AppTheme.spaceMD),
 
+                // Totals
+                FadeInSlide(
+                  index: 2,
+                  child: OrganicCard(
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppTheme.spaceMD),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.total,
+                            style: theme.textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: AppTheme.spaceSM),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              _buildMacroChip(
+                                theme,
+                                '${meal.totalCalories.round()}',
+                                'kcal',
+                                theme.colorScheme.primary,
+                              ),
+                              _buildMacroChip(
+                                theme,
+                                '${meal.totalProtein.round()}g',
+                                l10n.proteinShort,
+                                AppTheme.protein,
+                              ),
+                              _buildMacroChip(
+                                theme,
+                                '${meal.totalCarbs.round()}g',
+                                l10n.carbsShort,
+                                AppTheme.carbs,
+                              ),
+                              _buildMacroChip(
+                                theme,
+                                '${meal.totalFat.round()}g',
+                                l10n.fatShort,
+                                AppTheme.fat,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: AppTheme.spaceMD),
+
                 // Meal selector
-                OrganicCard(
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppTheme.spaceMD),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          l10n.importAs,
-                          style: theme.textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: AppTheme.spaceSM),
-                        Wrap(
-                          spacing: AppTheme.spaceSM,
-                          children: mealTypes
+                FadeInSlide(
+                  index: 3,
+                  child: OrganicCard(
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppTheme.spaceMD),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.importAs,
+                            style: theme.textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: AppTheme.spaceSM),
+                          Wrap(
+                            spacing: AppTheme.spaceSM,
+                            children: mealTypes
                               .map(
                                 (mealType) => ChoiceChip(
                                   label: Row(
@@ -217,6 +229,7 @@ class _ImportMealScreenState extends State<ImportMealScreen> {
                     ),
                   ),
                 ),
+              ),
 
                 const SizedBox(height: AppTheme.spaceLG),
 

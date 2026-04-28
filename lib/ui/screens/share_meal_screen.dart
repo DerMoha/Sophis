@@ -5,6 +5,7 @@ import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/shareable_meal.dart';
 import 'package:sophis/services/meal_sharing_service.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
+import 'package:sophis/ui/theme/animations.dart';
 import 'package:sophis/ui/components/organic_components.dart';
 
 class ShareMealScreen extends StatelessWidget {
@@ -33,44 +34,47 @@ class ShareMealScreen extends StatelessWidget {
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 // QR Code Card
-                OrganicCard(
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppTheme.spaceLG),
-                    child: Column(
-                      children: [
-                        // QR Code
-                        Container(
-                          padding: const EdgeInsets.all(AppTheme.spaceMD),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.surface,
-                            borderRadius:
-                                BorderRadius.circular(AppTheme.radiusMD),
+                FadeInSlide(
+                  index: 0,
+                  child: OrganicCard(
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppTheme.spaceLG),
+                      child: Column(
+                        children: [
+                          // QR Code
+                          Container(
+                            padding: const EdgeInsets.all(AppTheme.spaceMD),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.surface,
+                              borderRadius:
+                                  BorderRadius.circular(AppTheme.radiusMD),
+                            ),
+                            child: QrImageView(
+                              data: deepLink,
+                              version: QrVersions.auto,
+                              size: 200,
+                              backgroundColor: theme.colorScheme.surface,
+                              errorCorrectionLevel: QrErrorCorrectLevel.M,
+                            ),
                           ),
-                          child: QrImageView(
-                            data: deepLink,
-                            version: QrVersions.auto,
-                            size: 200,
-                            backgroundColor: theme.colorScheme.surface,
-                            errorCorrectionLevel: QrErrorCorrectLevel.M,
-                          ),
-                        ),
 
-                        const SizedBox(height: AppTheme.spaceMD),
+                          const SizedBox(height: AppTheme.spaceMD),
 
-                        // Meal info
-                        Text(
-                          meal.title ?? l10n.sharedMeal,
-                          style: theme.textTheme.titleLarge,
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: AppTheme.spaceXS),
-                        Text(
-                          '${meal.items.length} ${meal.items.length == 1 ? 'item' : 'items'} - ${meal.totalCalories.round()} kcal',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
+                          // Meal info
+                          Text(
+                            meal.title ?? l10n.sharedMeal,
+                            style: theme.textTheme.titleLarge,
+                            textAlign: TextAlign.center,
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: AppTheme.spaceXS),
+                          Text(
+                            '${meal.items.length} ${meal.items.length == 1 ? 'item' : 'items'} - ${meal.totalCalories.round()} kcal',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -78,31 +82,34 @@ class ShareMealScreen extends StatelessWidget {
                 const SizedBox(height: AppTheme.spaceMD),
 
                 // Macros summary
-                OrganicCard(
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppTheme.spaceMD),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _buildMacroColumn(
-                          theme,
-                          l10n.proteinShort,
-                          '${meal.totalProtein.round()}g',
-                          AppTheme.protein,
-                        ),
-                        _buildMacroColumn(
-                          theme,
-                          l10n.carbsShort,
-                          '${meal.totalCarbs.round()}g',
-                          AppTheme.carbs,
-                        ),
-                        _buildMacroColumn(
-                          theme,
-                          l10n.fatShort,
-                          '${meal.totalFat.round()}g',
-                          AppTheme.fat,
-                        ),
-                      ],
+                FadeInSlide(
+                  index: 1,
+                  child: OrganicCard(
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppTheme.spaceMD),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _buildMacroColumn(
+                            theme,
+                            l10n.proteinShort,
+                            '${meal.totalProtein.round()}g',
+                            AppTheme.protein,
+                          ),
+                          _buildMacroColumn(
+                            theme,
+                            l10n.carbsShort,
+                            '${meal.totalCarbs.round()}g',
+                            AppTheme.carbs,
+                          ),
+                          _buildMacroColumn(
+                            theme,
+                            l10n.fatShort,
+                            '${meal.totalFat.round()}g',
+                            AppTheme.fat,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -110,62 +117,68 @@ class ShareMealScreen extends StatelessWidget {
                 const SizedBox(height: AppTheme.spaceMD),
 
                 // Items list
-                OrganicCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(AppTheme.spaceMD),
-                        child: Text(
-                          l10n.foods,
-                          style: theme.textTheme.titleMedium,
+                FadeInSlide(
+                  index: 2,
+                  child: OrganicCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(AppTheme.spaceMD),
+                          child: Text(
+                            l10n.foods,
+                            style: theme.textTheme.titleMedium,
+                          ),
                         ),
-                      ),
-                      const Divider(height: 1),
-                      ...meal.items.map(
-                        (item) => ListTile(
-                          title: Text(item.name),
-                          trailing: Text(
-                            '${item.calories.round()} kcal',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.primary,
+                        const Divider(height: 1),
+                        ...meal.items.map(
+                          (item) => ListTile(
+                            title: Text(item.name),
+                            trailing: Text(
+                              '${item.calories.round()} kcal',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.primary,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
 
                 const SizedBox(height: AppTheme.spaceLG),
 
                 // Share buttons
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () async {
-                          await MealSharingService.copyToClipboard(meal);
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(l10n.linkCopied)),
-                            );
-                          }
-                        },
-                        icon: const Icon(Icons.copy_rounded),
-                        label: Text(l10n.copyLink),
+                FadeInSlide(
+                  index: 3,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () async {
+                            await MealSharingService.copyToClipboard(meal);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(l10n.linkCopied)),
+                              );
+                            }
+                          },
+                          icon: const Icon(Icons.copy_rounded),
+                          label: Text(l10n.copyLink),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: AppTheme.spaceSM),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () =>
-                            MealSharingService.shareViaSystem(meal),
-                        icon: const Icon(Icons.share_rounded),
-                        label: Text(l10n.shareLink),
+                      const SizedBox(width: AppTheme.spaceSM),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () =>
+                              MealSharingService.shareViaSystem(meal),
+                          icon: const Icon(Icons.share_rounded),
+                          label: Text(l10n.shareLink),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
 
                 const SizedBox(height: AppTheme.spaceMD),

@@ -9,6 +9,7 @@ import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/ui/components/nutrition_entry_fields.dart';
 import 'package:sophis/ui/components/common/ui_primitives.dart';
+import 'package:sophis/ui/components/settings/settings_tiles.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/components/organic_components.dart';
 import 'package:sophis/ui/theme/animations.dart';
@@ -419,66 +420,55 @@ class _MealEntryCard extends StatelessWidget {
               ),
             ),
             // Actions
-            ListTile(
-              leading: Icon(
-                Icons.swap_horiz_outlined,
-                color: theme.colorScheme.primary,
-              ),
-              title: Text(l10n.moveTo),
-              subtitle: Text(l10n.moveToMealSubtitle),
+            ActionTile(
+              icon: Icons.swap_horiz_outlined,
+              title: l10n.moveTo,
+              subtitle: l10n.moveToMealSubtitle,
               onTap: () {
                 Navigator.pop(ctx);
                 _showMoveToMealDialog(context, l10n);
               },
             ),
-            ListTile(
-              leading:
-                  Icon(Icons.copy_outlined, color: theme.colorScheme.primary),
-              title: Text(l10n.duplicate),
-              subtitle: Text(l10n.duplicateSubtitle),
+            ActionTile(
+              icon: Icons.copy_outlined,
+              title: l10n.duplicate,
+              subtitle: l10n.duplicateSubtitle,
               onTap: () {
                 Navigator.pop(ctx);
                 _duplicateEntry(context, l10n);
               },
             ),
-            ListTile(
-              leading:
-                  Icon(Icons.edit_outlined, color: theme.colorScheme.primary),
-              title: Text(l10n.editEntry),
-              subtitle: Text(l10n.editEntrySubtitle),
+            ActionTile(
+              icon: Icons.edit_outlined,
+              title: l10n.editEntry,
+              subtitle: l10n.editEntrySubtitle,
               onTap: () {
                 Navigator.pop(ctx);
                 _showEditDialog(context, l10n);
               },
             ),
-            ListTile(
-              leading: Icon(
-                Icons.bookmark_add_outlined,
-                color: theme.colorScheme.primary,
-              ),
-              title: Text(l10n.saveToMyFoods),
-              subtitle: Text(l10n.saveToMyFoodsSubtitle),
+            ActionTile(
+              icon: Icons.bookmark_add_outlined,
+              title: l10n.saveToMyFoods,
+              subtitle: l10n.saveToMyFoodsSubtitle,
               onTap: () {
                 Navigator.pop(ctx);
                 _saveToMyFoods(context, l10n);
               },
             ),
-            ListTile(
-              leading:
-                  Icon(Icons.share_outlined, color: theme.colorScheme.primary),
-              title: Text(l10n.share),
+            ActionTile(
+              icon: Icons.share_outlined,
+              title: l10n.share,
               onTap: () {
                 Navigator.pop(ctx);
                 _shareEntry(context);
               },
             ),
-            ListTile(
-              leading:
-                  Icon(Icons.delete_outline, color: theme.colorScheme.error),
-              title: Text(
-                l10n.delete,
-                style: TextStyle(color: theme.colorScheme.error),
-              ),
+            ActionTile(
+              icon: Icons.delete_outline,
+              iconColor: theme.colorScheme.error,
+              title: l10n.delete,
+              textColor: theme.colorScheme.error,
               onTap: () {
                 Navigator.pop(ctx);
                 _showDeleteConfirmation(context, l10n);

@@ -384,7 +384,6 @@ class _SupplementsScreenState extends State<SupplementsScreen> {
                 supplement.copyWith(enabled: value),
               );
             },
-            activeThumbColor: accentColor,
           ),
 
           // Edit button

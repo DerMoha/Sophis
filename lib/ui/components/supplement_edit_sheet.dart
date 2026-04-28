@@ -9,6 +9,7 @@ import 'package:sophis/services/service_result.dart';
 import 'package:sophis/providers/supplements_provider.dart';
 import 'package:sophis/utils/time_utils.dart';
 import 'package:sophis/ui/components/modal_sheet.dart';
+import 'package:sophis/ui/components/settings/settings_tiles.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 
 class SupplementEditSheet extends StatefulWidget {
@@ -248,75 +249,16 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
                   const SizedBox(height: 24),
 
                   // Enabled switch
-                  AnimatedContainer(
-                    duration: AppTheme.animFast,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: _enabled
-                          ? accentColor.withValues(alpha: 0.08)
-                          : theme.colorScheme.surfaceContainerHighest
-                              .withValues(alpha: 0.25),
-                      borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-                      border: Border.all(
-                        color:
-                            (_enabled ? accentColor : theme.colorScheme.outline)
-                                .withValues(alpha: 0.12),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: (_enabled
-                                    ? accentColor
-                                    : theme.colorScheme.onSurfaceVariant)
-                                .withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(
-                              AppTheme.radiusSM,
-                            ),
-                          ),
-                          child: Icon(
-                            _enabled
-                                ? Icons.notifications_active_outlined
-                                : Icons.notifications_off_outlined,
-                            color: _enabled
-                                ? accentColor
-                                : theme.colorScheme.onSurfaceVariant,
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Enable Reminder',
-                                style: theme.textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Get daily notifications',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Switch(
-                          value: _enabled,
-                          onChanged: (value) {
-                            setState(() => _enabled = value);
-                          },
-                          activeThumbColor: accentColor,
-                        ),
-                      ],
-                    ),
+                  SwitchTile(
+                    title: 'Enable Reminder',
+                    subtitle: 'Get daily notifications',
+                    icon: _enabled
+                        ? Icons.notifications_active_outlined
+                        : Icons.notifications_off_outlined,
+                    value: _enabled,
+                    onChanged: (value) {
+                      setState(() => _enabled = value);
+                    },
                   ),
                   const SizedBox(height: 32),
 
