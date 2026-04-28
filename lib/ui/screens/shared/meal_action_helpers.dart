@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/food_entry.dart';
 import 'package:sophis/models/shareable_meal.dart';
-import 'package:sophis/services/nutrition_provider.dart';
+import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/screens/add_food_screen.dart';
 import 'package:sophis/ui/screens/ai_food_camera_screen.dart';

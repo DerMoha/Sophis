@@ -3,13 +3,13 @@ import 'package:provider/provider.dart';
 
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/app_settings.dart';
-import 'package:sophis/services/settings_provider.dart';
+import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/theme/animations.dart';
 import 'package:sophis/utils/unit_converter.dart';
 import 'package:sophis/ui/components/organic_components.dart';
 import 'package:sophis/ui/components/water_details_sheet.dart';
-import 'package:sophis/services/nutrition_provider.dart';
+import 'package:sophis/providers/nutrition_provider.dart';
 
 /// Water tracking card for the modern home screen.
 class WaterCard extends StatelessWidget {

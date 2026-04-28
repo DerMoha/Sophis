@@ -19,25 +19,15 @@ class ShareMealScreen extends StatelessWidget {
     final deepLink = meal.toDeepLink();
 
     return Scaffold(
+      appBar: AppBar(
+        title: Text(l10n.shareMeal),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+      ),
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
-          // App Bar
-          SliverAppBar(
-            expandedHeight: 100,
-            floating: true,
-            pinned: true,
-            backgroundColor: theme.scaffoldBackgroundColor,
-            centerTitle: true,
-            flexibleSpace: FlexibleSpaceBar(
-              titlePadding: EdgeInsets.zero,
-              title: Text(
-                l10n.shareMeal,
-                style: theme.appBarTheme.titleTextStyle,
-              ),
-            ),
-          ),
-
           SliverPadding(
             padding: const EdgeInsets.all(AppTheme.spaceMD),
             sliver: SliverList(

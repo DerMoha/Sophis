@@ -5,8 +5,9 @@ import 'package:provider/provider.dart';
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/custom_meal_type.dart';
 import 'package:sophis/models/meal_plan.dart';
-import 'package:sophis/services/nutrition_provider.dart';
-import 'package:sophis/services/settings_provider.dart';
+import 'package:sophis/providers/nutrition_provider.dart';
+import 'package:sophis/providers/settings_provider.dart';
+import 'package:sophis/ui/components/common/ui_primitives.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/theme/animations.dart';
 import 'package:sophis/ui/components/organic_components.dart';
@@ -280,8 +281,8 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
                           : isToday
                               ? theme.colorScheme.primary
                               : isDark
-                                  ? Colors.white.withValues(alpha: 0.08)
-                                  : Colors.black.withValues(alpha: 0.06),
+                                  ? CachedColors.borderDark
+                                  : CachedColors.borderLight,
                       width: isToday && !isSelected ? 2 : 1,
                     ),
                     boxShadow: isSelected
@@ -303,7 +304,7 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
                         _formatDayName(context, date),
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: isSelected
-                              ? Colors.white.withValues(alpha: 0.8)
+                              ? theme.colorScheme.onPrimary.withValues(alpha: 0.8)
                               : theme.colorScheme.onSurfaceVariant,
                           fontWeight: FontWeight.w500,
                           letterSpacing: 0.5,
@@ -315,7 +316,7 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
                         '${date.day}',
                         style: theme.textTheme.titleLarge?.copyWith(
                           color: isSelected
-                              ? Colors.white
+                              ? theme.colorScheme.onPrimary
                               : theme.colorScheme.onSurface,
                           fontWeight: FontWeight.bold,
                         ),
@@ -329,7 +330,7 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
                         decoration: BoxDecoration(
                           color: hasMeals
                               ? (isSelected
-                                  ? Colors.white
+                                  ? theme.colorScheme.onPrimary
                                   : theme.colorScheme.primary)
                               : Colors.transparent,
                           shape: BoxShape.circle,
@@ -397,43 +398,13 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
         // Helpful tip when empty
         if (meals.isEmpty) ...[
           const SizedBox(height: 32),
-          _buildEmptyDayHint(theme, l10n),
+          EmptyDayHint(
+            icon: Icons.restaurant_menu_outlined,
+            title: l10n.noMealsPlanned,
+            subtitle: l10n.tapToAddFirstMeal,
+          ),
         ],
       ],
-    );
-  }
-
-  Widget _buildEmptyDayHint(ThemeData theme, AppLocalizations l10n) {
-    return Center(
-      child: Column(
-        children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.restaurant_menu_outlined,
-              size: 28,
-              color: theme.colorScheme.primary.withValues(alpha: 0.5),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            l10n.noMealsPlanned,
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            l10n.tapToAddFirstMeal,
-            style: theme.textTheme.bodySmall,
-          ),
-        ],
-      ),
     );
   }
 

@@ -4,7 +4,8 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/food_entry.dart';
-import 'package:sophis/services/nutrition_provider.dart';
+import 'package:sophis/providers/nutrition_provider.dart';
+import 'package:sophis/ui/components/common/ui_primitives.dart';
 import 'package:sophis/ui/screens/food_diary/food_diary_vm.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/theme/animations.dart';
@@ -281,38 +282,12 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
         // Helpful hint when empty
         if (vm.isEmpty) ...[
           const SizedBox(height: 32),
-          _buildEmptyDayHint(theme, l10n),
+          EmptyDayHint(
+            icon: Icons.restaurant_menu_outlined,
+            title: l10n.noEntriesForDay,
+          ),
         ],
       ],
-    );
-  }
-
-  Widget _buildEmptyDayHint(ThemeData theme, AppLocalizations l10n) {
-    return Center(
-      child: Column(
-        children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.restaurant_menu_outlined,
-              size: 28,
-              color: theme.colorScheme.primary.withValues(alpha: 0.5),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            l10n.noEntriesForDay,
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
     );
   }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sophis/models/food_item.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/components/organic_components.dart';
+import 'package:sophis/utils/number_utils.dart';
 
 class FoodSearchResultTile extends StatelessWidget {
   final FoodItem item;
@@ -256,7 +257,7 @@ class _MacroChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppTheme.radiusXS),
       ),
       child: Text(
-        '$label: ${value.toStringAsFixed(0)}g',
+        '$label: ${NumberUtils.formatNutrient(value)}g',
         style: theme.textTheme.labelSmall?.copyWith(
           color: isDark
               ? color.withValues(alpha: 0.9)
@@ -291,7 +292,7 @@ class _CalorieBadge extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            calories.toStringAsFixed(0),
+            NumberUtils.formatCalories(calories),
             style: theme.textTheme.titleSmall?.copyWith(
               color: theme.colorScheme.primary,
               fontWeight: FontWeight.bold,

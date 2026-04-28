@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sophis/l10n/generated/app_localizations.dart';
-import 'package:sophis/services/settings_provider.dart';
-import 'package:sophis/services/supplements_provider.dart';
+import 'package:sophis/providers/settings_provider.dart';
+import 'package:sophis/providers/supplements_provider.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/components/settings/settings_tiles.dart';
 import 'package:sophis/ui/components/settings/water_sizes_dialog.dart';

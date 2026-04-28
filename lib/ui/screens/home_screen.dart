@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:sophis/services/nutrition_provider.dart';
+import 'package:sophis/providers/nutrition_provider.dart';
+import 'package:sophis/ui/components/common/ui_primitives.dart';
 import 'package:sophis/ui/screens/home/modern/home_modern_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -13,9 +14,7 @@ class HomeScreen extends StatelessWidget {
     );
     if (isLoading) {
       return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
+        body: LoadingState(),
       );
     }
 

@@ -6,7 +6,7 @@ import 'package:uuid/uuid.dart';
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/supplement.dart';
 import 'package:sophis/services/service_result.dart';
-import 'package:sophis/services/supplements_provider.dart';
+import 'package:sophis/providers/supplements_provider.dart';
 import 'package:sophis/utils/time_utils.dart';
 import 'package:sophis/ui/components/modal_sheet.dart';
 import 'package:sophis/ui/theme/app_theme.dart';

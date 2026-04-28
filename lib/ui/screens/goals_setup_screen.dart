@@ -4,8 +4,8 @@ import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/app_settings.dart';
 import 'package:sophis/models/user_profile.dart';
 import 'package:sophis/models/nutrition_goals.dart';
-import 'package:sophis/services/nutrition_provider.dart';
-import 'package:sophis/services/settings_provider.dart';
+import 'package:sophis/providers/nutrition_provider.dart';
+import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/theme/animations.dart';
 import 'package:sophis/utils/unit_converter.dart';
@@ -188,40 +188,30 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
     final heightUnit = UnitConverter.heightUnit(unitSystem);
 
     return Scaffold(
+      appBar: AppBar(
+        title: Text(l10n.goals),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: TextButton(
+              onPressed: _save,
+              child: Text(
+                l10n.save,
+                style: TextStyle(
+                  color: theme.colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
-          // App Bar
-          SliverAppBar(
-            expandedHeight: 100,
-            floating: true,
-            pinned: true,
-            backgroundColor: theme.scaffoldBackgroundColor,
-            centerTitle: true,
-            flexibleSpace: FlexibleSpaceBar(
-              titlePadding: EdgeInsets.zero,
-              title: Text(
-                l10n.goals,
-                style: theme.textTheme.headlineMedium,
-              ),
-            ),
-            actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: TextButton(
-                  onPressed: _save,
-                  child: Text(
-                    l10n.save,
-                    style: TextStyle(
-                      color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-
           // Content
           SliverPadding(
             padding: AppTheme.pagePadding,

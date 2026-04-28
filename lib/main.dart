@@ -9,15 +9,15 @@ import 'package:sophis/l10n/generated/app_localizations.dart';
 
 import 'package:sophis/models/shareable_meal.dart';
 import 'package:sophis/services/storage_service.dart';
-import 'package:sophis/services/settings_provider.dart';
-import 'package:sophis/services/nutrition_provider.dart';
+import 'package:sophis/providers/settings_provider.dart';
+import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/services/notification_service.dart';
 import 'package:sophis/services/meal_sharing_service.dart';
 import 'package:sophis/services/barcode_lookup_service.dart';
 import 'package:sophis/services/brocade_service.dart';
 import 'package:sophis/services/database_service.dart';
 import 'package:sophis/services/openfoodfacts_service.dart';
-import 'package:sophis/services/supplements_provider.dart';
+import 'package:sophis/providers/supplements_provider.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/screens/home_screen.dart';
 import 'package:sophis/ui/screens/import_meal_screen.dart';

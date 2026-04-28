@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/food_entry.dart';
-import 'package:sophis/services/nutrition_provider.dart';
-import 'package:sophis/services/settings_provider.dart';
+import 'package:sophis/providers/nutrition_provider.dart';
+import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/components/organic_components.dart';
 import 'package:sophis/ui/screens/meal_detail_screen.dart';

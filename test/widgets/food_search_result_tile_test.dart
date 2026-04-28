@@ -75,9 +75,9 @@ void main() {
         ),
       );
 
-      expect(find.text('P: 0g'), findsOneWidget);
+      expect(find.text('P: 0.3g'), findsOneWidget);
       expect(find.text('C: 14g'), findsOneWidget);
-      expect(find.text('F: 0g'), findsOneWidget);
+      expect(find.text('F: 0.2g'), findsOneWidget);
     });
 
     testWidgets('calls onTap when tapped', (WidgetTester tester) async {

@@ -4,7 +4,7 @@ import 'package:uuid/uuid.dart';
 
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/custom_meal_type.dart';
-import 'package:sophis/services/settings_provider.dart';
+import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/utils/time_utils.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/theme/animations.dart';

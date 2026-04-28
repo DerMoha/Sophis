@@ -878,8 +878,6 @@ class DatabaseService extends _$DatabaseService {
   }
 
   // ---------------------------------------------------------------------------
-  // CUSTOM PORTIONS
-  // ---------------------------------------------------------------------------
 
   Future<List<CustomPortionRow>> getAllCustomPortions() async {
     return await select(customPortions).get();
@@ -904,28 +902,6 @@ class DatabaseService extends _$DatabaseService {
   // ---------------------------------------------------------------------------
   // RECENT FOODS
   // ---------------------------------------------------------------------------
-
-  Future<List<RecentFoodRow>> getAllRecentFoods() async {
-    return await select(recentFoods).get();
-  }
-
-  Future<int> insertRecentFood(RecentFoodRow food) {
-    return into(recentFoods).insert(
-      RecentFoodsCompanion(
-        id: Value(food.id),
-        name: Value(food.name),
-        category: Value(food.category),
-        caloriesPer100g: Value(food.caloriesPer100g),
-        proteinPer100g: Value(food.proteinPer100g),
-        carbsPer100g: Value(food.carbsPer100g),
-        fatPer100g: Value(food.fatPer100g),
-        barcode: Value(food.barcode),
-        brand: Value(food.brand),
-        imageUrl: Value(food.imageUrl),
-        servingsJson: Value(food.servingsJson),
-      ),
-    );
-  }
 
   Future<void> replaceRecentFoods(List<RecentFoodRow> foodsList) async {
     await delete(recentFoods).go();
@@ -957,13 +933,6 @@ class DatabaseService extends _$DatabaseService {
   // USER STATS
   // ---------------------------------------------------------------------------
 
-  Future<UserStatsRow?> getUserStats() async {
-    final rows = await (select(userStatsTable)
-          ..where((t) => t.id.equals('default')))
-        .get();
-    return rows.isEmpty ? null : rows.first;
-  }
-
   Future<void> upsertUserStats(UserStatsRow stats) async {
     await into(userStatsTable).insertOnConflictUpdate(
       UserStatsTableCompanion(
@@ -980,10 +949,6 @@ class DatabaseService extends _$DatabaseService {
   // ---------------------------------------------------------------------------
   // PLANNED MEALS CHECKED
   // ---------------------------------------------------------------------------
-
-  Future<List<PlannedMealCheckedRow>> getAllPlannedMealsChecked() async {
-    return await select(plannedMealsChecked).get();
-  }
 
   Future<void> replacePlannedMealsChecked(List<String> keys) async {
     await delete(plannedMealsChecked).go();

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:sophis/services/gemini/models/models.dart';
+import 'package:sophis/utils/number_utils.dart';
 
 class EditableFoodResult {
   FoodAnalysis originalAnalysis;
@@ -21,16 +22,20 @@ class EditableFoodResult {
         currentAnalysis = analysis,
         nameController = TextEditingController(text: analysis.name),
         portionController = TextEditingController(
-          text: analysis.portionGrams.toStringAsFixed(0),
+          text: NumberUtils.format(analysis.portionGrams),
         ),
-        caloriesController =
-            TextEditingController(text: analysis.calories.toStringAsFixed(0)),
-        proteinController =
-            TextEditingController(text: analysis.protein.toStringAsFixed(1)),
-        carbsController =
-            TextEditingController(text: analysis.carbs.toStringAsFixed(1)),
-        fatController =
-            TextEditingController(text: analysis.fat.toStringAsFixed(1));
+        caloriesController = TextEditingController(
+          text: NumberUtils.formatCalories(analysis.calories),
+        ),
+        proteinController = TextEditingController(
+          text: NumberUtils.formatNutrient(analysis.protein),
+        ),
+        carbsController = TextEditingController(
+          text: NumberUtils.formatNutrient(analysis.carbs),
+        ),
+        fatController = TextEditingController(
+          text: NumberUtils.formatNutrient(analysis.fat),
+        );
 
   TextEditingController get controller => nameController;
   FoodAnalysis get analysis => currentAnalysis;
@@ -59,7 +64,7 @@ class EditableFoodResult {
     final portion = double.tryParse(portionController.text);
     if (portion != null &&
         (portion - originalAnalysis.portionGrams).abs() > 5) {
-      parts.add('portion should be ${portion.toStringAsFixed(0)}g');
+      parts.add('portion should be ${NumberUtils.format(portion)}g');
     }
 
     if (parts.isEmpty) {

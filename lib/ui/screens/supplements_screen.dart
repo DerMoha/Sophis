@@ -4,10 +4,11 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/services/service_result.dart';
-import 'package:sophis/services/supplements_provider.dart';
+import 'package:sophis/providers/supplements_provider.dart';
 import 'package:sophis/models/supplement.dart';
 import 'package:sophis/ui/theme/animations.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
+import 'package:sophis/ui/components/common/ui_primitives.dart';
 import 'package:sophis/ui/components/organic_components.dart';
 import 'package:sophis/ui/components/supplement_edit_sheet.dart';
 
@@ -26,10 +27,26 @@ class _SupplementsScreenState extends State<SupplementsScreen> {
     final accentColor = theme.colorScheme.primary;
 
     return Scaffold(
+      appBar: AppBar(
+        title: Text(l10n.supplements),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () => Navigator.pop(context),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded),
+            onPressed: () => context.read<SupplementsProvider>().refresh(),
+          ),
+        ],
+      ),
       body: Consumer<SupplementsProvider>(
         builder: (context, provider, _) {
           if (provider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return const LoadingState();
           }
 
           final supplements = provider.supplements;
@@ -38,25 +55,6 @@ class _SupplementsScreenState extends State<SupplementsScreen> {
           return CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
-              // App Bar
-              SliverAppBar(
-                pinned: true,
-                elevation: 0,
-                backgroundColor: Colors.transparent,
-                centerTitle: true,
-                title: Text(l10n.supplements),
-                leading: IconButton(
-                  icon: const Icon(Icons.arrow_back_rounded),
-                  onPressed: () => Navigator.pop(context),
-                ),
-                actions: [
-                  IconButton(
-                    icon: const Icon(Icons.refresh_rounded),
-                    onPressed: () => provider.refresh(),
-                  ),
-                ],
-              ),
-
               // Today's Progress Card
               if (supplements.isNotEmpty)
                 SliverToBoxAdapter(
@@ -401,16 +399,17 @@ class _SupplementsScreenState extends State<SupplementsScreen> {
   }
 
   Widget _buildEmptyState(BuildContext context, ThemeData theme) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(40),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const EmptyState(
+            EmptyState(
               icon: Icons.medication_liquid_rounded,
-              title: 'No supplements yet',
-              subtitle: 'Add your first supplement to start tracking',
+              title: l10n.noSupplementsYet,
+              subtitle: l10n.addFirstSupplementHint,
             ),
             const SizedBox(height: 32),
             _buildQuickAddButtons(context),

@@ -6,10 +6,11 @@ import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/food_item.dart';
 import 'package:sophis/services/food_entry_factory.dart';
 import 'package:sophis/services/openfoodfacts_service.dart';
-import 'package:sophis/services/nutrition_provider.dart';
+import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/services/service_result.dart';
 import 'package:sophis/ui/components/food_search_result_tile.dart';
 import 'package:sophis/ui/components/portion_picker_sheet.dart';
+import 'package:sophis/ui/components/common/ui_primitives.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 
 class FoodSearchScreen extends StatefulWidget {
@@ -249,7 +250,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
           children: [
             Icon(
               Icons.search,
-              size: 48,
+              size: AppTheme.iconXL,
               color: Theme.of(context).disabledColor,
             ),
             const SizedBox(height: 16),
@@ -410,7 +411,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
     if (_results.isEmpty) {
       if (_isSearchingApi) {
         // Still searching API, no local results found yet
-        return const Center(child: CircularProgressIndicator());
+        return const LoadingState();
       }
       return Center(
         child: Text(

@@ -9,12 +9,13 @@ import 'package:sophis/services/gemini_food_service.dart';
 import 'package:sophis/services/gemini/models/models.dart';
 import 'package:sophis/services/service_result.dart';
 import 'package:sophis/services/food_entry_factory.dart';
-import 'package:sophis/services/nutrition_provider.dart';
-import 'package:sophis/services/settings_provider.dart';
+import 'package:sophis/providers/nutrition_provider.dart';
+import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/models/shareable_meal.dart';
 import 'package:sophis/ui/components/ai_food_image_tile.dart';
 import 'package:sophis/ui/components/ai_food_result.dart';
 import 'package:sophis/ui/components/ai_food_result_card.dart';
+import 'package:sophis/ui/components/common/ui_primitives.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/components/edit_food_analysis_sheet.dart';
 import 'package:sophis/ui/screens/share_meal_screen.dart';
@@ -557,16 +558,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     }
 
     if (_isLoading) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const CircularProgressIndicator(),
-            const SizedBox(height: 16),
-            Text(l10n.analyzingFood),
-          ],
-        ),
-      );
+      return LoadingState(label: l10n.analyzingFood);
     }
 
     if (_results == null) {

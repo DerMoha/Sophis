@@ -10,7 +10,7 @@ import 'package:sophis/models/nutrition_totals.dart';
 import 'package:sophis/models/serving_size.dart';
 import 'package:sophis/services/barcode_lookup_service.dart';
 import 'package:sophis/services/service_result.dart';
-import 'package:sophis/services/nutrition_provider.dart';
+import 'package:sophis/providers/nutrition_provider.dart';
 
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/components/edit_product_sheet.dart';

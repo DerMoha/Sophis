@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sophis/ui/components/common/ui_primitives.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 
 class NavigationTile extends StatelessWidget {
@@ -34,18 +35,11 @@ class NavigationTile extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(AppTheme.radiusXS),
-                ),
-                child: Icon(
-                  icon,
-                  size: 18,
-                  color: theme.colorScheme.primary,
-                ),
+              IconBox(
+                icon: icon,
+                size: 32,
+                iconSize: AppTheme.iconSM,
+                borderRadius: AppTheme.radiusXS,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -108,18 +102,11 @@ class SwitchTile extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(AppTheme.radiusXS),
-            ),
-            child: Icon(
-              icon,
-              size: 18,
-              color: theme.colorScheme.primary,
-            ),
+          IconBox(
+            icon: icon,
+            size: 32,
+            iconSize: AppTheme.iconSM,
+            borderRadius: AppTheme.radiusXS,
           ),
           const SizedBox(width: 12),
           Expanded(

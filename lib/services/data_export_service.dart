@@ -12,7 +12,7 @@ import 'package:sophis/models/meal_plan.dart';
 import 'package:sophis/models/nutrition_goals.dart';
 import 'package:sophis/models/user_profile.dart';
 import 'package:sophis/models/workout_entry.dart';
-import 'package:sophis/services/nutrition_provider.dart';
+import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/services/service_result.dart';
 
 /// Service for exporting and importing all app data as JSON

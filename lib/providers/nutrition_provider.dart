@@ -15,7 +15,7 @@ import 'package:sophis/services/storage_service.dart';
 import 'package:sophis/services/health_service.dart';
 import 'package:sophis/services/database_service.dart';
 import 'package:sophis/services/home_widget_service.dart';
-import 'package:sophis/services/settings_provider.dart';
+import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/services/nutrition/food_log_controller.dart';
 import 'package:sophis/services/nutrition/hydration_controller.dart';
 import 'package:sophis/services/nutrition/workout_controller.dart';

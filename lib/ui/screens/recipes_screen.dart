@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/recipe.dart';
-import 'package:sophis/services/nutrition_provider.dart';
-import 'package:sophis/services/settings_provider.dart';
+import 'package:sophis/providers/nutrition_provider.dart';
+import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/theme/animations.dart';
 import 'package:uuid/uuid.dart';
@@ -40,7 +40,7 @@ class RecipesScreen extends StatelessWidget {
                 children: [
                   Icon(
                     Icons.restaurant_outlined,
-                    size: 64,
+                    size: AppTheme.iconHero,
                     color: theme.disabledColor,
                   ),
                   const SizedBox(height: 16),

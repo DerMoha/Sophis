@@ -10,7 +10,7 @@ import 'package:sophis/services/barcode_lookup_service.dart';
 import 'package:sophis/services/gemini/models/models.dart';
 import 'package:sophis/services/gemini_food_service.dart';
 import 'package:sophis/services/service_result.dart';
-import 'package:sophis/services/settings_provider.dart';
+import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/ui/components/settings/settings_tiles.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/components/edit_product_sheet.dart';

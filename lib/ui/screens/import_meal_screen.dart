@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/shareable_meal.dart';
-import 'package:sophis/services/nutrition_provider.dart';
-import 'package:sophis/services/settings_provider.dart';
+import 'package:sophis/providers/nutrition_provider.dart';
+import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/components/organic_components.dart';
 
@@ -58,25 +58,15 @@ class _ImportMealScreenState extends State<ImportMealScreen> {
     final mealTypes = context.watch<SettingsProvider>().mealTypes;
 
     return Scaffold(
+      appBar: AppBar(
+        title: Text(l10n.importMeal),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+      ),
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
-          // App Bar
-          SliverAppBar(
-            expandedHeight: 100,
-            floating: true,
-            pinned: true,
-            backgroundColor: theme.scaffoldBackgroundColor,
-            centerTitle: true,
-            flexibleSpace: FlexibleSpaceBar(
-              titlePadding: EdgeInsets.zero,
-              title: Text(
-                l10n.importMeal,
-                style: theme.appBarTheme.titleTextStyle,
-              ),
-            ),
-          ),
-
           SliverPadding(
             padding: const EdgeInsets.all(AppTheme.spaceMD),
             sliver: SliverList(
@@ -89,7 +79,7 @@ class _ImportMealScreenState extends State<ImportMealScreen> {
                       children: [
                         Icon(
                           Icons.restaurant_menu_rounded,
-                          size: 48,
+                          size: AppTheme.iconXL,
                           color: theme.colorScheme.primary,
                         ),
                         const SizedBox(height: AppTheme.spaceSM),

@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'package:sophis/l10n/generated/app_localizations.dart';
-import 'package:sophis/services/nutrition_provider.dart';
+import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/services/planned_meal_factory.dart';
 import 'package:sophis/ui/components/nutrition_entry_fields.dart';
 

@@ -10,13 +10,14 @@ import 'package:sophis/models/food_item.dart';
 import 'package:sophis/models/recipe.dart';
 import 'package:sophis/services/gemini/models/models.dart';
 import 'package:sophis/services/gemini_food_service.dart';
-import 'package:sophis/services/nutrition_provider.dart';
+import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/services/openfoodfacts_service.dart';
 import 'package:sophis/services/service_result.dart';
 import 'package:sophis/services/planned_meal_factory.dart';
-import 'package:sophis/services/settings_provider.dart';
+import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/ui/components/add_planned_meal_extracted_recipe_view.dart';
 import 'package:sophis/ui/components/add_planned_meal_manual_entry_form.dart';
+import 'package:sophis/ui/components/common/ui_primitives.dart';
 import 'package:sophis/ui/components/modal_sheet.dart';
 import 'package:sophis/ui/components/organic/primitives.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
@@ -216,7 +217,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
             children: [
               Icon(
                 Icons.menu_book_outlined,
-                size: 48,
+                size: AppTheme.iconXL,
                 color:
                     theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
               ),
@@ -390,20 +391,8 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
                   ),
                 )
               : _isSearching
-                  ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const CircularProgressIndicator(),
-                          const SizedBox(height: 16),
-                          Text(
-                            l10n.searching,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
+                  ? LoadingState(
+                      label: l10n.searching,
                     )
                   : _searchResults.isEmpty && _searchController.text.isNotEmpty
                       ? Center(
@@ -459,7 +448,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
             children: [
               Icon(
                 Icons.key_outlined,
-                size: 48,
+                size: AppTheme.iconXL,
                 color:
                     theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
               ),
@@ -499,19 +488,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
 
     // Show scanning state
     if (_isScanning) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const CircularProgressIndicator(),
-            const SizedBox(height: AppTheme.spaceLG2),
-            Text(
-              l10n.scanningRecipe,
-              style: theme.textTheme.bodyMedium,
-            ),
-          ],
-        ),
-      );
+      return LoadingState(label: l10n.scanningRecipe);
     }
 
     // Show error
@@ -524,7 +501,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
             children: [
               const Icon(
                 Icons.error_outline,
-                size: 48,
+                size: AppTheme.iconXL,
                 color: AppTheme.error,
               ),
               const SizedBox(height: 16),
@@ -610,7 +587,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
                     children: [
                       Icon(
                         Icons.menu_book_outlined,
-                        size: 64,
+                        size: AppTheme.iconHero,
                         color: theme.colorScheme.onSurfaceVariant
                             .withValues(alpha: 0.3),
                       ),

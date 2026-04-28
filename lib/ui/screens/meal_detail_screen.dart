@@ -5,9 +5,10 @@ import 'package:uuid/uuid.dart';
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/food_entry.dart';
 import 'package:sophis/services/food_entry_factory.dart';
-import 'package:sophis/services/nutrition_provider.dart';
-import 'package:sophis/services/settings_provider.dart';
+import 'package:sophis/providers/nutrition_provider.dart';
+import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/ui/components/nutrition_entry_fields.dart';
+import 'package:sophis/ui/components/common/ui_primitives.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/components/organic_components.dart';
 import 'package:sophis/ui/theme/animations.dart';
@@ -106,17 +107,17 @@ class MealDetailScreen extends StatelessWidget {
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceEvenly,
                                 children: [
-                                  _MacroSummary(
+                                  MacroSummary(
                                     label: l10n.protein,
                                     value: totalProtein,
                                     color: AppTheme.protein,
                                   ),
-                                  _MacroSummary(
+                                  MacroSummary(
                                     label: l10n.carbs,
                                     value: totalCarbs,
                                     color: AppTheme.carbs,
                                   ),
-                                  _MacroSummary(
+                                  MacroSummary(
                                     label: l10n.fat,
                                     value: totalFat,
                                     color: AppTheme.fat,
@@ -268,19 +269,19 @@ class _MealEntryCard extends StatelessWidget {
                   // Macro row
                   Row(
                     children: [
-                      _MacroChip(
+                      MacroChip(
                         label: 'P',
                         value: entry.protein,
                         color: AppTheme.protein,
                       ),
                       const SizedBox(width: 12),
-                      _MacroChip(
+                      MacroChip(
                         label: 'C',
                         value: entry.carbs,
                         color: AppTheme.carbs,
                       ),
                       const SizedBox(width: 12),
-                      _MacroChip(
+                      MacroChip(
                         label: 'F',
                         value: entry.fat,
                         color: AppTheme.fat,
@@ -648,84 +649,4 @@ class _PortionButton extends StatelessWidget {
   }
 }
 
-/// Macro chip for entry display
-class _MacroChip extends StatelessWidget {
-  final String label;
-  final double value;
-  final Color color;
 
-  const _MacroChip({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(width: 4),
-        Text(
-          '${value.toStringAsFixed(0)}g',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Summary display for a macro
-class _MacroSummary extends StatelessWidget {
-  final String label;
-  final double value;
-  final Color color;
-
-  const _MacroSummary({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          '${value.toStringAsFixed(0)}g',
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        Text(
-          label,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ],
-    );
-  }
-}

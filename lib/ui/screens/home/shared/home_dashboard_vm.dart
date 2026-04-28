@@ -2,7 +2,7 @@ import 'package:sophis/models/nutrition_goals.dart';
 import 'package:sophis/models/nutrition_totals.dart';
 import 'package:sophis/models/app_settings.dart';
 import 'package:sophis/models/custom_meal_type.dart';
-import 'package:sophis/services/nutrition_provider.dart';
+import 'package:sophis/providers/nutrition_provider.dart';
 
 /// Immutable view model containing all derived dashboard values.
 class HomeDashboardVM {

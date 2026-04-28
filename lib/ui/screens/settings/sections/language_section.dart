@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sophis/l10n/generated/app_localizations.dart';
-import 'package:sophis/services/settings_provider.dart';
+import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/ui/components/settings/settings_tiles.dart';
 
 class LanguageSection extends StatelessWidget {

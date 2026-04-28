@@ -486,6 +486,8 @@
   },
   "undo": "Undo",
   "addSupplement": "Add Supplement",
+  "noSupplementsYet": "No supplements yet",
+  "addFirstSupplementHint": "Add your first supplement to start tracking",
   "achievementFirstLog": "First Log!",
   "achievement3Days": "3 Day Streak",
   "achievement7Days": "Week Warrior",

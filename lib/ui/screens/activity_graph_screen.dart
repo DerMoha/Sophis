@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import 'package:sophis/l10n/generated/app_localizations.dart';
-import 'package:sophis/services/nutrition_provider.dart';
+import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/models/nutrition_goals.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/theme/animations.dart';
@@ -56,7 +56,7 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.bar_chart, size: 64, color: theme.disabledColor),
+                  Icon(Icons.bar_chart, size: AppTheme.iconHero, color: theme.disabledColor),
                   const SizedBox(height: 16),
                   Text(
                     l10n.noActivityData,

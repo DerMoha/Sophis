@@ -355,6 +355,8 @@
   "supplementDeleted": "{name} gelöscht",
   "undo": "Rückgängig",
   "addSupplement": "Supplement hinzufügen",
+  "noSupplementsYet": "Noch keine Supplements",
+  "addFirstSupplementHint": "Füge dein erstes Supplement hinzu, um zu starten",
   "@totalDaysLogged": {
     "placeholders": {
       "count": {"type": "int"}

@@ -3,6 +3,7 @@ import 'package:sophis/models/nutrition_goals.dart';
 import 'package:sophis/models/nutrition_totals.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/components/organic/progress.dart';
+import 'package:sophis/ui/components/common/ui_primitives.dart';
 import 'package:sophis/ui/components/organic/primitives.dart';
 
 class NutritionSummaryCard extends StatelessWidget {
@@ -450,19 +451,19 @@ class FoodEntryTile extends StatelessWidget {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      _MacroChip(
+                      MacroChip(
                         label: 'P',
                         value: protein,
                         color: AppTheme.protein,
                       ),
                       const SizedBox(width: 8),
-                      _MacroChip(
+                      MacroChip(
                         label: 'C',
                         value: carbs,
                         color: AppTheme.carbs,
                       ),
                       const SizedBox(width: 8),
-                      _MacroChip(label: 'F', value: fat, color: AppTheme.fat),
+                      MacroChip(label: 'F', value: fat, color: AppTheme.fat),
                     ],
                   ),
                 ],
@@ -482,36 +483,4 @@ class FoodEntryTile extends StatelessWidget {
   }
 }
 
-class _MacroChip extends StatelessWidget {
-  final String label;
-  final double value;
-  final Color color;
 
-  const _MacroChip({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 6,
-          height: 6,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 4),
-        Text(
-          '${value.toStringAsFixed(0)}g',
-          style: Theme.of(context)
-              .textTheme
-              .bodySmall
-              ?.copyWith(fontWeight: FontWeight.w500),
-        ),
-      ],
-    );
-  }
-}

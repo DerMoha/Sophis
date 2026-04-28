@@ -10,7 +10,7 @@ import 'package:sophis/services/brocade_service.dart';
 import 'package:sophis/services/food_entry_factory.dart';
 import 'package:sophis/services/meal_sharing_service.dart';
 import 'package:sophis/services/openfoodfacts_service.dart';
-import 'package:sophis/services/nutrition_provider.dart';
+import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/services/service_result.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/components/barcode_not_found_sheet.dart';

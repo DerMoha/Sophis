@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/app_settings.dart';
 import 'package:sophis/models/custom_meal_type.dart';
-import 'package:sophis/services/nutrition_provider.dart';
-import 'package:sophis/services/settings_provider.dart';
+import 'package:sophis/providers/nutrition_provider.dart';
+import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/theme/animations.dart';
 import 'package:sophis/ui/components/organic_components.dart';
@@ -308,10 +308,10 @@ class _WelcomeView extends StatelessWidget {
                         ),
                         borderRadius: BorderRadius.circular(AppTheme.radiusLG),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.restaurant_menu_rounded,
                         size: 32,
-                        color: Colors.white,
+                        color: theme.colorScheme.onPrimary,
                       ),
                     ),
                     const SizedBox(height: 24),
