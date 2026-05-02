@@ -16,6 +16,7 @@ import 'package:sophis/models/food_item.dart';
 import 'package:sophis/models/meal_plan.dart';
 import 'package:sophis/models/custom_portion.dart';
 import 'package:sophis/models/user_stats.dart';
+import 'package:sophis/models/progress_photo.dart';
 part 'database_service.g.dart';
 
 // -----------------------------------------------------------------------------
@@ -215,6 +216,20 @@ class PlannedMealsChecked extends Table {
   Set<Column> get primaryKey => {key};
 }
 
+@DataClassName('ProgressPhotoRow')
+class ProgressPhotos extends Table {
+  TextColumn get id => text()();
+  TextColumn get imagePath => text()();
+  DateTimeColumn get timestamp => dateTime()();
+  RealColumn get weightKg => real().nullable()();
+  TextColumn get note => text().nullable()();
+  IntColumn get category => integer().withDefault(const Constant(0))();
+  DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 // -----------------------------------------------------------------------------
 // DATABASE CLASS
 // -----------------------------------------------------------------------------
@@ -236,13 +251,14 @@ class PlannedMealsChecked extends Table {
     RecentFoods,
     UserStatsTable,
     PlannedMealsChecked,
+    ProgressPhotos,
   ],
 )
 class DatabaseService extends _$DatabaseService {
   DatabaseService() : super(_openConnection());
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -266,6 +282,9 @@ class DatabaseService extends _$DatabaseService {
             await migrator.createTable(recentFoods);
             await migrator.createTable(userStatsTable);
             await migrator.createTable(plannedMealsChecked);
+          }
+          if (from <= 5 && to >= 6) {
+            await migrator.createTable(progressPhotos);
           }
         },
       );
@@ -700,6 +719,7 @@ class DatabaseService extends _$DatabaseService {
     await delete(recentFoods).go();
     await delete(userStatsTable).go();
     await delete(plannedMealsChecked).go();
+    await delete(progressPhotos).go();
   }
 
   // ---------------------------------------------------------------------------
@@ -964,6 +984,103 @@ class DatabaseService extends _$DatabaseService {
             .toList(),
       );
     });
+  }
+
+  // ---------------------------------------------------------------------------
+  // PROGRESS PHOTOS
+  // ---------------------------------------------------------------------------
+
+  Future<List<ProgressPhoto>> getAllPhotos() async {
+    final rows = await (select(progressPhotos)
+          ..orderBy([(t) => OrderingTerm.desc(t.timestamp)]))
+        .get();
+    return rows
+        .map(
+          (row) => ProgressPhoto(
+            id: row.id,
+            imagePath: row.imagePath,
+            timestamp: row.timestamp,
+            weightKg: row.weightKg,
+            note: row.note,
+            category: PhotoCategory.values[row.category],
+            createdAt: row.createdAt,
+          ),
+        )
+        .toList();
+  }
+
+  Future<int> insertPhoto(ProgressPhoto photo) {
+    return into(progressPhotos).insert(
+      ProgressPhotosCompanion(
+        id: Value(photo.id),
+        imagePath: Value(photo.imagePath),
+        timestamp: Value(photo.timestamp),
+        weightKg: Value(photo.weightKg),
+        note: Value(photo.note),
+        category: Value(photo.category.index),
+        createdAt: Value(photo.createdAt),
+      ),
+    );
+  }
+
+  Future<void> insertPhotos(List<ProgressPhoto> photos) async {
+    await batch((batch) {
+      batch.insertAll(
+        progressPhotos,
+        photos.map(
+          (photo) => ProgressPhotosCompanion(
+            id: Value(photo.id),
+            imagePath: Value(photo.imagePath),
+            timestamp: Value(photo.timestamp),
+            weightKg: Value(photo.weightKg),
+            note: Value(photo.note),
+            category: Value(photo.category.index),
+            createdAt: Value(photo.createdAt),
+          ),
+        ),
+        mode: InsertMode.insertOrReplace,
+      );
+    });
+  }
+
+  Future<int> deletePhoto(String id) {
+    return (delete(progressPhotos)..where((t) => t.id.equals(id))).go();
+  }
+
+  Future<ProgressPhoto?> getPhotoById(String id) async {
+    final row =
+        await (select(progressPhotos)..where((t) => t.id.equals(id)))
+            .getSingleOrNull();
+    if (row == null) return null;
+    return ProgressPhoto(
+      id: row.id,
+      imagePath: row.imagePath,
+      timestamp: row.timestamp,
+      weightKg: row.weightKg,
+      note: row.note,
+      category: PhotoCategory.values[row.category],
+      createdAt: row.createdAt,
+    );
+  }
+
+  Future<List<ProgressPhoto>> getPhotosByCategory(PhotoCategory category) async {
+    final rows = await (select(progressPhotos)
+          ..where((t) => t.category.equals(category.index))
+          ..orderBy([(t) => OrderingTerm.desc(t.timestamp)]))
+        .get();
+    return rows
+        .map(
+          (row) => ProgressPhoto(
+            id: row.id,
+            imagePath: row.imagePath,
+            timestamp: row.timestamp,
+            weightKg: row.weightKg,
+            note: row.note,
+            category: PhotoCategory.values[row.category],
+            createdAt: row.createdAt,
+          ),
+        )
+        .toList();
   }
 
   // ---------------------------------------------------------------------------

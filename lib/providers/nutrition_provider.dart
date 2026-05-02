@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:sophis/models/nutrition_goals.dart';
 import 'package:sophis/models/food_entry.dart';
@@ -21,6 +23,8 @@ import 'package:sophis/services/nutrition/hydration_controller.dart';
 import 'package:sophis/services/nutrition/workout_controller.dart';
 import 'package:sophis/services/nutrition/meal_plan_controller.dart';
 import 'package:sophis/services/nutrition/food_library_controller.dart';
+import 'package:sophis/services/progress_photo_controller.dart';
+import 'package:sophis/models/progress_photo.dart';
 import 'package:uuid/uuid.dart';
 
 /// Central state management for nutrition tracking.
@@ -37,10 +41,12 @@ class NutritionProvider extends ChangeNotifier {
   late final WorkoutController _workouts;
   late final MealPlanController _mealPlan;
   late final FoodLibraryController _foodLibrary;
+  late final ProgressPhotoController _progressPhotos;
 
   NutritionGoals? _goals;
   UserProfile? _profile;
   List<WeightEntry> _weightEntries = [];
+  List<ProgressPhoto> _photos = [];
   UserStats _userStats = const UserStats();
 
   double _healthSyncBurnedCalories = 0.0;
@@ -83,6 +89,7 @@ class NutritionProvider extends ChangeNotifier {
       _dayKey,
     );
     _foodLibrary = FoodLibraryController(_storage, _onSimpleChanged);
+    _progressPhotos = ProgressPhotoController(_db);
     _loadData();
   }
 
@@ -140,6 +147,7 @@ class NutritionProvider extends ChangeNotifier {
   List<FoodItem> get customFoods => _foodLibrary.customFoods;
   List<FoodItem> get favoriteFoods => _foodLibrary.favoriteFoods;
   UserStats get userStats => _userStats;
+  List<ProgressPhoto> get photos => _photos;
 
   double get burnedCalories =>
       _workouts.getTodayWorkoutCalories() + _healthSyncBurnedCalories;
@@ -187,6 +195,12 @@ class NutritionProvider extends ChangeNotifier {
     );
 
     _userStats = _storage.loadUserStats();
+
+    final photos = await _db.getAllPhotos();
+    _photos = photos;
+
+    // Clean up orphaned photo files in background
+    _progressPhotos.cleanupOrphanedFiles();
 
     _cacheDate = null; // Force cache rebuild
     HomeWidgetService.updateWidgetData(this);
@@ -451,6 +465,40 @@ class NutritionProvider extends ChangeNotifier {
   WeightEntry? get latestWeight =>
       _weightEntries.isEmpty ? null : _weightEntries.first;
 
+  // ── Progress Photos ─────────────────────────────────────────────────────
+
+  Future<void> addProgressPhoto({
+    required File imageFile,
+    DateTime? timestamp,
+    double? weightKg,
+    String? note,
+    PhotoCategory category = PhotoCategory.front,
+  }) async {
+    final photo = await _progressPhotos.addPhoto(
+      imageFile: imageFile,
+      timestamp: timestamp,
+      weightKg: weightKg ?? latestWeight?.weightKg,
+      note: note,
+      category: category,
+    );
+    _photos.add(photo);
+    _photos.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    notifyListeners();
+  }
+
+  Future<void> deleteProgressPhoto(String id) async {
+    _photos.removeWhere((p) => p.id == id);
+    await _progressPhotos.deletePhoto(id);
+    notifyListeners();
+  }
+
+  Future<void> restoreProgressPhoto(ProgressPhoto photo) async {
+    await _db.insertPhoto(photo);
+    _photos.add(photo);
+    _photos.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    notifyListeners();
+  }
+
   // ── Recipes ─────────────────────────────────────────────────────────────
 
   Future<void> addRecipe(Recipe recipe) => _foodLibrary.addRecipe(recipe);
@@ -661,6 +709,7 @@ class NutritionProvider extends ChangeNotifier {
     _goals = null;
     _profile = null;
     _weightEntries = [];
+    _photos = [];
     _userStats = const UserStats();
 
     _foodLog.clearAll();

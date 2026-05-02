@@ -5501,6 +5501,389 @@ class PlannedMealsCheckedCompanion
   }
 }
 
+class $ProgressPhotosTable extends ProgressPhotos
+    with TableInfo<$ProgressPhotosTable, ProgressPhotoRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ProgressPhotosTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _imagePathMeta =
+      const VerificationMeta('imagePath');
+  @override
+  late final GeneratedColumn<String> imagePath = GeneratedColumn<String>(
+      'image_path', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _timestampMeta =
+      const VerificationMeta('timestamp');
+  @override
+  late final GeneratedColumn<DateTime> timestamp = GeneratedColumn<DateTime>(
+      'timestamp', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _weightKgMeta =
+      const VerificationMeta('weightKg');
+  @override
+  late final GeneratedColumn<double> weightKg = GeneratedColumn<double>(
+      'weight_kg', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+      'note', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _categoryMeta =
+      const VerificationMeta('category');
+  @override
+  late final GeneratedColumn<int> category = GeneratedColumn<int>(
+      'category', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [id, imagePath, timestamp, weightKg, note, category, createdAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'progress_photos';
+  @override
+  VerificationContext validateIntegrity(Insertable<ProgressPhotoRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('image_path')) {
+      context.handle(_imagePathMeta,
+          imagePath.isAcceptableOrUnknown(data['image_path']!, _imagePathMeta));
+    } else if (isInserting) {
+      context.missing(_imagePathMeta);
+    }
+    if (data.containsKey('timestamp')) {
+      context.handle(_timestampMeta,
+          timestamp.isAcceptableOrUnknown(data['timestamp']!, _timestampMeta));
+    } else if (isInserting) {
+      context.missing(_timestampMeta);
+    }
+    if (data.containsKey('weight_kg')) {
+      context.handle(_weightKgMeta,
+          weightKg.isAcceptableOrUnknown(data['weight_kg']!, _weightKgMeta));
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+          _noteMeta, note.isAcceptableOrUnknown(data['note']!, _noteMeta));
+    }
+    if (data.containsKey('category')) {
+      context.handle(_categoryMeta,
+          category.isAcceptableOrUnknown(data['category']!, _categoryMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ProgressPhotoRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ProgressPhotoRow(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      imagePath: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}image_path'])!,
+      timestamp: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}timestamp'])!,
+      weightKg: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}weight_kg']),
+      note: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}note']),
+      category: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}category'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+    );
+  }
+
+  @override
+  $ProgressPhotosTable createAlias(String alias) {
+    return $ProgressPhotosTable(attachedDatabase, alias);
+  }
+}
+
+class ProgressPhotoRow extends DataClass
+    implements Insertable<ProgressPhotoRow> {
+  final String id;
+  final String imagePath;
+  final DateTime timestamp;
+  final double? weightKg;
+  final String? note;
+  final int category;
+  final DateTime createdAt;
+  const ProgressPhotoRow(
+      {required this.id,
+      required this.imagePath,
+      required this.timestamp,
+      this.weightKg,
+      this.note,
+      required this.category,
+      required this.createdAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['image_path'] = Variable<String>(imagePath);
+    map['timestamp'] = Variable<DateTime>(timestamp);
+    if (!nullToAbsent || weightKg != null) {
+      map['weight_kg'] = Variable<double>(weightKg);
+    }
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
+    map['category'] = Variable<int>(category);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  ProgressPhotosCompanion toCompanion(bool nullToAbsent) {
+    return ProgressPhotosCompanion(
+      id: Value(id),
+      imagePath: Value(imagePath),
+      timestamp: Value(timestamp),
+      weightKg: weightKg == null && nullToAbsent
+          ? const Value.absent()
+          : Value(weightKg),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      category: Value(category),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory ProgressPhotoRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ProgressPhotoRow(
+      id: serializer.fromJson<String>(json['id']),
+      imagePath: serializer.fromJson<String>(json['imagePath']),
+      timestamp: serializer.fromJson<DateTime>(json['timestamp']),
+      weightKg: serializer.fromJson<double?>(json['weightKg']),
+      note: serializer.fromJson<String?>(json['note']),
+      category: serializer.fromJson<int>(json['category']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'imagePath': serializer.toJson<String>(imagePath),
+      'timestamp': serializer.toJson<DateTime>(timestamp),
+      'weightKg': serializer.toJson<double?>(weightKg),
+      'note': serializer.toJson<String?>(note),
+      'category': serializer.toJson<int>(category),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  ProgressPhotoRow copyWith(
+          {String? id,
+          String? imagePath,
+          DateTime? timestamp,
+          Value<double?> weightKg = const Value.absent(),
+          Value<String?> note = const Value.absent(),
+          int? category,
+          DateTime? createdAt}) =>
+      ProgressPhotoRow(
+        id: id ?? this.id,
+        imagePath: imagePath ?? this.imagePath,
+        timestamp: timestamp ?? this.timestamp,
+        weightKg: weightKg.present ? weightKg.value : this.weightKg,
+        note: note.present ? note.value : this.note,
+        category: category ?? this.category,
+        createdAt: createdAt ?? this.createdAt,
+      );
+  ProgressPhotoRow copyWithCompanion(ProgressPhotosCompanion data) {
+    return ProgressPhotoRow(
+      id: data.id.present ? data.id.value : this.id,
+      imagePath: data.imagePath.present ? data.imagePath.value : this.imagePath,
+      timestamp: data.timestamp.present ? data.timestamp.value : this.timestamp,
+      weightKg: data.weightKg.present ? data.weightKg.value : this.weightKg,
+      note: data.note.present ? data.note.value : this.note,
+      category: data.category.present ? data.category.value : this.category,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProgressPhotoRow(')
+          ..write('id: $id, ')
+          ..write('imagePath: $imagePath, ')
+          ..write('timestamp: $timestamp, ')
+          ..write('weightKg: $weightKg, ')
+          ..write('note: $note, ')
+          ..write('category: $category, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      id, imagePath, timestamp, weightKg, note, category, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ProgressPhotoRow &&
+          other.id == this.id &&
+          other.imagePath == this.imagePath &&
+          other.timestamp == this.timestamp &&
+          other.weightKg == this.weightKg &&
+          other.note == this.note &&
+          other.category == this.category &&
+          other.createdAt == this.createdAt);
+}
+
+class ProgressPhotosCompanion extends UpdateCompanion<ProgressPhotoRow> {
+  final Value<String> id;
+  final Value<String> imagePath;
+  final Value<DateTime> timestamp;
+  final Value<double?> weightKg;
+  final Value<String?> note;
+  final Value<int> category;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const ProgressPhotosCompanion({
+    this.id = const Value.absent(),
+    this.imagePath = const Value.absent(),
+    this.timestamp = const Value.absent(),
+    this.weightKg = const Value.absent(),
+    this.note = const Value.absent(),
+    this.category = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ProgressPhotosCompanion.insert({
+    required String id,
+    required String imagePath,
+    required DateTime timestamp,
+    this.weightKg = const Value.absent(),
+    this.note = const Value.absent(),
+    this.category = const Value.absent(),
+    required DateTime createdAt,
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        imagePath = Value(imagePath),
+        timestamp = Value(timestamp),
+        createdAt = Value(createdAt);
+  static Insertable<ProgressPhotoRow> custom({
+    Expression<String>? id,
+    Expression<String>? imagePath,
+    Expression<DateTime>? timestamp,
+    Expression<double>? weightKg,
+    Expression<String>? note,
+    Expression<int>? category,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (imagePath != null) 'image_path': imagePath,
+      if (timestamp != null) 'timestamp': timestamp,
+      if (weightKg != null) 'weight_kg': weightKg,
+      if (note != null) 'note': note,
+      if (category != null) 'category': category,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ProgressPhotosCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? imagePath,
+      Value<DateTime>? timestamp,
+      Value<double?>? weightKg,
+      Value<String?>? note,
+      Value<int>? category,
+      Value<DateTime>? createdAt,
+      Value<int>? rowid}) {
+    return ProgressPhotosCompanion(
+      id: id ?? this.id,
+      imagePath: imagePath ?? this.imagePath,
+      timestamp: timestamp ?? this.timestamp,
+      weightKg: weightKg ?? this.weightKg,
+      note: note ?? this.note,
+      category: category ?? this.category,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (imagePath.present) {
+      map['image_path'] = Variable<String>(imagePath.value);
+    }
+    if (timestamp.present) {
+      map['timestamp'] = Variable<DateTime>(timestamp.value);
+    }
+    if (weightKg.present) {
+      map['weight_kg'] = Variable<double>(weightKg.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (category.present) {
+      map['category'] = Variable<int>(category.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProgressPhotosCompanion(')
+          ..write('id: $id, ')
+          ..write('imagePath: $imagePath, ')
+          ..write('timestamp: $timestamp, ')
+          ..write('weightKg: $weightKg, ')
+          ..write('note: $note, ')
+          ..write('category: $category, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$DatabaseService extends GeneratedDatabase {
   _$DatabaseService(QueryExecutor e) : super(e);
   $DatabaseServiceManager get managers => $DatabaseServiceManager(this);
@@ -5522,6 +5905,7 @@ abstract class _$DatabaseService extends GeneratedDatabase {
   late final $UserStatsTableTable userStatsTable = $UserStatsTableTable(this);
   late final $PlannedMealsCheckedTable plannedMealsChecked =
       $PlannedMealsCheckedTable(this);
+  late final $ProgressPhotosTable progressPhotos = $ProgressPhotosTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -5541,7 +5925,8 @@ abstract class _$DatabaseService extends GeneratedDatabase {
         customPortions,
         recentFoods,
         userStatsTable,
-        plannedMealsChecked
+        plannedMealsChecked,
+        progressPhotos
       ];
 }
 
@@ -8445,6 +8830,210 @@ typedef $$PlannedMealsCheckedTableProcessedTableManager = ProcessedTableManager<
     ),
     PlannedMealCheckedRow,
     PrefetchHooks Function()>;
+typedef $$ProgressPhotosTableCreateCompanionBuilder = ProgressPhotosCompanion
+    Function({
+  required String id,
+  required String imagePath,
+  required DateTime timestamp,
+  Value<double?> weightKg,
+  Value<String?> note,
+  Value<int> category,
+  required DateTime createdAt,
+  Value<int> rowid,
+});
+typedef $$ProgressPhotosTableUpdateCompanionBuilder = ProgressPhotosCompanion
+    Function({
+  Value<String> id,
+  Value<String> imagePath,
+  Value<DateTime> timestamp,
+  Value<double?> weightKg,
+  Value<String?> note,
+  Value<int> category,
+  Value<DateTime> createdAt,
+  Value<int> rowid,
+});
+
+class $$ProgressPhotosTableFilterComposer
+    extends Composer<_$DatabaseService, $ProgressPhotosTable> {
+  $$ProgressPhotosTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get imagePath => $composableBuilder(
+      column: $table.imagePath, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get timestamp => $composableBuilder(
+      column: $table.timestamp, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get weightKg => $composableBuilder(
+      column: $table.weightKg, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get note => $composableBuilder(
+      column: $table.note, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get category => $composableBuilder(
+      column: $table.category, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$ProgressPhotosTableOrderingComposer
+    extends Composer<_$DatabaseService, $ProgressPhotosTable> {
+  $$ProgressPhotosTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get imagePath => $composableBuilder(
+      column: $table.imagePath, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get timestamp => $composableBuilder(
+      column: $table.timestamp, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get weightKg => $composableBuilder(
+      column: $table.weightKg, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get note => $composableBuilder(
+      column: $table.note, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get category => $composableBuilder(
+      column: $table.category, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$ProgressPhotosTableAnnotationComposer
+    extends Composer<_$DatabaseService, $ProgressPhotosTable> {
+  $$ProgressPhotosTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get imagePath =>
+      $composableBuilder(column: $table.imagePath, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get timestamp =>
+      $composableBuilder(column: $table.timestamp, builder: (column) => column);
+
+  GeneratedColumn<double> get weightKg =>
+      $composableBuilder(column: $table.weightKg, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<int> get category =>
+      $composableBuilder(column: $table.category, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$ProgressPhotosTableTableManager extends RootTableManager<
+    _$DatabaseService,
+    $ProgressPhotosTable,
+    ProgressPhotoRow,
+    $$ProgressPhotosTableFilterComposer,
+    $$ProgressPhotosTableOrderingComposer,
+    $$ProgressPhotosTableAnnotationComposer,
+    $$ProgressPhotosTableCreateCompanionBuilder,
+    $$ProgressPhotosTableUpdateCompanionBuilder,
+    (
+      ProgressPhotoRow,
+      BaseReferences<_$DatabaseService, $ProgressPhotosTable, ProgressPhotoRow>
+    ),
+    ProgressPhotoRow,
+    PrefetchHooks Function()> {
+  $$ProgressPhotosTableTableManager(
+      _$DatabaseService db, $ProgressPhotosTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ProgressPhotosTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ProgressPhotosTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ProgressPhotosTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> imagePath = const Value.absent(),
+            Value<DateTime> timestamp = const Value.absent(),
+            Value<double?> weightKg = const Value.absent(),
+            Value<String?> note = const Value.absent(),
+            Value<int> category = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              ProgressPhotosCompanion(
+            id: id,
+            imagePath: imagePath,
+            timestamp: timestamp,
+            weightKg: weightKg,
+            note: note,
+            category: category,
+            createdAt: createdAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String imagePath,
+            required DateTime timestamp,
+            Value<double?> weightKg = const Value.absent(),
+            Value<String?> note = const Value.absent(),
+            Value<int> category = const Value.absent(),
+            required DateTime createdAt,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              ProgressPhotosCompanion.insert(
+            id: id,
+            imagePath: imagePath,
+            timestamp: timestamp,
+            weightKg: weightKg,
+            note: note,
+            category: category,
+            createdAt: createdAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$ProgressPhotosTableProcessedTableManager = ProcessedTableManager<
+    _$DatabaseService,
+    $ProgressPhotosTable,
+    ProgressPhotoRow,
+    $$ProgressPhotosTableFilterComposer,
+    $$ProgressPhotosTableOrderingComposer,
+    $$ProgressPhotosTableAnnotationComposer,
+    $$ProgressPhotosTableCreateCompanionBuilder,
+    $$ProgressPhotosTableUpdateCompanionBuilder,
+    (
+      ProgressPhotoRow,
+      BaseReferences<_$DatabaseService, $ProgressPhotosTable, ProgressPhotoRow>
+    ),
+    ProgressPhotoRow,
+    PrefetchHooks Function()>;
 
 class $DatabaseServiceManager {
   final _$DatabaseService _db;
@@ -8479,4 +9068,6 @@ class $DatabaseServiceManager {
       $$UserStatsTableTableTableManager(_db, _db.userStatsTable);
   $$PlannedMealsCheckedTableTableManager get plannedMealsChecked =>
       $$PlannedMealsCheckedTableTableManager(_db, _db.plannedMealsChecked);
+  $$ProgressPhotosTableTableManager get progressPhotos =>
+      $$ProgressPhotosTableTableManager(_db, _db.progressPhotos);
 }

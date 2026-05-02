@@ -35,6 +35,7 @@ class DashboardCardIds {
   static const recipes = 'recipes';
   static const activity = 'activity';
   static const workout = 'workout';
+  static const progressPhotos = 'progress_photos';
 
   static const List<String> defaultOrder = [
     foodDiary,
@@ -43,6 +44,7 @@ class DashboardCardIds {
     recipes,
     activity,
     workout,
+    progressPhotos,
   ];
 
   static List<DashboardCard> get defaultCards =>

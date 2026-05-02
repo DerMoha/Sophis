@@ -12,6 +12,7 @@ import 'package:sophis/models/meal_plan.dart';
 import 'package:sophis/models/nutrition_goals.dart';
 import 'package:sophis/models/user_profile.dart';
 import 'package:sophis/models/workout_entry.dart';
+import 'package:sophis/models/progress_photo.dart';
 import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/services/service_result.dart';
 
@@ -36,6 +37,8 @@ class DataExportService {
         'plannedMeals': nutrition.plannedMeals.map((e) => e.toJson()).toList(),
         'workoutEntries':
             nutrition.workoutEntries.map((e) => e.toJson()).toList(),
+        'progressPhotos':
+            nutrition.photos.map((e) => e.toJson()).toList(),
       };
 
       // Convert to formatted JSON
@@ -180,6 +183,17 @@ class DataExportService {
           await nutrition.restoreWorkoutEntry(entry);
         }
         itemsImported += entries.length;
+      }
+
+      // Progress photos
+      if (data['progressPhotos'] != null) {
+        final photos = (data['progressPhotos'] as List)
+            .map((e) => ProgressPhoto.fromJson(e as Map<String, dynamic>))
+            .toList();
+        for (final photo in photos) {
+          await nutrition.restoreProgressPhoto(photo);
+        }
+        itemsImported += photos.length;
       }
 
       return Success(ImportResult(
