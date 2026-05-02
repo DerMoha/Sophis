@@ -7,6 +7,7 @@ import 'package:sophis/ui/screens/meal_planner_screen.dart';
 import 'package:sophis/ui/screens/weight_tracker_screen.dart';
 import 'package:sophis/ui/screens/recipes_screen.dart';
 import 'package:sophis/ui/screens/activity_graph_screen.dart';
+import 'package:sophis/ui/screens/progress_photos_screen.dart';
 import 'package:sophis/ui/components/workout_bottom_sheet.dart';
 
 /// Represents a home screen quick action.
@@ -109,6 +110,17 @@ HomeAction? _buildAction(
           isScrollControlled: true,
           backgroundColor: Colors.transparent,
           builder: (_) => const WorkoutBottomSheet(),
+        ),
+      );
+    case DashboardCardIds.progressPhotos:
+      return HomeAction(
+        id: id,
+        icon: Icons.photo_camera_outlined,
+        label: l10n.progressPhotos,
+        color: AppTheme.emerald,
+        onTap: () => Navigator.push(
+          context,
+          AppTheme.slideRoute(const ProgressPhotosScreen()),
         ),
       );
     default:

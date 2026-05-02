@@ -25,6 +25,7 @@ class AppTheme {
 
   // Macro Colors - Distinctive and memorable
   static const Color protein = Color(0xFF059669); // Emerald - lean, healthy
+  static const Color emerald = Color(0xFF059669); // Emerald
   static const Color carbs = Color(0xFFD97706); // Amber - energy, warmth
   static const Color fat = Color(0xFFE11D48); // Rose - rich, indulgent
 

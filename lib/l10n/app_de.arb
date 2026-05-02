@@ -440,5 +440,43 @@
   "offSubmitSuccess": "Produkt zu OpenFoodFacts gesendet!",
   "offSubmitFailed": "Konnte nicht zu OpenFoodFacts gesendet werden",
   "offRateLimited": "Zu viele Anfragen, versuche es später erneut",
-  "savedLocallyCouldNotReachOff": "Lokal gespeichert, OpenFoodFacts konnte nicht erreicht werden"
+  "savedLocallyCouldNotReachOff": "Lokal gespeichert, OpenFoodFacts konnte nicht erreicht werden",
+
+  "progressPhotos": "Fortschrittsfotos",
+  "addProgressPhoto": "Fortschrittsfoto hinzufügen",
+  "takePhoto": "Foto aufnehmen",
+  "chooseFromGallery": "Aus Galerie wählen",
+  "category": "Kategorie",
+  "front": "Vorne",
+  "side": "Seite",
+  "back": "Hinten",
+  "other": "Sonstiges",
+  "photoDate": "Datum",
+  "photoNote": "Notiz",
+  "photoWeight": "Gewicht",
+  "noPhotosYet": "Noch keine Fotos",
+  "noPhotosSubtitle": "Mache dein erstes Fortschrittsfoto um deine Transformation zu verfolgen",
+  "compare": "Vergleichen",
+  "photoDeleted": "Foto gelöscht",
+  "deletePhotoConfirmation": "Dieses Foto löschen?",
+  "daysSinceFirstPhoto": "{count} Tage seit dem ersten Foto",
+  "@daysSinceFirstPhoto": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "totalPhotos": "{count} Fotos",
+  "@totalPhotos": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "before": "Vorher",
+  "after": "Nachher",
+  "weightDelta": "Gewichtsunterschied",
+  "duration": "Dauer",
+  "shareComparison": "Vergleich teilen",
+  "selectBeforePhoto": "Vorher-Foto wählen",
+  "selectAfterPhoto": "Nachher-Foto wählen",
+  "all": "Alle"
 }

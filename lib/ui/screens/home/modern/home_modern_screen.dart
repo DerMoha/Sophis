@@ -10,6 +10,7 @@ import 'package:sophis/ui/theme/animations.dart';
 import 'package:sophis/ui/components/organic_components.dart';
 import 'package:sophis/ui/components/streak_card.dart';
 import 'package:sophis/ui/components/supplements_today_card.dart';
+import 'package:sophis/ui/components/progress_photos_dashboard_card.dart';
 import 'package:sophis/ui/screens/goals_setup_screen.dart';
 import 'package:sophis/ui/screens/settings_screen.dart';
 import 'package:sophis/ui/screens/home/shared/home_refresh.dart';
@@ -148,6 +149,8 @@ class _HomeScreenModernState extends State<HomeScreenModern> {
         unitSystem: vm.unitSystem,
       ),
     );
+    addSpace(16);
+    addFade(const ProgressPhotosDashboardCard());
     if (showSupplements) {
       addSpace(16);
       addFade(const SupplementsTodayCard());

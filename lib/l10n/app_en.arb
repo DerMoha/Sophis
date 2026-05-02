@@ -566,5 +566,43 @@
   "offSubmitSuccess": "Product submitted to OpenFoodFacts!",
   "offSubmitFailed": "Could not submit to OpenFoodFacts",
   "offRateLimited": "Too many requests, try again later",
-  "savedLocallyCouldNotReachOff": "Saved locally, could not reach OpenFoodFacts"
+  "savedLocallyCouldNotReachOff": "Saved locally, could not reach OpenFoodFacts",
+
+  "progressPhotos": "Progress Photos",
+  "addProgressPhoto": "Add Progress Photo",
+  "takePhoto": "Take Photo",
+  "chooseFromGallery": "Choose from Gallery",
+  "category": "Category",
+  "front": "Front",
+  "side": "Side",
+  "back": "Back",
+  "other": "Other",
+  "photoDate": "Date",
+  "photoNote": "Note",
+  "photoWeight": "Weight",
+  "noPhotosYet": "No photos yet",
+  "noPhotosSubtitle": "Take your first progress photo to start tracking your transformation",
+  "compare": "Compare",
+  "photoDeleted": "Photo deleted",
+  "deletePhotoConfirmation": "Delete this photo?",
+  "daysSinceFirstPhoto": "{count} days since first photo",
+  "@daysSinceFirstPhoto": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "totalPhotos": "{count} photos",
+  "@totalPhotos": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "before": "Before",
+  "after": "After",
+  "weightDelta": "Weight difference",
+  "duration": "Duration",
+  "shareComparison": "Share Comparison",
+  "selectBeforePhoto": "Select before photo",
+  "selectAfterPhoto": "Select after photo",
+  "all": "All"
 }
