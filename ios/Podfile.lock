@@ -55,6 +55,8 @@ PODS:
   - mobile_scanner (7.0.0):
     - Flutter
     - FlutterMacOS
+  - package_info_plus (0.4.5):
+    - Flutter
   - SDWebImage (5.21.5):
     - SDWebImage/Core (= 5.21.5)
   - SDWebImage/Core (5.21.5)
@@ -104,6 +106,7 @@ DEPENDENCIES:
   - home_widget (from `.symlinks/plugins/home_widget/ios`)
   - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
   - mobile_scanner (from `.symlinks/plugins/mobile_scanner/darwin`)
+  - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - share_plus (from `.symlinks/plugins/share_plus/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
   - sqlite3_flutter_libs (from `.symlinks/plugins/sqlite3_flutter_libs/darwin`)
@@ -140,6 +143,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/image_picker_ios/ios"
   mobile_scanner:
     :path: ".symlinks/plugins/mobile_scanner/darwin"
+  package_info_plus:
+    :path: ".symlinks/plugins/package_info_plus/ios"
   share_plus:
     :path: ".symlinks/plugins/share_plus/ios"
   shared_preferences_foundation:
@@ -163,6 +168,7 @@ SPEC CHECKSUMS:
   home_widget: f169fc41fd807b4d46ab6615dc44d62adbf9f64f
   image_picker_ios: e0ece4aa2a75771a7de3fa735d26d90817041326
   mobile_scanner: 9157936403f5a0644ca3779a38ff8404c5434a93
+  package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499
   SDWebImage: e9c98383c7572d713c1a0d7dd2783b10599b9838
   share_plus: 50da8cb520a8f0f65671c6c6a99b3617ed10a58a
   shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
