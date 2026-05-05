@@ -10,6 +10,7 @@ import 'package:sophis/ui/theme/animations.dart';
 import 'package:sophis/ui/components/add_photo_sheet.dart';
 import 'package:sophis/ui/screens/progress_photo_viewer.dart';
 import 'package:sophis/ui/screens/progress_photo_compare.dart';
+import 'package:sophis/ui/screens/progress_photo_lock_guard.dart';
 
 class ProgressPhotosScreen extends StatefulWidget {
   const ProgressPhotosScreen({super.key});
@@ -41,7 +42,10 @@ class _ProgressPhotosScreenState extends State<ProgressPhotosScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(l10n.delete, style: const TextStyle(color: AppTheme.error)),
+            child: Text(
+              l10n.delete,
+              style: const TextStyle(color: AppTheme.error),
+            ),
           ),
         ],
       ),
@@ -64,48 +68,56 @@ class _ProgressPhotosScreenState extends State<ProgressPhotosScreen> {
     final photos = context.watch<NutritionProvider>().photos;
     final filtered = _getFilteredPhotos(photos);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.progressPhotos),
-        actions: [
-          if (photos.length >= 2)
-            IconButton(
-              icon: const Icon(Icons.compare_outlined),
-              tooltip: l10n.compare,
-              onPressed: () => Navigator.push(
-                context,
-                AppTheme.slideRoute(const ProgressPhotoCompare()),
+    return ProgressPhotoLockScope(
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(l10n.progressPhotos),
+          actions: [
+            if (photos.length >= 2)
+              IconButton(
+                icon: const Icon(Icons.compare_outlined),
+                tooltip: l10n.compare,
+                onPressed: () => Navigator.push(
+                  context,
+                  AppTheme.slideRoute(const ProgressPhotoCompare()),
+                ),
               ),
-            ),
-          IconButton(
-            icon: const Icon(Icons.add_a_photo_outlined),
-            tooltip: l10n.addProgressPhoto,
-            onPressed: () => _showAddSheet(context),
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildFilterBar(l10n, theme),
-            Expanded(
-              child: filtered.isEmpty
-                  ? _buildEmptyState(l10n, theme)
-                  : _buildPhotoGrid(filtered, theme),
+            IconButton(
+              icon: const Icon(Icons.add_a_photo_outlined),
+              tooltip: l10n.addProgressPhoto,
+              onPressed: () => _showAddSheet(context),
             ),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddSheet(context),
-        child: const Icon(Icons.camera_alt),
+        body: SafeArea(
+          child: Column(
+            children: [
+              _buildFilterBar(l10n, theme),
+              Expanded(
+                child: filtered.isEmpty
+                    ? _buildEmptyState(l10n, theme)
+                    : _buildPhotoGrid(filtered, theme),
+              ),
+            ],
+          ),
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () => _showAddSheet(context),
+          child: const Icon(Icons.camera_alt),
+        ),
       ),
     );
   }
 
   Widget _buildFilterBar(AppLocalizations l10n, ThemeData theme) {
     final labels = [l10n.all, l10n.front, l10n.side, l10n.back, l10n.other];
-    final values = [null, PhotoCategory.front, PhotoCategory.side, PhotoCategory.back, PhotoCategory.other];
+    final values = [
+      null,
+      PhotoCategory.front,
+      PhotoCategory.side,
+      PhotoCategory.back,
+      PhotoCategory.other,
+    ];
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -113,9 +125,8 @@ class _ProgressPhotosScreenState extends State<ProgressPhotosScreen> {
         scrollDirection: Axis.horizontal,
         child: Row(
           children: List.generate(labels.length, (index) {
-            final isSelected = _showAll
-                ? values[index] == null
-                : values[index] == _filter;
+            final isSelected =
+                _showAll ? values[index] == null : values[index] == _filter;
             return Padding(
               padding: const EdgeInsets.only(right: 8),
               child: FilterChip(
@@ -131,9 +142,12 @@ class _ProgressPhotosScreenState extends State<ProgressPhotosScreen> {
                     }
                   });
                 },
-                selectedColor: theme.colorScheme.primary.withValues(alpha: 0.15),
+                selectedColor:
+                    theme.colorScheme.primary.withValues(alpha: 0.15),
                 labelStyle: TextStyle(
-                  color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface,
+                  color: isSelected
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurface,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                 ),
               ),
@@ -200,7 +214,11 @@ class _ProgressPhotosScreenState extends State<ProgressPhotosScreen> {
     );
   }
 
-  void _openViewer(BuildContext context, List<ProgressPhoto> photos, int index) {
+  void _openViewer(
+    BuildContext context,
+    List<ProgressPhoto> photos,
+    int index,
+  ) {
     Navigator.push(
       context,
       MaterialPageRoute(

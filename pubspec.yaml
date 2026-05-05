@@ -33,6 +33,7 @@ dependencies:
   flutter_local_notifications: ^19.5.0
   timezone: ^0.10.1
   flutter_secure_storage: ^10.0.0
+  local_auth: ^2.3.0
 
   # Phase 7: Meal Planning
   share_plus: ^10.0.0
@@ -69,4 +70,3 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   generate: true
-

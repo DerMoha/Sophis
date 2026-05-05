@@ -149,10 +149,17 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   QuickActionSize get quickActionSize => _settings.quickActionSize;
+  bool get progressPhotoLockEnabled => _settings.progressPhotoLockEnabled;
 
   Future<void> setQuickActionSize(QuickActionSize size) async {
     await _persistSettings(
       settings: _settings.copyWith(quickActionSize: size),
+    );
+  }
+
+  Future<void> setProgressPhotoLockEnabled(bool enabled) async {
+    await _persistSettings(
+      settings: _settings.copyWith(progressPhotoLockEnabled: enabled),
     );
   }
 

@@ -604,5 +604,13 @@
   "shareComparison": "Share Comparison",
   "selectBeforePhoto": "Select before photo",
   "selectAfterPhoto": "Select after photo",
-  "all": "All"
+  "all": "All",
+  "privacy": "Privacy",
+  "progressPhotoLock": "Lock Progress Photos",
+  "progressPhotoLockSubtitle": "Require Face ID, Touch ID, or your device passcode before photos are shown.",
+  "progressPhotoAuthReason": "Unlock your progress photos",
+  "progressPhotoLockUnavailable": "Device authentication is not available.",
+  "progressPhotoUnlockFailed": "Could not unlock progress photos.",
+  "progressPhotosLocked": "Progress photos are locked",
+  "unlockProgressPhotos": "Unlock Photos"
 }

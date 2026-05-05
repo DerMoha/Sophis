@@ -9,6 +9,7 @@ import 'package:sophis/ui/screens/recipes_screen.dart';
 import 'package:sophis/ui/screens/activity_graph_screen.dart';
 import 'package:sophis/ui/screens/progress_photos_screen.dart';
 import 'package:sophis/ui/components/workout_bottom_sheet.dart';
+import 'package:sophis/ui/screens/progress_photo_lock_guard.dart';
 
 /// Represents a home screen quick action.
 class HomeAction {
@@ -118,10 +119,15 @@ HomeAction? _buildAction(
         icon: Icons.photo_camera_outlined,
         label: l10n.progressPhotos,
         color: AppTheme.emerald,
-        onTap: () => Navigator.push(
-          context,
-          AppTheme.slideRoute(const ProgressPhotosScreen()),
-        ),
+        onTap: () async {
+          final unlocked = await ProgressPhotoLockGuard.requireUnlock(context);
+          if (!context.mounted || !unlocked) return;
+
+          await Navigator.push(
+            context,
+            AppTheme.slideRoute(const ProgressPhotosScreen()),
+          );
+        },
       );
     default:
       return null;

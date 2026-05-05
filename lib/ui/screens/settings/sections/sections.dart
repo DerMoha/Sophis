@@ -3,6 +3,7 @@ export 'nutrition_section.dart';
 export 'language_section.dart';
 export 'units_section.dart';
 export 'dashboard_section.dart';
+export 'privacy_section.dart';
 export 'reminders_section.dart';
 export 'fitness_section.dart';
 export 'ai_section.dart';

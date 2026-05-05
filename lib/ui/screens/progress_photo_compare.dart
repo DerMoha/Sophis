@@ -7,6 +7,7 @@ import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/progress_photo.dart';
 import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
+import 'package:sophis/ui/screens/progress_photo_lock_guard.dart';
 
 class ProgressPhotoCompare extends StatefulWidget {
   const ProgressPhotoCompare({super.key});
@@ -87,46 +88,48 @@ class _ProgressPhotoCompareState extends State<ProgressPhotoCompare> {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.compare),
-        actions: [
-          if (_before != null && _after != null)
-            IconButton(
-              icon: const Icon(Icons.share_outlined),
-              onPressed: _shareComparison,
-            ),
-        ],
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _buildPhotoColumn(
-                      l10n.before,
-                      _before,
-                      () => _selectPhoto(true),
-                    ),
-                  ),
-                  Container(
-                    width: 1,
-                    color: theme.colorScheme.outline.withValues(alpha: 0.2),
-                  ),
-                  Expanded(
-                    child: _buildPhotoColumn(
-                      l10n.after,
-                      _after,
-                      () => _selectPhoto(false),
-                    ),
-                  ),
-                ],
+    return ProgressPhotoLockScope(
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(l10n.compare),
+          actions: [
+            if (_before != null && _after != null)
+              IconButton(
+                icon: const Icon(Icons.share_outlined),
+                onPressed: _shareComparison,
               ),
-            ),
-            _buildStatsBar(l10n, theme),
           ],
+        ),
+        body: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _buildPhotoColumn(
+                        l10n.before,
+                        _before,
+                        () => _selectPhoto(true),
+                      ),
+                    ),
+                    Container(
+                      width: 1,
+                      color: theme.colorScheme.outline.withValues(alpha: 0.2),
+                    ),
+                    Expanded(
+                      child: _buildPhotoColumn(
+                        l10n.after,
+                        _after,
+                        () => _selectPhoto(false),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              _buildStatsBar(l10n, theme),
+            ],
+          ),
         ),
       ),
     );
@@ -179,7 +182,8 @@ class _ProgressPhotoCompareState extends State<ProgressPhotoCompare> {
                           Icon(
                             Icons.add_photo_alternate_outlined,
                             size: 48,
-                            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                            color: theme.colorScheme.onSurfaceVariant
+                                .withValues(alpha: 0.4),
                           ),
                           const SizedBox(height: 8),
                           Text(
@@ -237,8 +241,7 @@ class _ProgressPhotoCompareState extends State<ProgressPhotoCompare> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            if (duration != null)
-              _buildStat(l10n.duration, duration, theme),
+            if (duration != null) _buildStat(l10n.duration, duration, theme),
             if (weightDelta != null)
               _buildStat(l10n.weightDelta, weightDelta, theme),
           ],

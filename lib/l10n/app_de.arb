@@ -478,5 +478,13 @@
   "shareComparison": "Vergleich teilen",
   "selectBeforePhoto": "Vorher-Foto wählen",
   "selectAfterPhoto": "Nachher-Foto wählen",
-  "all": "Alle"
+  "all": "Alle",
+  "privacy": "Privatsphäre",
+  "progressPhotoLock": "Fortschrittsfotos sperren",
+  "progressPhotoLockSubtitle": "Face ID, Touch ID oder deinen Gerätecode verlangen, bevor Fotos angezeigt werden.",
+  "progressPhotoAuthReason": "Fortschrittsfotos entsperren",
+  "progressPhotoLockUnavailable": "Geräteauthentifizierung ist nicht verfügbar.",
+  "progressPhotoUnlockFailed": "Fortschrittsfotos konnten nicht entsperrt werden.",
+  "progressPhotosLocked": "Fortschrittsfotos sind gesperrt",
+  "unlockProgressPhotos": "Fotos entsperren"
 }

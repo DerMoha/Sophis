@@ -5,9 +5,11 @@ import 'package:provider/provider.dart';
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/progress_photo.dart';
 import 'package:sophis/providers/nutrition_provider.dart';
+import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/screens/progress_photos_screen.dart';
 import 'package:sophis/ui/components/add_photo_sheet.dart';
+import 'package:sophis/ui/screens/progress_photo_lock_guard.dart';
 
 class ProgressPhotosDashboardCard extends StatelessWidget {
   const ProgressPhotosDashboardCard({super.key});
@@ -17,13 +19,11 @@ class ProgressPhotosDashboardCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final photos = context.watch<NutritionProvider>().photos;
+    final isLocked = context.watch<SettingsProvider>().progressPhotoLockEnabled;
     final latest = photos.isNotEmpty ? photos.first : null;
 
     return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        AppTheme.slideRoute(const ProgressPhotosScreen()),
-      ),
+      onTap: () => _openProgressPhotos(context),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -60,7 +60,7 @@ class ProgressPhotosDashboardCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (latest != null)
+                if (latest != null && !isLocked)
                   Text(
                     l10n.totalPhotos(photos.length),
                     style: theme.textTheme.labelSmall?.copyWith(
@@ -70,7 +70,9 @@ class ProgressPhotosDashboardCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            if (latest != null)
+            if (isLocked)
+              _buildLockedPreview(context, l10n, theme)
+            else if (latest != null)
               _buildLatestPreview(context, latest, theme)
             else
               _buildEmptyState(context, l10n, theme),
@@ -80,7 +82,69 @@ class ProgressPhotosDashboardCard extends StatelessWidget {
     );
   }
 
-  Widget _buildLatestPreview(BuildContext context, ProgressPhoto photo, ThemeData theme) {
+  Future<void> _openProgressPhotos(BuildContext context) async {
+    final unlocked = await ProgressPhotoLockGuard.requireUnlock(context);
+    if (!context.mounted || !unlocked) return;
+
+    await Navigator.push(
+      context,
+      AppTheme.slideRoute(const ProgressPhotosScreen()),
+    );
+  }
+
+  Future<void> _showAddSheet(BuildContext context) async {
+    final unlocked = await ProgressPhotoLockGuard.requireUnlock(context);
+    if (!context.mounted || !unlocked) return;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const AddPhotoSheet(),
+    );
+  }
+
+  Widget _buildLockedPreview(
+    BuildContext context,
+    AppLocalizations l10n,
+    ThemeData theme,
+  ) {
+    return Row(
+      children: [
+        Container(
+          width: 64,
+          height: 64,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primary.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+          ),
+          child: Icon(
+            Icons.lock_outline,
+            color: theme.colorScheme.primary,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            l10n.progressPhotosLocked,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.lock_open_outlined),
+          onPressed: () => _openProgressPhotos(context),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLatestPreview(
+    BuildContext context,
+    ProgressPhoto photo,
+    ThemeData theme,
+  ) {
     final thumbPath = '${photo.imagePath.replaceAll('.jpg', '')}_thumb.jpg';
     final thumbFile = File(thumbPath);
     final hasThumb = thumbFile.existsSync();
@@ -126,20 +190,17 @@ class ProgressPhotosDashboardCard extends StatelessWidget {
         ),
         IconButton(
           icon: const Icon(Icons.add_a_photo_outlined),
-          onPressed: () {
-            showModalBottomSheet(
-              context: context,
-              isScrollControlled: true,
-              backgroundColor: Colors.transparent,
-              builder: (_) => const AddPhotoSheet(),
-            );
-          },
+          onPressed: () => _showAddSheet(context),
         ),
       ],
     );
   }
 
-  Widget _buildEmptyState(BuildContext context, AppLocalizations l10n, ThemeData theme) {
+  Widget _buildEmptyState(
+    BuildContext context,
+    AppLocalizations l10n,
+    ThemeData theme,
+  ) {
     return Row(
       children: [
         Expanded(
@@ -151,14 +212,7 @@ class ProgressPhotosDashboardCard extends StatelessWidget {
           ),
         ),
         FilledButton.tonalIcon(
-          onPressed: () {
-            showModalBottomSheet(
-              context: context,
-              isScrollControlled: true,
-              backgroundColor: Colors.transparent,
-              builder: (_) => const AddPhotoSheet(),
-            );
-          },
+          onPressed: () => _showAddSheet(context),
           icon: const Icon(Icons.camera_alt_outlined, size: 18),
           label: Text(l10n.takePhoto),
         ),

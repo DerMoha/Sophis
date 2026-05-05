@@ -97,6 +97,8 @@ class AppSettings {
   final bool showSupplements;
   // Quick Action Button Size
   final QuickActionSize quickActionSize;
+  // Require device authentication before showing progress photos
+  final bool progressPhotoLockEnabled;
 
   const AppSettings({
     this.aiMode = AIMode.offlineBasic,
@@ -121,6 +123,7 @@ class AppSettings {
     this.showMealMacros = false,
     this.showSupplements = true,
     this.quickActionSize = QuickActionSize.small,
+    this.progressPhotoLockEnabled = false,
   });
 
   Color get accentColor => Color(accentColorValue);
@@ -148,6 +151,7 @@ class AppSettings {
         'showMealMacros': showMealMacros,
         'showSupplements': showSupplements,
         'quickActionSize': quickActionSize.index,
+        'progressPhotoLockEnabled': progressPhotoLockEnabled,
       };
 
   factory AppSettings.fromJson(Map<String, dynamic> json) => AppSettings(
@@ -190,6 +194,8 @@ class AppSettings {
         quickActionSize: json['quickActionSize'] != null
             ? QuickActionSize.values[json['quickActionSize']]
             : QuickActionSize.small,
+        progressPhotoLockEnabled:
+            json['progressPhotoLockEnabled'] as bool? ?? false,
       );
 
   AppSettings copyWith({
@@ -215,6 +221,7 @@ class AppSettings {
     bool? showMealMacros,
     bool? showSupplements,
     QuickActionSize? quickActionSize,
+    bool? progressPhotoLockEnabled,
     bool clearLocale = false,
     bool clearBreakfast = false,
     bool clearLunch = false,
@@ -251,5 +258,7 @@ class AppSettings {
         showMealMacros: showMealMacros ?? this.showMealMacros,
         showSupplements: showSupplements ?? this.showSupplements,
         quickActionSize: quickActionSize ?? this.quickActionSize,
+        progressPhotoLockEnabled:
+            progressPhotoLockEnabled ?? this.progressPhotoLockEnabled,
       );
 }

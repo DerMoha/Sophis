@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:sophis/models/progress_photo.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
+import 'package:sophis/ui/screens/progress_photo_lock_guard.dart';
 
 class ProgressPhotoViewer extends StatefulWidget {
   final List<ProgressPhoto> photos;
@@ -54,49 +55,51 @@ class _ProgressPhotoViewerState extends State<ProgressPhotoViewer> {
     final theme = Theme.of(context);
     final photo = widget.photos[_currentIndex];
 
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        children: [
-          GestureDetector(
-            onTap: _toggleOverlay,
-            child: PageView.builder(
-              controller: _pageController,
-              itemCount: widget.photos.length,
-              onPageChanged: (index) => setState(() => _currentIndex = index),
-              itemBuilder: (context, index) {
-                final p = widget.photos[index];
-                return InteractiveViewer(
-                  minScale: 0.5,
-                  maxScale: 4.0,
-                  child: Center(
-                    child: Hero(
-                      tag: 'photo_${p.id}',
-                      child: Image.file(
-                        File(p.imagePath),
-                        fit: BoxFit.contain,
+    return ProgressPhotoLockScope(
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(
+          children: [
+            GestureDetector(
+              onTap: _toggleOverlay,
+              child: PageView.builder(
+                controller: _pageController,
+                itemCount: widget.photos.length,
+                onPageChanged: (index) => setState(() => _currentIndex = index),
+                itemBuilder: (context, index) {
+                  final p = widget.photos[index];
+                  return InteractiveViewer(
+                    minScale: 0.5,
+                    maxScale: 4.0,
+                    child: Center(
+                      child: Hero(
+                        tag: 'photo_${p.id}',
+                        child: Image.file(
+                          File(p.imagePath),
+                          fit: BoxFit.contain,
+                        ),
                       ),
                     ),
-                  ),
-                );
-              },
-            ),
-          ),
-          AnimatedOpacity(
-            opacity: _showOverlay ? 1.0 : 0.0,
-            duration: AppTheme.animFast,
-            child: IgnorePointer(
-              ignoring: !_showOverlay,
-              child: Column(
-                children: [
-                  _buildAppBar(theme, photo),
-                  const Spacer(),
-                  _buildInfoBar(theme, photo),
-                ],
+                  );
+                },
               ),
             ),
-          ),
-        ],
+            AnimatedOpacity(
+              opacity: _showOverlay ? 1.0 : 0.0,
+              duration: AppTheme.animFast,
+              child: IgnorePointer(
+                ignoring: !_showOverlay,
+                child: Column(
+                  children: [
+                    _buildAppBar(theme, photo),
+                    const Spacer(),
+                    _buildInfoBar(theme, photo),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

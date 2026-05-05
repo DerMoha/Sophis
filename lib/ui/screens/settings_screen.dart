@@ -15,6 +15,7 @@ enum _SettingsSection {
   language,
   units,
   dashboard,
+  privacy,
   reminders,
   fitness,
   ai,
@@ -121,6 +122,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     title: l10n.quickActions,
                     icon: Icons.dashboard_customize_outlined,
                     child: const DashboardSection(),
+                  ),
+                  _SettingsSectionConfig(
+                    section: _SettingsSection.privacy,
+                    title: l10n.privacy,
+                    icon: Icons.lock_outline,
+                    child: PrivacySection(settings: settings),
                   ),
                   _SettingsSectionConfig(
                     section: _SettingsSection.reminders,
