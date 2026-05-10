@@ -7,6 +7,7 @@ import 'package:gal/gal.dart';
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/services/gemini_food_service.dart';
 import 'package:sophis/services/gemini/models/models.dart';
+import 'package:sophis/services/local_ai_food_service.dart';
 import 'package:sophis/services/service_result.dart';
 import 'package:sophis/services/food_entry_factory.dart';
 import 'package:sophis/providers/nutrition_provider.dart';
@@ -35,14 +36,21 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
 
   final _picker = ImagePicker();
   final _geminiService = GeminiFoodService();
+  final _localAiService = LocalAiFoodService();
 
   final List<File> _images = [];
   List<EditableFoodResult>? _results;
+  List<FoodAnalysis>? _localResults;
   bool _isLoading = false;
   String? _error;
+  String? _cloudError;
+  String? _localError;
   bool _serviceInitialized = false;
+  bool _localServiceInitialized = false;
   bool _isInitializing = false;
   int _remainingRequests = 20;
+
+  bool get _canAnalyze => _serviceInitialized || _localServiceInitialized;
 
   @override
   void initState() {
@@ -89,12 +97,11 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     // Load remaining requests
     final remaining = await GeminiFoodService.getRemainingRequests();
     if (mounted) setState(() => _remainingRequests = remaining);
+    if (!mounted) return;
 
     if (apiKey == null || apiKey.isEmpty) {
-      if (mounted) {
-        setState(() => _error = AppLocalizations.of(context)!.errorApiKey);
-      }
-      return;
+      _serviceInitialized = false;
+      _cloudError = AppLocalizations.of(context)!.errorApiKey;
     }
 
     if (_isInitializing) return;
@@ -106,29 +113,58 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       });
     }
 
-    final initResult = _geminiService.initialize(apiKey);
-    if (initResult.isSuccess) {
-      if (mounted) setState(() => _serviceInitialized = true);
-    } else {
-      if (mounted) {
-        setState(
-          () => _error = AppLocalizations.of(context)!
-              .errorInit((initResult as Failure).message),
-        );
-      }
+    final localInitResult = await _localAiService.initialize();
+
+    ServiceResult<void>? cloudInitResult;
+    if (apiKey != null && apiKey.isNotEmpty) {
+      cloudInitResult = _geminiService.initialize(apiKey);
     }
-    if (mounted) setState(() => _isInitializing = false);
+
+    if (!mounted) return;
+
+    setState(() {
+      switch (localInitResult) {
+        case Success<void>():
+          _localServiceInitialized = true;
+          _localError = null;
+        case Failure<void>(message: final message):
+          _localServiceInitialized = false;
+          _localError = message;
+      }
+
+      if (cloudInitResult != null) {
+        switch (cloudInitResult) {
+          case Success<void>():
+            _serviceInitialized = true;
+            _cloudError = null;
+          case Failure<void>(message: final message):
+            _serviceInitialized = false;
+            _cloudError = AppLocalizations.of(context)!.errorInit(message);
+        }
+      }
+
+      if (!_canAnalyze) {
+        _error = _cloudError ?? _localError;
+      }
+
+      _isInitializing = false;
+    });
   }
 
   @override
   void dispose() {
     _geminiService.dispose();
-    if (_results != null) {
-      for (final result in _results!) {
-        result.dispose();
-      }
-    }
+    _localAiService.dispose();
+    _disposeResults(_results);
     super.dispose();
+  }
+
+  void _disposeResults(List<EditableFoodResult>? results) {
+    if (results == null) return;
+
+    for (final result in results) {
+      result.dispose();
+    }
   }
 
   Future<void> _pickImage(ImageSource source) async {
@@ -149,6 +185,8 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
 
       if (picked == null) return;
 
+      _disposeResults(_results);
+
       if (source == ImageSource.camera) {
         try {
           await Gal.putImage(picked.path);
@@ -160,6 +198,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       setState(() {
         _images.add(File(picked.path));
         _results = null;
+        _localResults = null;
         _error = null;
       });
     } catch (e) {
@@ -173,44 +212,89 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
   }
 
   void _removeImage(int index) {
+    _disposeResults(_results);
+
     setState(() {
       _images.removeAt(index);
       _results = null;
+      _localResults = null;
     });
   }
 
   Future<void> _analyzeFood({String? correctionHint}) async {
     if (_images.isEmpty) return;
+    if (!_canAnalyze) {
+      setState(() => _error = _cloudError ?? _localError);
+      return;
+    }
 
     setState(() {
       _isLoading = true;
       _error = null;
+      _cloudError = null;
+      _localError = null;
     });
 
-    final analysisResult = await _geminiService.analyzeFoodMultiple(
-      _images,
-      correctionHint: correctionHint,
-    );
+    final analysisResults =
+        await Future.wait<ServiceResult<List<FoodAnalysis>>>([
+      if (_serviceInitialized)
+        _geminiService.analyzeFoodMultiple(
+          _images,
+          correctionHint: correctionHint,
+        )
+      else
+        Future.value(
+          Failure<List<FoodAnalysis>>(
+            ServiceErrorType.authFailed,
+            _cloudError ?? 'Gemini cloud analysis is not configured.',
+          ),
+        ),
+      if (_localServiceInitialized)
+        _localAiService.analyzeFoodMultiple(
+          _images,
+          correctionHint: correctionHint,
+        )
+      else
+        Future.value(
+          Failure<List<FoodAnalysis>>(
+            ServiceErrorType.notFound,
+            _localError ?? 'No local Gemma model is installed.',
+          ),
+        ),
+    ]);
+
+    final analysisResult = analysisResults[0];
+    final localAnalysisResult = analysisResults[1];
 
     // Update remaining requests count
     final remaining = await GeminiFoodService.getRemainingRequests();
 
     if (!mounted) return;
 
+    _disposeResults(_results);
+
     switch (analysisResult) {
       case Success<List<FoodAnalysis>>(value: final results):
-        setState(() {
-          _results =
-              results.map((r) => EditableFoodResult(analysis: r)).toList();
-          _remainingRequests = remaining;
-          _isLoading = false;
-        });
+        _results = results.map((r) => EditableFoodResult(analysis: r)).toList();
+        _cloudError = null;
       case Failure<List<FoodAnalysis>>(message: final message):
-        setState(() {
-          _error = _getUserFriendlyError(message);
-          _isLoading = false;
-        });
+        _results = null;
+        _cloudError = _getUserFriendlyError(message);
     }
+
+    switch (localAnalysisResult) {
+      case Success<List<FoodAnalysis>>(value: final results):
+        _localResults = results;
+        _localError = null;
+      case Failure<List<FoodAnalysis>>(message: final message):
+        _localResults = null;
+        _localError = message;
+    }
+
+    setState(() {
+      _remainingRequests = remaining;
+      _isLoading = false;
+    });
   }
 
   void _showEditSheet(EditableFoodResult result) {
@@ -488,10 +572,9 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                   children: [
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed:
-                            _serviceInitialized && _images.length < maxImages
-                                ? () => _pickImage(ImageSource.camera)
-                                : null,
+                        onPressed: _canAnalyze && _images.length < maxImages
+                            ? () => _pickImage(ImageSource.camera)
+                            : null,
                         icon: const Icon(Icons.camera_alt),
                         label: Text(l10n.camera),
                       ),
@@ -499,10 +582,9 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed:
-                            _serviceInitialized && _images.length < maxImages
-                                ? () => _pickImage(ImageSource.gallery)
-                                : null,
+                        onPressed: _canAnalyze && _images.length < maxImages
+                            ? () => _pickImage(ImageSource.gallery)
+                            : null,
                         icon: const Icon(Icons.photo_library),
                         label: Text(l10n.gallery),
                       ),
@@ -513,10 +595,9 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed:
-                        _serviceInitialized && _images.isNotEmpty && !_isLoading
-                            ? () => _analyzeFood()
-                            : null,
+                    onPressed: _canAnalyze && _images.isNotEmpty && !_isLoading
+                        ? () => _analyzeFood()
+                        : null,
                     icon: const Icon(Icons.auto_awesome),
                     label: Text(l10n.analyzeWithAI),
                   ),
@@ -569,54 +650,180 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       return LoadingState(label: l10n.analyzingFood);
     }
 
-    if (_results == null) {
+    final hasComparisonOutput = _results != null ||
+        _localResults != null ||
+        _cloudError != null ||
+        _localError != null;
+
+    if (!hasComparisonOutput) {
       return FadeInSlide(
         index: 0,
         child: Center(
           child: Text(
-            _serviceInitialized
-                ? l10n.takePhotosAndAnalyze
-                : l10n.initializingAI,
+            _canAnalyze ? l10n.takePhotosAndAnalyze : l10n.initializingAI,
             style: TextStyle(color: theme.disabledColor),
           ),
         ),
       );
     }
 
-    if (_results!.isEmpty) {
-      return FadeInSlide(
-        index: 0,
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        _buildCloudResultsSection(l10n, theme),
+        const SizedBox(height: 16),
+        _buildLocalResultsSection(l10n, theme),
+      ],
+    );
+  }
+
+  Widget _buildCloudResultsSection(AppLocalizations l10n, ThemeData theme) {
+    final results = _results;
+    return _buildResultSection(
+      title: 'Cloud Gemini Results',
+      icon: Icons.cloud_outlined,
+      color: theme.colorScheme.primary,
+      child: _cloudError != null
+          ? _buildSectionMessage(theme, _cloudError!, isError: true)
+          : _buildCloudResultCards(l10n, theme, results),
+    );
+  }
+
+  Widget _buildLocalResultsSection(AppLocalizations l10n, ThemeData theme) {
+    final results = _localResults;
+    return _buildResultSection(
+      title: 'Local Gemma Results',
+      icon: Icons.phone_iphone_outlined,
+      color: AppTheme.success,
+      child: _localError != null
+          ? _buildSectionMessage(theme, _localError!, isError: true)
+          : _buildLocalResultCards(l10n, theme, results),
+    );
+  }
+
+  Widget _buildResultSection({
+    required String title,
+    required IconData icon,
+    required Color color,
+    required Widget child,
+  }) {
+    return FadeInSlide(
+      index: title.startsWith('Cloud') ? 0 : 1,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Icon(Icons.no_food, size: 48, color: theme.disabledColor),
-              const SizedBox(height: 16),
+              Icon(icon, size: 18, color: color),
+              const SizedBox(width: 8),
               Text(
-                l10n.noFoodDetected,
-                style: TextStyle(color: theme.disabledColor),
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ),
-        ),
-      );
+          const SizedBox(height: 8),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCloudResultCards(
+    AppLocalizations l10n,
+    ThemeData theme,
+    List<EditableFoodResult>? results,
+  ) {
+    if (results == null) {
+      return _buildSectionMessage(theme, 'Gemini cloud analysis did not run.');
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _results!.length,
-      itemBuilder: (context, index) {
-        final result = _results![index];
-        return FadeInSlide(
-          index: index,
-          child: AiFoodResultCard(
+    if (results.isEmpty) {
+      return _buildSectionMessage(theme, l10n.noFoodDetected);
+    }
+
+    return Column(
+      children: [
+        for (final result in results)
+          AiFoodResultCard(
             result: result,
             onEdit: () => _showEditSheet(result),
             onShare: () => _shareSingleFood(result),
             onAdd: () => _addFood(result),
           ),
-        );
-      },
+      ],
+    );
+  }
+
+  Widget _buildLocalResultCards(
+    AppLocalizations l10n,
+    ThemeData theme,
+    List<FoodAnalysis>? results,
+  ) {
+    if (results == null) {
+      return _buildSectionMessage(theme, 'Local Gemma analysis did not run.');
+    }
+
+    if (results.isEmpty) {
+      return _buildSectionMessage(theme, l10n.noFoodDetected);
+    }
+
+    return Column(
+      children: [
+        for (final food in results) _buildReadOnlyFoodCard(theme, food),
+      ],
+    );
+  }
+
+  Widget _buildSectionMessage(
+    ThemeData theme,
+    String message, {
+    bool isError = false,
+  }) {
+    final color = isError ? AppTheme.error : theme.colorScheme.onSurfaceVariant;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+        border: Border.all(color: color.withValues(alpha: 0.16)),
+      ),
+      child: Text(
+        message,
+        style: TextStyle(color: color),
+      ),
+    );
+  }
+
+  Widget _buildReadOnlyFoodCard(ThemeData theme, FoodAnalysis food) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              food.name,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: AppTheme.spaceSM2),
+            Text(
+              '${food.portionDisplay} • ${food.caloriesDisplay}',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4),
+            Text(food.macrosDisplay, style: theme.textTheme.bodySmall),
+          ],
+        ),
+      ),
     );
   }
 }
