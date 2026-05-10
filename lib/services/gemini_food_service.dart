@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:image/image.dart' as img;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:sophis/services/gemini/models/models.dart';
@@ -124,11 +126,7 @@ class GeminiFoodService {
     }
 
     // Build image parts
-    final imageParts = <DataPart>[];
-    for (final file in imageFiles) {
-      final bytes = await file.readAsBytes();
-      imageParts.add(DataPart('image/jpeg', bytes));
-    }
+    final imageParts = await _buildImageParts(imageFiles);
 
     // Build prompt
     var promptText = '''
@@ -173,7 +171,7 @@ If no food is visible, return: {"foods": []}
     try {
       final response = await _model!.generateContent([
         Content.multi([prompt, ...imageParts]),
-      ]);
+      ]).timeout(const Duration(seconds: 30));
 
       final text = response.text;
       if (text == null || text.isEmpty) {
@@ -182,6 +180,13 @@ If no food is visible, return: {"foods": []}
 
       final results = _parseResponse(text);
       return Success(results);
+    } on TimeoutException {
+      await _decrementRequestCount();
+      debugPrint('Gemini food analysis timed out');
+      return const Failure(
+        ServiceErrorType.network,
+        'Request timed out. Please try again.',
+      );
     } catch (e) {
       await _decrementRequestCount();
       debugPrint('Gemini food analysis failed: $e');
@@ -216,11 +221,7 @@ If no food is visible, return: {"foods": []}
     }
 
     // Build image parts
-    final imageParts = <DataPart>[];
-    for (final file in imageFiles) {
-      final bytes = await file.readAsBytes();
-      imageParts.add(DataPart('image/jpeg', bytes));
-    }
+    final imageParts = await _buildImageParts(imageFiles);
 
     final confirmedList = confirmedFoods.isEmpty
         ? 'None'
@@ -276,7 +277,7 @@ Respond ONLY with valid JSON in this exact format, no other text:
     try {
       final response = await _model!.generateContent([
         Content.multi([prompt, ...imageParts]),
-      ]);
+      ]).timeout(const Duration(seconds: 30));
 
       final text = response.text;
       if (text == null || text.isEmpty) {
@@ -286,6 +287,13 @@ Respond ONLY with valid JSON in this exact format, no other text:
       final results = _parseResponse(text);
       if (results.isEmpty) return const Success(null);
       return Success(results.first);
+    } on TimeoutException {
+      await _decrementRequestCount();
+      debugPrint('Gemini re-analysis timed out');
+      return const Failure(
+        ServiceErrorType.network,
+        'Request timed out. Please try again.',
+      );
     } catch (e) {
       await _decrementRequestCount();
       debugPrint('Gemini re-analysis failed: $e');
@@ -321,7 +329,7 @@ Respond ONLY with valid JSON in this exact format, no other text:
         );
       }).toList();
     } catch (e) {
-      debugPrint('Failed to parse Gemini food response: $e');
+      debugPrint('Failed to parse Gemini food response: $e\nRaw response: $text');
       return [];
     }
   }
@@ -344,8 +352,8 @@ Respond ONLY with valid JSON in this exact format, no other text:
       );
     }
 
-    final bytes = await imageFile.readAsBytes();
-    final imagePart = DataPart('image/jpeg', bytes);
+    final jpegBytes = await _convertImageToJpeg(imageFile);
+    final imagePart = DataPart('image/jpeg', jpegBytes);
 
     const promptText = '''
 Analyze this photo of a nutrition label (Nährwerttabelle / Nährwertangaben).
@@ -382,12 +390,19 @@ If the image is not a nutrition label or values are unreadable, return:
     try {
       final response = await _model!.generateContent([
         Content.multi([prompt, imagePart]),
-      ]);
+      ]).timeout(const Duration(seconds: 30));
 
       final text = response.text;
       if (text == null || text.isEmpty) return const Success(null);
 
       return Success(_parseNutritionLabelResponse(text));
+    } on TimeoutException {
+      await _decrementRequestCount();
+      debugPrint('Gemini nutrition label analysis timed out');
+      return const Failure(
+        ServiceErrorType.network,
+        'Request timed out. Please try again.',
+      );
     } catch (e) {
       await _decrementRequestCount();
       debugPrint('Gemini nutrition label analysis failed: $e');
@@ -427,7 +442,7 @@ If the image is not a nutrition label or values are unreadable, return:
         servingName: json['serving_name']?.toString(),
       );
     } catch (e) {
-      debugPrint('Failed to parse nutrition label response: $e');
+      debugPrint('Failed to parse nutrition label response: $e\nRaw response: $text');
       return null;
     }
   }
@@ -451,8 +466,8 @@ If the image is not a nutrition label or values are unreadable, return:
       );
     }
 
-    final bytes = await imageFile.readAsBytes();
-    final imagePart = DataPart('image/jpeg', bytes);
+    final jpegBytes = await _convertImageToJpeg(imageFile);
+    final imagePart = DataPart('image/jpeg', jpegBytes);
 
     const promptText = '''
 Analyze this image of a recipe and extract the following information.
@@ -515,7 +530,7 @@ If no recipe is visible or readable, return:
     try {
       final response = await _model!.generateContent([
         Content.multi([prompt, imagePart]),
-      ]);
+      ]).timeout(const Duration(seconds: 30));
 
       final text = response.text;
       if (text == null || text.isEmpty) {
@@ -524,6 +539,13 @@ If no recipe is visible or readable, return:
 
       final result = _parseRecipeResponse(text);
       return Success(result);
+    } on TimeoutException {
+      await _decrementRequestCount();
+      debugPrint('Gemini recipe extraction timed out');
+      return const Failure(
+        ServiceErrorType.network,
+        'Request timed out. Please try again.',
+      );
     } catch (e) {
       await _decrementRequestCount();
       debugPrint('Gemini recipe extraction failed: $e');
@@ -571,9 +593,29 @@ If no recipe is visible or readable, return:
         totalFat: (nutrition['fat'] as num?)?.toDouble() ?? 0,
       );
     } catch (e) {
-      debugPrint('Failed to parse recipe response: $e');
+      debugPrint('Failed to parse recipe response: $e\nRaw response: $text');
       return RecipeExtraction.empty();
     }
+  }
+
+  Future<Uint8List> _convertImageToJpeg(File file) async {
+    final bytes = await file.readAsBytes();
+    final decoded = img.decodeImage(bytes);
+    if (decoded == null) {
+      final path = file.path;
+      debugPrint('Failed to decode image: $path');
+      return Uint8List.fromList(bytes);
+    }
+    return Uint8List.fromList(img.encodeJpg(decoded, quality: 85));
+  }
+
+  Future<List<DataPart>> _buildImageParts(List<File> files) async {
+    final parts = <DataPart>[];
+    for (final file in files) {
+      final jpegBytes = await _convertImageToJpeg(file);
+      parts.add(DataPart('image/jpeg', jpegBytes));
+    }
+    return parts;
   }
 
   void dispose() {
