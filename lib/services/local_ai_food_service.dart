@@ -18,6 +18,10 @@ class LocalAiFoodService {
   });
 
   static bool _pluginInitialized = false;
+  static const recommendedVisionModelName = 'Gemma 4 E2B IT';
+  static const recommendedVisionModelSize = '2.4 GB';
+  static const recommendedVisionModelUrl =
+      'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm';
 
   final ModelType modelType;
   final PreferredBackend preferredBackend;
@@ -104,6 +108,7 @@ class LocalAiFoodService {
     String? token,
     ModelType? modelType,
     ModelFileType fileType = ModelFileType.litertlm,
+    bool? foreground,
     void Function(int progress)? onProgress,
   }) async {
     try {
@@ -111,7 +116,7 @@ class LocalAiFoodService {
       var builder = FlutterGemma.installModel(
         modelType: modelType ?? this.modelType,
         fileType: fileType,
-      ).fromNetwork(url, token: token);
+      ).fromNetwork(url, token: token, foreground: foreground);
 
       if (onProgress != null) {
         builder = builder.withProgress(onProgress);
@@ -127,6 +132,18 @@ class LocalAiFoodService {
         'Failed to download local AI model: $e',
       );
     }
+  }
+
+  Future<ServiceResult<String>> installRecommendedVisionModel({
+    void Function(int progress)? onProgress,
+  }) async {
+    return installModelFromNetwork(
+      recommendedVisionModelUrl,
+      modelType: ModelType.gemma4,
+      fileType: ModelFileType.litertlm,
+      foreground: true,
+      onProgress: onProgress,
+    );
   }
 
   Future<ServiceResult<List<FoodAnalysis>>> analyzeFood(File imageFile) async {

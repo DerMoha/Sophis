@@ -22,8 +22,10 @@ class _AiSectionState extends State<AiSection> {
 
   List<String> _installedLocalModels = [];
   String? _localModelError;
+  int? _localModelInstallProgress;
   bool _hasActiveLocalModel = false;
   bool _isCheckingLocalModels = false;
+  bool _isInstallingLocalModel = false;
 
   @override
   void initState() {
@@ -90,6 +92,47 @@ class _AiSectionState extends State<AiSection> {
     });
   }
 
+  Future<void> _installRecommendedLocalModel() async {
+    if (_isInstallingLocalModel) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() {
+      _isInstallingLocalModel = true;
+      _localModelInstallProgress = 0;
+      _localModelError = null;
+    });
+
+    final result = await _localAiService.installRecommendedVisionModel(
+      onProgress: (progress) {
+        if (!mounted) return;
+        setState(() {
+          _localModelInstallProgress = progress.clamp(0, 100).toInt();
+        });
+      },
+    );
+
+    if (!mounted) return;
+
+    switch (result) {
+      case Success<String>():
+        setState(() {
+          _isInstallingLocalModel = false;
+          _localModelInstallProgress = 100;
+        });
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Local Gemma model installed.')),
+        );
+        await _loadLocalModelState();
+      case Failure<String>(message: final message):
+        setState(() {
+          _isInstallingLocalModel = false;
+          _localModelInstallProgress = null;
+          _localModelError = message;
+        });
+        messenger.showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -143,9 +186,16 @@ class _AiSectionState extends State<AiSection> {
   }
 
   Widget _buildLocalModelCard(ThemeData theme) {
-    final statusColor =
-        _hasActiveLocalModel ? AppTheme.success : AppTheme.error;
-    final statusLabel = _hasActiveLocalModel ? 'Ready' : 'Not installed';
+    final statusColor = _isInstallingLocalModel
+        ? theme.colorScheme.primary
+        : _hasActiveLocalModel
+            ? AppTheme.success
+            : AppTheme.error;
+    final statusLabel = _isInstallingLocalModel
+        ? 'Installing'
+        : _hasActiveLocalModel
+            ? 'Ready'
+            : 'Not installed';
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -205,28 +255,64 @@ class _AiSectionState extends State<AiSection> {
                   : AppTheme.error,
             ),
           ),
-          const SizedBox(height: 8),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              onPressed: _isCheckingLocalModels ? null : _loadLocalModelState,
-              icon: _isCheckingLocalModels
-                  ? SizedBox(
-                      width: 14,
-                      height: 14,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: theme.colorScheme.primary,
-                      ),
-                    )
-                  : const Icon(Icons.refresh, size: 16),
-              label: Text(_isCheckingLocalModels ? 'Checking...' : 'Refresh'),
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
+          if (_isInstallingLocalModel) ...[
+            const SizedBox(height: 10),
+            LinearProgressIndicator(
+              value: _localModelInstallProgress == null ||
+                      _localModelInstallProgress == 0
+                  ? null
+                  : _localModelInstallProgress! / 100,
+              minHeight: 4,
+              borderRadius: BorderRadius.circular(AppTheme.radiusXS),
             ),
+          ],
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ElevatedButton.icon(
+                onPressed: _isInstallingLocalModel || _hasActiveLocalModel
+                    ? null
+                    : _installRecommendedLocalModel,
+                icon: _isInstallingLocalModel
+                    ? SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: theme.colorScheme.primary,
+                        ),
+                      )
+                    : const Icon(Icons.download_outlined, size: 16),
+                label: Text(
+                  _isInstallingLocalModel
+                      ? 'Downloading...'
+                      : 'Download Gemma 4 E2B',
+                ),
+              ),
+              TextButton.icon(
+                onPressed: _isCheckingLocalModels || _isInstallingLocalModel
+                    ? null
+                    : _loadLocalModelState,
+                icon: _isCheckingLocalModels
+                    ? SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: theme.colorScheme.primary,
+                        ),
+                      )
+                    : const Icon(Icons.refresh, size: 16),
+                label: Text(_isCheckingLocalModels ? 'Checking...' : 'Refresh'),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -234,6 +320,14 @@ class _AiSectionState extends State<AiSection> {
   }
 
   String _localModelDescription() {
+    if (_isInstallingLocalModel) {
+      final progress = _localModelInstallProgress;
+      final progressText = progress == null || progress == 0
+          ? 'Starting download'
+          : 'Downloading $progress%';
+      return '$progressText. Keep the app open while the ${LocalAiFoodService.recommendedVisionModelSize} model installs.';
+    }
+
     if (_isCheckingLocalModels) {
       return 'Checking installed on-device models...';
     }
@@ -243,7 +337,7 @@ class _AiSectionState extends State<AiSection> {
     }
 
     if (_installedLocalModels.isEmpty) {
-      return 'No local model found. Install a Gemma 4 vision .litertlm or .task model before testing on-device analysis.';
+      return 'No local model found. Download ${LocalAiFoodService.recommendedVisionModelName} (${LocalAiFoodService.recommendedVisionModelSize}) to enable on-device food analysis.';
     }
 
     return 'Installed: ${_installedLocalModels.join(', ')}';
