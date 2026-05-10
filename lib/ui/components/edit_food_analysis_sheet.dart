@@ -158,16 +158,19 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
 
   bool get _hasChanges {
     final original = widget.result.originalAnalysis;
+    const epsilon = 0.01;
+    bool dataField(String controllerText, double originalValue, int decimals) {
+      final parsed = double.tryParse(controllerText);
+      if (parsed == null) return controllerText.isNotEmpty;
+      return (parsed - originalValue).abs() > epsilon;
+    }
+
     return widget.result.nameController.text.trim() != original.name ||
-        widget.result.portionController.text !=
-            original.portionGrams.toStringAsFixed(0) ||
-        widget.result.caloriesController.text !=
-            original.calories.toStringAsFixed(0) ||
-        widget.result.proteinController.text !=
-            original.protein.toStringAsFixed(1) ||
-        widget.result.carbsController.text !=
-            original.carbs.toStringAsFixed(1) ||
-        widget.result.fatController.text != original.fat.toStringAsFixed(1);
+        dataField(widget.result.portionController.text, original.portionGrams, 0) ||
+        dataField(widget.result.caloriesController.text, original.calories, 0) ||
+        dataField(widget.result.proteinController.text, original.protein, 1) ||
+        dataField(widget.result.carbsController.text, original.carbs, 1) ||
+        dataField(widget.result.fatController.text, original.fat, 1);
   }
 
   String? _validatePositiveNumber(String? value, String fieldName) {

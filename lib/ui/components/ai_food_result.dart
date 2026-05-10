@@ -62,8 +62,11 @@ class EditableFoodResult {
     }
 
     final portion = double.tryParse(portionController.text);
+    final threshold = originalAnalysis.portionGrams > 0
+        ? 5.0.clamp(originalAnalysis.portionGrams * 0.1, double.infinity)
+        : 5.0;
     if (portion != null &&
-        (portion - originalAnalysis.portionGrams).abs() > 5) {
+        (portion - originalAnalysis.portionGrams).abs() > threshold) {
       parts.add('portion should be ${NumberUtils.format(portion)}g');
     }
 
