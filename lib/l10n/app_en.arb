@@ -325,6 +325,8 @@
   "summary": "Summary",
   "avgCalories": "Avg Calories",
   "avgProtein": "Avg Protein",
+  "avgCarbs": "Avg Carbs",
+  "avgFat": "Avg Fat",
   "daysOnTrack": "{count}/{total} days on track",
   "@daysOnTrack": {
     "placeholders": {

@@ -241,6 +241,8 @@
   "summary": "Zusammenfassung",
   "avgCalories": "Ø Kalorien",
   "avgProtein": "Ø Protein",
+  "avgCarbs": "Ø Kohlenh.",
+  "avgFat": "Ø Fett",
   "daysOnTrack": "{count}/{total} Tage im Ziel",
   "goalLabel": "Ziel",
   "per100g": "Pro 100g: {kcal} kcal",
