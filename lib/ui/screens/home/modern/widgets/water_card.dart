@@ -8,7 +8,7 @@ import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/theme/animations.dart';
 import 'package:sophis/utils/unit_converter.dart';
 import 'package:sophis/ui/components/organic_components.dart';
-import 'package:sophis/ui/components/water_details_sheet.dart';
+import 'package:sophis/ui/screens/water_screen.dart';
 import 'package:sophis/providers/nutrition_provider.dart';
 
 /// Water tracking card for the modern home screen.
@@ -159,11 +159,9 @@ class WaterCard extends StatelessWidget {
   }
 
   void _showWaterDetails(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const WaterDetailsSheet(),
+    Navigator.push(
+      context,
+      AppTheme.slideRoute(const WaterScreen()),
     );
   }
 }

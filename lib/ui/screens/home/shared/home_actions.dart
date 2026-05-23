@@ -8,7 +8,7 @@ import 'package:sophis/ui/screens/weight_tracker_screen.dart';
 import 'package:sophis/ui/screens/recipes_screen.dart';
 import 'package:sophis/ui/screens/activity_graph_screen.dart';
 import 'package:sophis/ui/screens/progress_photos_screen.dart';
-import 'package:sophis/ui/components/workout_bottom_sheet.dart';
+import 'package:sophis/ui/screens/workout_screen.dart';
 import 'package:sophis/ui/screens/progress_photo_lock_guard.dart';
 
 /// Represents a home screen quick action.
@@ -106,11 +106,9 @@ HomeAction? _buildAction(
         icon: Icons.local_fire_department_rounded,
         label: l10n.workout,
         color: AppTheme.fire,
-        onTap: () => showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.transparent,
-          builder: (_) => const WorkoutBottomSheet(),
+        onTap: () => Navigator.push(
+          context,
+          AppTheme.slideRoute(const WorkoutScreen()),
         ),
       );
     case DashboardCardIds.progressPhotos:
