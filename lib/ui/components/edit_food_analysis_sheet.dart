@@ -10,6 +10,7 @@ import 'package:sophis/ui/theme/app_theme.dart';
 class EditFoodAnalysisSheet extends StatefulWidget {
   final EditableFoodResult result;
   final int remainingRequests;
+  final bool allowReAnalyze;
   final VoidCallback onSaveEdits;
   final Function(String correctionHint) onReAnalyze;
 
@@ -17,6 +18,7 @@ class EditFoodAnalysisSheet extends StatefulWidget {
     super.key,
     required this.result,
     required this.remainingRequests,
+    this.allowReAnalyze = true,
     required this.onSaveEdits,
     required this.onReAnalyze,
   });
@@ -166,8 +168,16 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
     }
 
     return widget.result.nameController.text.trim() != original.name ||
-        dataField(widget.result.portionController.text, original.portionGrams, 0) ||
-        dataField(widget.result.caloriesController.text, original.calories, 0) ||
+        dataField(
+          widget.result.portionController.text,
+          original.portionGrams,
+          0,
+        ) ||
+        dataField(
+          widget.result.caloriesController.text,
+          original.calories,
+          0,
+        ) ||
         dataField(widget.result.proteinController.text, original.protein, 1) ||
         dataField(widget.result.carbsController.text, original.carbs, 1) ||
         dataField(widget.result.fatController.text, original.fat, 1);
@@ -199,9 +209,10 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
-    final showLowRequestWarning =
-        widget.remainingRequests < 5 && widget.remainingRequests > 0;
-    final canReAnalyze = widget.remainingRequests > 0;
+    final canReAnalyze = widget.allowReAnalyze && widget.remainingRequests > 0;
+    final showLowRequestWarning = widget.allowReAnalyze &&
+        widget.remainingRequests < 5 &&
+        widget.remainingRequests > 0;
 
     return ModalSheetSurface(
       useSafeArea: false,
@@ -476,7 +487,7 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                     ],
 
                     // No requests left message
-                    if (!canReAnalyze)
+                    if (widget.allowReAnalyze && !canReAnalyze)
                       Container(
                         margin: const EdgeInsets.only(top: 12),
                         padding: const EdgeInsets.all(AppTheme.spaceSM),

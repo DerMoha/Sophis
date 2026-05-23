@@ -31,8 +31,11 @@ class AIFoodCameraScreen extends StatefulWidget {
   State<AIFoodCameraScreen> createState() => _AIFoodCameraScreenState();
 }
 
+enum _AiAnalysisMode { cloud, local, compare }
+
 class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
   static const int maxImages = 5;
+  static const int localMaxImages = 1;
 
   final _picker = ImagePicker();
   final _geminiService = GeminiFoodService();
@@ -40,17 +43,33 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
 
   final List<File> _images = [];
   List<EditableFoodResult>? _results;
-  List<FoodAnalysis>? _localResults;
+  List<EditableFoodResult>? _localResults;
+  _AiAnalysisMode _analysisMode = _AiAnalysisMode.cloud;
   bool _isLoading = false;
   String? _error;
   String? _cloudError;
   String? _localError;
+  String? _localNotice;
   bool _serviceInitialized = false;
   bool _localServiceInitialized = false;
   bool _isInitializing = false;
   int _remainingRequests = 20;
 
-  bool get _canAnalyze => _serviceInitialized || _localServiceInitialized;
+  bool get _canAnalyze => switch (_analysisMode) {
+        _AiAnalysisMode.cloud => _serviceInitialized,
+        _AiAnalysisMode.local => _localServiceInitialized,
+        _AiAnalysisMode.compare =>
+          _serviceInitialized && _localServiceInitialized,
+      };
+
+  List<EditableFoodResult>? get _activeBulkResults => switch (_analysisMode) {
+        _AiAnalysisMode.cloud => _results,
+        _AiAnalysisMode.local => _localResults,
+        _AiAnalysisMode.compare => null,
+      };
+
+  int get _imageLimit =>
+      _analysisMode == _AiAnalysisMode.local ? localMaxImages : maxImages;
 
   @override
   void initState() {
@@ -143,6 +162,10 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
         }
       }
 
+      if (!_analysisModeAvailable(_analysisMode)) {
+        _analysisMode = _defaultAnalysisMode();
+      }
+
       if (!_canAnalyze) {
         _error = _cloudError ?? _localError;
       }
@@ -156,6 +179,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     _geminiService.dispose();
     _localAiService.dispose();
     _disposeResults(_results);
+    _disposeResults(_localResults);
     super.dispose();
   }
 
@@ -167,8 +191,35 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     }
   }
 
+  bool _analysisModeAvailable(_AiAnalysisMode mode) {
+    return switch (mode) {
+      _AiAnalysisMode.cloud => _serviceInitialized,
+      _AiAnalysisMode.local => _localServiceInitialized,
+      _AiAnalysisMode.compare =>
+        _serviceInitialized && _localServiceInitialized,
+    };
+  }
+
+  _AiAnalysisMode _defaultAnalysisMode() {
+    if (_serviceInitialized) return _AiAnalysisMode.cloud;
+    if (_localServiceInitialized) return _AiAnalysisMode.local;
+    return _AiAnalysisMode.cloud;
+  }
+
+  void _setAnalysisMode(_AiAnalysisMode mode) {
+    if (!_analysisModeAvailable(mode) || _analysisMode == mode) return;
+
+    setState(() {
+      _analysisMode = mode;
+      _error = null;
+      _cloudError = null;
+      _localError = null;
+      _localNotice = null;
+    });
+  }
+
   Future<void> _pickImage(ImageSource source) async {
-    if (_images.length >= maxImages) {
+    if (_images.length >= _imageLimit) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppLocalizations.of(context)!.maxImagesReached)),
       );
@@ -186,6 +237,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       if (picked == null) return;
 
       _disposeResults(_results);
+      _disposeResults(_localResults);
 
       if (source == ImageSource.camera) {
         try {
@@ -200,6 +252,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
         _results = null;
         _localResults = null;
         _error = null;
+        _localNotice = null;
       });
     } catch (e) {
       if (mounted) {
@@ -213,11 +266,13 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
 
   void _removeImage(int index) {
     _disposeResults(_results);
+    _disposeResults(_localResults);
 
     setState(() {
       _images.removeAt(index);
       _results = null;
       _localResults = null;
+      _localNotice = null;
     });
   }
 
@@ -228,16 +283,34 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       return;
     }
 
+    if (_analysisMode == _AiAnalysisMode.local &&
+        _images.length > localMaxImages) {
+      setState(() {
+        _error =
+            'Local Gemma supports one image at a time. Remove extra photos or use Cloud mode.';
+      });
+      return;
+    }
+
+    final runCloud =
+        _serviceInitialized && _analysisMode != _AiAnalysisMode.local;
+    final runLocal =
+        _localServiceInitialized && _analysisMode != _AiAnalysisMode.cloud;
+    final localImages = _images.take(localMaxImages).toList();
+
     setState(() {
       _isLoading = true;
       _error = null;
       _cloudError = null;
       _localError = null;
+      _localNotice = runLocal && _images.length > localMaxImages
+          ? 'Local Gemma analyzes one image at a time, so only the first photo was used locally.'
+          : null;
     });
 
     final analysisResults =
         await Future.wait<ServiceResult<List<FoodAnalysis>>>([
-      if (_serviceInitialized)
+      if (runCloud)
         _geminiService.analyzeFoodMultiple(
           _images,
           correctionHint: correctionHint,
@@ -249,9 +322,9 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
             _cloudError ?? 'Gemini cloud analysis is not configured.',
           ),
         ),
-      if (_localServiceInitialized)
+      if (runLocal)
         _localAiService.analyzeFoodMultiple(
-          _images,
+          localImages,
           correctionHint: correctionHint,
         )
       else
@@ -272,23 +345,28 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     if (!mounted) return;
 
     _disposeResults(_results);
+    _disposeResults(_localResults);
 
     switch (analysisResult) {
       case Success<List<FoodAnalysis>>(value: final results):
-        _results = results.map((r) => EditableFoodResult(analysis: r)).toList();
+        _results = runCloud
+            ? results.map((r) => EditableFoodResult(analysis: r)).toList()
+            : null;
         _cloudError = null;
       case Failure<List<FoodAnalysis>>(message: final message):
         _results = null;
-        _cloudError = _getUserFriendlyError(message);
+        _cloudError = runCloud ? _getUserFriendlyError(message) : null;
     }
 
     switch (localAnalysisResult) {
       case Success<List<FoodAnalysis>>(value: final results):
-        _localResults = results;
+        _localResults = runLocal
+            ? results.map((r) => EditableFoodResult(analysis: r)).toList()
+            : null;
         _localError = null;
       case Failure<List<FoodAnalysis>>(message: final message):
         _localResults = null;
-        _localError = message;
+        _localError = runLocal ? message : null;
     }
 
     setState(() {
@@ -297,7 +375,10 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     });
   }
 
-  void _showEditSheet(EditableFoodResult result) {
+  void _showEditSheet(
+    EditableFoodResult result, {
+    required bool allowReAnalyze,
+  }) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -305,6 +386,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       builder: (ctx) => EditFoodAnalysisSheet(
         result: result,
         remainingRequests: _remainingRequests,
+        allowReAnalyze: allowReAnalyze,
         onSaveEdits: () {
           setState(() {
             result.currentAnalysis = result.getEditedAnalysis();
@@ -413,9 +495,10 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
   }
 
   void _addAllFoods() {
-    if (_results == null || _results!.isEmpty) return;
+    final results = _activeBulkResults;
+    if (results == null || results.isEmpty) return;
 
-    for (final result in _results!) {
+    for (final result in results) {
       _addFood(result);
     }
 
@@ -423,9 +506,10 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
   }
 
   void _shareAllFoods() {
-    if (_results == null || _results!.isEmpty) return;
+    final results = _activeBulkResults;
+    if (results == null || results.isEmpty) return;
 
-    final items = _results!.map((result) {
+    final items = results.map((result) {
       final customName = result.controller.text.trim();
       return SharedFoodItem.fromFoodAnalysis(
         result.analysis,
@@ -462,6 +546,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     // Watch only for API key changes to avoid unnecessary rebuilds
     final hasApiKey =
         context.select<SettingsProvider, bool>((s) => s.hasGeminiApiKey);
+    final bulkResults = _activeBulkResults;
 
     // Retry initialization if key becomes available and we failed previously
     if (hasApiKey && !_serviceInitialized && !_isInitializing) {
@@ -524,13 +609,13 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                   borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                 ),
                 child: Text(
-                  '${_images.length}/$maxImages',
+                  '${_images.length}/$_imageLimit',
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
             ),
           ),
-          if (_results != null && _results!.isNotEmpty) ...[
+          if (bulkResults != null && bulkResults.isNotEmpty) ...[
             IconButton(
               icon: const Icon(Icons.share_outlined),
               onPressed: _shareAllFoods,
@@ -568,11 +653,13 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Column(
               children: [
+                _buildModeSelector(theme),
+                const SizedBox(height: 8),
                 Row(
                   children: [
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: _canAnalyze && _images.length < maxImages
+                        onPressed: _canAnalyze && _images.length < _imageLimit
                             ? () => _pickImage(ImageSource.camera)
                             : null,
                         icon: const Icon(Icons.camera_alt),
@@ -582,7 +669,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: _canAnalyze && _images.length < maxImages
+                        onPressed: _canAnalyze && _images.length < _imageLimit
                             ? () => _pickImage(ImageSource.gallery)
                             : null,
                         icon: const Icon(Icons.photo_library),
@@ -612,6 +699,54 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildModeSelector(ThemeData theme) {
+    return Row(
+      children: [
+        for (final mode in _AiAnalysisMode.values) ...[
+          Expanded(
+            child: ChoiceChip(
+              selected: _analysisMode == mode,
+              onSelected: _analysisModeAvailable(mode)
+                  ? (_) => _setAnalysisMode(mode)
+                  : null,
+              avatar: Icon(
+                _analysisModeIcon(mode),
+                size: 16,
+                color: _analysisMode == mode
+                    ? theme.colorScheme.onPrimaryContainer
+                    : theme.colorScheme.onSurfaceVariant,
+              ),
+              label: SizedBox(
+                width: double.infinity,
+                child: Text(
+                  _analysisModeLabel(mode),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          ),
+          if (mode != _AiAnalysisMode.values.last) const SizedBox(width: 8),
+        ],
+      ],
+    );
+  }
+
+  String _analysisModeLabel(_AiAnalysisMode mode) {
+    return switch (mode) {
+      _AiAnalysisMode.cloud => 'Cloud',
+      _AiAnalysisMode.local => 'Local',
+      _AiAnalysisMode.compare => 'Compare',
+    };
+  }
+
+  IconData _analysisModeIcon(_AiAnalysisMode mode) {
+    return switch (mode) {
+      _AiAnalysisMode.cloud => Icons.cloud_outlined,
+      _AiAnalysisMode.local => Icons.phone_iphone_outlined,
+      _AiAnalysisMode.compare => Icons.compare_arrows_outlined,
+    };
   }
 
   Widget _buildResultsArea(AppLocalizations l10n, ThemeData theme) {
@@ -650,10 +785,14 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       return LoadingState(label: l10n.analyzingFood);
     }
 
-    final hasComparisonOutput = _results != null ||
-        _localResults != null ||
-        _cloudError != null ||
-        _localError != null;
+    final hasComparisonOutput = switch (_analysisMode) {
+      _AiAnalysisMode.cloud => _results != null || _cloudError != null,
+      _AiAnalysisMode.local => _localResults != null || _localError != null,
+      _AiAnalysisMode.compare => _results != null ||
+          _localResults != null ||
+          _cloudError != null ||
+          _localError != null,
+    };
 
     if (!hasComparisonOutput) {
       return FadeInSlide(
@@ -670,9 +809,12 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        _buildCloudResultsSection(l10n, theme),
-        const SizedBox(height: 16),
-        _buildLocalResultsSection(l10n, theme),
+        if (_analysisMode != _AiAnalysisMode.local)
+          _buildCloudResultsSection(l10n, theme),
+        if (_analysisMode == _AiAnalysisMode.compare)
+          const SizedBox(height: 16),
+        if (_analysisMode != _AiAnalysisMode.cloud)
+          _buildLocalResultsSection(l10n, theme),
       ],
     );
   }
@@ -695,9 +837,17 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       title: 'Local Gemma Results',
       icon: Icons.phone_iphone_outlined,
       color: AppTheme.success,
-      child: _localError != null
-          ? _buildSectionMessage(theme, _localError!, isError: true)
-          : _buildLocalResultCards(l10n, theme, results),
+      child: Column(
+        children: [
+          if (_localNotice != null) ...[
+            _buildSectionMessage(theme, _localNotice!),
+            const SizedBox(height: 8),
+          ],
+          _localError != null
+              ? _buildSectionMessage(theme, _localError!, isError: true)
+              : _buildLocalResultCards(l10n, theme, results),
+        ],
+      ),
     );
   }
 
@@ -750,7 +900,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
         for (final result in results)
           AiFoodResultCard(
             result: result,
-            onEdit: () => _showEditSheet(result),
+            onEdit: () => _showEditSheet(result, allowReAnalyze: true),
             onShare: () => _shareSingleFood(result),
             onAdd: () => _addFood(result),
           ),
@@ -761,7 +911,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
   Widget _buildLocalResultCards(
     AppLocalizations l10n,
     ThemeData theme,
-    List<FoodAnalysis>? results,
+    List<EditableFoodResult>? results,
   ) {
     if (results == null) {
       return _buildSectionMessage(theme, 'Local Gemma analysis did not run.');
@@ -773,7 +923,13 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
 
     return Column(
       children: [
-        for (final food in results) _buildReadOnlyFoodCard(theme, food),
+        for (final result in results)
+          AiFoodResultCard(
+            result: result,
+            onEdit: () => _showEditSheet(result, allowReAnalyze: false),
+            onShare: () => _shareSingleFood(result),
+            onAdd: () => _addFood(result),
+          ),
       ],
     );
   }
@@ -795,34 +951,6 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       child: Text(
         message,
         style: TextStyle(color: color),
-      ),
-    );
-  }
-
-  Widget _buildReadOnlyFoodCard(ThemeData theme, FoodAnalysis food) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              food.name,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: AppTheme.spaceSM2),
-            Text(
-              '${food.portionDisplay} • ${food.caloriesDisplay}',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 4),
-            Text(food.macrosDisplay, style: theme.textTheme.bodySmall),
-          ],
-        ),
       ),
     );
   }
