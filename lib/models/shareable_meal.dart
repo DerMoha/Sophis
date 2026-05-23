@@ -12,6 +12,7 @@ class SharedFoodItem {
   final double protein;
   final double carbs;
   final double fat;
+  final double fiber;
   final double? portionGrams;
 
   const SharedFoodItem({
@@ -20,6 +21,7 @@ class SharedFoodItem {
     required this.protein,
     required this.carbs,
     required this.fat,
+    this.fiber = 0,
     this.portionGrams,
   });
 
@@ -30,6 +32,7 @@ class SharedFoodItem {
         'p': protein,
         'cb': carbs,
         'f': fat,
+        'fi': fiber,
         if (portionGrams != null) 'g': portionGrams,
       };
 
@@ -39,6 +42,7 @@ class SharedFoodItem {
         protein: (json['p'] as num).toDouble(),
         carbs: (json['cb'] as num).toDouble(),
         fat: (json['f'] as num).toDouble(),
+        fiber: (json['fi'] as num?)?.toDouble() ?? 0,
         portionGrams: json['g'] != null ? (json['g'] as num).toDouble() : null,
       );
 
@@ -49,6 +53,7 @@ class SharedFoodItem {
         protein: entry.protein,
         carbs: entry.carbs,
         fat: entry.fat,
+        fiber: entry.fiber,
       );
 
   /// Create from a FoodAnalysis (AI result)
@@ -62,6 +67,7 @@ class SharedFoodItem {
         protein: analysis.protein,
         carbs: analysis.carbs,
         fat: analysis.fat,
+        fiber: analysis.fiber,
         portionGrams: analysis.portionGrams,
       );
 
@@ -73,6 +79,7 @@ class SharedFoodItem {
         protein: protein,
         carbs: carbs,
         fat: fat,
+        fiber: fiber,
         timestamp: DateTime.now(),
         meal: meal,
       );
@@ -99,6 +106,7 @@ class ShareableMeal {
   double get totalProtein => items.fold(0, (sum, i) => sum + i.protein);
   double get totalCarbs => items.fold(0, (sum, i) => sum + i.carbs);
   double get totalFat => items.fold(0, (sum, i) => sum + i.fat);
+  double get totalFiber => items.fold(0, (sum, i) => sum + i.fiber);
 
   Map<String, dynamic> toJson() => {
         'v': v,

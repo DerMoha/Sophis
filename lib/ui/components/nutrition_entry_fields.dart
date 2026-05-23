@@ -9,6 +9,7 @@ class NutritionEntryFields extends StatelessWidget {
   final TextEditingController proteinController;
   final TextEditingController carbsController;
   final TextEditingController fatController;
+  final TextEditingController? fiberController;
   final String nameLabel;
   final String? Function(String?)? nameValidator;
   final String? Function(String?)? caloriesValidator;
@@ -23,6 +24,7 @@ class NutritionEntryFields extends StatelessWidget {
     required this.proteinController,
     required this.carbsController,
     required this.fatController,
+    this.fiberController,
     required this.nameLabel,
     this.nameValidator,
     this.caloriesValidator,
@@ -109,6 +111,21 @@ class NutritionEntryFields extends StatelessWidget {
             ),
           ],
         ),
+        if (fiberController != null) ...[
+          const SizedBox(height: AppTheme.spaceSM2),
+          TextFormField(
+            controller: fiberController,
+            decoration: InputDecoration(
+              labelText: l10n.fiber,
+              suffixText: 'g',
+              border: border,
+            ),
+            keyboardType: const TextInputType.numberWithOptions(
+              decimal: true,
+            ),
+            validator: macroValidator,
+          ),
+        ],
       ],
     );
   }

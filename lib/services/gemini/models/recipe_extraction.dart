@@ -8,6 +8,7 @@ class RecipeExtraction {
   final double totalProtein;
   final double totalCarbs;
   final double totalFat;
+  final double totalFiber;
 
   RecipeExtraction({
     required this.recipeName,
@@ -17,6 +18,7 @@ class RecipeExtraction {
     required this.totalProtein,
     required this.totalCarbs,
     required this.totalFat,
+    this.totalFiber = 0,
   });
 
   factory RecipeExtraction.empty() => RecipeExtraction(
@@ -27,6 +29,7 @@ class RecipeExtraction {
         totalProtein: 0,
         totalCarbs: 0,
         totalFat: 0,
+        totalFiber: 0,
       );
 
   bool get isEmpty => ingredients.isEmpty;
@@ -36,4 +39,5 @@ class RecipeExtraction {
   double get proteinPerServing => servings > 0 ? totalProtein / servings : 0;
   double get carbsPerServing => servings > 0 ? totalCarbs / servings : 0;
   double get fatPerServing => servings > 0 ? totalFat / servings : 0;
+  double get fiberPerServing => servings > 0 ? totalFiber / servings : 0;
 }

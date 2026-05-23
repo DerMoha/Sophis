@@ -76,11 +76,13 @@ class _MealSectionContent extends StatelessWidget {
     var totalProtein = 0.0;
     var totalCarbs = 0.0;
     var totalFat = 0.0;
+    var totalFiber = 0.0;
     for (final entry in entries) {
       total += entry.calories;
       totalProtein += entry.protein;
       totalCarbs += entry.carbs;
       totalFat += entry.fat;
+      totalFiber += entry.fiber;
     }
 
     return MealCard(
@@ -92,6 +94,7 @@ class _MealSectionContent extends StatelessWidget {
       protein: totalProtein,
       carbs: totalCarbs,
       fat: totalFat,
+      fiber: totalFiber,
       onHeaderTap: () => Navigator.push(
         context,
         AppTheme.slideRoute(
@@ -197,6 +200,7 @@ class _MealSectionContent extends StatelessWidget {
       protein: entry.protein,
       carbs: entry.carbs,
       fat: entry.fat,
+      fiber: entry.fiber,
       onLongPress: () => _showEntryOptions(context, l10n, entry),
     );
   }

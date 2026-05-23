@@ -10,6 +10,7 @@ class PlannedMeal {
   final double protein;
   final double carbs;
   final double fat;
+  final double fiber;
   final String? recipeId; // If from a recipe
   final double servings; // Number of servings (for recipes)
   final List<PlannedMealIngredient> ingredients; // For shopping list
@@ -23,6 +24,7 @@ class PlannedMeal {
     required this.protein,
     required this.carbs,
     required this.fat,
+    this.fiber = 0,
     this.recipeId,
     this.servings = 1,
     this.ingredients = const [],
@@ -40,6 +42,7 @@ class PlannedMeal {
         'protein': protein,
         'carbs': carbs,
         'fat': fat,
+        'fiber': fiber,
         'recipeId': recipeId,
         'servings': servings,
         'ingredients': ingredients.map((i) => i.toJson()).toList(),
@@ -54,6 +57,7 @@ class PlannedMeal {
         protein: (json['protein'] as num).toDouble(),
         carbs: (json['carbs'] as num).toDouble(),
         fat: (json['fat'] as num).toDouble(),
+        fiber: (json['fiber'] as num?)?.toDouble() ?? 0,
         recipeId: json['recipeId'],
         servings: (json['servings'] as num?)?.toDouble() ?? 1,
         ingredients: (json['ingredients'] as List?)
@@ -70,6 +74,7 @@ class PlannedMeal {
     double? protein,
     double? carbs,
     double? fat,
+    double? fiber,
     String? recipeId,
     double? servings,
     List<PlannedMealIngredient>? ingredients,
@@ -83,6 +88,7 @@ class PlannedMeal {
         protein: protein ?? this.protein,
         carbs: carbs ?? this.carbs,
         fat: fat ?? this.fat,
+        fiber: fiber ?? this.fiber,
         recipeId: recipeId ?? this.recipeId,
         servings: servings ?? this.servings,
         ingredients: ingredients ?? this.ingredients,

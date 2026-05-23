@@ -184,8 +184,9 @@ class OpenFoodFactsService {
     }
   }
 
-  /// Lookup a product by barcode on the German OpenFoodFacts endpoint
-  Future<FoodItem?> lookupBarcodeDe(String barcode) async {
+  /// Lookup a product by barcode on the German OpenFoodFacts endpoint.
+  /// Returns Success(FoodItem) if found, Success(null) if not found, or Failure on error.
+  Future<ServiceResult<FoodItem?>> lookupBarcodeDe(String barcode) async {
     try {
       final url = Uri.https(
         _deHost,
@@ -199,24 +200,55 @@ class OpenFoodFactsService {
           .get(url, headers: _defaultHeaders)
           .timeout(_requestTimeout);
 
-      if (response.statusCode != 200) return null;
+      if (response.statusCode == 429) {
+        return const Failure(
+          ServiceErrorType.rateLimited,
+          'Too many requests, try again later',
+        );
+      }
+      if (response.statusCode >= 500) {
+        return Failure(
+          ServiceErrorType.unknown,
+          'Server returned status ${response.statusCode}',
+        );
+      }
+      if (response.statusCode != 200) {
+        return const Success(null);
+      }
 
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       if (data['status'] != 'success' &&
           data['status'] != 1 &&
           data['status_verbose'] != 'product found') {
-        return null;
+        return const Success(null);
       }
 
-      return _parseProduct(data['product'] as Map<String, dynamic>?);
+      final product = _parseProduct(data['product'] as Map<String, dynamic>?);
+      return Success(product);
+    } on SocketException catch (e) {
+      debugPrint(
+        'OpenFoodFacts DE barcode lookup network error for "$barcode": $e',
+      );
+      return Failure(ServiceErrorType.network, e.message);
+    } on TimeoutException {
+      debugPrint('OpenFoodFacts DE barcode lookup timeout for "$barcode"');
+      return const Failure(ServiceErrorType.network, 'Request timed out');
+    } on FormatException catch (e) {
+      debugPrint(
+        'OpenFoodFacts DE barcode lookup parse error for "$barcode": $e',
+      );
+      return Failure(ServiceErrorType.parseError, e.message);
     } catch (e) {
-      debugPrint('OpenFoodFacts DE barcode lookup failed for "$barcode": $e');
-      return null;
+      debugPrint(
+        'OpenFoodFacts DE barcode lookup failed for "$barcode": $e',
+      );
+      return Failure(ServiceErrorType.unknown, e.toString());
     }
   }
 
-  /// Lookup a product by barcode on the World OpenFoodFacts endpoint
-  Future<FoodItem?> lookupBarcode(String barcode) async {
+  /// Lookup a product by barcode on the World OpenFoodFacts endpoint.
+  /// Returns Success(FoodItem) if found, Success(null) if not found, or Failure on error.
+  Future<ServiceResult<FoodItem?>> lookupBarcode(String barcode) async {
     try {
       final url = Uri.https(
         _worldHost,
@@ -230,21 +262,49 @@ class OpenFoodFactsService {
           .get(url, headers: _defaultHeaders)
           .timeout(_requestTimeout);
 
-      if (response.statusCode != 200) return null;
+      if (response.statusCode == 429) {
+        return const Failure(
+          ServiceErrorType.rateLimited,
+          'Too many requests, try again later',
+        );
+      }
+      if (response.statusCode >= 500) {
+        return Failure(
+          ServiceErrorType.unknown,
+          'Server returned status ${response.statusCode}',
+        );
+      }
+      if (response.statusCode != 200) {
+        return const Success(null);
+      }
 
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       if (data['status'] != 'success' &&
           data['status'] != 1 &&
           data['status_verbose'] != 'product found') {
-        return null;
+        return const Success(null);
       }
 
-      return _parseProduct(data['product'] as Map<String, dynamic>?);
+      final product = _parseProduct(data['product'] as Map<String, dynamic>?);
+      return Success(product);
+    } on SocketException catch (e) {
+      debugPrint(
+        'OpenFoodFacts World barcode lookup network error for "$barcode": $e',
+      );
+      return Failure(ServiceErrorType.network, e.message);
+    } on TimeoutException {
+      debugPrint('OpenFoodFacts World barcode lookup timeout for "$barcode"');
+      return const Failure(ServiceErrorType.network, 'Request timed out');
+    } on FormatException catch (e) {
+      debugPrint(
+        'OpenFoodFacts World barcode lookup parse error for "$barcode": $e',
+      );
+      return Failure(ServiceErrorType.parseError, e.message);
     } catch (e) {
       debugPrint(
         'OpenFoodFacts World barcode lookup failed for "$barcode": $e',
       );
-      return null;
+      return Failure(ServiceErrorType.unknown, e.toString());
     }
   }
 
@@ -266,6 +326,7 @@ class OpenFoodFactsService {
     final protein = _parseNutrient(nutrients, 'proteins_100g') ?? 0;
     final carbs = _parseNutrient(nutrients, 'carbohydrates_100g') ?? 0;
     final fat = _parseNutrient(nutrients, 'fat_100g') ?? 0;
+    final fiber = _parseNutrient(nutrients, 'fiber_100g') ?? 0;
 
     // Extract brand
     final brand = product['brands']?.toString();
@@ -296,6 +357,7 @@ class OpenFoodFactsService {
       proteinPer100g: protein,
       carbsPer100g: carbs,
       fatPer100g: fat,
+      fiberPer100g: fiber,
       barcode: product['code'],
       brand: brand,
       imageUrl: imageUrl,

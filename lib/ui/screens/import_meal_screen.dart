@@ -170,6 +170,12 @@ class _ImportMealScreenState extends State<ImportMealScreen> {
                                 l10n.fatShort,
                                 AppTheme.fat,
                               ),
+                              _buildMacroChip(
+                                theme,
+                                '${meal.totalFiber.round()}g',
+                                l10n.fiberShort,
+                                AppTheme.fiber,
+                              ),
                             ],
                           ),
                         ],

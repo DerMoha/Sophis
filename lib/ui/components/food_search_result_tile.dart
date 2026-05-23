@@ -229,6 +229,12 @@ class _MacroChips extends StatelessWidget {
           value: item.fatPer100g,
           color: AppTheme.fat,
         ),
+        const SizedBox(width: 6),
+        _MacroChip(
+          label: 'Fi',
+          value: item.fiberPer100g,
+          color: AppTheme.fiber,
+        ),
       ],
     );
   }

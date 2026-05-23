@@ -172,6 +172,8 @@ class MealMacrosSettingsScreen extends StatelessWidget {
                       _buildMiniMacro('C', 45, AppTheme.carbs, theme),
                       const SizedBox(width: 8),
                       _buildMiniMacro('F', 15, AppTheme.fat, theme),
+                      const SizedBox(width: 8),
+                      _buildMiniMacro('Fi', 6, AppTheme.fiber, theme),
                     ],
                   ),
                 ],

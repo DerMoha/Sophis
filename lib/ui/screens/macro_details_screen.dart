@@ -24,6 +24,7 @@ class MacroDetailsScreen extends StatelessWidget {
     final proteinProgress = totals.protein / goals.protein;
     final carbsProgress = totals.carbs / goals.carbs;
     final fatProgress = totals.fat / goals.fat;
+    final fiberProgress = goals.fiber > 0 ? totals.fiber / goals.fiber : 0.0;
 
     return Scaffold(
       appBar: AppBar(
@@ -91,6 +92,22 @@ class MacroDetailsScreen extends StatelessWidget {
                       .water_drop_rounded, // Assuming fat uses droplet or similar
                 ),
               ),
+              const SizedBox(height: AppTheme.spaceLG2),
+
+              // Fiber Section
+              if (goals.fiber > 0)
+                FadeInSlide(
+                  index: 3,
+                  child: _buildMacroDeepDive(
+                    context,
+                    label: l10n.fiber,
+                    current: totals.fiber,
+                    goal: goals.fiber,
+                    color: AppTheme.fiber,
+                    progress: fiberProgress,
+                    icon: Icons.grain_rounded,
+                  ),
+                ),
             ],
           ),
         ),

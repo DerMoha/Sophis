@@ -6,10 +6,8 @@ import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/food_item.dart';
 import 'package:sophis/models/shareable_meal.dart';
 import 'package:sophis/services/barcode_lookup_service.dart';
-import 'package:sophis/services/brocade_service.dart';
 import 'package:sophis/services/food_entry_factory.dart';
 import 'package:sophis/services/meal_sharing_service.dart';
-import 'package:sophis/services/openfoodfacts_service.dart';
 import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/services/service_result.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
@@ -29,27 +27,17 @@ class BarcodeScannerScreen extends StatefulWidget {
 
 class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
   final MobileScannerController _controller = MobileScannerController();
-  late final BarcodeLookupService _lookupService;
-
   bool _isProcessing = false;
   String? _lastScannedCode;
-
-  @override
-  void initState() {
-    super.initState();
-    final db = context.read<NutritionProvider>().databaseService;
-    _lookupService = BarcodeLookupService(
-      db: db,
-      offService: OpenFoodFactsService(),
-      brocadeService: BrocadeService(),
-    );
-  }
 
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
   }
+
+  BarcodeLookupService get _lookupService =>
+      context.read<BarcodeLookupService>();
 
   Future<void> _onBarcodeDetected(BarcodeCapture capture) async {
     if (_isProcessing) return;
@@ -69,7 +57,6 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
     if (MealSharingService.isShareLink(barcode)) {
       final meal = ShareableMeal.fromDeepLink(barcode);
       if (meal != null && mounted) {
-        // Navigate to import screen and close scanner
         Navigator.pushReplacement(
           context,
           AppTheme.slideRoute(ImportMealScreen(meal: meal)),
@@ -81,7 +68,10 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
           SnackBar(content: Text(l10n.invalidShareData)),
         );
         _controller.start();
-        setState(() => _isProcessing = false);
+        setState(() {
+          _isProcessing = false;
+          _lastScannedCode = null;
+        });
         return;
       }
     }
@@ -104,7 +94,10 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
           SnackBar(content: Text(l10n.errorGeneric(message))),
         );
         _controller.start();
-        setState(() => _isProcessing = false);
+        setState(() {
+          _isProcessing = false;
+          _lastScannedCode = null;
+        });
     }
   }
 
@@ -135,7 +128,10 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
       ),
     ).whenComplete(() {
       _controller.start();
-      setState(() => _isProcessing = false);
+      setState(() {
+        _isProcessing = false;
+        _lastScannedCode = null;
+      });
     });
   }
 
@@ -159,7 +155,10 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
     ).whenComplete(() {
       // Resume scanning when sheet is closed
       _controller.start();
-      setState(() => _isProcessing = false);
+      setState(() {
+        _isProcessing = false;
+        _lastScannedCode = null;
+      });
     });
   }
 

@@ -13,6 +13,7 @@ class EditableFoodResult {
   final TextEditingController proteinController;
   final TextEditingController carbsController;
   final TextEditingController fatController;
+  final TextEditingController fiberController;
 
   bool isAdded = false;
   bool isModified = false;
@@ -35,6 +36,9 @@ class EditableFoodResult {
         ),
         fatController = TextEditingController(
           text: NumberUtils.formatNutrient(analysis.fat),
+        ),
+        fiberController = TextEditingController(
+          text: NumberUtils.formatNutrient(analysis.fiber),
         );
 
   TextEditingController get controller => nameController;
@@ -51,6 +55,7 @@ class EditableFoodResult {
           double.tryParse(proteinController.text) ?? currentAnalysis.protein,
       carbs: double.tryParse(carbsController.text) ?? currentAnalysis.carbs,
       fat: double.tryParse(fatController.text) ?? currentAnalysis.fat,
+      fiber: double.tryParse(fiberController.text) ?? currentAnalysis.fiber,
     );
   }
 
@@ -86,5 +91,6 @@ class EditableFoodResult {
     proteinController.dispose();
     carbsController.dispose();
     fatController.dispose();
+    fiberController.dispose();
   }
 }

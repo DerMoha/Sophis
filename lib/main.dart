@@ -40,15 +40,17 @@ void main() async {
 
   final databaseService = DatabaseService();
 
+  final barcodeLookupService = BarcodeLookupService(
+    db: databaseService,
+    offService: OpenFoodFactsService(),
+    brocadeService: BrocadeService(),
+  );
+
   final nutritionProvider = NutritionProvider(storageService, databaseService);
   nutritionProvider.attachSettingsProvider(settingsProvider);
 
   // Clean up expired barcode cache in background
-  BarcodeLookupService(
-    db: databaseService,
-    offService: OpenFoodFactsService(),
-    brocadeService: BrocadeService(),
-  ).cleanExpiredCache();
+  barcodeLookupService.cleanExpiredCache();
 
   runApp(
     MultiProvider(
@@ -63,6 +65,7 @@ void main() async {
           create: (_) =>
               SupplementsProvider(databaseService, notificationService),
         ),
+        Provider<BarcodeLookupService>.value(value: barcodeLookupService),
       ],
       child: const SophisApp(),
     ),

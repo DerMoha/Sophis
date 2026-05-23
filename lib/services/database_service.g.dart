@@ -40,6 +40,13 @@ class $FoodsTable extends Foods with TableInfo<$FoodsTable, Food> {
   late final GeneratedColumn<double> fat = GeneratedColumn<double>(
       'fat', aliasedName, false,
       type: DriftSqlType.double, requiredDuringInsert: true);
+  static const VerificationMeta _fiberMeta = const VerificationMeta('fiber');
+  @override
+  late final GeneratedColumn<double> fiber = GeneratedColumn<double>(
+      'fiber', aliasedName, false,
+      type: DriftSqlType.double,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
   static const VerificationMeta _timestampMeta =
       const VerificationMeta('timestamp');
   @override
@@ -53,7 +60,7 @@ class $FoodsTable extends Foods with TableInfo<$FoodsTable, Food> {
       type: DriftSqlType.string, requiredDuringInsert: true);
   @override
   List<GeneratedColumn> get $columns =>
-      [id, name, calories, protein, carbs, fat, timestamp, meal];
+      [id, name, calories, protein, carbs, fat, fiber, timestamp, meal];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -99,6 +106,10 @@ class $FoodsTable extends Foods with TableInfo<$FoodsTable, Food> {
     } else if (isInserting) {
       context.missing(_fatMeta);
     }
+    if (data.containsKey('fiber')) {
+      context.handle(
+          _fiberMeta, fiber.isAcceptableOrUnknown(data['fiber']!, _fiberMeta));
+    }
     if (data.containsKey('timestamp')) {
       context.handle(_timestampMeta,
           timestamp.isAcceptableOrUnknown(data['timestamp']!, _timestampMeta));
@@ -132,6 +143,8 @@ class $FoodsTable extends Foods with TableInfo<$FoodsTable, Food> {
           .read(DriftSqlType.double, data['${effectivePrefix}carbs'])!,
       fat: attachedDatabase.typeMapping
           .read(DriftSqlType.double, data['${effectivePrefix}fat'])!,
+      fiber: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}fiber'])!,
       timestamp: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}timestamp'])!,
       meal: attachedDatabase.typeMapping
@@ -152,6 +165,7 @@ class Food extends DataClass implements Insertable<Food> {
   final double protein;
   final double carbs;
   final double fat;
+  final double fiber;
   final DateTime timestamp;
   final String meal;
   const Food(
@@ -161,6 +175,7 @@ class Food extends DataClass implements Insertable<Food> {
       required this.protein,
       required this.carbs,
       required this.fat,
+      required this.fiber,
       required this.timestamp,
       required this.meal});
   @override
@@ -172,6 +187,7 @@ class Food extends DataClass implements Insertable<Food> {
     map['protein'] = Variable<double>(protein);
     map['carbs'] = Variable<double>(carbs);
     map['fat'] = Variable<double>(fat);
+    map['fiber'] = Variable<double>(fiber);
     map['timestamp'] = Variable<DateTime>(timestamp);
     map['meal'] = Variable<String>(meal);
     return map;
@@ -185,6 +201,7 @@ class Food extends DataClass implements Insertable<Food> {
       protein: Value(protein),
       carbs: Value(carbs),
       fat: Value(fat),
+      fiber: Value(fiber),
       timestamp: Value(timestamp),
       meal: Value(meal),
     );
@@ -200,6 +217,7 @@ class Food extends DataClass implements Insertable<Food> {
       protein: serializer.fromJson<double>(json['protein']),
       carbs: serializer.fromJson<double>(json['carbs']),
       fat: serializer.fromJson<double>(json['fat']),
+      fiber: serializer.fromJson<double>(json['fiber']),
       timestamp: serializer.fromJson<DateTime>(json['timestamp']),
       meal: serializer.fromJson<String>(json['meal']),
     );
@@ -214,6 +232,7 @@ class Food extends DataClass implements Insertable<Food> {
       'protein': serializer.toJson<double>(protein),
       'carbs': serializer.toJson<double>(carbs),
       'fat': serializer.toJson<double>(fat),
+      'fiber': serializer.toJson<double>(fiber),
       'timestamp': serializer.toJson<DateTime>(timestamp),
       'meal': serializer.toJson<String>(meal),
     };
@@ -226,6 +245,7 @@ class Food extends DataClass implements Insertable<Food> {
           double? protein,
           double? carbs,
           double? fat,
+          double? fiber,
           DateTime? timestamp,
           String? meal}) =>
       Food(
@@ -235,6 +255,7 @@ class Food extends DataClass implements Insertable<Food> {
         protein: protein ?? this.protein,
         carbs: carbs ?? this.carbs,
         fat: fat ?? this.fat,
+        fiber: fiber ?? this.fiber,
         timestamp: timestamp ?? this.timestamp,
         meal: meal ?? this.meal,
       );
@@ -246,6 +267,7 @@ class Food extends DataClass implements Insertable<Food> {
       protein: data.protein.present ? data.protein.value : this.protein,
       carbs: data.carbs.present ? data.carbs.value : this.carbs,
       fat: data.fat.present ? data.fat.value : this.fat,
+      fiber: data.fiber.present ? data.fiber.value : this.fiber,
       timestamp: data.timestamp.present ? data.timestamp.value : this.timestamp,
       meal: data.meal.present ? data.meal.value : this.meal,
     );
@@ -260,6 +282,7 @@ class Food extends DataClass implements Insertable<Food> {
           ..write('protein: $protein, ')
           ..write('carbs: $carbs, ')
           ..write('fat: $fat, ')
+          ..write('fiber: $fiber, ')
           ..write('timestamp: $timestamp, ')
           ..write('meal: $meal')
           ..write(')'))
@@ -267,8 +290,8 @@ class Food extends DataClass implements Insertable<Food> {
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, name, calories, protein, carbs, fat, timestamp, meal);
+  int get hashCode => Object.hash(
+      id, name, calories, protein, carbs, fat, fiber, timestamp, meal);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -279,6 +302,7 @@ class Food extends DataClass implements Insertable<Food> {
           other.protein == this.protein &&
           other.carbs == this.carbs &&
           other.fat == this.fat &&
+          other.fiber == this.fiber &&
           other.timestamp == this.timestamp &&
           other.meal == this.meal);
 }
@@ -290,6 +314,7 @@ class FoodsCompanion extends UpdateCompanion<Food> {
   final Value<double> protein;
   final Value<double> carbs;
   final Value<double> fat;
+  final Value<double> fiber;
   final Value<DateTime> timestamp;
   final Value<String> meal;
   final Value<int> rowid;
@@ -300,6 +325,7 @@ class FoodsCompanion extends UpdateCompanion<Food> {
     this.protein = const Value.absent(),
     this.carbs = const Value.absent(),
     this.fat = const Value.absent(),
+    this.fiber = const Value.absent(),
     this.timestamp = const Value.absent(),
     this.meal = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -311,6 +337,7 @@ class FoodsCompanion extends UpdateCompanion<Food> {
     required double protein,
     required double carbs,
     required double fat,
+    this.fiber = const Value.absent(),
     required DateTime timestamp,
     required String meal,
     this.rowid = const Value.absent(),
@@ -329,6 +356,7 @@ class FoodsCompanion extends UpdateCompanion<Food> {
     Expression<double>? protein,
     Expression<double>? carbs,
     Expression<double>? fat,
+    Expression<double>? fiber,
     Expression<DateTime>? timestamp,
     Expression<String>? meal,
     Expression<int>? rowid,
@@ -340,6 +368,7 @@ class FoodsCompanion extends UpdateCompanion<Food> {
       if (protein != null) 'protein': protein,
       if (carbs != null) 'carbs': carbs,
       if (fat != null) 'fat': fat,
+      if (fiber != null) 'fiber': fiber,
       if (timestamp != null) 'timestamp': timestamp,
       if (meal != null) 'meal': meal,
       if (rowid != null) 'rowid': rowid,
@@ -353,6 +382,7 @@ class FoodsCompanion extends UpdateCompanion<Food> {
       Value<double>? protein,
       Value<double>? carbs,
       Value<double>? fat,
+      Value<double>? fiber,
       Value<DateTime>? timestamp,
       Value<String>? meal,
       Value<int>? rowid}) {
@@ -363,6 +393,7 @@ class FoodsCompanion extends UpdateCompanion<Food> {
       protein: protein ?? this.protein,
       carbs: carbs ?? this.carbs,
       fat: fat ?? this.fat,
+      fiber: fiber ?? this.fiber,
       timestamp: timestamp ?? this.timestamp,
       meal: meal ?? this.meal,
       rowid: rowid ?? this.rowid,
@@ -390,6 +421,9 @@ class FoodsCompanion extends UpdateCompanion<Food> {
     if (fat.present) {
       map['fat'] = Variable<double>(fat.value);
     }
+    if (fiber.present) {
+      map['fiber'] = Variable<double>(fiber.value);
+    }
     if (timestamp.present) {
       map['timestamp'] = Variable<DateTime>(timestamp.value);
     }
@@ -411,6 +445,7 @@ class FoodsCompanion extends UpdateCompanion<Food> {
           ..write('protein: $protein, ')
           ..write('carbs: $carbs, ')
           ..write('fat: $fat, ')
+          ..write('fiber: $fiber, ')
           ..write('timestamp: $timestamp, ')
           ..write('meal: $meal, ')
           ..write('rowid: $rowid')
@@ -1830,7 +1865,9 @@ class $BarcodeProductsTable extends BarcodeProducts
   @override
   late final GeneratedColumn<String> name = GeneratedColumn<String>(
       'name', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(''));
   static const VerificationMeta _brandMeta = const VerificationMeta('brand');
   @override
   late final GeneratedColumn<String> brand = GeneratedColumn<String>(
@@ -1847,25 +1884,41 @@ class $BarcodeProductsTable extends BarcodeProducts
   @override
   late final GeneratedColumn<double> caloriesPer100g = GeneratedColumn<double>(
       'calories_per100g', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+      type: DriftSqlType.double,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
   static const VerificationMeta _proteinPer100gMeta =
       const VerificationMeta('proteinPer100g');
   @override
   late final GeneratedColumn<double> proteinPer100g = GeneratedColumn<double>(
       'protein_per100g', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+      type: DriftSqlType.double,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
   static const VerificationMeta _carbsPer100gMeta =
       const VerificationMeta('carbsPer100g');
   @override
   late final GeneratedColumn<double> carbsPer100g = GeneratedColumn<double>(
       'carbs_per100g', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+      type: DriftSqlType.double,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
   static const VerificationMeta _fatPer100gMeta =
       const VerificationMeta('fatPer100g');
   @override
   late final GeneratedColumn<double> fatPer100g = GeneratedColumn<double>(
       'fat_per100g', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+      type: DriftSqlType.double,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  static const VerificationMeta _fiberPer100gMeta =
+      const VerificationMeta('fiberPer100g');
+  @override
+  late final GeneratedColumn<double> fiberPer100g = GeneratedColumn<double>(
+      'fiber_per100g', aliasedName, false,
+      type: DriftSqlType.double,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
   static const VerificationMeta _imageUrlMeta =
       const VerificationMeta('imageUrl');
   @override
@@ -1878,6 +1931,14 @@ class $BarcodeProductsTable extends BarcodeProducts
   late final GeneratedColumn<String> servingsJson = GeneratedColumn<String>(
       'servings_json', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _cacheStatusMeta =
+      const VerificationMeta('cacheStatus');
+  @override
+  late final GeneratedColumn<String> cacheStatus = GeneratedColumn<String>(
+      'cache_status', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('found'));
   static const VerificationMeta _isUserCorrectedMeta =
       const VerificationMeta('isUserCorrected');
   @override
@@ -1911,8 +1972,10 @@ class $BarcodeProductsTable extends BarcodeProducts
         proteinPer100g,
         carbsPer100g,
         fatPer100g,
+        fiberPer100g,
         imageUrl,
         servingsJson,
+        cacheStatus,
         isUserCorrected,
         cachedAt,
         source
@@ -1936,8 +1999,6 @@ class $BarcodeProductsTable extends BarcodeProducts
     if (data.containsKey('name')) {
       context.handle(
           _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
-    } else if (isInserting) {
-      context.missing(_nameMeta);
     }
     if (data.containsKey('brand')) {
       context.handle(
@@ -1952,32 +2013,30 @@ class $BarcodeProductsTable extends BarcodeProducts
           _caloriesPer100gMeta,
           caloriesPer100g.isAcceptableOrUnknown(
               data['calories_per100g']!, _caloriesPer100gMeta));
-    } else if (isInserting) {
-      context.missing(_caloriesPer100gMeta);
     }
     if (data.containsKey('protein_per100g')) {
       context.handle(
           _proteinPer100gMeta,
           proteinPer100g.isAcceptableOrUnknown(
               data['protein_per100g']!, _proteinPer100gMeta));
-    } else if (isInserting) {
-      context.missing(_proteinPer100gMeta);
     }
     if (data.containsKey('carbs_per100g')) {
       context.handle(
           _carbsPer100gMeta,
           carbsPer100g.isAcceptableOrUnknown(
               data['carbs_per100g']!, _carbsPer100gMeta));
-    } else if (isInserting) {
-      context.missing(_carbsPer100gMeta);
     }
     if (data.containsKey('fat_per100g')) {
       context.handle(
           _fatPer100gMeta,
           fatPer100g.isAcceptableOrUnknown(
               data['fat_per100g']!, _fatPer100gMeta));
-    } else if (isInserting) {
-      context.missing(_fatPer100gMeta);
+    }
+    if (data.containsKey('fiber_per100g')) {
+      context.handle(
+          _fiberPer100gMeta,
+          fiberPer100g.isAcceptableOrUnknown(
+              data['fiber_per100g']!, _fiberPer100gMeta));
     }
     if (data.containsKey('image_url')) {
       context.handle(_imageUrlMeta,
@@ -1988,6 +2047,12 @@ class $BarcodeProductsTable extends BarcodeProducts
           _servingsJsonMeta,
           servingsJson.isAcceptableOrUnknown(
               data['servings_json']!, _servingsJsonMeta));
+    }
+    if (data.containsKey('cache_status')) {
+      context.handle(
+          _cacheStatusMeta,
+          cacheStatus.isAcceptableOrUnknown(
+              data['cache_status']!, _cacheStatusMeta));
     }
     if (data.containsKey('is_user_corrected')) {
       context.handle(
@@ -2030,10 +2095,14 @@ class $BarcodeProductsTable extends BarcodeProducts
           .read(DriftSqlType.double, data['${effectivePrefix}carbs_per100g'])!,
       fatPer100g: attachedDatabase.typeMapping
           .read(DriftSqlType.double, data['${effectivePrefix}fat_per100g'])!,
+      fiberPer100g: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}fiber_per100g'])!,
       imageUrl: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}image_url']),
       servingsJson: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}servings_json']),
+      cacheStatus: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}cache_status'])!,
       isUserCorrected: attachedDatabase.typeMapping.read(
           DriftSqlType.bool, data['${effectivePrefix}is_user_corrected'])!,
       cachedAt: attachedDatabase.typeMapping
@@ -2058,8 +2127,10 @@ class BarcodeProduct extends DataClass implements Insertable<BarcodeProduct> {
   final double proteinPer100g;
   final double carbsPer100g;
   final double fatPer100g;
+  final double fiberPer100g;
   final String? imageUrl;
   final String? servingsJson;
+  final String cacheStatus;
   final bool isUserCorrected;
   final DateTime cachedAt;
   final String source;
@@ -2072,8 +2143,10 @@ class BarcodeProduct extends DataClass implements Insertable<BarcodeProduct> {
       required this.proteinPer100g,
       required this.carbsPer100g,
       required this.fatPer100g,
+      required this.fiberPer100g,
       this.imageUrl,
       this.servingsJson,
+      required this.cacheStatus,
       required this.isUserCorrected,
       required this.cachedAt,
       required this.source});
@@ -2092,12 +2165,14 @@ class BarcodeProduct extends DataClass implements Insertable<BarcodeProduct> {
     map['protein_per100g'] = Variable<double>(proteinPer100g);
     map['carbs_per100g'] = Variable<double>(carbsPer100g);
     map['fat_per100g'] = Variable<double>(fatPer100g);
+    map['fiber_per100g'] = Variable<double>(fiberPer100g);
     if (!nullToAbsent || imageUrl != null) {
       map['image_url'] = Variable<String>(imageUrl);
     }
     if (!nullToAbsent || servingsJson != null) {
       map['servings_json'] = Variable<String>(servingsJson);
     }
+    map['cache_status'] = Variable<String>(cacheStatus);
     map['is_user_corrected'] = Variable<bool>(isUserCorrected);
     map['cached_at'] = Variable<DateTime>(cachedAt);
     map['source'] = Variable<String>(source);
@@ -2117,12 +2192,14 @@ class BarcodeProduct extends DataClass implements Insertable<BarcodeProduct> {
       proteinPer100g: Value(proteinPer100g),
       carbsPer100g: Value(carbsPer100g),
       fatPer100g: Value(fatPer100g),
+      fiberPer100g: Value(fiberPer100g),
       imageUrl: imageUrl == null && nullToAbsent
           ? const Value.absent()
           : Value(imageUrl),
       servingsJson: servingsJson == null && nullToAbsent
           ? const Value.absent()
           : Value(servingsJson),
+      cacheStatus: Value(cacheStatus),
       isUserCorrected: Value(isUserCorrected),
       cachedAt: Value(cachedAt),
       source: Value(source),
@@ -2141,8 +2218,10 @@ class BarcodeProduct extends DataClass implements Insertable<BarcodeProduct> {
       proteinPer100g: serializer.fromJson<double>(json['proteinPer100g']),
       carbsPer100g: serializer.fromJson<double>(json['carbsPer100g']),
       fatPer100g: serializer.fromJson<double>(json['fatPer100g']),
+      fiberPer100g: serializer.fromJson<double>(json['fiberPer100g']),
       imageUrl: serializer.fromJson<String?>(json['imageUrl']),
       servingsJson: serializer.fromJson<String?>(json['servingsJson']),
+      cacheStatus: serializer.fromJson<String>(json['cacheStatus']),
       isUserCorrected: serializer.fromJson<bool>(json['isUserCorrected']),
       cachedAt: serializer.fromJson<DateTime>(json['cachedAt']),
       source: serializer.fromJson<String>(json['source']),
@@ -2160,8 +2239,10 @@ class BarcodeProduct extends DataClass implements Insertable<BarcodeProduct> {
       'proteinPer100g': serializer.toJson<double>(proteinPer100g),
       'carbsPer100g': serializer.toJson<double>(carbsPer100g),
       'fatPer100g': serializer.toJson<double>(fatPer100g),
+      'fiberPer100g': serializer.toJson<double>(fiberPer100g),
       'imageUrl': serializer.toJson<String?>(imageUrl),
       'servingsJson': serializer.toJson<String?>(servingsJson),
+      'cacheStatus': serializer.toJson<String>(cacheStatus),
       'isUserCorrected': serializer.toJson<bool>(isUserCorrected),
       'cachedAt': serializer.toJson<DateTime>(cachedAt),
       'source': serializer.toJson<String>(source),
@@ -2177,8 +2258,10 @@ class BarcodeProduct extends DataClass implements Insertable<BarcodeProduct> {
           double? proteinPer100g,
           double? carbsPer100g,
           double? fatPer100g,
+          double? fiberPer100g,
           Value<String?> imageUrl = const Value.absent(),
           Value<String?> servingsJson = const Value.absent(),
+          String? cacheStatus,
           bool? isUserCorrected,
           DateTime? cachedAt,
           String? source}) =>
@@ -2191,9 +2274,11 @@ class BarcodeProduct extends DataClass implements Insertable<BarcodeProduct> {
         proteinPer100g: proteinPer100g ?? this.proteinPer100g,
         carbsPer100g: carbsPer100g ?? this.carbsPer100g,
         fatPer100g: fatPer100g ?? this.fatPer100g,
+        fiberPer100g: fiberPer100g ?? this.fiberPer100g,
         imageUrl: imageUrl.present ? imageUrl.value : this.imageUrl,
         servingsJson:
             servingsJson.present ? servingsJson.value : this.servingsJson,
+        cacheStatus: cacheStatus ?? this.cacheStatus,
         isUserCorrected: isUserCorrected ?? this.isUserCorrected,
         cachedAt: cachedAt ?? this.cachedAt,
         source: source ?? this.source,
@@ -2215,10 +2300,15 @@ class BarcodeProduct extends DataClass implements Insertable<BarcodeProduct> {
           : this.carbsPer100g,
       fatPer100g:
           data.fatPer100g.present ? data.fatPer100g.value : this.fatPer100g,
+      fiberPer100g: data.fiberPer100g.present
+          ? data.fiberPer100g.value
+          : this.fiberPer100g,
       imageUrl: data.imageUrl.present ? data.imageUrl.value : this.imageUrl,
       servingsJson: data.servingsJson.present
           ? data.servingsJson.value
           : this.servingsJson,
+      cacheStatus:
+          data.cacheStatus.present ? data.cacheStatus.value : this.cacheStatus,
       isUserCorrected: data.isUserCorrected.present
           ? data.isUserCorrected.value
           : this.isUserCorrected,
@@ -2238,8 +2328,10 @@ class BarcodeProduct extends DataClass implements Insertable<BarcodeProduct> {
           ..write('proteinPer100g: $proteinPer100g, ')
           ..write('carbsPer100g: $carbsPer100g, ')
           ..write('fatPer100g: $fatPer100g, ')
+          ..write('fiberPer100g: $fiberPer100g, ')
           ..write('imageUrl: $imageUrl, ')
           ..write('servingsJson: $servingsJson, ')
+          ..write('cacheStatus: $cacheStatus, ')
           ..write('isUserCorrected: $isUserCorrected, ')
           ..write('cachedAt: $cachedAt, ')
           ..write('source: $source')
@@ -2257,8 +2349,10 @@ class BarcodeProduct extends DataClass implements Insertable<BarcodeProduct> {
       proteinPer100g,
       carbsPer100g,
       fatPer100g,
+      fiberPer100g,
       imageUrl,
       servingsJson,
+      cacheStatus,
       isUserCorrected,
       cachedAt,
       source);
@@ -2274,8 +2368,10 @@ class BarcodeProduct extends DataClass implements Insertable<BarcodeProduct> {
           other.proteinPer100g == this.proteinPer100g &&
           other.carbsPer100g == this.carbsPer100g &&
           other.fatPer100g == this.fatPer100g &&
+          other.fiberPer100g == this.fiberPer100g &&
           other.imageUrl == this.imageUrl &&
           other.servingsJson == this.servingsJson &&
+          other.cacheStatus == this.cacheStatus &&
           other.isUserCorrected == this.isUserCorrected &&
           other.cachedAt == this.cachedAt &&
           other.source == this.source);
@@ -2290,8 +2386,10 @@ class BarcodeProductsCompanion extends UpdateCompanion<BarcodeProduct> {
   final Value<double> proteinPer100g;
   final Value<double> carbsPer100g;
   final Value<double> fatPer100g;
+  final Value<double> fiberPer100g;
   final Value<String?> imageUrl;
   final Value<String?> servingsJson;
+  final Value<String> cacheStatus;
   final Value<bool> isUserCorrected;
   final Value<DateTime> cachedAt;
   final Value<String> source;
@@ -2305,8 +2403,10 @@ class BarcodeProductsCompanion extends UpdateCompanion<BarcodeProduct> {
     this.proteinPer100g = const Value.absent(),
     this.carbsPer100g = const Value.absent(),
     this.fatPer100g = const Value.absent(),
+    this.fiberPer100g = const Value.absent(),
     this.imageUrl = const Value.absent(),
     this.servingsJson = const Value.absent(),
+    this.cacheStatus = const Value.absent(),
     this.isUserCorrected = const Value.absent(),
     this.cachedAt = const Value.absent(),
     this.source = const Value.absent(),
@@ -2314,25 +2414,22 @@ class BarcodeProductsCompanion extends UpdateCompanion<BarcodeProduct> {
   });
   BarcodeProductsCompanion.insert({
     required String barcode,
-    required String name,
+    this.name = const Value.absent(),
     this.brand = const Value.absent(),
     this.category = const Value.absent(),
-    required double caloriesPer100g,
-    required double proteinPer100g,
-    required double carbsPer100g,
-    required double fatPer100g,
+    this.caloriesPer100g = const Value.absent(),
+    this.proteinPer100g = const Value.absent(),
+    this.carbsPer100g = const Value.absent(),
+    this.fatPer100g = const Value.absent(),
+    this.fiberPer100g = const Value.absent(),
     this.imageUrl = const Value.absent(),
     this.servingsJson = const Value.absent(),
+    this.cacheStatus = const Value.absent(),
     this.isUserCorrected = const Value.absent(),
     required DateTime cachedAt,
     this.source = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : barcode = Value(barcode),
-        name = Value(name),
-        caloriesPer100g = Value(caloriesPer100g),
-        proteinPer100g = Value(proteinPer100g),
-        carbsPer100g = Value(carbsPer100g),
-        fatPer100g = Value(fatPer100g),
         cachedAt = Value(cachedAt);
   static Insertable<BarcodeProduct> custom({
     Expression<String>? barcode,
@@ -2343,8 +2440,10 @@ class BarcodeProductsCompanion extends UpdateCompanion<BarcodeProduct> {
     Expression<double>? proteinPer100g,
     Expression<double>? carbsPer100g,
     Expression<double>? fatPer100g,
+    Expression<double>? fiberPer100g,
     Expression<String>? imageUrl,
     Expression<String>? servingsJson,
+    Expression<String>? cacheStatus,
     Expression<bool>? isUserCorrected,
     Expression<DateTime>? cachedAt,
     Expression<String>? source,
@@ -2359,8 +2458,10 @@ class BarcodeProductsCompanion extends UpdateCompanion<BarcodeProduct> {
       if (proteinPer100g != null) 'protein_per100g': proteinPer100g,
       if (carbsPer100g != null) 'carbs_per100g': carbsPer100g,
       if (fatPer100g != null) 'fat_per100g': fatPer100g,
+      if (fiberPer100g != null) 'fiber_per100g': fiberPer100g,
       if (imageUrl != null) 'image_url': imageUrl,
       if (servingsJson != null) 'servings_json': servingsJson,
+      if (cacheStatus != null) 'cache_status': cacheStatus,
       if (isUserCorrected != null) 'is_user_corrected': isUserCorrected,
       if (cachedAt != null) 'cached_at': cachedAt,
       if (source != null) 'source': source,
@@ -2377,8 +2478,10 @@ class BarcodeProductsCompanion extends UpdateCompanion<BarcodeProduct> {
       Value<double>? proteinPer100g,
       Value<double>? carbsPer100g,
       Value<double>? fatPer100g,
+      Value<double>? fiberPer100g,
       Value<String?>? imageUrl,
       Value<String?>? servingsJson,
+      Value<String>? cacheStatus,
       Value<bool>? isUserCorrected,
       Value<DateTime>? cachedAt,
       Value<String>? source,
@@ -2392,8 +2495,10 @@ class BarcodeProductsCompanion extends UpdateCompanion<BarcodeProduct> {
       proteinPer100g: proteinPer100g ?? this.proteinPer100g,
       carbsPer100g: carbsPer100g ?? this.carbsPer100g,
       fatPer100g: fatPer100g ?? this.fatPer100g,
+      fiberPer100g: fiberPer100g ?? this.fiberPer100g,
       imageUrl: imageUrl ?? this.imageUrl,
       servingsJson: servingsJson ?? this.servingsJson,
+      cacheStatus: cacheStatus ?? this.cacheStatus,
       isUserCorrected: isUserCorrected ?? this.isUserCorrected,
       cachedAt: cachedAt ?? this.cachedAt,
       source: source ?? this.source,
@@ -2428,11 +2533,17 @@ class BarcodeProductsCompanion extends UpdateCompanion<BarcodeProduct> {
     if (fatPer100g.present) {
       map['fat_per100g'] = Variable<double>(fatPer100g.value);
     }
+    if (fiberPer100g.present) {
+      map['fiber_per100g'] = Variable<double>(fiberPer100g.value);
+    }
     if (imageUrl.present) {
       map['image_url'] = Variable<String>(imageUrl.value);
     }
     if (servingsJson.present) {
       map['servings_json'] = Variable<String>(servingsJson.value);
+    }
+    if (cacheStatus.present) {
+      map['cache_status'] = Variable<String>(cacheStatus.value);
     }
     if (isUserCorrected.present) {
       map['is_user_corrected'] = Variable<bool>(isUserCorrected.value);
@@ -2460,8 +2571,10 @@ class BarcodeProductsCompanion extends UpdateCompanion<BarcodeProduct> {
           ..write('proteinPer100g: $proteinPer100g, ')
           ..write('carbsPer100g: $carbsPer100g, ')
           ..write('fatPer100g: $fatPer100g, ')
+          ..write('fiberPer100g: $fiberPer100g, ')
           ..write('imageUrl: $imageUrl, ')
           ..write('servingsJson: $servingsJson, ')
+          ..write('cacheStatus: $cacheStatus, ')
           ..write('isUserCorrected: $isUserCorrected, ')
           ..write('cachedAt: $cachedAt, ')
           ..write('source: $source, ')
@@ -2864,6 +2977,14 @@ class $CustomFoodsTable extends CustomFoods
   late final GeneratedColumn<double> fatPer100g = GeneratedColumn<double>(
       'fat_per100g', aliasedName, false,
       type: DriftSqlType.double, requiredDuringInsert: true);
+  static const VerificationMeta _fiberPer100gMeta =
+      const VerificationMeta('fiberPer100g');
+  @override
+  late final GeneratedColumn<double> fiberPer100g = GeneratedColumn<double>(
+      'fiber_per100g', aliasedName, false,
+      type: DriftSqlType.double,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
   static const VerificationMeta _barcodeMeta =
       const VerificationMeta('barcode');
   @override
@@ -2896,6 +3017,7 @@ class $CustomFoodsTable extends CustomFoods
         proteinPer100g,
         carbsPer100g,
         fatPer100g,
+        fiberPer100g,
         barcode,
         brand,
         imageUrl,
@@ -2960,6 +3082,12 @@ class $CustomFoodsTable extends CustomFoods
     } else if (isInserting) {
       context.missing(_fatPer100gMeta);
     }
+    if (data.containsKey('fiber_per100g')) {
+      context.handle(
+          _fiberPer100gMeta,
+          fiberPer100g.isAcceptableOrUnknown(
+              data['fiber_per100g']!, _fiberPer100gMeta));
+    }
     if (data.containsKey('barcode')) {
       context.handle(_barcodeMeta,
           barcode.isAcceptableOrUnknown(data['barcode']!, _barcodeMeta));
@@ -3001,6 +3129,8 @@ class $CustomFoodsTable extends CustomFoods
           .read(DriftSqlType.double, data['${effectivePrefix}carbs_per100g'])!,
       fatPer100g: attachedDatabase.typeMapping
           .read(DriftSqlType.double, data['${effectivePrefix}fat_per100g'])!,
+      fiberPer100g: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}fiber_per100g'])!,
       barcode: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}barcode']),
       brand: attachedDatabase.typeMapping
@@ -3026,6 +3156,7 @@ class CustomFoodRow extends DataClass implements Insertable<CustomFoodRow> {
   final double proteinPer100g;
   final double carbsPer100g;
   final double fatPer100g;
+  final double fiberPer100g;
   final String? barcode;
   final String? brand;
   final String? imageUrl;
@@ -3038,6 +3169,7 @@ class CustomFoodRow extends DataClass implements Insertable<CustomFoodRow> {
       required this.proteinPer100g,
       required this.carbsPer100g,
       required this.fatPer100g,
+      required this.fiberPer100g,
       this.barcode,
       this.brand,
       this.imageUrl,
@@ -3052,6 +3184,7 @@ class CustomFoodRow extends DataClass implements Insertable<CustomFoodRow> {
     map['protein_per100g'] = Variable<double>(proteinPer100g);
     map['carbs_per100g'] = Variable<double>(carbsPer100g);
     map['fat_per100g'] = Variable<double>(fatPer100g);
+    map['fiber_per100g'] = Variable<double>(fiberPer100g);
     if (!nullToAbsent || barcode != null) {
       map['barcode'] = Variable<String>(barcode);
     }
@@ -3076,6 +3209,7 @@ class CustomFoodRow extends DataClass implements Insertable<CustomFoodRow> {
       proteinPer100g: Value(proteinPer100g),
       carbsPer100g: Value(carbsPer100g),
       fatPer100g: Value(fatPer100g),
+      fiberPer100g: Value(fiberPer100g),
       barcode: barcode == null && nullToAbsent
           ? const Value.absent()
           : Value(barcode),
@@ -3101,6 +3235,7 @@ class CustomFoodRow extends DataClass implements Insertable<CustomFoodRow> {
       proteinPer100g: serializer.fromJson<double>(json['proteinPer100g']),
       carbsPer100g: serializer.fromJson<double>(json['carbsPer100g']),
       fatPer100g: serializer.fromJson<double>(json['fatPer100g']),
+      fiberPer100g: serializer.fromJson<double>(json['fiberPer100g']),
       barcode: serializer.fromJson<String?>(json['barcode']),
       brand: serializer.fromJson<String?>(json['brand']),
       imageUrl: serializer.fromJson<String?>(json['imageUrl']),
@@ -3118,6 +3253,7 @@ class CustomFoodRow extends DataClass implements Insertable<CustomFoodRow> {
       'proteinPer100g': serializer.toJson<double>(proteinPer100g),
       'carbsPer100g': serializer.toJson<double>(carbsPer100g),
       'fatPer100g': serializer.toJson<double>(fatPer100g),
+      'fiberPer100g': serializer.toJson<double>(fiberPer100g),
       'barcode': serializer.toJson<String?>(barcode),
       'brand': serializer.toJson<String?>(brand),
       'imageUrl': serializer.toJson<String?>(imageUrl),
@@ -3133,6 +3269,7 @@ class CustomFoodRow extends DataClass implements Insertable<CustomFoodRow> {
           double? proteinPer100g,
           double? carbsPer100g,
           double? fatPer100g,
+          double? fiberPer100g,
           Value<String?> barcode = const Value.absent(),
           Value<String?> brand = const Value.absent(),
           Value<String?> imageUrl = const Value.absent(),
@@ -3145,6 +3282,7 @@ class CustomFoodRow extends DataClass implements Insertable<CustomFoodRow> {
         proteinPer100g: proteinPer100g ?? this.proteinPer100g,
         carbsPer100g: carbsPer100g ?? this.carbsPer100g,
         fatPer100g: fatPer100g ?? this.fatPer100g,
+        fiberPer100g: fiberPer100g ?? this.fiberPer100g,
         barcode: barcode.present ? barcode.value : this.barcode,
         brand: brand.present ? brand.value : this.brand,
         imageUrl: imageUrl.present ? imageUrl.value : this.imageUrl,
@@ -3167,6 +3305,9 @@ class CustomFoodRow extends DataClass implements Insertable<CustomFoodRow> {
           : this.carbsPer100g,
       fatPer100g:
           data.fatPer100g.present ? data.fatPer100g.value : this.fatPer100g,
+      fiberPer100g: data.fiberPer100g.present
+          ? data.fiberPer100g.value
+          : this.fiberPer100g,
       barcode: data.barcode.present ? data.barcode.value : this.barcode,
       brand: data.brand.present ? data.brand.value : this.brand,
       imageUrl: data.imageUrl.present ? data.imageUrl.value : this.imageUrl,
@@ -3186,6 +3327,7 @@ class CustomFoodRow extends DataClass implements Insertable<CustomFoodRow> {
           ..write('proteinPer100g: $proteinPer100g, ')
           ..write('carbsPer100g: $carbsPer100g, ')
           ..write('fatPer100g: $fatPer100g, ')
+          ..write('fiberPer100g: $fiberPer100g, ')
           ..write('barcode: $barcode, ')
           ..write('brand: $brand, ')
           ..write('imageUrl: $imageUrl, ')
@@ -3203,6 +3345,7 @@ class CustomFoodRow extends DataClass implements Insertable<CustomFoodRow> {
       proteinPer100g,
       carbsPer100g,
       fatPer100g,
+      fiberPer100g,
       barcode,
       brand,
       imageUrl,
@@ -3218,6 +3361,7 @@ class CustomFoodRow extends DataClass implements Insertable<CustomFoodRow> {
           other.proteinPer100g == this.proteinPer100g &&
           other.carbsPer100g == this.carbsPer100g &&
           other.fatPer100g == this.fatPer100g &&
+          other.fiberPer100g == this.fiberPer100g &&
           other.barcode == this.barcode &&
           other.brand == this.brand &&
           other.imageUrl == this.imageUrl &&
@@ -3232,6 +3376,7 @@ class CustomFoodsCompanion extends UpdateCompanion<CustomFoodRow> {
   final Value<double> proteinPer100g;
   final Value<double> carbsPer100g;
   final Value<double> fatPer100g;
+  final Value<double> fiberPer100g;
   final Value<String?> barcode;
   final Value<String?> brand;
   final Value<String?> imageUrl;
@@ -3245,6 +3390,7 @@ class CustomFoodsCompanion extends UpdateCompanion<CustomFoodRow> {
     this.proteinPer100g = const Value.absent(),
     this.carbsPer100g = const Value.absent(),
     this.fatPer100g = const Value.absent(),
+    this.fiberPer100g = const Value.absent(),
     this.barcode = const Value.absent(),
     this.brand = const Value.absent(),
     this.imageUrl = const Value.absent(),
@@ -3259,6 +3405,7 @@ class CustomFoodsCompanion extends UpdateCompanion<CustomFoodRow> {
     required double proteinPer100g,
     required double carbsPer100g,
     required double fatPer100g,
+    this.fiberPer100g = const Value.absent(),
     this.barcode = const Value.absent(),
     this.brand = const Value.absent(),
     this.imageUrl = const Value.absent(),
@@ -3279,6 +3426,7 @@ class CustomFoodsCompanion extends UpdateCompanion<CustomFoodRow> {
     Expression<double>? proteinPer100g,
     Expression<double>? carbsPer100g,
     Expression<double>? fatPer100g,
+    Expression<double>? fiberPer100g,
     Expression<String>? barcode,
     Expression<String>? brand,
     Expression<String>? imageUrl,
@@ -3293,6 +3441,7 @@ class CustomFoodsCompanion extends UpdateCompanion<CustomFoodRow> {
       if (proteinPer100g != null) 'protein_per100g': proteinPer100g,
       if (carbsPer100g != null) 'carbs_per100g': carbsPer100g,
       if (fatPer100g != null) 'fat_per100g': fatPer100g,
+      if (fiberPer100g != null) 'fiber_per100g': fiberPer100g,
       if (barcode != null) 'barcode': barcode,
       if (brand != null) 'brand': brand,
       if (imageUrl != null) 'image_url': imageUrl,
@@ -3309,6 +3458,7 @@ class CustomFoodsCompanion extends UpdateCompanion<CustomFoodRow> {
       Value<double>? proteinPer100g,
       Value<double>? carbsPer100g,
       Value<double>? fatPer100g,
+      Value<double>? fiberPer100g,
       Value<String?>? barcode,
       Value<String?>? brand,
       Value<String?>? imageUrl,
@@ -3322,6 +3472,7 @@ class CustomFoodsCompanion extends UpdateCompanion<CustomFoodRow> {
       proteinPer100g: proteinPer100g ?? this.proteinPer100g,
       carbsPer100g: carbsPer100g ?? this.carbsPer100g,
       fatPer100g: fatPer100g ?? this.fatPer100g,
+      fiberPer100g: fiberPer100g ?? this.fiberPer100g,
       barcode: barcode ?? this.barcode,
       brand: brand ?? this.brand,
       imageUrl: imageUrl ?? this.imageUrl,
@@ -3354,6 +3505,9 @@ class CustomFoodsCompanion extends UpdateCompanion<CustomFoodRow> {
     if (fatPer100g.present) {
       map['fat_per100g'] = Variable<double>(fatPer100g.value);
     }
+    if (fiberPer100g.present) {
+      map['fiber_per100g'] = Variable<double>(fiberPer100g.value);
+    }
     if (barcode.present) {
       map['barcode'] = Variable<String>(barcode.value);
     }
@@ -3382,6 +3536,7 @@ class CustomFoodsCompanion extends UpdateCompanion<CustomFoodRow> {
           ..write('proteinPer100g: $proteinPer100g, ')
           ..write('carbsPer100g: $carbsPer100g, ')
           ..write('fatPer100g: $fatPer100g, ')
+          ..write('fiberPer100g: $fiberPer100g, ')
           ..write('barcode: $barcode, ')
           ..write('brand: $brand, ')
           ..write('imageUrl: $imageUrl, ')
@@ -3594,6 +3749,13 @@ class $PlannedMealsTable extends PlannedMeals
   late final GeneratedColumn<double> fat = GeneratedColumn<double>(
       'fat', aliasedName, false,
       type: DriftSqlType.double, requiredDuringInsert: true);
+  static const VerificationMeta _fiberMeta = const VerificationMeta('fiber');
+  @override
+  late final GeneratedColumn<double> fiber = GeneratedColumn<double>(
+      'fiber', aliasedName, false,
+      type: DriftSqlType.double,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
   static const VerificationMeta _recipeIdMeta =
       const VerificationMeta('recipeId');
   @override
@@ -3624,6 +3786,7 @@ class $PlannedMealsTable extends PlannedMeals
         protein,
         carbs,
         fat,
+        fiber,
         recipeId,
         servings,
         ingredientsJson
@@ -3685,6 +3848,10 @@ class $PlannedMealsTable extends PlannedMeals
     } else if (isInserting) {
       context.missing(_fatMeta);
     }
+    if (data.containsKey('fiber')) {
+      context.handle(
+          _fiberMeta, fiber.isAcceptableOrUnknown(data['fiber']!, _fiberMeta));
+    }
     if (data.containsKey('recipe_id')) {
       context.handle(_recipeIdMeta,
           recipeId.isAcceptableOrUnknown(data['recipe_id']!, _recipeIdMeta));
@@ -3726,6 +3893,8 @@ class $PlannedMealsTable extends PlannedMeals
           .read(DriftSqlType.double, data['${effectivePrefix}carbs'])!,
       fat: attachedDatabase.typeMapping
           .read(DriftSqlType.double, data['${effectivePrefix}fat'])!,
+      fiber: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}fiber'])!,
       recipeId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}recipe_id']),
       servings: attachedDatabase.typeMapping
@@ -3750,6 +3919,7 @@ class PlannedMealRow extends DataClass implements Insertable<PlannedMealRow> {
   final double protein;
   final double carbs;
   final double fat;
+  final double fiber;
   final String? recipeId;
   final double servings;
   final String ingredientsJson;
@@ -3762,6 +3932,7 @@ class PlannedMealRow extends DataClass implements Insertable<PlannedMealRow> {
       required this.protein,
       required this.carbs,
       required this.fat,
+      required this.fiber,
       this.recipeId,
       required this.servings,
       required this.ingredientsJson});
@@ -3776,6 +3947,7 @@ class PlannedMealRow extends DataClass implements Insertable<PlannedMealRow> {
     map['protein'] = Variable<double>(protein);
     map['carbs'] = Variable<double>(carbs);
     map['fat'] = Variable<double>(fat);
+    map['fiber'] = Variable<double>(fiber);
     if (!nullToAbsent || recipeId != null) {
       map['recipe_id'] = Variable<String>(recipeId);
     }
@@ -3794,6 +3966,7 @@ class PlannedMealRow extends DataClass implements Insertable<PlannedMealRow> {
       protein: Value(protein),
       carbs: Value(carbs),
       fat: Value(fat),
+      fiber: Value(fiber),
       recipeId: recipeId == null && nullToAbsent
           ? const Value.absent()
           : Value(recipeId),
@@ -3814,6 +3987,7 @@ class PlannedMealRow extends DataClass implements Insertable<PlannedMealRow> {
       protein: serializer.fromJson<double>(json['protein']),
       carbs: serializer.fromJson<double>(json['carbs']),
       fat: serializer.fromJson<double>(json['fat']),
+      fiber: serializer.fromJson<double>(json['fiber']),
       recipeId: serializer.fromJson<String?>(json['recipeId']),
       servings: serializer.fromJson<double>(json['servings']),
       ingredientsJson: serializer.fromJson<String>(json['ingredientsJson']),
@@ -3831,6 +4005,7 @@ class PlannedMealRow extends DataClass implements Insertable<PlannedMealRow> {
       'protein': serializer.toJson<double>(protein),
       'carbs': serializer.toJson<double>(carbs),
       'fat': serializer.toJson<double>(fat),
+      'fiber': serializer.toJson<double>(fiber),
       'recipeId': serializer.toJson<String?>(recipeId),
       'servings': serializer.toJson<double>(servings),
       'ingredientsJson': serializer.toJson<String>(ingredientsJson),
@@ -3846,6 +4021,7 @@ class PlannedMealRow extends DataClass implements Insertable<PlannedMealRow> {
           double? protein,
           double? carbs,
           double? fat,
+          double? fiber,
           Value<String?> recipeId = const Value.absent(),
           double? servings,
           String? ingredientsJson}) =>
@@ -3858,6 +4034,7 @@ class PlannedMealRow extends DataClass implements Insertable<PlannedMealRow> {
         protein: protein ?? this.protein,
         carbs: carbs ?? this.carbs,
         fat: fat ?? this.fat,
+        fiber: fiber ?? this.fiber,
         recipeId: recipeId.present ? recipeId.value : this.recipeId,
         servings: servings ?? this.servings,
         ingredientsJson: ingredientsJson ?? this.ingredientsJson,
@@ -3872,6 +4049,7 @@ class PlannedMealRow extends DataClass implements Insertable<PlannedMealRow> {
       protein: data.protein.present ? data.protein.value : this.protein,
       carbs: data.carbs.present ? data.carbs.value : this.carbs,
       fat: data.fat.present ? data.fat.value : this.fat,
+      fiber: data.fiber.present ? data.fiber.value : this.fiber,
       recipeId: data.recipeId.present ? data.recipeId.value : this.recipeId,
       servings: data.servings.present ? data.servings.value : this.servings,
       ingredientsJson: data.ingredientsJson.present
@@ -3891,6 +4069,7 @@ class PlannedMealRow extends DataClass implements Insertable<PlannedMealRow> {
           ..write('protein: $protein, ')
           ..write('carbs: $carbs, ')
           ..write('fat: $fat, ')
+          ..write('fiber: $fiber, ')
           ..write('recipeId: $recipeId, ')
           ..write('servings: $servings, ')
           ..write('ingredientsJson: $ingredientsJson')
@@ -3900,7 +4079,7 @@ class PlannedMealRow extends DataClass implements Insertable<PlannedMealRow> {
 
   @override
   int get hashCode => Object.hash(id, date, meal, name, calories, protein,
-      carbs, fat, recipeId, servings, ingredientsJson);
+      carbs, fat, fiber, recipeId, servings, ingredientsJson);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -3913,6 +4092,7 @@ class PlannedMealRow extends DataClass implements Insertable<PlannedMealRow> {
           other.protein == this.protein &&
           other.carbs == this.carbs &&
           other.fat == this.fat &&
+          other.fiber == this.fiber &&
           other.recipeId == this.recipeId &&
           other.servings == this.servings &&
           other.ingredientsJson == this.ingredientsJson);
@@ -3927,6 +4107,7 @@ class PlannedMealsCompanion extends UpdateCompanion<PlannedMealRow> {
   final Value<double> protein;
   final Value<double> carbs;
   final Value<double> fat;
+  final Value<double> fiber;
   final Value<String?> recipeId;
   final Value<double> servings;
   final Value<String> ingredientsJson;
@@ -3940,6 +4121,7 @@ class PlannedMealsCompanion extends UpdateCompanion<PlannedMealRow> {
     this.protein = const Value.absent(),
     this.carbs = const Value.absent(),
     this.fat = const Value.absent(),
+    this.fiber = const Value.absent(),
     this.recipeId = const Value.absent(),
     this.servings = const Value.absent(),
     this.ingredientsJson = const Value.absent(),
@@ -3954,6 +4136,7 @@ class PlannedMealsCompanion extends UpdateCompanion<PlannedMealRow> {
     required double protein,
     required double carbs,
     required double fat,
+    this.fiber = const Value.absent(),
     this.recipeId = const Value.absent(),
     this.servings = const Value.absent(),
     required String ingredientsJson,
@@ -3976,6 +4159,7 @@ class PlannedMealsCompanion extends UpdateCompanion<PlannedMealRow> {
     Expression<double>? protein,
     Expression<double>? carbs,
     Expression<double>? fat,
+    Expression<double>? fiber,
     Expression<String>? recipeId,
     Expression<double>? servings,
     Expression<String>? ingredientsJson,
@@ -3990,6 +4174,7 @@ class PlannedMealsCompanion extends UpdateCompanion<PlannedMealRow> {
       if (protein != null) 'protein': protein,
       if (carbs != null) 'carbs': carbs,
       if (fat != null) 'fat': fat,
+      if (fiber != null) 'fiber': fiber,
       if (recipeId != null) 'recipe_id': recipeId,
       if (servings != null) 'servings': servings,
       if (ingredientsJson != null) 'ingredients_json': ingredientsJson,
@@ -4006,6 +4191,7 @@ class PlannedMealsCompanion extends UpdateCompanion<PlannedMealRow> {
       Value<double>? protein,
       Value<double>? carbs,
       Value<double>? fat,
+      Value<double>? fiber,
       Value<String?>? recipeId,
       Value<double>? servings,
       Value<String>? ingredientsJson,
@@ -4019,6 +4205,7 @@ class PlannedMealsCompanion extends UpdateCompanion<PlannedMealRow> {
       protein: protein ?? this.protein,
       carbs: carbs ?? this.carbs,
       fat: fat ?? this.fat,
+      fiber: fiber ?? this.fiber,
       recipeId: recipeId ?? this.recipeId,
       servings: servings ?? this.servings,
       ingredientsJson: ingredientsJson ?? this.ingredientsJson,
@@ -4053,6 +4240,9 @@ class PlannedMealsCompanion extends UpdateCompanion<PlannedMealRow> {
     if (fat.present) {
       map['fat'] = Variable<double>(fat.value);
     }
+    if (fiber.present) {
+      map['fiber'] = Variable<double>(fiber.value);
+    }
     if (recipeId.present) {
       map['recipe_id'] = Variable<String>(recipeId.value);
     }
@@ -4079,6 +4269,7 @@ class PlannedMealsCompanion extends UpdateCompanion<PlannedMealRow> {
           ..write('protein: $protein, ')
           ..write('carbs: $carbs, ')
           ..write('fat: $fat, ')
+          ..write('fiber: $fiber, ')
           ..write('recipeId: $recipeId, ')
           ..write('servings: $servings, ')
           ..write('ingredientsJson: $ingredientsJson, ')
@@ -4445,6 +4636,14 @@ class $RecentFoodsTable extends RecentFoods
   late final GeneratedColumn<double> fatPer100g = GeneratedColumn<double>(
       'fat_per100g', aliasedName, false,
       type: DriftSqlType.double, requiredDuringInsert: true);
+  static const VerificationMeta _fiberPer100gMeta =
+      const VerificationMeta('fiberPer100g');
+  @override
+  late final GeneratedColumn<double> fiberPer100g = GeneratedColumn<double>(
+      'fiber_per100g', aliasedName, false,
+      type: DriftSqlType.double,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
   static const VerificationMeta _barcodeMeta =
       const VerificationMeta('barcode');
   @override
@@ -4477,6 +4676,7 @@ class $RecentFoodsTable extends RecentFoods
         proteinPer100g,
         carbsPer100g,
         fatPer100g,
+        fiberPer100g,
         barcode,
         brand,
         imageUrl,
@@ -4541,6 +4741,12 @@ class $RecentFoodsTable extends RecentFoods
     } else if (isInserting) {
       context.missing(_fatPer100gMeta);
     }
+    if (data.containsKey('fiber_per100g')) {
+      context.handle(
+          _fiberPer100gMeta,
+          fiberPer100g.isAcceptableOrUnknown(
+              data['fiber_per100g']!, _fiberPer100gMeta));
+    }
     if (data.containsKey('barcode')) {
       context.handle(_barcodeMeta,
           barcode.isAcceptableOrUnknown(data['barcode']!, _barcodeMeta));
@@ -4582,6 +4788,8 @@ class $RecentFoodsTable extends RecentFoods
           .read(DriftSqlType.double, data['${effectivePrefix}carbs_per100g'])!,
       fatPer100g: attachedDatabase.typeMapping
           .read(DriftSqlType.double, data['${effectivePrefix}fat_per100g'])!,
+      fiberPer100g: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}fiber_per100g'])!,
       barcode: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}barcode']),
       brand: attachedDatabase.typeMapping
@@ -4607,6 +4815,7 @@ class RecentFoodRow extends DataClass implements Insertable<RecentFoodRow> {
   final double proteinPer100g;
   final double carbsPer100g;
   final double fatPer100g;
+  final double fiberPer100g;
   final String? barcode;
   final String? brand;
   final String? imageUrl;
@@ -4619,6 +4828,7 @@ class RecentFoodRow extends DataClass implements Insertable<RecentFoodRow> {
       required this.proteinPer100g,
       required this.carbsPer100g,
       required this.fatPer100g,
+      required this.fiberPer100g,
       this.barcode,
       this.brand,
       this.imageUrl,
@@ -4633,6 +4843,7 @@ class RecentFoodRow extends DataClass implements Insertable<RecentFoodRow> {
     map['protein_per100g'] = Variable<double>(proteinPer100g);
     map['carbs_per100g'] = Variable<double>(carbsPer100g);
     map['fat_per100g'] = Variable<double>(fatPer100g);
+    map['fiber_per100g'] = Variable<double>(fiberPer100g);
     if (!nullToAbsent || barcode != null) {
       map['barcode'] = Variable<String>(barcode);
     }
@@ -4657,6 +4868,7 @@ class RecentFoodRow extends DataClass implements Insertable<RecentFoodRow> {
       proteinPer100g: Value(proteinPer100g),
       carbsPer100g: Value(carbsPer100g),
       fatPer100g: Value(fatPer100g),
+      fiberPer100g: Value(fiberPer100g),
       barcode: barcode == null && nullToAbsent
           ? const Value.absent()
           : Value(barcode),
@@ -4682,6 +4894,7 @@ class RecentFoodRow extends DataClass implements Insertable<RecentFoodRow> {
       proteinPer100g: serializer.fromJson<double>(json['proteinPer100g']),
       carbsPer100g: serializer.fromJson<double>(json['carbsPer100g']),
       fatPer100g: serializer.fromJson<double>(json['fatPer100g']),
+      fiberPer100g: serializer.fromJson<double>(json['fiberPer100g']),
       barcode: serializer.fromJson<String?>(json['barcode']),
       brand: serializer.fromJson<String?>(json['brand']),
       imageUrl: serializer.fromJson<String?>(json['imageUrl']),
@@ -4699,6 +4912,7 @@ class RecentFoodRow extends DataClass implements Insertable<RecentFoodRow> {
       'proteinPer100g': serializer.toJson<double>(proteinPer100g),
       'carbsPer100g': serializer.toJson<double>(carbsPer100g),
       'fatPer100g': serializer.toJson<double>(fatPer100g),
+      'fiberPer100g': serializer.toJson<double>(fiberPer100g),
       'barcode': serializer.toJson<String?>(barcode),
       'brand': serializer.toJson<String?>(brand),
       'imageUrl': serializer.toJson<String?>(imageUrl),
@@ -4714,6 +4928,7 @@ class RecentFoodRow extends DataClass implements Insertable<RecentFoodRow> {
           double? proteinPer100g,
           double? carbsPer100g,
           double? fatPer100g,
+          double? fiberPer100g,
           Value<String?> barcode = const Value.absent(),
           Value<String?> brand = const Value.absent(),
           Value<String?> imageUrl = const Value.absent(),
@@ -4726,6 +4941,7 @@ class RecentFoodRow extends DataClass implements Insertable<RecentFoodRow> {
         proteinPer100g: proteinPer100g ?? this.proteinPer100g,
         carbsPer100g: carbsPer100g ?? this.carbsPer100g,
         fatPer100g: fatPer100g ?? this.fatPer100g,
+        fiberPer100g: fiberPer100g ?? this.fiberPer100g,
         barcode: barcode.present ? barcode.value : this.barcode,
         brand: brand.present ? brand.value : this.brand,
         imageUrl: imageUrl.present ? imageUrl.value : this.imageUrl,
@@ -4748,6 +4964,9 @@ class RecentFoodRow extends DataClass implements Insertable<RecentFoodRow> {
           : this.carbsPer100g,
       fatPer100g:
           data.fatPer100g.present ? data.fatPer100g.value : this.fatPer100g,
+      fiberPer100g: data.fiberPer100g.present
+          ? data.fiberPer100g.value
+          : this.fiberPer100g,
       barcode: data.barcode.present ? data.barcode.value : this.barcode,
       brand: data.brand.present ? data.brand.value : this.brand,
       imageUrl: data.imageUrl.present ? data.imageUrl.value : this.imageUrl,
@@ -4767,6 +4986,7 @@ class RecentFoodRow extends DataClass implements Insertable<RecentFoodRow> {
           ..write('proteinPer100g: $proteinPer100g, ')
           ..write('carbsPer100g: $carbsPer100g, ')
           ..write('fatPer100g: $fatPer100g, ')
+          ..write('fiberPer100g: $fiberPer100g, ')
           ..write('barcode: $barcode, ')
           ..write('brand: $brand, ')
           ..write('imageUrl: $imageUrl, ')
@@ -4784,6 +5004,7 @@ class RecentFoodRow extends DataClass implements Insertable<RecentFoodRow> {
       proteinPer100g,
       carbsPer100g,
       fatPer100g,
+      fiberPer100g,
       barcode,
       brand,
       imageUrl,
@@ -4799,6 +5020,7 @@ class RecentFoodRow extends DataClass implements Insertable<RecentFoodRow> {
           other.proteinPer100g == this.proteinPer100g &&
           other.carbsPer100g == this.carbsPer100g &&
           other.fatPer100g == this.fatPer100g &&
+          other.fiberPer100g == this.fiberPer100g &&
           other.barcode == this.barcode &&
           other.brand == this.brand &&
           other.imageUrl == this.imageUrl &&
@@ -4813,6 +5035,7 @@ class RecentFoodsCompanion extends UpdateCompanion<RecentFoodRow> {
   final Value<double> proteinPer100g;
   final Value<double> carbsPer100g;
   final Value<double> fatPer100g;
+  final Value<double> fiberPer100g;
   final Value<String?> barcode;
   final Value<String?> brand;
   final Value<String?> imageUrl;
@@ -4826,6 +5049,7 @@ class RecentFoodsCompanion extends UpdateCompanion<RecentFoodRow> {
     this.proteinPer100g = const Value.absent(),
     this.carbsPer100g = const Value.absent(),
     this.fatPer100g = const Value.absent(),
+    this.fiberPer100g = const Value.absent(),
     this.barcode = const Value.absent(),
     this.brand = const Value.absent(),
     this.imageUrl = const Value.absent(),
@@ -4840,6 +5064,7 @@ class RecentFoodsCompanion extends UpdateCompanion<RecentFoodRow> {
     required double proteinPer100g,
     required double carbsPer100g,
     required double fatPer100g,
+    this.fiberPer100g = const Value.absent(),
     this.barcode = const Value.absent(),
     this.brand = const Value.absent(),
     this.imageUrl = const Value.absent(),
@@ -4860,6 +5085,7 @@ class RecentFoodsCompanion extends UpdateCompanion<RecentFoodRow> {
     Expression<double>? proteinPer100g,
     Expression<double>? carbsPer100g,
     Expression<double>? fatPer100g,
+    Expression<double>? fiberPer100g,
     Expression<String>? barcode,
     Expression<String>? brand,
     Expression<String>? imageUrl,
@@ -4874,6 +5100,7 @@ class RecentFoodsCompanion extends UpdateCompanion<RecentFoodRow> {
       if (proteinPer100g != null) 'protein_per100g': proteinPer100g,
       if (carbsPer100g != null) 'carbs_per100g': carbsPer100g,
       if (fatPer100g != null) 'fat_per100g': fatPer100g,
+      if (fiberPer100g != null) 'fiber_per100g': fiberPer100g,
       if (barcode != null) 'barcode': barcode,
       if (brand != null) 'brand': brand,
       if (imageUrl != null) 'image_url': imageUrl,
@@ -4890,6 +5117,7 @@ class RecentFoodsCompanion extends UpdateCompanion<RecentFoodRow> {
       Value<double>? proteinPer100g,
       Value<double>? carbsPer100g,
       Value<double>? fatPer100g,
+      Value<double>? fiberPer100g,
       Value<String?>? barcode,
       Value<String?>? brand,
       Value<String?>? imageUrl,
@@ -4903,6 +5131,7 @@ class RecentFoodsCompanion extends UpdateCompanion<RecentFoodRow> {
       proteinPer100g: proteinPer100g ?? this.proteinPer100g,
       carbsPer100g: carbsPer100g ?? this.carbsPer100g,
       fatPer100g: fatPer100g ?? this.fatPer100g,
+      fiberPer100g: fiberPer100g ?? this.fiberPer100g,
       barcode: barcode ?? this.barcode,
       brand: brand ?? this.brand,
       imageUrl: imageUrl ?? this.imageUrl,
@@ -4935,6 +5164,9 @@ class RecentFoodsCompanion extends UpdateCompanion<RecentFoodRow> {
     if (fatPer100g.present) {
       map['fat_per100g'] = Variable<double>(fatPer100g.value);
     }
+    if (fiberPer100g.present) {
+      map['fiber_per100g'] = Variable<double>(fiberPer100g.value);
+    }
     if (barcode.present) {
       map['barcode'] = Variable<String>(barcode.value);
     }
@@ -4963,6 +5195,7 @@ class RecentFoodsCompanion extends UpdateCompanion<RecentFoodRow> {
           ..write('proteinPer100g: $proteinPer100g, ')
           ..write('carbsPer100g: $carbsPer100g, ')
           ..write('fatPer100g: $fatPer100g, ')
+          ..write('fiberPer100g: $fiberPer100g, ')
           ..write('barcode: $barcode, ')
           ..write('brand: $brand, ')
           ..write('imageUrl: $imageUrl, ')
@@ -5937,6 +6170,7 @@ typedef $$FoodsTableCreateCompanionBuilder = FoodsCompanion Function({
   required double protein,
   required double carbs,
   required double fat,
+  Value<double> fiber,
   required DateTime timestamp,
   required String meal,
   Value<int> rowid,
@@ -5948,6 +6182,7 @@ typedef $$FoodsTableUpdateCompanionBuilder = FoodsCompanion Function({
   Value<double> protein,
   Value<double> carbs,
   Value<double> fat,
+  Value<double> fiber,
   Value<DateTime> timestamp,
   Value<String> meal,
   Value<int> rowid,
@@ -5979,6 +6214,9 @@ class $$FoodsTableFilterComposer
 
   ColumnFilters<double> get fat => $composableBuilder(
       column: $table.fat, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get fiber => $composableBuilder(
+      column: $table.fiber, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<DateTime> get timestamp => $composableBuilder(
       column: $table.timestamp, builder: (column) => ColumnFilters(column));
@@ -6014,6 +6252,9 @@ class $$FoodsTableOrderingComposer
   ColumnOrderings<double> get fat => $composableBuilder(
       column: $table.fat, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<double> get fiber => $composableBuilder(
+      column: $table.fiber, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<DateTime> get timestamp => $composableBuilder(
       column: $table.timestamp, builder: (column) => ColumnOrderings(column));
 
@@ -6047,6 +6288,9 @@ class $$FoodsTableAnnotationComposer
 
   GeneratedColumn<double> get fat =>
       $composableBuilder(column: $table.fat, builder: (column) => column);
+
+  GeneratedColumn<double> get fiber =>
+      $composableBuilder(column: $table.fiber, builder: (column) => column);
 
   GeneratedColumn<DateTime> get timestamp =>
       $composableBuilder(column: $table.timestamp, builder: (column) => column);
@@ -6084,6 +6328,7 @@ class $$FoodsTableTableManager extends RootTableManager<
             Value<double> protein = const Value.absent(),
             Value<double> carbs = const Value.absent(),
             Value<double> fat = const Value.absent(),
+            Value<double> fiber = const Value.absent(),
             Value<DateTime> timestamp = const Value.absent(),
             Value<String> meal = const Value.absent(),
             Value<int> rowid = const Value.absent(),
@@ -6095,6 +6340,7 @@ class $$FoodsTableTableManager extends RootTableManager<
             protein: protein,
             carbs: carbs,
             fat: fat,
+            fiber: fiber,
             timestamp: timestamp,
             meal: meal,
             rowid: rowid,
@@ -6106,6 +6352,7 @@ class $$FoodsTableTableManager extends RootTableManager<
             required double protein,
             required double carbs,
             required double fat,
+            Value<double> fiber = const Value.absent(),
             required DateTime timestamp,
             required String meal,
             Value<int> rowid = const Value.absent(),
@@ -6117,6 +6364,7 @@ class $$FoodsTableTableManager extends RootTableManager<
             protein: protein,
             carbs: carbs,
             fat: fat,
+            fiber: fiber,
             timestamp: timestamp,
             meal: meal,
             rowid: rowid,
@@ -6944,15 +7192,17 @@ typedef $$SupplementLogsTableProcessedTableManager = ProcessedTableManager<
 typedef $$BarcodeProductsTableCreateCompanionBuilder = BarcodeProductsCompanion
     Function({
   required String barcode,
-  required String name,
+  Value<String> name,
   Value<String?> brand,
   Value<String?> category,
-  required double caloriesPer100g,
-  required double proteinPer100g,
-  required double carbsPer100g,
-  required double fatPer100g,
+  Value<double> caloriesPer100g,
+  Value<double> proteinPer100g,
+  Value<double> carbsPer100g,
+  Value<double> fatPer100g,
+  Value<double> fiberPer100g,
   Value<String?> imageUrl,
   Value<String?> servingsJson,
+  Value<String> cacheStatus,
   Value<bool> isUserCorrected,
   required DateTime cachedAt,
   Value<String> source,
@@ -6968,8 +7218,10 @@ typedef $$BarcodeProductsTableUpdateCompanionBuilder = BarcodeProductsCompanion
   Value<double> proteinPer100g,
   Value<double> carbsPer100g,
   Value<double> fatPer100g,
+  Value<double> fiberPer100g,
   Value<String?> imageUrl,
   Value<String?> servingsJson,
+  Value<String> cacheStatus,
   Value<bool> isUserCorrected,
   Value<DateTime> cachedAt,
   Value<String> source,
@@ -7011,11 +7263,17 @@ class $$BarcodeProductsTableFilterComposer
   ColumnFilters<double> get fatPer100g => $composableBuilder(
       column: $table.fatPer100g, builder: (column) => ColumnFilters(column));
 
+  ColumnFilters<double> get fiberPer100g => $composableBuilder(
+      column: $table.fiberPer100g, builder: (column) => ColumnFilters(column));
+
   ColumnFilters<String> get imageUrl => $composableBuilder(
       column: $table.imageUrl, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get servingsJson => $composableBuilder(
       column: $table.servingsJson, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get cacheStatus => $composableBuilder(
+      column: $table.cacheStatus, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<bool> get isUserCorrected => $composableBuilder(
       column: $table.isUserCorrected,
@@ -7064,12 +7322,19 @@ class $$BarcodeProductsTableOrderingComposer
   ColumnOrderings<double> get fatPer100g => $composableBuilder(
       column: $table.fatPer100g, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<double> get fiberPer100g => $composableBuilder(
+      column: $table.fiberPer100g,
+      builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get imageUrl => $composableBuilder(
       column: $table.imageUrl, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get servingsJson => $composableBuilder(
       column: $table.servingsJson,
       builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get cacheStatus => $composableBuilder(
+      column: $table.cacheStatus, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<bool> get isUserCorrected => $composableBuilder(
       column: $table.isUserCorrected,
@@ -7115,11 +7380,17 @@ class $$BarcodeProductsTableAnnotationComposer
   GeneratedColumn<double> get fatPer100g => $composableBuilder(
       column: $table.fatPer100g, builder: (column) => column);
 
+  GeneratedColumn<double> get fiberPer100g => $composableBuilder(
+      column: $table.fiberPer100g, builder: (column) => column);
+
   GeneratedColumn<String> get imageUrl =>
       $composableBuilder(column: $table.imageUrl, builder: (column) => column);
 
   GeneratedColumn<String> get servingsJson => $composableBuilder(
       column: $table.servingsJson, builder: (column) => column);
+
+  GeneratedColumn<String> get cacheStatus => $composableBuilder(
+      column: $table.cacheStatus, builder: (column) => column);
 
   GeneratedColumn<bool> get isUserCorrected => $composableBuilder(
       column: $table.isUserCorrected, builder: (column) => column);
@@ -7166,8 +7437,10 @@ class $$BarcodeProductsTableTableManager extends RootTableManager<
             Value<double> proteinPer100g = const Value.absent(),
             Value<double> carbsPer100g = const Value.absent(),
             Value<double> fatPer100g = const Value.absent(),
+            Value<double> fiberPer100g = const Value.absent(),
             Value<String?> imageUrl = const Value.absent(),
             Value<String?> servingsJson = const Value.absent(),
+            Value<String> cacheStatus = const Value.absent(),
             Value<bool> isUserCorrected = const Value.absent(),
             Value<DateTime> cachedAt = const Value.absent(),
             Value<String> source = const Value.absent(),
@@ -7182,8 +7455,10 @@ class $$BarcodeProductsTableTableManager extends RootTableManager<
             proteinPer100g: proteinPer100g,
             carbsPer100g: carbsPer100g,
             fatPer100g: fatPer100g,
+            fiberPer100g: fiberPer100g,
             imageUrl: imageUrl,
             servingsJson: servingsJson,
+            cacheStatus: cacheStatus,
             isUserCorrected: isUserCorrected,
             cachedAt: cachedAt,
             source: source,
@@ -7191,15 +7466,17 @@ class $$BarcodeProductsTableTableManager extends RootTableManager<
           ),
           createCompanionCallback: ({
             required String barcode,
-            required String name,
+            Value<String> name = const Value.absent(),
             Value<String?> brand = const Value.absent(),
             Value<String?> category = const Value.absent(),
-            required double caloriesPer100g,
-            required double proteinPer100g,
-            required double carbsPer100g,
-            required double fatPer100g,
+            Value<double> caloriesPer100g = const Value.absent(),
+            Value<double> proteinPer100g = const Value.absent(),
+            Value<double> carbsPer100g = const Value.absent(),
+            Value<double> fatPer100g = const Value.absent(),
+            Value<double> fiberPer100g = const Value.absent(),
             Value<String?> imageUrl = const Value.absent(),
             Value<String?> servingsJson = const Value.absent(),
+            Value<String> cacheStatus = const Value.absent(),
             Value<bool> isUserCorrected = const Value.absent(),
             required DateTime cachedAt,
             Value<String> source = const Value.absent(),
@@ -7214,8 +7491,10 @@ class $$BarcodeProductsTableTableManager extends RootTableManager<
             proteinPer100g: proteinPer100g,
             carbsPer100g: carbsPer100g,
             fatPer100g: fatPer100g,
+            fiberPer100g: fiberPer100g,
             imageUrl: imageUrl,
             servingsJson: servingsJson,
+            cacheStatus: cacheStatus,
             isUserCorrected: isUserCorrected,
             cachedAt: cachedAt,
             source: source,
@@ -7434,6 +7713,7 @@ typedef $$CustomFoodsTableCreateCompanionBuilder = CustomFoodsCompanion
   required double proteinPer100g,
   required double carbsPer100g,
   required double fatPer100g,
+  Value<double> fiberPer100g,
   Value<String?> barcode,
   Value<String?> brand,
   Value<String?> imageUrl,
@@ -7449,6 +7729,7 @@ typedef $$CustomFoodsTableUpdateCompanionBuilder = CustomFoodsCompanion
   Value<double> proteinPer100g,
   Value<double> carbsPer100g,
   Value<double> fatPer100g,
+  Value<double> fiberPer100g,
   Value<String?> barcode,
   Value<String?> brand,
   Value<String?> imageUrl,
@@ -7487,6 +7768,9 @@ class $$CustomFoodsTableFilterComposer
 
   ColumnFilters<double> get fatPer100g => $composableBuilder(
       column: $table.fatPer100g, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get fiberPer100g => $composableBuilder(
+      column: $table.fiberPer100g, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get barcode => $composableBuilder(
       column: $table.barcode, builder: (column) => ColumnFilters(column));
@@ -7534,6 +7818,10 @@ class $$CustomFoodsTableOrderingComposer
   ColumnOrderings<double> get fatPer100g => $composableBuilder(
       column: $table.fatPer100g, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<double> get fiberPer100g => $composableBuilder(
+      column: $table.fiberPer100g,
+      builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get barcode => $composableBuilder(
       column: $table.barcode, builder: (column) => ColumnOrderings(column));
 
@@ -7577,6 +7865,9 @@ class $$CustomFoodsTableAnnotationComposer
 
   GeneratedColumn<double> get fatPer100g => $composableBuilder(
       column: $table.fatPer100g, builder: (column) => column);
+
+  GeneratedColumn<double> get fiberPer100g => $composableBuilder(
+      column: $table.fiberPer100g, builder: (column) => column);
 
   GeneratedColumn<String> get barcode =>
       $composableBuilder(column: $table.barcode, builder: (column) => column);
@@ -7624,6 +7915,7 @@ class $$CustomFoodsTableTableManager extends RootTableManager<
             Value<double> proteinPer100g = const Value.absent(),
             Value<double> carbsPer100g = const Value.absent(),
             Value<double> fatPer100g = const Value.absent(),
+            Value<double> fiberPer100g = const Value.absent(),
             Value<String?> barcode = const Value.absent(),
             Value<String?> brand = const Value.absent(),
             Value<String?> imageUrl = const Value.absent(),
@@ -7638,6 +7930,7 @@ class $$CustomFoodsTableTableManager extends RootTableManager<
             proteinPer100g: proteinPer100g,
             carbsPer100g: carbsPer100g,
             fatPer100g: fatPer100g,
+            fiberPer100g: fiberPer100g,
             barcode: barcode,
             brand: brand,
             imageUrl: imageUrl,
@@ -7652,6 +7945,7 @@ class $$CustomFoodsTableTableManager extends RootTableManager<
             required double proteinPer100g,
             required double carbsPer100g,
             required double fatPer100g,
+            Value<double> fiberPer100g = const Value.absent(),
             Value<String?> barcode = const Value.absent(),
             Value<String?> brand = const Value.absent(),
             Value<String?> imageUrl = const Value.absent(),
@@ -7666,6 +7960,7 @@ class $$CustomFoodsTableTableManager extends RootTableManager<
             proteinPer100g: proteinPer100g,
             carbsPer100g: carbsPer100g,
             fatPer100g: fatPer100g,
+            fiberPer100g: fiberPer100g,
             barcode: barcode,
             brand: brand,
             imageUrl: imageUrl,
@@ -7818,6 +8113,7 @@ typedef $$PlannedMealsTableCreateCompanionBuilder = PlannedMealsCompanion
   required double protein,
   required double carbs,
   required double fat,
+  Value<double> fiber,
   Value<String?> recipeId,
   Value<double> servings,
   required String ingredientsJson,
@@ -7833,6 +8129,7 @@ typedef $$PlannedMealsTableUpdateCompanionBuilder = PlannedMealsCompanion
   Value<double> protein,
   Value<double> carbs,
   Value<double> fat,
+  Value<double> fiber,
   Value<String?> recipeId,
   Value<double> servings,
   Value<String> ingredientsJson,
@@ -7871,6 +8168,9 @@ class $$PlannedMealsTableFilterComposer
 
   ColumnFilters<double> get fat => $composableBuilder(
       column: $table.fat, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get fiber => $composableBuilder(
+      column: $table.fiber, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get recipeId => $composableBuilder(
       column: $table.recipeId, builder: (column) => ColumnFilters(column));
@@ -7916,6 +8216,9 @@ class $$PlannedMealsTableOrderingComposer
   ColumnOrderings<double> get fat => $composableBuilder(
       column: $table.fat, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<double> get fiber => $composableBuilder(
+      column: $table.fiber, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get recipeId => $composableBuilder(
       column: $table.recipeId, builder: (column) => ColumnOrderings(column));
 
@@ -7959,6 +8262,9 @@ class $$PlannedMealsTableAnnotationComposer
 
   GeneratedColumn<double> get fat =>
       $composableBuilder(column: $table.fat, builder: (column) => column);
+
+  GeneratedColumn<double> get fiber =>
+      $composableBuilder(column: $table.fiber, builder: (column) => column);
 
   GeneratedColumn<String> get recipeId =>
       $composableBuilder(column: $table.recipeId, builder: (column) => column);
@@ -8005,6 +8311,7 @@ class $$PlannedMealsTableTableManager extends RootTableManager<
             Value<double> protein = const Value.absent(),
             Value<double> carbs = const Value.absent(),
             Value<double> fat = const Value.absent(),
+            Value<double> fiber = const Value.absent(),
             Value<String?> recipeId = const Value.absent(),
             Value<double> servings = const Value.absent(),
             Value<String> ingredientsJson = const Value.absent(),
@@ -8019,6 +8326,7 @@ class $$PlannedMealsTableTableManager extends RootTableManager<
             protein: protein,
             carbs: carbs,
             fat: fat,
+            fiber: fiber,
             recipeId: recipeId,
             servings: servings,
             ingredientsJson: ingredientsJson,
@@ -8033,6 +8341,7 @@ class $$PlannedMealsTableTableManager extends RootTableManager<
             required double protein,
             required double carbs,
             required double fat,
+            Value<double> fiber = const Value.absent(),
             Value<String?> recipeId = const Value.absent(),
             Value<double> servings = const Value.absent(),
             required String ingredientsJson,
@@ -8047,6 +8356,7 @@ class $$PlannedMealsTableTableManager extends RootTableManager<
             protein: protein,
             carbs: carbs,
             fat: fat,
+            fiber: fiber,
             recipeId: recipeId,
             servings: servings,
             ingredientsJson: ingredientsJson,
@@ -8257,6 +8567,7 @@ typedef $$RecentFoodsTableCreateCompanionBuilder = RecentFoodsCompanion
   required double proteinPer100g,
   required double carbsPer100g,
   required double fatPer100g,
+  Value<double> fiberPer100g,
   Value<String?> barcode,
   Value<String?> brand,
   Value<String?> imageUrl,
@@ -8272,6 +8583,7 @@ typedef $$RecentFoodsTableUpdateCompanionBuilder = RecentFoodsCompanion
   Value<double> proteinPer100g,
   Value<double> carbsPer100g,
   Value<double> fatPer100g,
+  Value<double> fiberPer100g,
   Value<String?> barcode,
   Value<String?> brand,
   Value<String?> imageUrl,
@@ -8310,6 +8622,9 @@ class $$RecentFoodsTableFilterComposer
 
   ColumnFilters<double> get fatPer100g => $composableBuilder(
       column: $table.fatPer100g, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get fiberPer100g => $composableBuilder(
+      column: $table.fiberPer100g, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get barcode => $composableBuilder(
       column: $table.barcode, builder: (column) => ColumnFilters(column));
@@ -8357,6 +8672,10 @@ class $$RecentFoodsTableOrderingComposer
   ColumnOrderings<double> get fatPer100g => $composableBuilder(
       column: $table.fatPer100g, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<double> get fiberPer100g => $composableBuilder(
+      column: $table.fiberPer100g,
+      builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get barcode => $composableBuilder(
       column: $table.barcode, builder: (column) => ColumnOrderings(column));
 
@@ -8400,6 +8719,9 @@ class $$RecentFoodsTableAnnotationComposer
 
   GeneratedColumn<double> get fatPer100g => $composableBuilder(
       column: $table.fatPer100g, builder: (column) => column);
+
+  GeneratedColumn<double> get fiberPer100g => $composableBuilder(
+      column: $table.fiberPer100g, builder: (column) => column);
 
   GeneratedColumn<String> get barcode =>
       $composableBuilder(column: $table.barcode, builder: (column) => column);
@@ -8447,6 +8769,7 @@ class $$RecentFoodsTableTableManager extends RootTableManager<
             Value<double> proteinPer100g = const Value.absent(),
             Value<double> carbsPer100g = const Value.absent(),
             Value<double> fatPer100g = const Value.absent(),
+            Value<double> fiberPer100g = const Value.absent(),
             Value<String?> barcode = const Value.absent(),
             Value<String?> brand = const Value.absent(),
             Value<String?> imageUrl = const Value.absent(),
@@ -8461,6 +8784,7 @@ class $$RecentFoodsTableTableManager extends RootTableManager<
             proteinPer100g: proteinPer100g,
             carbsPer100g: carbsPer100g,
             fatPer100g: fatPer100g,
+            fiberPer100g: fiberPer100g,
             barcode: barcode,
             brand: brand,
             imageUrl: imageUrl,
@@ -8475,6 +8799,7 @@ class $$RecentFoodsTableTableManager extends RootTableManager<
             required double proteinPer100g,
             required double carbsPer100g,
             required double fatPer100g,
+            Value<double> fiberPer100g = const Value.absent(),
             Value<String?> barcode = const Value.absent(),
             Value<String?> brand = const Value.absent(),
             Value<String?> imageUrl = const Value.absent(),
@@ -8489,6 +8814,7 @@ class $$RecentFoodsTableTableManager extends RootTableManager<
             proteinPer100g: proteinPer100g,
             carbsPer100g: carbsPer100g,
             fatPer100g: fatPer100g,
+            fiberPer100g: fiberPer100g,
             barcode: barcode,
             brand: brand,
             imageUrl: imageUrl,

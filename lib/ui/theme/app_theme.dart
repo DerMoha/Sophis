@@ -28,6 +28,7 @@ class AppTheme {
   static const Color emerald = Color(0xFF059669); // Emerald
   static const Color carbs = Color(0xFFD97706); // Amber - energy, warmth
   static const Color fat = Color(0xFFE11D48); // Rose - rich, indulgent
+  static const Color fiber = Color(0xFF8B5CF6); // Violet - plant-based
 
   // Light Theme Palette
   static const Color _lightBg = Color(0xFFFFFBF7); // Warm cream
@@ -741,6 +742,12 @@ class AppTheme {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         );
+      case 'fiber':
+        return LinearGradient(
+          colors: [fiber, fiber.withValues(alpha: 0.7)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        );
       default:
         return LinearGradient(
           colors: [accent, accent.withValues(alpha: 0.7)],
@@ -759,6 +766,8 @@ class AppTheme {
         return carbs;
       case 'fat':
         return fat;
+      case 'fiber':
+        return fiber;
       default:
         return accent;
     }

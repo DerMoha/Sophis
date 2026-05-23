@@ -371,6 +371,7 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
             proteinLabel: l10n.protein,
             carbsLabel: l10n.carbs,
             fatLabel: l10n.fat,
+            fiberLabel: l10n.fiber,
             overGoalLabel: l10n.over,
             totals: totals,
             goals: goals,

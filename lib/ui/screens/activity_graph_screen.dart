@@ -170,6 +170,7 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
       totals.protein += entry.protein;
       totals.carbs += entry.carbs;
       totals.fat += entry.fat;
+      totals.fiber += entry.fiber;
     }
 
     final result = <DayData>[];
@@ -183,6 +184,7 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
           protein: totals?.protein ?? 0.0,
           carbs: totals?.carbs ?? 0.0,
           fat: totals?.fat ?? 0.0,
+          fiber: totals?.fiber ?? 0.0,
         ),
       );
     }
@@ -353,6 +355,12 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
         data.map((d) => d.calories).reduce((a, b) => a + b) / data.length;
     final avgProtein =
         data.map((d) => d.protein).reduce((a, b) => a + b) / data.length;
+    final avgCarbs =
+        data.map((d) => d.carbs).reduce((a, b) => a + b) / data.length;
+    final avgFat =
+        data.map((d) => d.fat).reduce((a, b) => a + b) / data.length;
+    final avgFiber =
+        data.map((d) => d.fiber).reduce((a, b) => a + b) / data.length;
 
     // Count days where goal was met
     int daysMetCalories = 0;
@@ -373,28 +381,66 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
           children: [
             Text(l10n.summary, style: theme.textTheme.titleMedium),
             const SizedBox(height: AppTheme.spaceSM2),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildSummaryTile(
-                    l10n.avgCalories,
-                    avgCalories.toStringAsFixed(0),
-                    'kcal',
-                    theme.colorScheme.primary,
-                    theme,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildSummaryTile(
-                    l10n.avgProtein,
-                    avgProtein.toStringAsFixed(0),
-                    'g',
-                    AppTheme.success,
-                    theme,
-                  ),
-                ),
-              ],
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final tileWidth = (constraints.maxWidth - 12) / 2;
+                return Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    SizedBox(
+                      width: tileWidth,
+                      child: _buildSummaryTile(
+                        l10n.avgCalories,
+                        avgCalories.toStringAsFixed(0),
+                        'kcal',
+                        theme.colorScheme.primary,
+                        theme,
+                      ),
+                    ),
+                    SizedBox(
+                      width: tileWidth,
+                      child: _buildSummaryTile(
+                        l10n.avgProtein,
+                        avgProtein.toStringAsFixed(0),
+                        'g',
+                        AppTheme.protein,
+                        theme,
+                      ),
+                    ),
+                    SizedBox(
+                      width: tileWidth,
+                      child: _buildSummaryTile(
+                        l10n.avgCarbs,
+                        avgCarbs.toStringAsFixed(0),
+                        'g',
+                        AppTheme.carbs,
+                        theme,
+                      ),
+                    ),
+                    SizedBox(
+                      width: tileWidth,
+                      child: _buildSummaryTile(
+                        l10n.avgFat,
+                        avgFat.toStringAsFixed(0),
+                        'g',
+                        AppTheme.fat,
+                        theme,
+                      ),
+                    ),
+                    SizedBox(
+                      width: tileWidth,
+                      child: _buildSummaryTile(
+                        l10n.avgFiber,
+                        avgFiber.toStringAsFixed(0),
+                        'g',
+                        AppTheme.fiber,
+                        theme,
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
             if (goals != null) ...[
               const SizedBox(height: AppTheme.spaceSM2),
@@ -464,6 +510,7 @@ class DayData {
   final double protein;
   final double carbs;
   final double fat;
+  final double fiber;
 
   DayData({
     required this.date,
@@ -471,6 +518,7 @@ class DayData {
     required this.protein,
     required this.carbs,
     required this.fat,
+    required this.fiber,
   });
 }
 
@@ -479,4 +527,5 @@ class _DayTotals {
   double protein = 0.0;
   double carbs = 0.0;
   double fat = 0.0;
+  double fiber = 0.0;
 }

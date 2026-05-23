@@ -81,6 +81,7 @@ class FoodLogController {
             protein: entry.protein,
             carbs: entry.carbs,
             fat: entry.fat,
+            fiber: entry.fiber,
           );
     }
 
@@ -190,6 +191,7 @@ class FoodLogController {
             protein: e.protein,
             carbs: e.carbs,
             fat: e.fat,
+            fiber: e.fiber,
           );
     }
     _cachedTodayTotals = totals;

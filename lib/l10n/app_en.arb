@@ -14,6 +14,7 @@
   "protein": "Protein",
   "carbs": "Carbs",
   "fat": "Fat",
+  "fiber": "Fiber",
   "remaining": "remaining",
   "over": "over",
   "breakfast": "Breakfast",
@@ -322,9 +323,13 @@
   "proteinG": "Protein (g)",
   "carbsG": "Carbs (g)",
   "fatG": "Fat (g)",
+  "fiberG": "Fiber (g)",
   "summary": "Summary",
   "avgCalories": "Avg Calories",
   "avgProtein": "Avg Protein",
+  "avgCarbs": "Avg Carbs",
+  "avgFat": "Avg Fat",
+  "avgFiber": "Avg Fiber",
   "daysOnTrack": "{count}/{total} days on track",
   "@daysOnTrack": {
     "placeholders": {
@@ -390,6 +395,7 @@
   "proteinShort": "P",
   "carbsShort": "C",
   "fatShort": "F",
+  "fiberShort": "Fi",
   "itemsImported": "{count} items imported",
   "@itemsImported": {
     "placeholders": {
@@ -434,7 +440,7 @@
   "saveToMyFoods": "Save to My Foods",
   "saveToMyFoodsSubtitle": "Quickly add this item again later",
   "showMealMacros": "Show Meal Macros",
-  "showMealMacrosSubtitle": "Display protein, carbs, and fat in meal headers",
+  "showMealMacrosSubtitle": "Display protein, carbs, fat, and fiber in meal headers",
   "preview": "Preview",
   "macrosHidden": "Macros Hidden",
   "macrosVisible": "Macros Visible",

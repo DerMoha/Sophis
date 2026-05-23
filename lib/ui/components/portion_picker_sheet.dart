@@ -21,7 +21,7 @@ class PortionPickerSheet extends StatefulWidget {
   final String meal;
   final Function(double grams) onAdd;
   final String? barcode;
-  final dynamic lookupService; // BarcodeLookupService, nullable
+  final BarcodeLookupService? lookupService;
   final Function(FoodItem updatedProduct)? onProductUpdated;
 
   const PortionPickerSheet({
@@ -337,8 +337,9 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
   }
 
   void _openEditSheet() {
-    final lookupService = widget.lookupService as BarcodeLookupService;
+    final lookupService = widget.lookupService;
     final barcode = widget.barcode!;
+    if (lookupService == null) return;
 
     showModalBottomSheet(
       context: context,

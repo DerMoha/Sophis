@@ -30,6 +30,7 @@ class Foods extends Table {
   RealColumn get protein => real()();
   RealColumn get carbs => real()();
   RealColumn get fat => real()();
+  RealColumn get fiber => real().withDefault(const Constant(0))();
   DateTimeColumn get timestamp => dateTime()();
   TextColumn get meal => text()(); // 'breakfast', 'lunch', etc.
 
@@ -90,15 +91,17 @@ class SupplementLogs extends Table {
 
 class BarcodeProducts extends Table {
   TextColumn get barcode => text()();
-  TextColumn get name => text()();
+  TextColumn get name => text().withDefault(const Constant(''))();
   TextColumn get brand => text().nullable()();
   TextColumn get category => text().nullable()();
-  RealColumn get caloriesPer100g => real()();
-  RealColumn get proteinPer100g => real()();
-  RealColumn get carbsPer100g => real()();
-  RealColumn get fatPer100g => real()();
+  RealColumn get caloriesPer100g => real().withDefault(const Constant(0))();
+  RealColumn get proteinPer100g => real().withDefault(const Constant(0))();
+  RealColumn get carbsPer100g => real().withDefault(const Constant(0))();
+  RealColumn get fatPer100g => real().withDefault(const Constant(0))();
+  RealColumn get fiberPer100g => real().withDefault(const Constant(0))();
   TextColumn get imageUrl => text().nullable()();
   TextColumn get servingsJson => text().nullable()();
+  TextColumn get cacheStatus => text().withDefault(const Constant('found'))();
   BoolColumn get isUserCorrected =>
       boolean().withDefault(const Constant(false))();
   DateTimeColumn get cachedAt => dateTime()();
@@ -130,6 +133,7 @@ class CustomFoods extends Table {
   RealColumn get proteinPer100g => real()();
   RealColumn get carbsPer100g => real()();
   RealColumn get fatPer100g => real()();
+  RealColumn get fiberPer100g => real().withDefault(const Constant(0))();
   TextColumn get barcode => text().nullable()();
   TextColumn get brand => text().nullable()();
   TextColumn get imageUrl => text().nullable()();
@@ -157,6 +161,7 @@ class PlannedMeals extends Table {
   RealColumn get protein => real()();
   RealColumn get carbs => real()();
   RealColumn get fat => real()();
+  RealColumn get fiber => real().withDefault(const Constant(0))();
   TextColumn get recipeId => text().nullable()();
   RealColumn get servings => real().withDefault(const Constant(1))();
   TextColumn get ingredientsJson => text()();
@@ -186,6 +191,7 @@ class RecentFoods extends Table {
   RealColumn get proteinPer100g => real()();
   RealColumn get carbsPer100g => real()();
   RealColumn get fatPer100g => real()();
+  RealColumn get fiberPer100g => real().withDefault(const Constant(0))();
   TextColumn get barcode => text().nullable()();
   TextColumn get brand => text().nullable()();
   TextColumn get imageUrl => text().nullable()();
@@ -258,7 +264,7 @@ class DatabaseService extends _$DatabaseService {
   DatabaseService() : super(_openConnection());
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -286,6 +292,17 @@ class DatabaseService extends _$DatabaseService {
           if (from <= 5 && to >= 6) {
             await migrator.createTable(progressPhotos);
           }
+          if (from <= 6 && to >= 7) {
+            await migrator.addColumn(
+                barcodeProducts, barcodeProducts.cacheStatus,);
+          }
+          if (from <= 7 && to >= 8) {
+            await migrator.addColumn(foods, foods.fiber);
+            await migrator.addColumn(plannedMeals, plannedMeals.fiber);
+            await migrator.addColumn(barcodeProducts, barcodeProducts.fiberPer100g);
+            await migrator.addColumn(customFoods, customFoods.fiberPer100g);
+            await migrator.addColumn(recentFoods, recentFoods.fiberPer100g);
+          }
         },
       );
 
@@ -304,6 +321,7 @@ class DatabaseService extends _$DatabaseService {
             protein: row.protein,
             carbs: row.carbs,
             fat: row.fat,
+            fiber: row.fiber,
             timestamp: row.timestamp,
             meal: row.meal,
           ),
@@ -320,6 +338,7 @@ class DatabaseService extends _$DatabaseService {
         protein: Value(entry.protein),
         carbs: Value(entry.carbs),
         fat: Value(entry.fat),
+        fiber: Value(entry.fiber),
         timestamp: Value(entry.timestamp),
         meal: Value(entry.meal),
       ),
@@ -343,6 +362,7 @@ class DatabaseService extends _$DatabaseService {
               protein: Value(entry.protein),
               carbs: Value(entry.carbs),
               fat: Value(entry.fat),
+              fiber: Value(entry.fiber),
               timestamp: Value(entry.timestamp),
               meal: Value(entry.meal),
             ),
@@ -364,6 +384,7 @@ class DatabaseService extends _$DatabaseService {
         protein: Value(entry.protein),
         carbs: Value(entry.carbs),
         fat: Value(entry.fat),
+        fiber: Value(entry.fiber),
         timestamp: Value(entry.timestamp),
         meal: Value(entry.meal),
       ),
@@ -684,13 +705,19 @@ class DatabaseService extends _$DatabaseService {
   }
 
   Future<void> deleteExpiredBarcodeCache() async {
-    final cutoff = DateTime.now().subtract(const Duration(days: 30));
+    final foundCutoff = DateTime.now().subtract(const Duration(days: 30));
+    final partialCutoff = DateTime.now().subtract(const Duration(days: 14));
+    final notFoundCutoff = DateTime.now().subtract(const Duration(days: 7));
+
     await (delete(barcodeProducts)
-          ..where(
-            (t) =>
-                t.cachedAt.isSmallerThanValue(cutoff) &
-                t.isUserCorrected.equals(false),
-          ))
+          ..where((t) =>
+              t.isUserCorrected.equals(false) &
+              (t.cacheStatus.equals('found') &
+                      t.cachedAt.isSmallerThanValue(foundCutoff) |
+                  t.cacheStatus.equals('partial') &
+                      t.cachedAt.isSmallerThanValue(partialCutoff) |
+                  t.cacheStatus.equals('notFound') &
+                      t.cachedAt.isSmallerThanValue(notFoundCutoff)),))
         .go();
   }
 
@@ -785,6 +812,7 @@ class DatabaseService extends _$DatabaseService {
         proteinPer100g: Value(food.proteinPer100g),
         carbsPer100g: Value(food.carbsPer100g),
         fatPer100g: Value(food.fatPer100g),
+        fiberPer100g: Value(food.fiberPer100g),
         barcode: Value(food.barcode),
         brand: Value(food.brand),
         imageUrl: Value(food.imageUrl),
@@ -807,6 +835,7 @@ class DatabaseService extends _$DatabaseService {
                 proteinPer100g: Value(f.proteinPer100g),
                 carbsPer100g: Value(f.carbsPer100g),
                 fatPer100g: Value(f.fatPer100g),
+                fiberPer100g: Value(f.fiberPer100g),
                 barcode: Value(f.barcode),
                 brand: Value(f.brand),
                 imageUrl: Value(f.imageUrl),
@@ -861,6 +890,7 @@ class DatabaseService extends _$DatabaseService {
         protein: Value(meal.protein),
         carbs: Value(meal.carbs),
         fat: Value(meal.fat),
+        fiber: Value(meal.fiber),
         recipeId: Value(meal.recipeId),
         servings: Value(meal.servings),
         ingredientsJson: Value(meal.ingredientsJson),
@@ -883,6 +913,7 @@ class DatabaseService extends _$DatabaseService {
                 protein: Value(m.protein),
                 carbs: Value(m.carbs),
                 fat: Value(m.fat),
+                fiber: Value(m.fiber),
                 recipeId: Value(m.recipeId),
                 servings: Value(m.servings),
                 ingredientsJson: Value(m.ingredientsJson),
@@ -938,6 +969,7 @@ class DatabaseService extends _$DatabaseService {
                 proteinPer100g: Value(f.proteinPer100g),
                 carbsPer100g: Value(f.carbsPer100g),
                 fatPer100g: Value(f.fatPer100g),
+                fiberPer100g: Value(f.fiberPer100g),
                 barcode: Value(f.barcode),
                 brand: Value(f.brand),
                 imageUrl: Value(f.imageUrl),
@@ -1134,6 +1166,7 @@ class DatabaseService extends _$DatabaseService {
         proteinPer100g: Value(food.proteinPer100g),
         carbsPer100g: Value(food.carbsPer100g),
         fatPer100g: Value(food.fatPer100g),
+        fiberPer100g: Value(food.fiberPer100g),
         barcode: Value(food.barcode),
         brand: Value(food.brand),
         imageUrl: Value(food.imageUrl),
@@ -1158,6 +1191,7 @@ class DatabaseService extends _$DatabaseService {
                 proteinPer100g: Value(f.proteinPer100g),
                 carbsPer100g: Value(f.carbsPer100g),
                 fatPer100g: Value(f.fatPer100g),
+                fiberPer100g: Value(f.fiberPer100g),
                 barcode: Value(f.barcode),
                 brand: Value(f.brand),
                 imageUrl: Value(f.imageUrl),
@@ -1197,6 +1231,7 @@ class DatabaseService extends _$DatabaseService {
         protein: Value(meal.protein),
         carbs: Value(meal.carbs),
         fat: Value(meal.fat),
+        fiber: Value(meal.fiber),
         recipeId: Value(meal.recipeId),
         servings: Value(meal.servings),
         ingredientsJson: Value(
@@ -1221,6 +1256,7 @@ class DatabaseService extends _$DatabaseService {
                 protein: Value(m.protein),
                 carbs: Value(m.carbs),
                 fat: Value(m.fat),
+                fiber: Value(m.fiber),
                 recipeId: Value(m.recipeId),
                 servings: Value(m.servings),
                 ingredientsJson: Value(
@@ -1264,6 +1300,7 @@ class DatabaseService extends _$DatabaseService {
               proteinPer100g: f.proteinPer100g,
               carbsPer100g: f.carbsPer100g,
               fatPer100g: f.fatPer100g,
+              fiberPer100g: f.fiberPer100g,
               barcode: f.barcode,
               brand: f.brand,
               imageUrl: f.imageUrl,

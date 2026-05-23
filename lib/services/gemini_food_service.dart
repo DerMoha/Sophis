@@ -138,6 +138,7 @@ For each food item, provide:
 4. Estimated protein in grams
 5. Estimated carbs in grams
 6. Estimated fat in grams
+7. Estimated fiber in grams
 ''';
 
     if (correctionHint != null && correctionHint.isNotEmpty) {
@@ -155,7 +156,8 @@ Respond ONLY with valid JSON in this exact format, no other text:
       "calories": 200,
       "protein": 10,
       "carbs": 20,
-      "fat": 8
+      "fat": 8,
+      "fiber": 3
     }
   ]
 }
@@ -263,7 +265,8 @@ Respond ONLY with valid JSON in this exact format, no other text:
       "calories": 200,
       "protein": 10,
       "carbs": 20,
-      "fat": 8
+      "fat": 8,
+      "fiber": 3
     }
   ]
 }
@@ -326,6 +329,7 @@ Respond ONLY with valid JSON in this exact format, no other text:
           protein: (food['protein'] as num?)?.toDouble() ?? 0,
           carbs: (food['carbs'] as num?)?.toDouble() ?? 0,
           fat: (food['fat'] as num?)?.toDouble() ?? 0,
+          fiber: (food['fiber'] as num?)?.toDouble() ?? 0,
         );
       }).toList();
     } catch (e) {
@@ -364,6 +368,7 @@ Look for:
 - Eiweiß / Protein
 - Kohlenhydrate / Carbohydrates
 - Fett / Fat
+- Ballaststoffe / Fiber
 - Product name if visible on the packaging
 
 Respond ONLY with valid JSON in this exact format, no other text:
@@ -374,12 +379,13 @@ Respond ONLY with valid JSON in this exact format, no other text:
   "protein_per_100g": 10.0,
   "carbs_per_100g": 25.0,
   "fat_per_100g": 8.0,
+  "fiber_per_100g": 3.0,
   "serving_size_g": 30,
   "serving_name": "1 Portion"
 }
 
 If the image is not a nutrition label or values are unreadable, return:
-{"product_name": null, "brand": null, "calories_per_100g": 0, "protein_per_100g": 0, "carbs_per_100g": 0, "fat_per_100g": 0, "serving_size_g": null, "serving_name": null}
+{"product_name": null, "brand": null, "calories_per_100g": 0, "protein_per_100g": 0, "carbs_per_100g": 0, "fat_per_100g": 0, "fiber_per_100g": 0, "serving_size_g": null, "serving_name": null}
 ''';
 
     final prompt = TextPart(promptText);
@@ -438,6 +444,7 @@ If the image is not a nutrition label or values are unreadable, return:
         proteinPer100g: (json['protein_per_100g'] as num?)?.toDouble() ?? 0,
         carbsPer100g: (json['carbs_per_100g'] as num?)?.toDouble() ?? 0,
         fatPer100g: (json['fat_per_100g'] as num?)?.toDouble() ?? 0,
+        fiberPer100g: (json['fiber_per_100g'] as num?)?.toDouble() ?? 0,
         servingSizeG: (json['serving_size_g'] as num?)?.toDouble(),
         servingName: json['serving_name']?.toString(),
       );
@@ -482,10 +489,11 @@ Extract:
    - Unit (g, ml, cups, tbsp, pieces, etc.)
    - Category for shopping (produce, dairy, protein, grains, pantry, frozen, beverages, other)
 4. Estimated total nutrition for the entire recipe:
-   - Calories
-   - Protein (g)
-   - Carbs (g)
-   - Fat (g)
+    - Calories
+    - Protein (g)
+    - Carbs (g)
+    - Fat (g)
+    - Fiber (g)
 
 Respond ONLY with valid JSON in this exact format, no other text:
 {
@@ -509,7 +517,8 @@ Respond ONLY with valid JSON in this exact format, no other text:
     "calories": 1200,
     "protein": 80,
     "carbs": 40,
-    "fat": 50
+    "fat": 50,
+    "fiber": 8
   }
 }
 
@@ -518,7 +527,7 @@ If no recipe is visible or readable, return:
   "recipe_name": null,
   "servings": 0,
   "ingredients": [],
-  "total_nutrition": {"calories": 0, "protein": 0, "carbs": 0, "fat": 0}
+  "total_nutrition": {"calories": 0, "protein": 0, "carbs": 0, "fat": 0, "fiber": 0}
 }
 ''';
 
@@ -591,6 +600,7 @@ If no recipe is visible or readable, return:
         totalProtein: (nutrition['protein'] as num?)?.toDouble() ?? 0,
         totalCarbs: (nutrition['carbs'] as num?)?.toDouble() ?? 0,
         totalFat: (nutrition['fat'] as num?)?.toDouble() ?? 0,
+        totalFiber: (nutrition['fiber'] as num?)?.toDouble() ?? 0,
       );
     } catch (e) {
       debugPrint('Failed to parse recipe response: $e\nRaw response: $text');

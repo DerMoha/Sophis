@@ -10,6 +10,7 @@ class FoodItem {
   final double proteinPer100g;
   final double carbsPer100g;
   final double fatPer100g;
+  final double fiberPer100g;
   final String? barcode;
   final String? brand;
   final String? imageUrl;
@@ -24,6 +25,7 @@ class FoodItem {
     required this.proteinPer100g,
     required this.carbsPer100g,
     required this.fatPer100g,
+    this.fiberPer100g = 0,
     this.barcode,
     this.brand,
     this.imageUrl,
@@ -39,6 +41,7 @@ class FoodItem {
         'proteinPer100g': proteinPer100g,
         'carbsPer100g': carbsPer100g,
         'fatPer100g': fatPer100g,
+        'fiberPer100g': fiberPer100g,
         'barcode': barcode,
         'brand': brand,
         'imageUrl': imageUrl,
@@ -54,6 +57,7 @@ class FoodItem {
         proteinPer100g: (json['proteinPer100g'] as num).toDouble(),
         carbsPer100g: (json['carbsPer100g'] as num).toDouble(),
         fatPer100g: (json['fatPer100g'] as num).toDouble(),
+        fiberPer100g: (json['fiberPer100g'] as num?)?.toDouble() ?? 0,
         barcode: json['barcode'],
         brand: json['brand'],
         imageUrl: json['imageUrl'],
@@ -72,6 +76,7 @@ class FoodItem {
       protein: proteinPer100g * factor,
       carbs: carbsPer100g * factor,
       fat: fatPer100g * factor,
+      fiber: fiberPer100g * factor,
     );
   }
 
@@ -84,6 +89,7 @@ class FoodItem {
     double? proteinPer100g,
     double? carbsPer100g,
     double? fatPer100g,
+    double? fiberPer100g,
     String? barcode,
     String? brand,
     String? imageUrl,
@@ -98,6 +104,7 @@ class FoodItem {
         proteinPer100g: proteinPer100g ?? this.proteinPer100g,
         carbsPer100g: carbsPer100g ?? this.carbsPer100g,
         fatPer100g: fatPer100g ?? this.fatPer100g,
+        fiberPer100g: fiberPer100g ?? this.fiberPer100g,
         barcode: barcode ?? this.barcode,
         brand: brand ?? this.brand,
         imageUrl: imageUrl ?? this.imageUrl,

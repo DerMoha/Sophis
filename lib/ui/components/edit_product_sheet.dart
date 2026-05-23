@@ -44,6 +44,7 @@ class _EditProductSheetState extends State<EditProductSheet> {
   late final TextEditingController _proteinController;
   late final TextEditingController _carbsController;
   late final TextEditingController _fatController;
+  late final TextEditingController _fiberController;
   bool _isSaving = false;
   bool _submitToOff = false;
 
@@ -69,6 +70,11 @@ class _EditProductSheetState extends State<EditProductSheet> {
     _fatController = TextEditingController(
       text: p != null ? p.fatPer100g.toStringAsFixed(1) : '',
     );
+    _fiberController = TextEditingController(
+      text: p != null && p.fiberPer100g > 0
+          ? p.fiberPer100g.toStringAsFixed(1)
+          : '',
+    );
   }
 
   @override
@@ -79,6 +85,7 @@ class _EditProductSheetState extends State<EditProductSheet> {
     _proteinController.dispose();
     _carbsController.dispose();
     _fatController.dispose();
+    _fiberController.dispose();
     super.dispose();
   }
 
@@ -118,6 +125,7 @@ class _EditProductSheetState extends State<EditProductSheet> {
       proteinPer100g: double.parse(_proteinController.text),
       carbsPer100g: double.parse(_carbsController.text),
       fatPer100g: double.parse(_fatController.text),
+      fiberPer100g: double.tryParse(_fiberController.text) ?? 0,
       barcode: widget.barcode,
       brand: _brandController.text.trim().isEmpty
           ? null
@@ -373,6 +381,26 @@ class _EditProductSheetState extends State<EditProductSheet> {
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Fiber row
+                    TextFormField(
+                      controller: _fiberController,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(
+                          RegExp(r'^\d+\.?\d{0,1}'),
+                        ),
+                      ],
+                      decoration: InputDecoration(
+                        labelText: l10n.fiber,
+                        suffixText: 'g',
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: AppTheme.spaceSM,
+                          vertical: 14,
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 24),
 
