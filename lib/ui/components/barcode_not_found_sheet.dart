@@ -112,6 +112,7 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
           proteinPer100g: result.proteinPer100g,
           carbsPer100g: result.carbsPer100g,
           fatPer100g: result.fatPer100g,
+          fiberPer100g: result.fiberPer100g,
           barcode: widget.barcode,
           brand: result.brand ?? widget.partialBrand,
           servings: servings,

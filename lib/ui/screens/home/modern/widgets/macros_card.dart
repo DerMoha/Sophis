@@ -50,6 +50,12 @@ class MacrosCard extends StatelessWidget {
             goal: goals.fat,
             color: AppTheme.fat,
           ),
+          MacroRing(
+            label: l10n.fiber,
+            value: totals.fiber,
+            goal: goals.fiber,
+            color: AppTheme.fiber,
+          ),
         ],
       ),
     );

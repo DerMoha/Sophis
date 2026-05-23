@@ -108,6 +108,12 @@ class ShareMealScreen extends StatelessWidget {
                             '${meal.totalFat.round()}g',
                             AppTheme.fat,
                           ),
+                          _buildMacroColumn(
+                            theme,
+                            l10n.fiberShort,
+                            '${meal.totalFiber.round()}g',
+                            AppTheme.fiber,
+                          ),
                         ],
                       ),
                     ),

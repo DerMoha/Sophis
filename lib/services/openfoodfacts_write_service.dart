@@ -26,6 +26,7 @@ class OpenFoodFactsWriteService {
         'nutriment_proteins_100g': item.proteinPer100g.toStringAsFixed(1),
         'nutriment_carbohydrates_100g': item.carbsPer100g.toStringAsFixed(1),
         'nutriment_fat_100g': item.fatPer100g.toStringAsFixed(1),
+        'nutriment_fiber_100g': item.fiberPer100g.toStringAsFixed(1),
         'comment': 'Submitted via Sophis App',
       };
 

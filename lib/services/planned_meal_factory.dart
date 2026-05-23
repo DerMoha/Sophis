@@ -35,6 +35,7 @@ class PlannedMealFactory {
       protein: recipe.proteinPerServing,
       carbs: recipe.carbsPerServing,
       fat: recipe.fatPerServing,
+      fiber: recipe.fiberPerServing,
       servings: 1,
       ingredients: ingredients,
     );
@@ -68,6 +69,7 @@ class PlannedMealFactory {
       protein: nutrients.protein * servings,
       carbs: nutrients.carbs * servings,
       fat: nutrients.fat * servings,
+      fiber: nutrients.fiber * servings,
       recipeId: recipe.id,
       servings: servings.toDouble(),
       ingredients: ingredients,
@@ -89,6 +91,7 @@ class PlannedMealFactory {
       protein: food.proteinPer100g,
       carbs: food.carbsPer100g,
       fat: food.fatPer100g,
+      fiber: food.fiberPer100g,
       ingredients: [
         PlannedMealIngredient(
           name: food.name,
@@ -108,6 +111,7 @@ class PlannedMealFactory {
     required double protein,
     required double carbs,
     required double fat,
+    double fiber = 0,
     String ingredientUnit = 'portion',
     String ingredientCategory = ShoppingCategory.other,
     double ingredientAmount = 1,
@@ -122,6 +126,7 @@ class PlannedMealFactory {
       protein: protein,
       carbs: carbs,
       fat: fat,
+      fiber: fiber,
       ingredients: [
         PlannedMealIngredient(
           name: name,

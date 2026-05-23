@@ -57,6 +57,7 @@ void main() {
       proteinPer100g: 8,
       carbsPer100g: 25,
       fatPer100g: 10,
+      fiberPer100g: 3,
       imageUrl: null,
       servingsJson: null,
       cacheStatus: cacheStatus,

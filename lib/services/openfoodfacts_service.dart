@@ -326,6 +326,7 @@ class OpenFoodFactsService {
     final protein = _parseNutrient(nutrients, 'proteins_100g') ?? 0;
     final carbs = _parseNutrient(nutrients, 'carbohydrates_100g') ?? 0;
     final fat = _parseNutrient(nutrients, 'fat_100g') ?? 0;
+    final fiber = _parseNutrient(nutrients, 'fiber_100g') ?? 0;
 
     // Extract brand
     final brand = product['brands']?.toString();
@@ -356,6 +357,7 @@ class OpenFoodFactsService {
       proteinPer100g: protein,
       carbsPer100g: carbs,
       fatPer100g: fat,
+      fiberPer100g: fiber,
       barcode: product['code'],
       brand: brand,
       imageUrl: imageUrl,

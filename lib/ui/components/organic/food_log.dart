@@ -11,6 +11,7 @@ class NutritionSummaryCard extends StatelessWidget {
   final String proteinLabel;
   final String carbsLabel;
   final String fatLabel;
+  final String? fiberLabel;
   final String? overGoalLabel;
   final NutritionTotals totals;
   final NutritionGoals? goals;
@@ -21,6 +22,7 @@ class NutritionSummaryCard extends StatelessWidget {
     required this.proteinLabel,
     required this.carbsLabel,
     required this.fatLabel,
+    this.fiberLabel,
     this.overGoalLabel,
     required this.totals,
     required this.goals,
@@ -114,6 +116,14 @@ class NutritionSummaryCard extends StatelessWidget {
                           value: totals.fat,
                           color: AppTheme.fat,
                         ),
+                        if (fiberLabel != null) ...[
+                          const SizedBox(width: 16),
+                          _SummaryMacroStat(
+                            label: fiberLabel!,
+                            value: totals.fiber,
+                            color: AppTheme.fiber,
+                          ),
+                        ],
                       ],
                     ),
                   ],
@@ -170,6 +180,7 @@ class MealCard extends StatelessWidget {
   final double protein;
   final double carbs;
   final double fat;
+  final double fiber;
 
   const MealCard({
     super.key,
@@ -187,6 +198,7 @@ class MealCard extends StatelessWidget {
     this.protein = 0,
     this.carbs = 0,
     this.fat = 0,
+    this.fiber = 0,
   });
 
   @override
@@ -294,6 +306,13 @@ class MealCard extends StatelessWidget {
                                       'F',
                                       fat,
                                       AppTheme.fat,
+                                      theme,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    _buildMiniMacro(
+                                      'Fi',
+                                      fiber,
+                                      AppTheme.fiber,
                                       theme,
                                     ),
                                   ],
@@ -411,6 +430,7 @@ class FoodEntryTile extends StatelessWidget {
   final double protein;
   final double carbs;
   final double fat;
+  final double fiber;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
 
@@ -421,6 +441,7 @@ class FoodEntryTile extends StatelessWidget {
     required this.protein,
     required this.carbs,
     required this.fat,
+    this.fiber = 0,
     this.onTap,
     this.onLongPress,
   });
@@ -464,6 +485,8 @@ class FoodEntryTile extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       MacroChip(label: 'F', value: fat, color: AppTheme.fat),
+                      const SizedBox(width: 8),
+                      MacroChip(label: 'Fi', value: fiber, color: AppTheme.fiber),
                     ],
                   ),
                 ],

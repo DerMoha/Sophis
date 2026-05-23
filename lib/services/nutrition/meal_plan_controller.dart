@@ -69,6 +69,7 @@ class MealPlanController {
             protein: meal.protein,
             carbs: meal.carbs,
             fat: meal.fat,
+            fiber: meal.fiber,
           );
     }
 
@@ -146,6 +147,7 @@ class MealPlanController {
       protein: meal.protein,
       carbs: meal.carbs,
       fat: meal.fat,
+      fiber: meal.fiber,
       recipeId: meal.recipeId,
       servings: meal.servings,
       ingredients: meal.ingredients,

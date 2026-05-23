@@ -5,6 +5,7 @@ class NutritionLabelResult {
   final double proteinPer100g;
   final double carbsPer100g;
   final double fatPer100g;
+  final double fiberPer100g;
   final double? servingSizeG;
   final String? servingName;
 
@@ -15,6 +16,7 @@ class NutritionLabelResult {
     required this.proteinPer100g,
     required this.carbsPer100g,
     required this.fatPer100g,
+    this.fiberPer100g = 0,
     this.servingSizeG,
     this.servingName,
   });

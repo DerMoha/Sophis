@@ -53,18 +53,20 @@ FoodDiaryVM buildFoodDiaryVM(
 }
 
 NutritionTotals _calculateTotals(List<FoodEntry> entries) {
-  double calories = 0, protein = 0, carbs = 0, fat = 0;
+  double calories = 0, protein = 0, carbs = 0, fat = 0, fiber = 0;
   for (final entry in entries) {
     calories += entry.calories;
     protein += entry.protein;
     carbs += entry.carbs;
     fat += entry.fat;
+    fiber += entry.fiber;
   }
   return NutritionTotals(
     calories: calories,
     protein: protein,
     carbs: carbs,
     fat: fat,
+    fiber: fiber,
   );
 }
 

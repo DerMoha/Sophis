@@ -12,6 +12,7 @@ class FoodEntryFactory {
     required double protein,
     required double carbs,
     required double fat,
+    double fiber = 0,
     required String meal,
     DateTime? timestamp,
     String? id,
@@ -23,6 +24,7 @@ class FoodEntryFactory {
       protein: protein,
       carbs: carbs,
       fat: fat,
+      fiber: fiber,
       timestamp: timestamp ?? DateTime.now(),
       meal: meal,
     );
@@ -47,6 +49,7 @@ class FoodEntryFactory {
       protein: nutrients.protein,
       carbs: nutrients.carbs,
       fat: nutrients.fat,
+      fiber: nutrients.fiber,
       meal: meal,
       timestamp: timestamp,
     );
@@ -58,6 +61,7 @@ class FoodEntryFactory {
     required double protein,
     required double carbs,
     required double fat,
+    double fiber = 0,
     String? id,
   }) {
     return FoodItem(
@@ -68,6 +72,7 @@ class FoodEntryFactory {
       proteinPer100g: protein,
       carbsPer100g: carbs,
       fatPer100g: fat,
+      fiberPer100g: fiber,
     );
   }
 
@@ -79,6 +84,7 @@ class FoodEntryFactory {
       protein: entry.protein,
       carbs: entry.carbs,
       fat: entry.fat,
+      fiber: entry.fiber,
     );
   }
 }

@@ -301,6 +301,7 @@ class BarcodeLookupService {
       proteinPer100g: Value(item.proteinPer100g),
       carbsPer100g: Value(item.carbsPer100g),
       fatPer100g: Value(item.fatPer100g),
+      fiberPer100g: Value(item.fiberPer100g),
       imageUrl: Value(item.imageUrl),
       servingsJson: Value(
         item.servings.isNotEmpty
@@ -327,6 +328,7 @@ class BarcodeLookupService {
       proteinPer100g: const Value(0),
       carbsPer100g: const Value(0),
       fatPer100g: const Value(0),
+      fiberPer100g: const Value(0),
       cacheStatus: const Value('partial'),
       isUserCorrected: const Value(false),
       cachedAt: Value(DateTime.now()),
@@ -346,6 +348,7 @@ class BarcodeLookupService {
       proteinPer100g: const Value(0),
       carbsPer100g: const Value(0),
       fatPer100g: const Value(0),
+      fiberPer100g: const Value(0),
       cacheStatus: const Value('notFound'),
       isUserCorrected: const Value(false),
       cachedAt: Value(DateTime.now()),
@@ -366,6 +369,7 @@ class BarcodeLookupService {
       proteinPer100g: Value(item.proteinPer100g),
       carbsPer100g: Value(item.carbsPer100g),
       fatPer100g: Value(item.fatPer100g),
+      fiberPer100g: Value(item.fiberPer100g),
       imageUrl: Value(item.imageUrl),
       servingsJson: Value(
         item.servings.isNotEmpty
@@ -433,6 +437,7 @@ class BarcodeLookupService {
       proteinPer100g: cached.proteinPer100g,
       carbsPer100g: cached.carbsPer100g,
       fatPer100g: cached.fatPer100g,
+      fiberPer100g: cached.fiberPer100g,
       barcode: cached.barcode,
       brand: cached.brand,
       imageUrl: cached.imageUrl,

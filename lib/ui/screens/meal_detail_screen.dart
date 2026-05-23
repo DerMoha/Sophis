@@ -533,6 +533,8 @@ class _MealEntryCard extends StatelessWidget {
         TextEditingController(text: entry.carbs.toStringAsFixed(1));
     final fatController =
         TextEditingController(text: entry.fat.toStringAsFixed(1));
+    final fiberController =
+        TextEditingController(text: entry.fiber.toStringAsFixed(1));
 
     showDialog(
       context: context,
@@ -545,6 +547,7 @@ class _MealEntryCard extends StatelessWidget {
             proteinController: proteinController,
             carbsController: carbsController,
             fatController: fatController,
+            fiberController: fiberController,
             nameLabel: l10n.name,
             nameTextCapitalization: TextCapitalization.sentences,
             border: const OutlineInputBorder(),
@@ -565,6 +568,8 @@ class _MealEntryCard extends StatelessWidget {
                     double.tryParse(proteinController.text) ?? entry.protein,
                 carbs: double.tryParse(carbsController.text) ?? entry.carbs,
                 fat: double.tryParse(fatController.text) ?? entry.fat,
+                fiber:
+                    double.tryParse(fiberController.text) ?? entry.fiber,
               );
               context.read<NutritionProvider>().updateFoodEntry(updatedEntry);
               Navigator.pop(ctx);

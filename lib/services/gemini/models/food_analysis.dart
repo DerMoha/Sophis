@@ -5,6 +5,7 @@ class FoodAnalysis {
   final double protein;
   final double carbs;
   final double fat;
+  final double fiber;
 
   FoodAnalysis({
     required this.name,
@@ -13,6 +14,7 @@ class FoodAnalysis {
     required this.protein,
     required this.carbs,
     required this.fat,
+    this.fiber = 0,
   });
 
   String get displayName => name;
@@ -28,6 +30,7 @@ class FoodAnalysis {
     double? protein,
     double? carbs,
     double? fat,
+    double? fiber,
   }) {
     return FoodAnalysis(
       name: name ?? this.name,
@@ -36,6 +39,7 @@ class FoodAnalysis {
       protein: protein ?? this.protein,
       carbs: carbs ?? this.carbs,
       fat: fat ?? this.fat,
+      fiber: fiber ?? this.fiber,
     );
   }
 
@@ -48,6 +52,7 @@ class FoodAnalysis {
       protein: protein * ratio,
       carbs: carbs * ratio,
       fat: fat * ratio,
+      fiber: fiber * ratio,
     );
   }
 }

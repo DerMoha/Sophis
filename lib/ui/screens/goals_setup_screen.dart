@@ -25,6 +25,7 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
   final _proteinController = TextEditingController();
   final _carbsController = TextEditingController();
   final _fatController = TextEditingController();
+  final _fiberController = TextEditingController();
   final _weightController = TextEditingController();
   final _heightController = TextEditingController();
   final _ageController = TextEditingController();
@@ -49,6 +50,7 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
       _proteinController.text = provider.goals!.protein.toStringAsFixed(0);
       _carbsController.text = provider.goals!.carbs.toStringAsFixed(0);
       _fatController.text = provider.goals!.fat.toStringAsFixed(0);
+      _fiberController.text = provider.goals!.fiber.toStringAsFixed(0);
     }
 
     if (provider.profile != null) {
@@ -81,6 +83,7 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
     _proteinController.dispose();
     _carbsController.dispose();
     _fatController.dispose();
+    _fiberController.dispose();
     _weightController.dispose();
     _heightController.dispose();
     _ageController.dispose();
@@ -130,6 +133,7 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
         _proteinController.text = goals.protein.toStringAsFixed(0);
         _carbsController.text = goals.carbs.toStringAsFixed(0);
         _fatController.text = goals.fat.toStringAsFixed(0);
+        _fiberController.text = goals.fiber.toStringAsFixed(0);
       });
     }
   }
@@ -166,6 +170,7 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
       protein: _parseDouble(_proteinController.text),
       carbs: _parseDouble(_carbsController.text),
       fat: _parseDouble(_fatController.text),
+      fiber: _parseDouble(_fiberController.text),
     );
     await provider.setGoals(goals);
 
@@ -411,6 +416,14 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
                                           controller: _fatController,
                                           label: l10n.fat,
                                           color: AppTheme.fat,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: _MacroInput(
+                                          controller: _fiberController,
+                                          label: l10n.fiber,
+                                          color: AppTheme.fiber,
                                         ),
                                       ),
                                     ],

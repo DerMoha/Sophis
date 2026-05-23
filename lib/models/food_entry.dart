@@ -6,6 +6,7 @@ class FoodEntry {
   final double protein;
   final double carbs;
   final double fat;
+  final double fiber;
   final DateTime timestamp;
   final String meal; // breakfast, lunch, dinner, snack
 
@@ -16,6 +17,7 @@ class FoodEntry {
     required this.protein,
     required this.carbs,
     required this.fat,
+    this.fiber = 0,
     required this.timestamp,
     required this.meal,
   });
@@ -28,6 +30,7 @@ class FoodEntry {
     double? protein,
     double? carbs,
     double? fat,
+    double? fiber,
     DateTime? timestamp,
     String? meal,
   }) {
@@ -38,6 +41,7 @@ class FoodEntry {
       protein: protein ?? this.protein,
       carbs: carbs ?? this.carbs,
       fat: fat ?? this.fat,
+      fiber: fiber ?? this.fiber,
       timestamp: timestamp ?? this.timestamp,
       meal: meal ?? this.meal,
     );
@@ -50,6 +54,7 @@ class FoodEntry {
       protein: protein * factor,
       carbs: carbs * factor,
       fat: fat * factor,
+      fiber: fiber * factor,
     );
   }
 
@@ -60,6 +65,7 @@ class FoodEntry {
         'protein': protein,
         'carbs': carbs,
         'fat': fat,
+        'fiber': fiber,
         'timestamp': timestamp.toIso8601String(),
         'meal': meal,
       };
@@ -71,6 +77,7 @@ class FoodEntry {
         protein: (json['protein'] as num).toDouble(),
         carbs: (json['carbs'] as num).toDouble(),
         fat: (json['fat'] as num).toDouble(),
+        fiber: (json['fiber'] as num?)?.toDouble() ?? 0,
         timestamp: DateTime.parse(json['timestamp']),
         meal: json['meal'] ?? 'snack',
       );

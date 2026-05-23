@@ -252,6 +252,7 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
             proteinLabel: l10n.protein,
             carbsLabel: l10n.carbs,
             fatLabel: l10n.fat,
+            fiberLabel: l10n.fiber,
             totals: vm.totals,
             goals: vm.goals,
           ),

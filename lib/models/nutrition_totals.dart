@@ -4,17 +4,20 @@ class NutritionTotals {
   final double protein;
   final double carbs;
   final double fat;
+  final double fiber;
 
   const NutritionTotals({
     this.calories = 0,
     this.protein = 0,
     this.carbs = 0,
     this.fat = 0,
+    this.fiber = 0,
   });
 
   static const zero = NutritionTotals();
 
-  bool get isEmpty => calories == 0 && protein == 0 && carbs == 0 && fat == 0;
+  bool get isEmpty =>
+      calories == 0 && protein == 0 && carbs == 0 && fat == 0 && fiber == 0;
 
   NutritionTotals operator +(NutritionTotals other) {
     return NutritionTotals(
@@ -22,6 +25,7 @@ class NutritionTotals {
       protein: protein + other.protein,
       carbs: carbs + other.carbs,
       fat: fat + other.fat,
+      fiber: fiber + other.fiber,
     );
   }
 
@@ -31,6 +35,7 @@ class NutritionTotals {
       protein: protein * multiplier,
       carbs: carbs * multiplier,
       fat: fat * multiplier,
+      fiber: fiber * multiplier,
     );
   }
 
@@ -40,6 +45,7 @@ class NutritionTotals {
         'protein': protein,
         'carbs': carbs,
         'fat': fat,
+        'fiber': fiber,
       };
 
   /// Create from legacy map format.
@@ -49,6 +55,7 @@ class NutritionTotals {
       protein: map['protein'] ?? 0,
       carbs: map['carbs'] ?? 0,
       fat: map['fat'] ?? 0,
+      fiber: map['fiber'] ?? 0,
     );
   }
 
@@ -56,5 +63,6 @@ class NutritionTotals {
   String toString() => 'NutritionTotals(cal: ${calories.toStringAsFixed(0)}, '
       'P: ${protein.toStringAsFixed(0)}g, '
       'C: ${carbs.toStringAsFixed(0)}g, '
-      'F: ${fat.toStringAsFixed(0)}g)';
+      'F: ${fat.toStringAsFixed(0)}g, '
+      'Fi: ${fiber.toStringAsFixed(0)}g)';
 }

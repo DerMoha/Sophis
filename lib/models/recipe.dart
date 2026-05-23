@@ -9,6 +9,7 @@ class RecipeIngredient {
   final double protein;
   final double carbs;
   final double fat;
+  final double fiber;
 
   const RecipeIngredient({
     required this.id,
@@ -18,6 +19,7 @@ class RecipeIngredient {
     required this.protein,
     required this.carbs,
     required this.fat,
+    this.fiber = 0,
   });
 
   Map<String, dynamic> toJson() => {
@@ -28,6 +30,7 @@ class RecipeIngredient {
         'protein': protein,
         'carbs': carbs,
         'fat': fat,
+        'fiber': fiber,
       };
 
   factory RecipeIngredient.fromJson(Map<String, dynamic> json) =>
@@ -39,6 +42,7 @@ class RecipeIngredient {
         protein: (json['protein'] as num).toDouble(),
         carbs: (json['carbs'] as num).toDouble(),
         fat: (json['fat'] as num).toDouble(),
+        fiber: (json['fiber'] as num?)?.toDouble() ?? 0,
       );
 }
 
@@ -62,14 +66,15 @@ class Recipe {
 
   /// Total nutrition for entire recipe
   NutritionTotals get totalNutrients {
-    double cal = 0, prot = 0, carb = 0, fat = 0;
+    double cal = 0, prot = 0, carb = 0, fat = 0, fib = 0;
     for (final i in ingredients) {
       cal += i.calories;
       prot += i.protein;
       carb += i.carbs;
       fat += i.fat;
+      fib += i.fiber;
     }
-    return NutritionTotals(calories: cal, protein: prot, carbs: carb, fat: fat);
+    return NutritionTotals(calories: cal, protein: prot, carbs: carb, fat: fat, fiber: fib);
   }
 
   /// Nutrition per serving
@@ -80,6 +85,7 @@ class Recipe {
       protein: total.protein / servings,
       carbs: total.carbs / servings,
       fat: total.fat / servings,
+      fiber: total.fiber / servings,
     );
   }
 
