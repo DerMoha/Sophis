@@ -19,6 +19,7 @@ class LocalAiFoodService {
 
   static bool _pluginInitialized = false;
   static const recommendedVisionModelName = 'Gemma 4 E2B IT';
+  static const recommendedVisionModelFilename = 'gemma-4-E2B-it.litertlm';
   static const recommendedVisionModelSize = '2.4 GB';
   static const recommendedVisionModelUrl =
       'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm';
@@ -35,7 +36,13 @@ class LocalAiFoodService {
     try {
       await _ensurePluginInitialized(huggingFaceToken: huggingFaceToken);
 
-      if (!FlutterGemma.hasActiveModel()) {
+      final activationResult = await ensureRecommendedVisionModelActive();
+      if (activationResult case Failure<bool>(message: final message)) {
+        _isInitialized = false;
+        return Failure(ServiceErrorType.unknown, message);
+      }
+
+      if (!activationResult.value) {
         _isInitialized = false;
         return const Failure(
           ServiceErrorType.notFound,
@@ -77,6 +84,36 @@ class LocalAiFoodService {
       return Failure(
         ServiceErrorType.unknown,
         'Failed to check local AI model: $e',
+      );
+    }
+  }
+
+  Future<ServiceResult<bool>> ensureRecommendedVisionModelActive() async {
+    try {
+      await _ensurePluginInitialized();
+
+      if (FlutterGemma.hasActiveModel()) {
+        return const Success(true);
+      }
+
+      final installedModels = await FlutterGemma.listInstalledModels();
+      if (!installedModels.contains(recommendedVisionModelFilename)) {
+        return const Success(false);
+      }
+
+      final activationResult = await installRecommendedVisionModel();
+      return switch (activationResult) {
+        Success<String>() => Success(FlutterGemma.hasActiveModel()),
+        Failure<String>(message: final message) => Failure(
+            ServiceErrorType.unknown,
+            'Failed to activate local AI model: $message',
+          ),
+      };
+    } catch (e) {
+      debugPrint('Failed to activate local AI model: $e');
+      return Failure(
+        ServiceErrorType.unknown,
+        'Failed to activate local AI model: $e',
       );
     }
   }
@@ -205,6 +242,12 @@ class LocalAiFoodService {
       }
 
       return Success(_parseResponse(response.token));
+    } on FormatException catch (e) {
+      debugPrint('Failed to parse local AI food response: $e');
+      return const Failure(
+        ServiceErrorType.parseError,
+        'Local AI returned an unreadable response. Try again with a clearer photo.',
+      );
     } on TimeoutException {
       debugPrint('Local AI food analysis timed out');
       return const Failure(
@@ -287,28 +330,28 @@ If no food is visible, return: {"foods": []}
   }
 
   List<FoodAnalysis> _parseResponse(String text) {
-    try {
-      final cleaned = _extractJsonObject(text);
-      final json = jsonDecode(cleaned) as Map<String, dynamic>;
-      final foods = json['foods'] as List<dynamic>? ?? [];
-
-      return foods.map((f) {
-        final food = f as Map<String, dynamic>;
-        return FoodAnalysis(
-          name: food['name']?.toString() ?? 'Unknown food',
-          portionGrams: (food['portion_grams'] as num?)?.toDouble() ?? 100,
-          calories: (food['calories'] as num?)?.toDouble() ?? 0,
-          protein: (food['protein'] as num?)?.toDouble() ?? 0,
-          carbs: (food['carbs'] as num?)?.toDouble() ?? 0,
-          fat: (food['fat'] as num?)?.toDouble() ?? 0,
-        );
-      }).toList();
-    } catch (e) {
-      debugPrint(
-        'Failed to parse local AI food response: $e\nRaw response: $text',
-      );
-      return [];
+    final cleaned = _extractJsonObject(text);
+    final decoded = jsonDecode(cleaned);
+    if (decoded is! Map<String, dynamic>) {
+      throw FormatException('Expected JSON object', text);
     }
+
+    final foods = decoded['foods'] as List<dynamic>? ?? [];
+
+    return foods.map((f) {
+      if (f is! Map<String, dynamic>) {
+        throw FormatException('Expected food object', text);
+      }
+
+      return FoodAnalysis(
+        name: f['name']?.toString() ?? 'Unknown food',
+        portionGrams: (f['portion_grams'] as num?)?.toDouble() ?? 100,
+        calories: (f['calories'] as num?)?.toDouble() ?? 0,
+        protein: (f['protein'] as num?)?.toDouble() ?? 0,
+        carbs: (f['carbs'] as num?)?.toDouble() ?? 0,
+        fat: (f['fat'] as num?)?.toDouble() ?? 0,
+      );
+    }).toList();
   }
 
   String _extractJsonObject(String text) {

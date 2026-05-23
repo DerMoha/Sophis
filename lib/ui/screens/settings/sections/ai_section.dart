@@ -27,6 +27,10 @@ class _AiSectionState extends State<AiSection> {
   bool _isCheckingLocalModels = false;
   bool _isInstallingLocalModel = false;
 
+  bool get _hasRecommendedLocalModel => _installedLocalModels.contains(
+        LocalAiFoodService.recommendedVisionModelFilename,
+      );
+
   @override
   void initState() {
     super.initState();
@@ -133,6 +137,46 @@ class _AiSectionState extends State<AiSection> {
     }
   }
 
+  Future<void> _activateRecommendedLocalModel() async {
+    if (_isInstallingLocalModel) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() {
+      _isInstallingLocalModel = true;
+      _localModelInstallProgress = null;
+      _localModelError = null;
+    });
+
+    final result = await _localAiService.ensureRecommendedVisionModelActive();
+
+    if (!mounted) return;
+
+    switch (result) {
+      case Success<bool>(value: true):
+        setState(() {
+          _isInstallingLocalModel = false;
+          _hasActiveLocalModel = true;
+        });
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Local Gemma model activated.')),
+        );
+        await _loadLocalModelState();
+      case Success<bool>(value: false):
+        setState(() {
+          _isInstallingLocalModel = false;
+          _localModelInstallProgress = null;
+          _localModelError = 'Recommended local model is not installed.';
+        });
+      case Failure<bool>(message: final message):
+        setState(() {
+          _isInstallingLocalModel = false;
+          _localModelInstallProgress = null;
+          _localModelError = message;
+        });
+        messenger.showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -190,12 +234,16 @@ class _AiSectionState extends State<AiSection> {
         ? theme.colorScheme.primary
         : _hasActiveLocalModel
             ? AppTheme.success
-            : AppTheme.error;
+            : _hasRecommendedLocalModel
+                ? AppTheme.warning
+                : AppTheme.error;
     final statusLabel = _isInstallingLocalModel
-        ? 'Installing'
+        ? (_hasRecommendedLocalModel ? 'Activating' : 'Installing')
         : _hasActiveLocalModel
             ? 'Ready'
-            : 'Not installed';
+            : _hasRecommendedLocalModel
+                ? 'Inactive'
+                : 'Not installed';
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -274,7 +322,9 @@ class _AiSectionState extends State<AiSection> {
               ElevatedButton.icon(
                 onPressed: _isInstallingLocalModel || _hasActiveLocalModel
                     ? null
-                    : _installRecommendedLocalModel,
+                    : _hasRecommendedLocalModel
+                        ? _activateRecommendedLocalModel
+                        : _installRecommendedLocalModel,
                 icon: _isInstallingLocalModel
                     ? SizedBox(
                         width: 14,
@@ -287,8 +337,12 @@ class _AiSectionState extends State<AiSection> {
                     : const Icon(Icons.download_outlined, size: 16),
                 label: Text(
                   _isInstallingLocalModel
-                      ? 'Downloading...'
-                      : 'Download Gemma 4 E2B',
+                      ? (_hasRecommendedLocalModel
+                          ? 'Activating...'
+                          : 'Downloading...')
+                      : _hasRecommendedLocalModel
+                          ? 'Activate Gemma 4 E2B'
+                          : 'Download Gemma 4 E2B',
                 ),
               ),
               TextButton.icon(
@@ -321,6 +375,9 @@ class _AiSectionState extends State<AiSection> {
 
   String _localModelDescription() {
     if (_isInstallingLocalModel) {
+      if (_hasRecommendedLocalModel) {
+        return 'Activating ${LocalAiFoodService.recommendedVisionModelName} for on-device food analysis...';
+      }
       final progress = _localModelInstallProgress;
       final progressText = progress == null || progress == 0
           ? 'Starting download'
@@ -338,6 +395,14 @@ class _AiSectionState extends State<AiSection> {
 
     if (_installedLocalModels.isEmpty) {
       return 'No local model found. Download ${LocalAiFoodService.recommendedVisionModelName} (${LocalAiFoodService.recommendedVisionModelSize}) to enable on-device food analysis.';
+    }
+
+    if (_hasRecommendedLocalModel && !_hasActiveLocalModel) {
+      return '${LocalAiFoodService.recommendedVisionModelName} is installed but inactive. Activate it to enable on-device food analysis.';
+    }
+
+    if (_hasActiveLocalModel) {
+      return 'Ready for on-device food analysis. Installed: ${_installedLocalModels.join(', ')}';
     }
 
     return 'Installed: ${_installedLocalModels.join(', ')}';
