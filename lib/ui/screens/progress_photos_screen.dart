@@ -72,6 +72,9 @@ class _ProgressPhotosScreenState extends State<ProgressPhotosScreen> {
       child: Scaffold(
         appBar: AppBar(
           title: Text(l10n.progressPhotos),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          centerTitle: true,
           actions: [
             if (photos.length >= 2)
               IconButton(
@@ -250,8 +253,8 @@ class _ProgressPhotosScreenState extends State<ProgressPhotosScreen> {
   ) {
     Navigator.push(
       context,
-      MaterialPageRoute<void>(
-        builder: (_) => ProgressPhotoViewer(
+      AppTheme.slideRoute(
+        ProgressPhotoViewer(
           photos: photos,
           initialIndex: index,
         ),
