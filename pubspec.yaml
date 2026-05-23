@@ -27,7 +27,7 @@ dependencies:
   
   # Phase 3: AI
   google_generative_ai: ^0.4.6
-  flutter_gemma: ^0.15.0
+  flutter_gemma: 0.15.0
   image_picker: ^1.0.7
   
   # Phase 5: Notifications
