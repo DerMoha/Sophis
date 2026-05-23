@@ -119,20 +119,21 @@ class _ProgressPhotosScreenState extends State<ProgressPhotosScreen> {
       PhotoCategory.other,
     ];
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    return Container(
+      height: 52,
+      margin: const EdgeInsets.symmetric(vertical: 8),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
           children: List.generate(labels.length, (index) {
             final isSelected =
                 _showAll ? values[index] == null : values[index] == _filter;
             return Padding(
               padding: const EdgeInsets.only(right: 8),
-              child: FilterChip(
-                label: Text(labels[index]),
-                selected: isSelected,
-                onSelected: (_) {
+              child: GestureDetector(
+                onTap: () {
                   setState(() {
                     if (values[index] == null) {
                       _showAll = true;
@@ -142,13 +143,30 @@ class _ProgressPhotosScreenState extends State<ProgressPhotosScreen> {
                     }
                   });
                 },
-                selectedColor:
-                    theme.colorScheme.primary.withValues(alpha: 0.15),
-                labelStyle: TextStyle(
-                  color: isSelected
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.onSurface,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                child: AnimatedContainer(
+                  duration: AppTheme.animFast,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(100),
+                    border: Border.all(
+                      color: isSelected
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.outline.withValues(alpha: 0.08),
+                    ),
+                  ),
+                  child: Text(
+                    labels[index],
+                    style: TextStyle(
+                      color: isSelected
+                          ? theme.colorScheme.onPrimary
+                          : theme.colorScheme.onSurfaceVariant,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      fontSize: 13,
+                    ),
+                  ),
                 ),
               ),
             );
@@ -197,15 +215,26 @@ class _ProgressPhotosScreenState extends State<ProgressPhotosScreen> {
         crossAxisCount: 2,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
-        childAspectRatio: 0.85,
+        childAspectRatio: 0.82,
       ),
       itemCount: photos.length,
       itemBuilder: (context, index) {
         final photo = photos[index];
+
+        // Calculate weight delta relative to the chronologically prior photo (which is at index + 1)
+        double? weightDelta;
+        if (index < photos.length - 1) {
+          final prior = photos[index + 1];
+          if (photo.weightKg != null && prior.weightKg != null) {
+            weightDelta = photo.weightKg! - prior.weightKg!;
+          }
+        }
+
         return FadeInSlide(
           index: index,
           child: _PhotoTile(
             photo: photo,
+            weightDelta: weightDelta,
             onTap: () => _openViewer(context, photos, index),
             onLongPress: () => _deletePhoto(photo.id),
           ),
@@ -221,7 +250,7 @@ class _ProgressPhotosScreenState extends State<ProgressPhotosScreen> {
   ) {
     Navigator.push(
       context,
-      MaterialPageRoute(
+      MaterialPageRoute<void>(
         builder: (_) => ProgressPhotoViewer(
           photos: photos,
           initialIndex: index,
@@ -231,7 +260,7 @@ class _ProgressPhotosScreenState extends State<ProgressPhotosScreen> {
   }
 
   void _showAddSheet(BuildContext context) {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -242,11 +271,13 @@ class _ProgressPhotosScreenState extends State<ProgressPhotosScreen> {
 
 class _PhotoTile extends StatelessWidget {
   final ProgressPhoto photo;
+  final double? weightDelta;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
 
   const _PhotoTile({
     required this.photo,
+    this.weightDelta,
     required this.onTap,
     required this.onLongPress,
   });
@@ -254,9 +285,19 @@ class _PhotoTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final thumbPath = '${photo.imagePath.replaceAll('.jpg', '')}_thumb.jpg';
     final thumbFile = File(thumbPath);
     final hasThumb = thumbFile.existsSync();
+    final fileToUse = hasThumb ? thumbFile : File(photo.imagePath);
+
+    String? deltaText;
+    bool isLoss = false;
+    if (weightDelta != null) {
+      isLoss = weightDelta! < 0;
+      final sign = weightDelta! >= 0 ? '+' : '';
+      deltaText = '$sign${weightDelta!.toStringAsFixed(1)} kg';
+    }
 
     return Hero(
       tag: 'photo_${photo.id}',
@@ -268,28 +309,50 @@ class _PhotoTile extends StatelessWidget {
           onLongPress: onLongPress,
           child: Container(
             decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest,
+              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
               borderRadius: BorderRadius.circular(AppTheme.radiusMD),
               border: Border.all(
-                color: theme.colorScheme.outline.withValues(alpha: 0.1),
+                color: theme.colorScheme.outline.withValues(alpha: 0.08),
               ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Expanded(
-                  child: hasThumb
-                      ? Image.file(
-                          thumbFile,
-                          fit: BoxFit.cover,
-                        )
-                      : Image.file(
-                          File(photo.imagePath),
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: Image.file(
+                          fileToUse,
                           fit: BoxFit.cover,
                         ),
+                      ),
+                      // Category Overlay Badge
+                      Positioned(
+                        top: 8,
+                        left: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.65),
+                            borderRadius: BorderRadius.circular(100),
+                          ),
+                          child: Text(
+                            _getCategoryLabel(photo.category, l10n).toUpperCase(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -297,17 +360,41 @@ class _PhotoTile extends StatelessWidget {
                         _formatDate(photo.timestamp),
                         style: theme.textTheme.bodySmall?.copyWith(
                           fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.onSurface,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      if (photo.weightKg != null)
-                        Text(
-                          '${photo.weightKg!.toStringAsFixed(1)} kg',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: theme.colorScheme.primary,
-                          ),
-                        ),
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          if (photo.weightKg != null)
+                            Text(
+                              '${photo.weightKg!.toStringAsFixed(1)} kg',
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: theme.colorScheme.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          if (deltaText != null)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: (isLoss ? AppTheme.success : AppTheme.warning).withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                deltaText,
+                                style: TextStyle(
+                                  color: isLoss ? AppTheme.success : AppTheme.warning,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -317,6 +404,19 @@ class _PhotoTile extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _getCategoryLabel(PhotoCategory category, AppLocalizations l10n) {
+    switch (category) {
+      case PhotoCategory.front:
+        return l10n.front;
+      case PhotoCategory.side:
+        return l10n.side;
+      case PhotoCategory.back:
+        return l10n.back;
+      case PhotoCategory.other:
+        return l10n.other;
+    }
   }
 
   String _formatDate(DateTime date) {

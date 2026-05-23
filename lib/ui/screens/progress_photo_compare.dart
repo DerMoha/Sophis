@@ -8,6 +8,9 @@ import 'package:sophis/models/progress_photo.dart';
 import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/screens/progress_photo_lock_guard.dart';
+import 'package:sophis/ui/components/progress_photo_slider.dart';
+
+enum CompareMode { sideBySide, slider }
 
 class ProgressPhotoCompare extends StatefulWidget {
   const ProgressPhotoCompare({super.key});
@@ -19,6 +22,7 @@ class ProgressPhotoCompare extends StatefulWidget {
 class _ProgressPhotoCompareState extends State<ProgressPhotoCompare> {
   ProgressPhoto? _before;
   ProgressPhoto? _after;
+  CompareMode _compareMode = CompareMode.sideBySide;
 
   @override
   void initState() {
@@ -88,12 +92,14 @@ class _ProgressPhotoCompareState extends State<ProgressPhotoCompare> {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
+    final showContent = _before != null && _after != null;
+
     return ProgressPhotoLockScope(
       child: Scaffold(
         appBar: AppBar(
           title: Text(l10n.compare),
           actions: [
-            if (_before != null && _after != null)
+            if (showContent)
               IconButton(
                 icon: const Icon(Icons.share_outlined),
                 onPressed: _shareComparison,
@@ -103,35 +109,148 @@ class _ProgressPhotoCompareState extends State<ProgressPhotoCompare> {
         body: SafeArea(
           child: Column(
             children: [
+              if (showContent) _buildModeSelector(theme),
               Expanded(
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _buildPhotoColumn(
-                        l10n.before,
-                        _before,
-                        () => _selectPhoto(true),
-                      ),
-                    ),
-                    Container(
-                      width: 1,
-                      color: theme.colorScheme.outline.withValues(alpha: 0.2),
-                    ),
-                    Expanded(
-                      child: _buildPhotoColumn(
-                        l10n.after,
-                        _after,
-                        () => _selectPhoto(false),
-                      ),
-                    ),
-                  ],
-                ),
+                child: showContent
+                    ? _buildComparisonView(theme, l10n)
+                    : _buildPhotoSelectionGrid(theme, l10n),
               ),
-              _buildStatsBar(l10n, theme),
+              if (showContent) _buildStatsBar(l10n, theme),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildModeSelector(ThemeData theme) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(100),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildModeTab(
+              label: 'Side by Side',
+              isSelected: _compareMode == CompareMode.sideBySide,
+              onTap: () => setState(() => _compareMode = CompareMode.sideBySide),
+              theme: theme,
+            ),
+          ),
+          Expanded(
+            child: _buildModeTab(
+              label: 'Interactive Slider',
+              isSelected: _compareMode == CompareMode.slider,
+              onTap: () => setState(() => _compareMode = CompareMode.slider),
+              theme: theme,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModeTab({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+    required ThemeData theme,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: AppTheme.animFast,
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: isSelected ? theme.colorScheme.surface : Colors.transparent,
+          borderRadius: BorderRadius.circular(100),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+            fontSize: 13,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildComparisonView(ThemeData theme, AppLocalizations l10n) {
+    if (_compareMode == CompareMode.slider) {
+      return Padding(
+        padding: const EdgeInsets.all(16),
+        child: AspectRatio(
+          aspectRatio: 0.72,
+          child: ProgressPhotoSlider(
+            beforeImage: File(_before!.imagePath),
+            afterImage: File(_after!.imagePath),
+          ),
+        ),
+      );
+    }
+
+    return Row(
+      children: [
+        Expanded(
+          child: _buildPhotoColumn(
+            l10n.before,
+            _before,
+            () => _selectPhoto(true),
+          ),
+        ),
+        Container(
+          width: 1,
+          color: theme.colorScheme.outline.withValues(alpha: 0.12),
+        ),
+        Expanded(
+          child: _buildPhotoColumn(
+            l10n.after,
+            _after,
+            () => _selectPhoto(false),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPhotoSelectionGrid(ThemeData theme, AppLocalizations l10n) {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildPhotoColumn(
+            l10n.before,
+            _before,
+            () => _selectPhoto(true),
+          ),
+        ),
+        Container(
+          width: 1,
+          color: theme.colorScheme.outline.withValues(alpha: 0.12),
+        ),
+        Expanded(
+          child: _buildPhotoColumn(
+            l10n.after,
+            _after,
+            () => _selectPhoto(false),
+          ),
+        ),
+      ],
     );
   }
 
@@ -145,24 +264,25 @@ class _ProgressPhotoCompareState extends State<ProgressPhotoCompare> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.all(8),
+        margin: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest,
+          color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(AppTheme.radiusMD),
           border: Border.all(
-            color: theme.colorScheme.outline.withValues(alpha: 0.1),
+            color: theme.colorScheme.outline.withValues(alpha: 0.08),
           ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Container(
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              padding: const EdgeInsets.symmetric(vertical: 10),
               alignment: Alignment.center,
               child: Text(
                 label,
                 style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
             ),
@@ -181,15 +301,15 @@ class _ProgressPhotoCompareState extends State<ProgressPhotoCompare> {
                         children: [
                           Icon(
                             Icons.add_photo_alternate_outlined,
-                            size: 48,
-                            color: theme.colorScheme.onSurfaceVariant
-                                .withValues(alpha: 0.4),
+                            size: 40,
+                            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.35),
                           ),
                           const SizedBox(height: 8),
                           Text(
                             'Tap to select',
-                            style: theme.textTheme.bodyMedium?.copyWith(
+                            style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],
@@ -203,14 +323,16 @@ class _ProgressPhotoCompareState extends State<ProgressPhotoCompare> {
                   children: [
                     Text(
                       _formatDate(photo.timestamp),
-                      style: theme.textTheme.bodySmall,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     if (photo.weightKg != null)
                       Text(
                         '${photo.weightKg!.toStringAsFixed(1)} kg',
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: theme.colorScheme.primary,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                   ],
@@ -227,23 +349,47 @@ class _ProgressPhotoCompareState extends State<ProgressPhotoCompare> {
     final weightDelta = _getWeightDelta();
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         border: Border(
           top: BorderSide(
-            color: theme.colorScheme.outline.withValues(alpha: 0.1),
+            color: theme.colorScheme.outline.withValues(alpha: 0.08),
           ),
         ),
       ),
       child: SafeArea(
         top: false,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            if (duration != null) _buildStat(l10n.duration, duration, theme),
-            if (weightDelta != null)
-              _buildStat(l10n.weightDelta, weightDelta, theme),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                if (duration != null) _buildStat(l10n.duration, duration, theme),
+                if (weightDelta != null)
+                  _buildStat(l10n.weightDelta, weightDelta, theme),
+              ],
+            ),
+            if (_compareMode == CompareMode.slider) ...[
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextButton.icon(
+                    onPressed: () => _selectPhoto(true),
+                    icon: const Icon(Icons.edit_outlined, size: 16),
+                    label: const Text('Change Before', style: TextStyle(fontSize: 12)),
+                  ),
+                  const SizedBox(width: 16),
+                  TextButton.icon(
+                    onPressed: () => _selectPhoto(false),
+                    icon: const Icon(Icons.edit_outlined, size: 16),
+                    label: const Text('Change After', style: TextStyle(fontSize: 12)),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
@@ -251,12 +397,15 @@ class _ProgressPhotoCompareState extends State<ProgressPhotoCompare> {
   }
 
   Widget _buildStat(String label, String value, ThemeData theme) {
+    final isLoss = value.contains('-');
+
     return Column(
       children: [
         Text(
           label,
           style: theme.textTheme.labelSmall?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w500,
           ),
         ),
         const SizedBox(height: 4),
@@ -264,7 +413,9 @@ class _ProgressPhotoCompareState extends State<ProgressPhotoCompare> {
           value,
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
-            color: theme.colorScheme.primary,
+            color: label.contains('Weight') || value.contains('kg')
+                ? (isLoss ? AppTheme.success : AppTheme.warning)
+                : theme.colorScheme.primary,
           ),
         ),
       ],
@@ -295,10 +446,12 @@ class _PhotoSelectorSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
               child: Text(
                 title,
-                style: theme.textTheme.titleLarge,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
             Flexible(
