@@ -9,6 +9,7 @@ import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/screens/progress_photo_lock_guard.dart';
 import 'package:sophis/ui/components/progress_photo_slider.dart';
+import 'package:sophis/ui/components/modal_sheet.dart';
 
 enum CompareMode { sideBySide, slider }
 
@@ -98,6 +99,9 @@ class _ProgressPhotoCompareState extends State<ProgressPhotoCompare> {
       child: Scaffold(
         appBar: AppBar(
           title: Text(l10n.compare),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          centerTitle: true,
           actions: [
             if (showContent)
               IconButton(
@@ -434,54 +438,44 @@ class _PhotoSelectorSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
-              child: Text(
-                title,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+    return ModalSheetSurface(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const ModalSheetHandle(),
+          ModalSheetHeader(
+            icon: Icons.photo_library_outlined,
+            iconColor: AppTheme.emerald,
+            title: title,
+          ),
+          const SizedBox(height: 8),
+          Flexible(
+            child: GridView.builder(
+              shrinkWrap: true,
+              padding: const EdgeInsets.all(16),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+                childAspectRatio: 0.8,
               ),
-            ),
-            Flexible(
-              child: GridView.builder(
-                shrinkWrap: true,
-                padding: const EdgeInsets.all(16),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
-                  childAspectRatio: 0.8,
-                ),
-                itemCount: photos.length,
-                itemBuilder: (context, index) {
-                  final photo = photos[index];
-                  return GestureDetector(
-                    onTap: () => Navigator.pop(context, photo),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                      child: Image.file(
-                        File(photo.imagePath),
-                        fit: BoxFit.cover,
-                      ),
+              itemCount: photos.length,
+              itemBuilder: (context, index) {
+                final photo = photos[index];
+                return GestureDetector(
+                  onTap: () => Navigator.pop(context, photo),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                    child: Image.file(
+                      File(photo.imagePath),
+                      fit: BoxFit.cover,
                     ),
-                  );
-                },
-              ),
+                  ),
+                );
+              },
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

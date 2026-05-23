@@ -7,6 +7,7 @@ import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/progress_photo.dart';
 import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
+import 'package:sophis/ui/components/modal_sheet.dart';
 
 class AddPhotoSheet extends StatefulWidget {
   const AddPhotoSheet({super.key});
@@ -74,62 +75,71 @@ class _AddPhotoSheetState extends State<AddPhotoSheet> {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+    return ModalSheetSurface(
+      child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.outline.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
+            const ModalSheetHandle(),
+            ModalSheetHeader(
+              icon: Icons.add_a_photo_outlined,
+              iconColor: AppTheme.emerald,
+              title: l10n.addProgressPhoto,
             ),
             const SizedBox(height: 20),
-            Text(
-              l10n.addProgressPhoto,
-              style: theme.textTheme.headlineSmall,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Text(l10n.category, style: theme.textTheme.titleSmall),
             ),
-            const SizedBox(height: 20),
-            Text(l10n.category, style: theme.textTheme.titleSmall),
             const SizedBox(height: 8),
-            _buildCategorySelector(l10n, theme),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: _buildCategorySelector(l10n, theme),
+            ),
             const SizedBox(height: 16),
-            _buildDateRow(l10n, theme),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: _buildDateRow(l10n, theme),
+            ),
             const SizedBox(height: 16),
-            _buildWeightField(l10n, theme),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: _buildWeightField(l10n, theme),
+            ),
             const SizedBox(height: 16),
-            _buildNoteField(l10n, theme),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: _buildNoteField(l10n, theme),
+            ),
             const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _isLoading ? null : () => _pickImage(ImageSource.camera),
-                    icon: const Icon(Icons.camera_alt_outlined),
-                    label: Text(l10n.takePhoto),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _isLoading ? null : () => _pickImage(ImageSource.camera),
+                      icon: const Icon(Icons.camera_alt_outlined),
+                      label: Text(l10n.takePhoto),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _isLoading ? null : () => _pickImage(ImageSource.gallery),
-                    icon: const Icon(Icons.photo_library_outlined),
-                    label: Text(l10n.chooseFromGallery),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _isLoading ? null : () => _pickImage(ImageSource.gallery),
+                      icon: const Icon(Icons.photo_library_outlined),
+                      label: Text(l10n.chooseFromGallery),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             if (_isLoading) ...[
               const SizedBox(height: 16),
               const Center(child: CircularProgressIndicator()),
             ],
+            const SizedBox(height: 24),
           ],
         ),
       ),
