@@ -1830,7 +1830,9 @@ class $BarcodeProductsTable extends BarcodeProducts
   @override
   late final GeneratedColumn<String> name = GeneratedColumn<String>(
       'name', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(''));
   static const VerificationMeta _brandMeta = const VerificationMeta('brand');
   @override
   late final GeneratedColumn<String> brand = GeneratedColumn<String>(
@@ -1847,25 +1849,33 @@ class $BarcodeProductsTable extends BarcodeProducts
   @override
   late final GeneratedColumn<double> caloriesPer100g = GeneratedColumn<double>(
       'calories_per100g', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+      type: DriftSqlType.double,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
   static const VerificationMeta _proteinPer100gMeta =
       const VerificationMeta('proteinPer100g');
   @override
   late final GeneratedColumn<double> proteinPer100g = GeneratedColumn<double>(
       'protein_per100g', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+      type: DriftSqlType.double,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
   static const VerificationMeta _carbsPer100gMeta =
       const VerificationMeta('carbsPer100g');
   @override
   late final GeneratedColumn<double> carbsPer100g = GeneratedColumn<double>(
       'carbs_per100g', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+      type: DriftSqlType.double,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
   static const VerificationMeta _fatPer100gMeta =
       const VerificationMeta('fatPer100g');
   @override
   late final GeneratedColumn<double> fatPer100g = GeneratedColumn<double>(
       'fat_per100g', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+      type: DriftSqlType.double,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
   static const VerificationMeta _imageUrlMeta =
       const VerificationMeta('imageUrl');
   @override
@@ -1878,6 +1888,14 @@ class $BarcodeProductsTable extends BarcodeProducts
   late final GeneratedColumn<String> servingsJson = GeneratedColumn<String>(
       'servings_json', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _cacheStatusMeta =
+      const VerificationMeta('cacheStatus');
+  @override
+  late final GeneratedColumn<String> cacheStatus = GeneratedColumn<String>(
+      'cache_status', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('found'));
   static const VerificationMeta _isUserCorrectedMeta =
       const VerificationMeta('isUserCorrected');
   @override
@@ -1913,6 +1931,7 @@ class $BarcodeProductsTable extends BarcodeProducts
         fatPer100g,
         imageUrl,
         servingsJson,
+        cacheStatus,
         isUserCorrected,
         cachedAt,
         source
@@ -1936,8 +1955,6 @@ class $BarcodeProductsTable extends BarcodeProducts
     if (data.containsKey('name')) {
       context.handle(
           _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
-    } else if (isInserting) {
-      context.missing(_nameMeta);
     }
     if (data.containsKey('brand')) {
       context.handle(
@@ -1952,32 +1969,24 @@ class $BarcodeProductsTable extends BarcodeProducts
           _caloriesPer100gMeta,
           caloriesPer100g.isAcceptableOrUnknown(
               data['calories_per100g']!, _caloriesPer100gMeta));
-    } else if (isInserting) {
-      context.missing(_caloriesPer100gMeta);
     }
     if (data.containsKey('protein_per100g')) {
       context.handle(
           _proteinPer100gMeta,
           proteinPer100g.isAcceptableOrUnknown(
               data['protein_per100g']!, _proteinPer100gMeta));
-    } else if (isInserting) {
-      context.missing(_proteinPer100gMeta);
     }
     if (data.containsKey('carbs_per100g')) {
       context.handle(
           _carbsPer100gMeta,
           carbsPer100g.isAcceptableOrUnknown(
               data['carbs_per100g']!, _carbsPer100gMeta));
-    } else if (isInserting) {
-      context.missing(_carbsPer100gMeta);
     }
     if (data.containsKey('fat_per100g')) {
       context.handle(
           _fatPer100gMeta,
           fatPer100g.isAcceptableOrUnknown(
               data['fat_per100g']!, _fatPer100gMeta));
-    } else if (isInserting) {
-      context.missing(_fatPer100gMeta);
     }
     if (data.containsKey('image_url')) {
       context.handle(_imageUrlMeta,
@@ -1988,6 +1997,12 @@ class $BarcodeProductsTable extends BarcodeProducts
           _servingsJsonMeta,
           servingsJson.isAcceptableOrUnknown(
               data['servings_json']!, _servingsJsonMeta));
+    }
+    if (data.containsKey('cache_status')) {
+      context.handle(
+          _cacheStatusMeta,
+          cacheStatus.isAcceptableOrUnknown(
+              data['cache_status']!, _cacheStatusMeta));
     }
     if (data.containsKey('is_user_corrected')) {
       context.handle(
@@ -2034,6 +2049,8 @@ class $BarcodeProductsTable extends BarcodeProducts
           .read(DriftSqlType.string, data['${effectivePrefix}image_url']),
       servingsJson: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}servings_json']),
+      cacheStatus: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}cache_status'])!,
       isUserCorrected: attachedDatabase.typeMapping.read(
           DriftSqlType.bool, data['${effectivePrefix}is_user_corrected'])!,
       cachedAt: attachedDatabase.typeMapping
@@ -2060,6 +2077,7 @@ class BarcodeProduct extends DataClass implements Insertable<BarcodeProduct> {
   final double fatPer100g;
   final String? imageUrl;
   final String? servingsJson;
+  final String cacheStatus;
   final bool isUserCorrected;
   final DateTime cachedAt;
   final String source;
@@ -2074,6 +2092,7 @@ class BarcodeProduct extends DataClass implements Insertable<BarcodeProduct> {
       required this.fatPer100g,
       this.imageUrl,
       this.servingsJson,
+      required this.cacheStatus,
       required this.isUserCorrected,
       required this.cachedAt,
       required this.source});
@@ -2098,6 +2117,7 @@ class BarcodeProduct extends DataClass implements Insertable<BarcodeProduct> {
     if (!nullToAbsent || servingsJson != null) {
       map['servings_json'] = Variable<String>(servingsJson);
     }
+    map['cache_status'] = Variable<String>(cacheStatus);
     map['is_user_corrected'] = Variable<bool>(isUserCorrected);
     map['cached_at'] = Variable<DateTime>(cachedAt);
     map['source'] = Variable<String>(source);
@@ -2123,6 +2143,7 @@ class BarcodeProduct extends DataClass implements Insertable<BarcodeProduct> {
       servingsJson: servingsJson == null && nullToAbsent
           ? const Value.absent()
           : Value(servingsJson),
+      cacheStatus: Value(cacheStatus),
       isUserCorrected: Value(isUserCorrected),
       cachedAt: Value(cachedAt),
       source: Value(source),
@@ -2143,6 +2164,7 @@ class BarcodeProduct extends DataClass implements Insertable<BarcodeProduct> {
       fatPer100g: serializer.fromJson<double>(json['fatPer100g']),
       imageUrl: serializer.fromJson<String?>(json['imageUrl']),
       servingsJson: serializer.fromJson<String?>(json['servingsJson']),
+      cacheStatus: serializer.fromJson<String>(json['cacheStatus']),
       isUserCorrected: serializer.fromJson<bool>(json['isUserCorrected']),
       cachedAt: serializer.fromJson<DateTime>(json['cachedAt']),
       source: serializer.fromJson<String>(json['source']),
@@ -2162,6 +2184,7 @@ class BarcodeProduct extends DataClass implements Insertable<BarcodeProduct> {
       'fatPer100g': serializer.toJson<double>(fatPer100g),
       'imageUrl': serializer.toJson<String?>(imageUrl),
       'servingsJson': serializer.toJson<String?>(servingsJson),
+      'cacheStatus': serializer.toJson<String>(cacheStatus),
       'isUserCorrected': serializer.toJson<bool>(isUserCorrected),
       'cachedAt': serializer.toJson<DateTime>(cachedAt),
       'source': serializer.toJson<String>(source),
@@ -2179,6 +2202,7 @@ class BarcodeProduct extends DataClass implements Insertable<BarcodeProduct> {
           double? fatPer100g,
           Value<String?> imageUrl = const Value.absent(),
           Value<String?> servingsJson = const Value.absent(),
+          String? cacheStatus,
           bool? isUserCorrected,
           DateTime? cachedAt,
           String? source}) =>
@@ -2194,6 +2218,7 @@ class BarcodeProduct extends DataClass implements Insertable<BarcodeProduct> {
         imageUrl: imageUrl.present ? imageUrl.value : this.imageUrl,
         servingsJson:
             servingsJson.present ? servingsJson.value : this.servingsJson,
+        cacheStatus: cacheStatus ?? this.cacheStatus,
         isUserCorrected: isUserCorrected ?? this.isUserCorrected,
         cachedAt: cachedAt ?? this.cachedAt,
         source: source ?? this.source,
@@ -2219,6 +2244,8 @@ class BarcodeProduct extends DataClass implements Insertable<BarcodeProduct> {
       servingsJson: data.servingsJson.present
           ? data.servingsJson.value
           : this.servingsJson,
+      cacheStatus:
+          data.cacheStatus.present ? data.cacheStatus.value : this.cacheStatus,
       isUserCorrected: data.isUserCorrected.present
           ? data.isUserCorrected.value
           : this.isUserCorrected,
@@ -2240,6 +2267,7 @@ class BarcodeProduct extends DataClass implements Insertable<BarcodeProduct> {
           ..write('fatPer100g: $fatPer100g, ')
           ..write('imageUrl: $imageUrl, ')
           ..write('servingsJson: $servingsJson, ')
+          ..write('cacheStatus: $cacheStatus, ')
           ..write('isUserCorrected: $isUserCorrected, ')
           ..write('cachedAt: $cachedAt, ')
           ..write('source: $source')
@@ -2259,6 +2287,7 @@ class BarcodeProduct extends DataClass implements Insertable<BarcodeProduct> {
       fatPer100g,
       imageUrl,
       servingsJson,
+      cacheStatus,
       isUserCorrected,
       cachedAt,
       source);
@@ -2276,6 +2305,7 @@ class BarcodeProduct extends DataClass implements Insertable<BarcodeProduct> {
           other.fatPer100g == this.fatPer100g &&
           other.imageUrl == this.imageUrl &&
           other.servingsJson == this.servingsJson &&
+          other.cacheStatus == this.cacheStatus &&
           other.isUserCorrected == this.isUserCorrected &&
           other.cachedAt == this.cachedAt &&
           other.source == this.source);
@@ -2292,6 +2322,7 @@ class BarcodeProductsCompanion extends UpdateCompanion<BarcodeProduct> {
   final Value<double> fatPer100g;
   final Value<String?> imageUrl;
   final Value<String?> servingsJson;
+  final Value<String> cacheStatus;
   final Value<bool> isUserCorrected;
   final Value<DateTime> cachedAt;
   final Value<String> source;
@@ -2307,6 +2338,7 @@ class BarcodeProductsCompanion extends UpdateCompanion<BarcodeProduct> {
     this.fatPer100g = const Value.absent(),
     this.imageUrl = const Value.absent(),
     this.servingsJson = const Value.absent(),
+    this.cacheStatus = const Value.absent(),
     this.isUserCorrected = const Value.absent(),
     this.cachedAt = const Value.absent(),
     this.source = const Value.absent(),
@@ -2314,25 +2346,21 @@ class BarcodeProductsCompanion extends UpdateCompanion<BarcodeProduct> {
   });
   BarcodeProductsCompanion.insert({
     required String barcode,
-    required String name,
+    this.name = const Value.absent(),
     this.brand = const Value.absent(),
     this.category = const Value.absent(),
-    required double caloriesPer100g,
-    required double proteinPer100g,
-    required double carbsPer100g,
-    required double fatPer100g,
+    this.caloriesPer100g = const Value.absent(),
+    this.proteinPer100g = const Value.absent(),
+    this.carbsPer100g = const Value.absent(),
+    this.fatPer100g = const Value.absent(),
     this.imageUrl = const Value.absent(),
     this.servingsJson = const Value.absent(),
+    this.cacheStatus = const Value.absent(),
     this.isUserCorrected = const Value.absent(),
     required DateTime cachedAt,
     this.source = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : barcode = Value(barcode),
-        name = Value(name),
-        caloriesPer100g = Value(caloriesPer100g),
-        proteinPer100g = Value(proteinPer100g),
-        carbsPer100g = Value(carbsPer100g),
-        fatPer100g = Value(fatPer100g),
         cachedAt = Value(cachedAt);
   static Insertable<BarcodeProduct> custom({
     Expression<String>? barcode,
@@ -2345,6 +2373,7 @@ class BarcodeProductsCompanion extends UpdateCompanion<BarcodeProduct> {
     Expression<double>? fatPer100g,
     Expression<String>? imageUrl,
     Expression<String>? servingsJson,
+    Expression<String>? cacheStatus,
     Expression<bool>? isUserCorrected,
     Expression<DateTime>? cachedAt,
     Expression<String>? source,
@@ -2361,6 +2390,7 @@ class BarcodeProductsCompanion extends UpdateCompanion<BarcodeProduct> {
       if (fatPer100g != null) 'fat_per100g': fatPer100g,
       if (imageUrl != null) 'image_url': imageUrl,
       if (servingsJson != null) 'servings_json': servingsJson,
+      if (cacheStatus != null) 'cache_status': cacheStatus,
       if (isUserCorrected != null) 'is_user_corrected': isUserCorrected,
       if (cachedAt != null) 'cached_at': cachedAt,
       if (source != null) 'source': source,
@@ -2379,6 +2409,7 @@ class BarcodeProductsCompanion extends UpdateCompanion<BarcodeProduct> {
       Value<double>? fatPer100g,
       Value<String?>? imageUrl,
       Value<String?>? servingsJson,
+      Value<String>? cacheStatus,
       Value<bool>? isUserCorrected,
       Value<DateTime>? cachedAt,
       Value<String>? source,
@@ -2394,6 +2425,7 @@ class BarcodeProductsCompanion extends UpdateCompanion<BarcodeProduct> {
       fatPer100g: fatPer100g ?? this.fatPer100g,
       imageUrl: imageUrl ?? this.imageUrl,
       servingsJson: servingsJson ?? this.servingsJson,
+      cacheStatus: cacheStatus ?? this.cacheStatus,
       isUserCorrected: isUserCorrected ?? this.isUserCorrected,
       cachedAt: cachedAt ?? this.cachedAt,
       source: source ?? this.source,
@@ -2434,6 +2466,9 @@ class BarcodeProductsCompanion extends UpdateCompanion<BarcodeProduct> {
     if (servingsJson.present) {
       map['servings_json'] = Variable<String>(servingsJson.value);
     }
+    if (cacheStatus.present) {
+      map['cache_status'] = Variable<String>(cacheStatus.value);
+    }
     if (isUserCorrected.present) {
       map['is_user_corrected'] = Variable<bool>(isUserCorrected.value);
     }
@@ -2462,6 +2497,7 @@ class BarcodeProductsCompanion extends UpdateCompanion<BarcodeProduct> {
           ..write('fatPer100g: $fatPer100g, ')
           ..write('imageUrl: $imageUrl, ')
           ..write('servingsJson: $servingsJson, ')
+          ..write('cacheStatus: $cacheStatus, ')
           ..write('isUserCorrected: $isUserCorrected, ')
           ..write('cachedAt: $cachedAt, ')
           ..write('source: $source, ')
@@ -6944,15 +6980,16 @@ typedef $$SupplementLogsTableProcessedTableManager = ProcessedTableManager<
 typedef $$BarcodeProductsTableCreateCompanionBuilder = BarcodeProductsCompanion
     Function({
   required String barcode,
-  required String name,
+  Value<String> name,
   Value<String?> brand,
   Value<String?> category,
-  required double caloriesPer100g,
-  required double proteinPer100g,
-  required double carbsPer100g,
-  required double fatPer100g,
+  Value<double> caloriesPer100g,
+  Value<double> proteinPer100g,
+  Value<double> carbsPer100g,
+  Value<double> fatPer100g,
   Value<String?> imageUrl,
   Value<String?> servingsJson,
+  Value<String> cacheStatus,
   Value<bool> isUserCorrected,
   required DateTime cachedAt,
   Value<String> source,
@@ -6970,6 +7007,7 @@ typedef $$BarcodeProductsTableUpdateCompanionBuilder = BarcodeProductsCompanion
   Value<double> fatPer100g,
   Value<String?> imageUrl,
   Value<String?> servingsJson,
+  Value<String> cacheStatus,
   Value<bool> isUserCorrected,
   Value<DateTime> cachedAt,
   Value<String> source,
@@ -7016,6 +7054,9 @@ class $$BarcodeProductsTableFilterComposer
 
   ColumnFilters<String> get servingsJson => $composableBuilder(
       column: $table.servingsJson, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get cacheStatus => $composableBuilder(
+      column: $table.cacheStatus, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<bool> get isUserCorrected => $composableBuilder(
       column: $table.isUserCorrected,
@@ -7071,6 +7112,9 @@ class $$BarcodeProductsTableOrderingComposer
       column: $table.servingsJson,
       builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get cacheStatus => $composableBuilder(
+      column: $table.cacheStatus, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<bool> get isUserCorrected => $composableBuilder(
       column: $table.isUserCorrected,
       builder: (column) => ColumnOrderings(column));
@@ -7121,6 +7165,9 @@ class $$BarcodeProductsTableAnnotationComposer
   GeneratedColumn<String> get servingsJson => $composableBuilder(
       column: $table.servingsJson, builder: (column) => column);
 
+  GeneratedColumn<String> get cacheStatus => $composableBuilder(
+      column: $table.cacheStatus, builder: (column) => column);
+
   GeneratedColumn<bool> get isUserCorrected => $composableBuilder(
       column: $table.isUserCorrected, builder: (column) => column);
 
@@ -7168,6 +7215,7 @@ class $$BarcodeProductsTableTableManager extends RootTableManager<
             Value<double> fatPer100g = const Value.absent(),
             Value<String?> imageUrl = const Value.absent(),
             Value<String?> servingsJson = const Value.absent(),
+            Value<String> cacheStatus = const Value.absent(),
             Value<bool> isUserCorrected = const Value.absent(),
             Value<DateTime> cachedAt = const Value.absent(),
             Value<String> source = const Value.absent(),
@@ -7184,6 +7232,7 @@ class $$BarcodeProductsTableTableManager extends RootTableManager<
             fatPer100g: fatPer100g,
             imageUrl: imageUrl,
             servingsJson: servingsJson,
+            cacheStatus: cacheStatus,
             isUserCorrected: isUserCorrected,
             cachedAt: cachedAt,
             source: source,
@@ -7191,15 +7240,16 @@ class $$BarcodeProductsTableTableManager extends RootTableManager<
           ),
           createCompanionCallback: ({
             required String barcode,
-            required String name,
+            Value<String> name = const Value.absent(),
             Value<String?> brand = const Value.absent(),
             Value<String?> category = const Value.absent(),
-            required double caloriesPer100g,
-            required double proteinPer100g,
-            required double carbsPer100g,
-            required double fatPer100g,
+            Value<double> caloriesPer100g = const Value.absent(),
+            Value<double> proteinPer100g = const Value.absent(),
+            Value<double> carbsPer100g = const Value.absent(),
+            Value<double> fatPer100g = const Value.absent(),
             Value<String?> imageUrl = const Value.absent(),
             Value<String?> servingsJson = const Value.absent(),
+            Value<String> cacheStatus = const Value.absent(),
             Value<bool> isUserCorrected = const Value.absent(),
             required DateTime cachedAt,
             Value<String> source = const Value.absent(),
@@ -7216,6 +7266,7 @@ class $$BarcodeProductsTableTableManager extends RootTableManager<
             fatPer100g: fatPer100g,
             imageUrl: imageUrl,
             servingsJson: servingsJson,
+            cacheStatus: cacheStatus,
             isUserCorrected: isUserCorrected,
             cachedAt: cachedAt,
             source: source,

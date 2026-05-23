@@ -90,15 +90,16 @@ class SupplementLogs extends Table {
 
 class BarcodeProducts extends Table {
   TextColumn get barcode => text()();
-  TextColumn get name => text()();
+  TextColumn get name => text().withDefault(const Constant(''))();
   TextColumn get brand => text().nullable()();
   TextColumn get category => text().nullable()();
-  RealColumn get caloriesPer100g => real()();
-  RealColumn get proteinPer100g => real()();
-  RealColumn get carbsPer100g => real()();
-  RealColumn get fatPer100g => real()();
+  RealColumn get caloriesPer100g => real().withDefault(const Constant(0))();
+  RealColumn get proteinPer100g => real().withDefault(const Constant(0))();
+  RealColumn get carbsPer100g => real().withDefault(const Constant(0))();
+  RealColumn get fatPer100g => real().withDefault(const Constant(0))();
   TextColumn get imageUrl => text().nullable()();
   TextColumn get servingsJson => text().nullable()();
+  TextColumn get cacheStatus => text().withDefault(const Constant('found'))();
   BoolColumn get isUserCorrected =>
       boolean().withDefault(const Constant(false))();
   DateTimeColumn get cachedAt => dateTime()();
@@ -258,7 +259,7 @@ class DatabaseService extends _$DatabaseService {
   DatabaseService() : super(_openConnection());
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -285,6 +286,10 @@ class DatabaseService extends _$DatabaseService {
           }
           if (from <= 5 && to >= 6) {
             await migrator.createTable(progressPhotos);
+          }
+          if (from <= 6 && to >= 7) {
+            await migrator.addColumn(
+                barcodeProducts, barcodeProducts.cacheStatus,);
           }
         },
       );
@@ -684,13 +689,19 @@ class DatabaseService extends _$DatabaseService {
   }
 
   Future<void> deleteExpiredBarcodeCache() async {
-    final cutoff = DateTime.now().subtract(const Duration(days: 30));
+    final foundCutoff = DateTime.now().subtract(const Duration(days: 30));
+    final partialCutoff = DateTime.now().subtract(const Duration(days: 14));
+    final notFoundCutoff = DateTime.now().subtract(const Duration(days: 7));
+
     await (delete(barcodeProducts)
-          ..where(
-            (t) =>
-                t.cachedAt.isSmallerThanValue(cutoff) &
-                t.isUserCorrected.equals(false),
-          ))
+          ..where((t) =>
+              t.isUserCorrected.equals(false) &
+              (t.cacheStatus.equals('found') &
+                      t.cachedAt.isSmallerThanValue(foundCutoff) |
+                  t.cacheStatus.equals('partial') &
+                      t.cachedAt.isSmallerThanValue(partialCutoff) |
+                  t.cacheStatus.equals('notFound') &
+                      t.cachedAt.isSmallerThanValue(notFoundCutoff)),))
         .go();
   }
 
