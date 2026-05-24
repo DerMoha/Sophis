@@ -188,62 +188,69 @@ class MacroRing extends StatelessWidget {
     final finalExcessColor = excessColor ?? AppTheme.error;
     final displayColor = isOver ? finalExcessColor : color;
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SizedBox(
-          width: size + 14,
-          height: size + 14,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              RadialProgress(
-                value: rawProgress.clamp(0.0, 1.0),
-                size: size,
-                strokeWidth: 6,
-                color: color,
-                showGlow: false,
-              ),
-              if (isOver)
-                RadialProgress(
-                  value: (rawProgress - 1.0).clamp(0.0, 1.0),
-                  size: size + 12,
-                  strokeWidth: 4,
-                  color: finalExcessColor,
-                  backgroundColor: Colors.transparent,
-                  showGlow: false,
-                ),
-              Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      value.toStringAsFixed(0),
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: displayColor,
-                      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final ringSize = (constraints.maxWidth - 14).clamp(40.0, size);
+
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: ringSize + 14,
+              height: ringSize + 14,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  RadialProgress(
+                    value: rawProgress.clamp(0.0, 1.0),
+                    size: ringSize,
+                    strokeWidth: 6,
+                    color: color,
+                    showGlow: false,
+                  ),
+                  if (isOver)
+                    RadialProgress(
+                      value: (rawProgress - 1.0).clamp(0.0, 1.0),
+                      size: ringSize + 12,
+                      strokeWidth: 4,
+                      color: finalExcessColor,
+                      backgroundColor: Colors.transparent,
+                      showGlow: false,
                     ),
-                    Text(
-                      unit,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
+                  Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          value.toStringAsFixed(0),
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: displayColor,
+                          ),
+                        ),
+                        Text(
+                          unit,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: theme.textTheme.labelMedium?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
