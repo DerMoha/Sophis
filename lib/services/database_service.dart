@@ -274,7 +274,7 @@ class DatabaseService extends _$DatabaseService {
             await migrator.createTable(supplementLogs);
           }
           if (from <= 2 && to >= 3) {
-            await migrator.addColumn(weightLogs, weightLogs.source);
+            await _safeAddColumn(migrator, weightLogs, weightLogs.source);
           }
           if (from <= 3 && to >= 4) {
             await migrator.createTable(barcodeProducts);
@@ -293,18 +293,28 @@ class DatabaseService extends _$DatabaseService {
             await migrator.createTable(progressPhotos);
           }
           if (from <= 6 && to >= 7) {
-            await migrator.addColumn(
-                barcodeProducts, barcodeProducts.cacheStatus,);
+            await _safeAddColumn(
+                migrator, barcodeProducts, barcodeProducts.cacheStatus,);
           }
           if (from <= 7 && to >= 8) {
-            await migrator.addColumn(foods, foods.fiber);
-            await migrator.addColumn(plannedMeals, plannedMeals.fiber);
-            await migrator.addColumn(barcodeProducts, barcodeProducts.fiberPer100g);
-            await migrator.addColumn(customFoods, customFoods.fiberPer100g);
-            await migrator.addColumn(recentFoods, recentFoods.fiberPer100g);
+            await _safeAddColumn(migrator, foods, foods.fiber);
+            await _safeAddColumn(migrator, plannedMeals, plannedMeals.fiber);
+            await _safeAddColumn(migrator, barcodeProducts, barcodeProducts.fiberPer100g);
+            await _safeAddColumn(migrator, customFoods, customFoods.fiberPer100g);
+            await _safeAddColumn(migrator, recentFoods, recentFoods.fiberPer100g);
           }
         },
       );
+
+  Future<void> _safeAddColumn(
+      Migrator migrator, TableInfo table, GeneratedColumn column,) async {
+    try {
+      await migrator.addColumn(table, column);
+    } catch (e) {
+      if (e.toString().contains('duplicate column name')) return;
+      rethrow;
+    }
+  }
 
   // ---------------------------------------------------------------------------
   // FOODS
