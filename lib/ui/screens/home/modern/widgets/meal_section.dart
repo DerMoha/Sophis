@@ -8,6 +8,7 @@ import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/components/organic_components.dart';
 import 'package:sophis/ui/screens/meal_detail_screen.dart';
+import 'package:sophis/ui/components/quick_add_sheet.dart';
 import 'package:sophis/ui/screens/shared/meal_action_helpers.dart';
 
 /// A meal section (e.g., Breakfast, Lunch) with food entries.
@@ -132,47 +133,13 @@ class _MealSectionContent extends StatelessWidget {
             onPressed: () => shareMealEntries(context, entries, title: title),
             tooltip: l10n.share,
           ),
-        PopupMenuButton<String>(
+        IconButton(
           icon:
               Icon(Icons.add_circle_outline, color: theme.colorScheme.primary),
           tooltip: l10n.add,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-          ),
-          onSelected: (value) => _handleAction(context, value),
-          itemBuilder: (_) => [
-            _buildPopupItem(Icons.edit_outlined, l10n.manualEntry, 'manual'),
-            _buildPopupItem(Icons.search_outlined, l10n.searchFood, 'search'),
-            _buildPopupItem(
-              Icons.qr_code_scanner_outlined,
-              l10n.scanBarcode,
-              'barcode',
-            ),
-            _buildPopupItem(
-              Icons.auto_awesome_outlined,
-              l10n.aiRecognition,
-              'ai',
-            ),
-          ],
+          onPressed: () => showQuickAddSheet(context, mealType: mealType),
         ),
       ],
-    );
-  }
-
-  PopupMenuItem<String> _buildPopupItem(
-    IconData icon,
-    String label,
-    String value,
-  ) {
-    return PopupMenuItem(
-      value: value,
-      child: Row(
-        children: [
-          Icon(icon, size: 20),
-          const SizedBox(width: 12),
-          Text(label),
-        ],
-      ),
     );
   }
 
@@ -203,10 +170,6 @@ class _MealSectionContent extends StatelessWidget {
       fiber: entry.fiber,
       onLongPress: () => _showEntryOptions(context, l10n, entry),
     );
-  }
-
-  void _handleAction(BuildContext context, String action) {
-    handleMealAddAction(context, mealType: mealType, action: action);
   }
 
   void _showEntryOptions(
