@@ -30,31 +30,39 @@ class MacrosCard extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          MacroRing(
-            label: l10n.protein,
-            value: totals.protein,
-            goal: goals.protein,
-            color: AppTheme.protein,
-            positiveExcess: true,
-            excessColor: AppTheme.success,
+          Flexible(
+            child: MacroRing(
+              label: l10n.protein,
+              value: totals.protein,
+              goal: goals.protein,
+              color: AppTheme.protein,
+              positiveExcess: true,
+              excessColor: AppTheme.success,
+            ),
           ),
-          MacroRing(
-            label: l10n.carbs,
-            value: totals.carbs,
-            goal: goals.carbs,
-            color: AppTheme.carbs,
+          Flexible(
+            child: MacroRing(
+              label: l10n.carbs,
+              value: totals.carbs,
+              goal: goals.carbs,
+              color: AppTheme.carbs,
+            ),
           ),
-          MacroRing(
-            label: l10n.fat,
-            value: totals.fat,
-            goal: goals.fat,
-            color: AppTheme.fat,
+          Flexible(
+            child: MacroRing(
+              label: l10n.fat,
+              value: totals.fat,
+              goal: goals.fat,
+              color: AppTheme.fat,
+            ),
           ),
-          MacroRing(
-            label: l10n.fiber,
-            value: totals.fiber,
-            goal: goals.fiber,
-            color: AppTheme.fiber,
+          Flexible(
+            child: MacroRing(
+              label: l10n.fiber,
+              value: totals.fiber,
+              goal: goals.fiber,
+              color: AppTheme.fiber,
+            ),
           ),
         ],
       ),
