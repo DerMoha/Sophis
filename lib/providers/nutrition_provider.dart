@@ -121,6 +121,7 @@ class NutritionProvider extends ChangeNotifier {
   /// Triggers streak update and home widget refresh.
   Future<void> _onFoodChanged() async {
     await _updateStreak();
+    await _storage.saveRecentFoods(_foodLog.recentFoods, _foodLog.recentFoodMeals);
     HomeWidgetService.updateWidgetData(this);
     notifyListeners();
   }
@@ -174,7 +175,8 @@ class NutritionProvider extends ChangeNotifier {
     final weights = await _db.getAllWeights();
     final workouts = await _db.getAllWorkouts();
 
-    _foodLog.loadData(foods, _storage.loadRecentFoods());
+    final recentMeals = <String, String>{};
+    _foodLog.loadData(foods, _storage.loadRecentFoods(outMeals: recentMeals), recentMeals);
     _hydration.loadData(water);
     _weightEntries = weights;
     _workouts.loadData(workouts);
@@ -594,7 +596,11 @@ class NutritionProvider extends ChangeNotifier {
 
   // ── Recent Foods ────────────────────────────────────────────────────────
 
-  Future<void> addRecentFood(FoodItem food) => _foodLog.addRecentFood(food);
+  List<FoodItem> getRecentFoodsForMeal(String meal) =>
+      _foodLog.getRecentFoodsForMeal(meal);
+
+  Future<void> addRecentFood(FoodItem food, {String? meal}) =>
+      _foodLog.addRecentFood(food, meal: meal);
 
   // ── Custom Foods ────────────────────────────────────────────────────────
 

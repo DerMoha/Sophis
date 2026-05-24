@@ -14,6 +14,7 @@ class FoodLogController {
 
   List<FoodEntry> _entries = [];
   List<FoodItem> _recentFoods = [];
+  final Map<String, String> _recentFoodMeals = {};
 
   // Today's cache
   List<FoodEntry>? _cachedTodayEntries;
@@ -37,9 +38,13 @@ class FoodLogController {
   void loadData(
     List<FoodEntry> entries,
     List<FoodItem> recentFoods,
+    Map<String, String>? recentFoodMeals,
   ) {
     _entries = entries;
     _recentFoods = recentFoods;
+    _recentFoodMeals
+      ..clear()
+      ..addAll(recentFoodMeals ?? const {});
     invalidateCache();
     invalidateFoodHistoryCache();
   }
@@ -218,18 +223,32 @@ class FoodLogController {
   NutritionTotals getTotalsForDate(DateTime date) =>
       getTotalsForDateTyped(date);
 
-  Future<void> addRecentFood(FoodItem food) async {
+  List<FoodItem> getRecentFoodsForMeal(String meal) {
+    final matching = _recentFoods
+        .where((f) => _recentFoodMeals[f.id] == meal)
+        .toList();
+    return matching.isNotEmpty ? matching : _recentFoods;
+  }
+
+  Future<void> addRecentFood(FoodItem food, {String? meal}) async {
     _recentFoods.removeWhere((f) => f.id == food.id);
     _recentFoods.insert(0, food);
+    if (meal != null) {
+      _recentFoodMeals[food.id] = meal;
+    }
     if (_recentFoods.length > 20) {
       _recentFoods = _recentFoods.take(20).toList();
     }
     _onChanged();
   }
 
+  Map<String, String> get recentFoodMeals =>
+      Map<String, String>.unmodifiable(_recentFoodMeals);
+
   void clearAll() {
     _entries = [];
     _recentFoods = [];
+    _recentFoodMeals.clear();
     invalidateCache();
     invalidateFoodHistoryCache();
   }

@@ -171,7 +171,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
 
     final provider = context.read<NutritionProvider>();
     provider.addFoodEntry(entry);
-    provider.addRecentFood(product); // Save to recent foods
+    provider.addRecentFood(product, meal: widget.meal);
     Navigator.pop(context); // Close barcode scanner
   }
 

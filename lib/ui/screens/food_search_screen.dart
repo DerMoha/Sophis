@@ -207,7 +207,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
 
     final provider = context.read<NutritionProvider>();
     provider.addFoodEntry(entry);
-    provider.addRecentFood(item); // Save to recent foods
+    provider.addRecentFood(item, meal: widget.meal);
     Navigator.pop(context); // Close search screen
   }
 

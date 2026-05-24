@@ -193,16 +193,38 @@ class StorageService {
   // Recent Foods
   static const _maxRecentFoods = 20;
 
-  Future<void> saveRecentFoods(List<FoodItem> foods) async {
-    final list = foods.take(_maxRecentFoods).map((f) => f.toJson()).toList();
+  Future<void> saveRecentFoods(
+    List<FoodItem> foods,
+    Map<String, String> meals,
+  ) async {
+    final list = foods.take(_maxRecentFoods).map(
+      (f) => <String, dynamic>{
+        'f': f.toJson(),
+        'm': meals[f.id] ?? '',
+      },
+    ).toList();
     await _prefs.setString(_recentFoodsKey, jsonEncode(list));
   }
 
-  List<FoodItem> loadRecentFoods() {
+  List<FoodItem> loadRecentFoods({Map<String, String>? outMeals}) {
     final json = _prefs.getString(_recentFoodsKey);
     if (json == null) return [];
     final list = jsonDecode(json) as List;
-    return list.map((f) => FoodItem.fromJson(f)).toList();
+    final foods = <FoodItem>[];
+    for (final item in list) {
+      if (item is Map<String, dynamic>) {
+        if (item.containsKey('f')) {
+          foods.add(FoodItem.fromJson(item['f'] as Map<String, dynamic>));
+          final meal = item['m'] as String?;
+          if (outMeals != null && meal != null && meal.isNotEmpty) {
+            outMeals[foods.last.id] = meal;
+          }
+        } else {
+          foods.add(FoodItem.fromJson(item));
+        }
+      }
+    }
+    return foods;
   }
 
   // Custom Foods (user-created foods for re-use)
