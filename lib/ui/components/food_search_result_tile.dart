@@ -210,32 +210,35 @@ class _MacroChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        _MacroChip(
-          label: 'P',
-          value: item.proteinPer100g,
-          color: AppTheme.protein,
-        ),
-        const SizedBox(width: 6),
-        _MacroChip(
-          label: 'C',
-          value: item.carbsPer100g,
-          color: AppTheme.carbs,
-        ),
-        const SizedBox(width: 6),
-        _MacroChip(
-          label: 'F',
-          value: item.fatPer100g,
-          color: AppTheme.fat,
-        ),
-        const SizedBox(width: 6),
-        _MacroChip(
-          label: 'Fi',
-          value: item.fiberPer100g,
-          color: AppTheme.fiber,
-        ),
-      ],
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          _MacroChip(
+            label: 'P',
+            value: item.proteinPer100g,
+            color: AppTheme.protein,
+          ),
+          const SizedBox(width: 6),
+          _MacroChip(
+            label: 'C',
+            value: item.carbsPer100g,
+            color: AppTheme.carbs,
+          ),
+          const SizedBox(width: 6),
+          _MacroChip(
+            label: 'F',
+            value: item.fatPer100g,
+            color: AppTheme.fat,
+          ),
+          const SizedBox(width: 6),
+          _MacroChip(
+            label: 'Fi',
+            value: item.fiberPer100g,
+            color: AppTheme.fiber,
+          ),
+        ],
+      ),
     );
   }
 }

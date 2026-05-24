@@ -51,7 +51,9 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
     });
 
     // Pause scanning
-    _controller.stop();
+    try {
+      _controller.stop();
+    } catch (_) {}
 
     // Check if this is a Sophis share link (QR code)
     if (MealSharingService.isShareLink(barcode)) {
@@ -67,7 +69,9 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l10n.invalidShareData)),
         );
-        _controller.start();
+        try {
+          _controller.start();
+        } catch (_) {}
         setState(() {
           _isProcessing = false;
           _lastScannedCode = null;
@@ -93,7 +97,9 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l10n.errorGeneric(message))),
         );
-        _controller.start();
+        try {
+          _controller.start();
+        } catch (_) {}
         setState(() {
           _isProcessing = false;
           _lastScannedCode = null;
@@ -127,7 +133,10 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
         },
       ),
     ).whenComplete(() {
-      _controller.start();
+      if (!mounted) return;
+      try {
+        _controller.start();
+      } catch (_) {}
       setState(() {
         _isProcessing = false;
         _lastScannedCode = null;
@@ -153,8 +162,11 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
         },
       ),
     ).whenComplete(() {
+      if (!mounted) return;
       // Resume scanning when sheet is closed
-      _controller.start();
+      try {
+        _controller.start();
+      } catch (_) {}
       setState(() {
         _isProcessing = false;
         _lastScannedCode = null;
@@ -203,6 +215,37 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
           MobileScanner(
             controller: _controller,
             onDetect: _onBarcodeDetected,
+            errorBuilder: (context, error) {
+              return Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      size: 48,
+                      color: Colors.white70,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      error.errorDetails?.message ??
+                          'Camera initialization failed',
+                      style: const TextStyle(color: Colors.white70),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 24),
+                    OutlinedButton.icon(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.arrow_back),
+                      label: const Text('Go Back'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: const BorderSide(color: Colors.white30),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
           // Scan overlay
           Center(

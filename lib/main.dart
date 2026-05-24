@@ -49,8 +49,8 @@ void main() async {
   final nutritionProvider = NutritionProvider(storageService, databaseService);
   nutritionProvider.attachSettingsProvider(settingsProvider);
 
-  // Clean up expired barcode cache in background
-  barcodeLookupService.cleanExpiredCache();
+  // Clean up expired barcode cache in background (don't block first frame)
+  Future.microtask(() => barcodeLookupService.cleanExpiredCache());
 
   runApp(
     MultiProvider(
