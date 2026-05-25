@@ -334,6 +334,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       protein: food.protein,
       carbs: food.carbs,
       fat: food.fat,
+      fiber: food.fiber,
       meal: widget.meal,
     );
 

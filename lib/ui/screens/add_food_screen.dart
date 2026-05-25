@@ -26,6 +26,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
   final _proteinController = TextEditingController();
   final _carbsController = TextEditingController();
   final _fatController = TextEditingController();
+  final _fiberController = TextEditingController();
   bool _saveAsCustomFood = false;
 
   @override
@@ -35,6 +36,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
     _proteinController.dispose();
     _carbsController.dispose();
     _fatController.dispose();
+    _fiberController.dispose();
     super.dispose();
   }
 
@@ -66,6 +68,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
     final protein = double.tryParse(_proteinController.text) ?? 0;
     final carbs = double.tryParse(_carbsController.text) ?? 0;
     final fat = double.tryParse(_fatController.text) ?? 0;
+    final fiber = double.tryParse(_fiberController.text) ?? 0;
 
     final entry = FoodEntryFactory.create(
       name: name,
@@ -73,6 +76,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
       protein: protein,
       carbs: carbs,
       fat: fat,
+      fiber: fiber,
       meal: widget.meal,
     );
 
@@ -86,6 +90,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
         protein: protein,
         carbs: carbs,
         fat: fat,
+        fiber: fiber,
       );
       await provider.addCustomFood(customFood);
       if (mounted) {
@@ -272,6 +277,19 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                                       color: AppTheme.fat,
                                     ),
                                   ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _MacroField(
+                                      controller: _fiberController,
+                                      label: l10n.fiber,
+                                      color: AppTheme.fiber,
+                                    ),
+                                  ),
+                                  const Spacer(flex: 2),
                                 ],
                               ),
                             ],

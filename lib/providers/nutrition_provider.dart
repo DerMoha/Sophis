@@ -329,6 +329,7 @@ class NutritionProvider extends ChangeNotifier {
       protein: totals.protein,
       carbs: totals.carbs,
       fat: totals.fat,
+      fiber: totals.fiber,
     );
   }
 
@@ -518,6 +519,7 @@ class NutritionProvider extends ChangeNotifier {
       protein: nutrients.protein * servings,
       carbs: nutrients.carbs * servings,
       fat: nutrients.fat * servings,
+      fiber: nutrients.fiber * servings,
       timestamp: DateTime.now(),
       meal: meal,
     );
@@ -563,6 +565,7 @@ class NutritionProvider extends ChangeNotifier {
       protein: planned.protein,
       carbs: planned.carbs,
       fat: planned.fat,
+      fiber: planned.fiber,
       timestamp: DateTime.now(),
       meal: planned.meal,
     );

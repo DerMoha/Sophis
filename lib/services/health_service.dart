@@ -20,6 +20,7 @@ abstract class HealthServiceProtocol {
     required double protein,
     required double carbs,
     required double fat,
+    required double fiber,
   });
 }
 
@@ -42,8 +43,10 @@ class HealthService implements HealthServiceProtocol {
     HealthDataType.DIETARY_PROTEIN_CONSUMED,
     HealthDataType.DIETARY_CARBS_CONSUMED,
     HealthDataType.DIETARY_FATS_CONSUMED,
+    HealthDataType.DIETARY_FIBER,
   ];
   static const _nutritionPermissions = [
+    HealthDataAccess.WRITE,
     HealthDataAccess.WRITE,
     HealthDataAccess.WRITE,
     HealthDataAccess.WRITE,
@@ -191,6 +194,7 @@ class HealthService implements HealthServiceProtocol {
     required double protein,
     required double carbs,
     required double fat,
+    required double fiber,
   }) async {
     try {
       await initialize();
@@ -224,6 +228,12 @@ class HealthService implements HealthServiceProtocol {
       await _health.writeHealthData(
         value: fat,
         type: HealthDataType.DIETARY_FATS_CONSUMED,
+        startTime: start,
+        endTime: end,
+      );
+      await _health.writeHealthData(
+        value: fiber,
+        type: HealthDataType.DIETARY_FIBER,
         startTime: start,
         endTime: end,
       );

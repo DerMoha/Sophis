@@ -284,6 +284,11 @@ class DatabaseService extends _$DatabaseService {
 
           await _safeAddColumn(migrator, weightLogs, weightLogs.source);
           await _safeAddColumn(migrator, barcodeProducts, barcodeProducts.cacheStatus);
+          await _safeAddColumn(migrator, foods, foods.fiber);
+          await _safeAddColumn(migrator, plannedMeals, plannedMeals.fiber);
+          await _safeAddColumn(migrator, barcodeProducts, barcodeProducts.fiberPer100g);
+          await _safeAddColumn(migrator, customFoods, customFoods.fiberPer100g);
+          await _safeAddColumn(migrator, recentFoods, recentFoods.fiberPer100g);
         },
       );
 
