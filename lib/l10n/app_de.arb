@@ -492,5 +492,12 @@
   "progressPhotoLockUnavailable": "Geräteauthentifizierung ist nicht verfügbar.",
   "progressPhotoUnlockFailed": "Fortschrittsfotos konnten nicht entsperrt werden.",
   "progressPhotosLocked": "Fortschrittsfotos sind gesperrt",
-  "unlockProgressPhotos": "Fotos entsperren"
+  "unlockProgressPhotos": "Fotos entsperren",
+  "nutritionLabelScannerTitle": "Nährwerttabelle scannen",
+  "nutritionLabelScannerDescription": "Fotografiere eine Nährwerttabelle, um Kalorien, Eiweiß, Kohlenhydrate, Fett und Ballaststoffe zu erfassen.",
+  "nutritionLabelAnalyzing": "Nährwerttabelle wird analysiert …",
+  "nutritionLabelNotParsed": "Nährwerte konnten nicht gelesen werden. Bitte versuche ein klareres Foto.",
+  "scannedProductName": "Gescanntes Produkt",
+  "takePhoto": "Foto aufnehmen",
+  "chooseFromGallery": "Aus Galerie wählen"
 }
