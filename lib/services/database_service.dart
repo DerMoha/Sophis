@@ -269,40 +269,21 @@ class DatabaseService extends _$DatabaseService {
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onUpgrade: (migrator, from, to) async {
-          if (from == 1) {
-            await migrator.createTable(supplementDefinitions);
-            await migrator.createTable(supplementLogs);
-          }
-          if (from <= 2 && to >= 3) {
-            await _safeAddColumn(migrator, weightLogs, weightLogs.source);
-          }
-          if (from <= 3 && to >= 4) {
-            await migrator.createTable(barcodeProducts);
-          }
-          if (from <= 4 && to >= 5) {
-            await migrator.createTable(recipes);
-            await migrator.createTable(customFoods);
-            await migrator.createTable(favoriteFoods);
-            await migrator.createTable(plannedMeals);
-            await migrator.createTable(customPortions);
-            await migrator.createTable(recentFoods);
-            await migrator.createTable(userStatsTable);
-            await migrator.createTable(plannedMealsChecked);
-          }
-          if (from <= 5 && to >= 6) {
-            await migrator.createTable(progressPhotos);
-          }
-          if (from <= 6 && to >= 7) {
-            await _safeAddColumn(
-                migrator, barcodeProducts, barcodeProducts.cacheStatus,);
-          }
-          if (from <= 7 && to >= 8) {
-            await _safeAddColumn(migrator, foods, foods.fiber);
-            await _safeAddColumn(migrator, plannedMeals, plannedMeals.fiber);
-            await _safeAddColumn(migrator, barcodeProducts, barcodeProducts.fiberPer100g);
-            await _safeAddColumn(migrator, customFoods, customFoods.fiberPer100g);
-            await _safeAddColumn(migrator, recentFoods, recentFoods.fiberPer100g);
-          }
+          await migrator.createTable(supplementDefinitions);
+          await migrator.createTable(supplementLogs);
+          await migrator.createTable(barcodeProducts);
+          await migrator.createTable(recipes);
+          await migrator.createTable(customFoods);
+          await migrator.createTable(favoriteFoods);
+          await migrator.createTable(plannedMeals);
+          await migrator.createTable(customPortions);
+          await migrator.createTable(recentFoods);
+          await migrator.createTable(userStatsTable);
+          await migrator.createTable(plannedMealsChecked);
+          await migrator.createTable(progressPhotos);
+
+          await _safeAddColumn(migrator, weightLogs, weightLogs.source);
+          await _safeAddColumn(migrator, barcodeProducts, barcodeProducts.cacheStatus);
         },
       );
 
