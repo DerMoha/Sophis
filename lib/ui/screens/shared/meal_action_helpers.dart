@@ -10,6 +10,7 @@ import 'package:sophis/ui/screens/add_food_screen.dart';
 import 'package:sophis/ui/screens/ai_food_camera_screen.dart';
 import 'package:sophis/ui/screens/barcode_scanner_screen.dart';
 import 'package:sophis/ui/screens/food_search_screen.dart';
+import 'package:sophis/ui/screens/nutrition_label_scanner_screen.dart';
 import 'package:sophis/ui/screens/share_meal_screen.dart';
 
 void handleMealAddAction(
@@ -28,6 +29,9 @@ void handleMealAddAction(
       break;
     case 'barcode':
       screen = BarcodeScannerScreen(meal: mealType);
+      break;
+    case 'nutrition_label':
+      screen = NutritionLabelScannerScreen(meal: mealType);
       break;
     case 'ai':
       screen = AIFoodCameraScreen(meal: mealType);
@@ -97,6 +101,19 @@ Future<void> showMealAddOptionsSheet(
                 context,
                 mealType: mealType,
                 action: 'barcode',
+              );
+            },
+          ),
+          _MealActionTile(
+            icon: Icons.document_scanner_outlined,
+            label: l10n.nutritionLabelScannerTitle,
+            color: theme.colorScheme.primary,
+            onTap: () {
+              Navigator.pop(sheetContext);
+              handleMealAddAction(
+                context,
+                mealType: mealType,
+                action: 'nutrition_label',
               );
             },
           ),

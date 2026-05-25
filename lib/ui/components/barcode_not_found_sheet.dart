@@ -7,8 +7,9 @@ import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/food_item.dart';
 import 'package:sophis/models/serving_size.dart';
 import 'package:sophis/services/barcode_lookup_service.dart';
-import 'package:sophis/services/gemini/models/models.dart';
 import 'package:sophis/services/gemini_food_service.dart';
+import 'package:sophis/services/gemini/models/nutrition_label_result.dart';
+import 'package:sophis/services/nutrition_label_scanner_service.dart';
 import 'package:sophis/services/service_result.dart';
 import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/ui/components/settings/settings_tiles.dart';
@@ -47,17 +48,6 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
   Future<void> _scanNutritionLabel() async {
     final l10n = AppLocalizations.of(context)!;
 
-    // Check AI availability
-    final canRequest = await GeminiFoodService.canMakeRequest();
-    if (!canRequest) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.noAiRequestsLeft)),
-        );
-      }
-      return;
-    }
-
     final picker = ImagePicker();
     final image = await picker.pickImage(
       source: ImageSource.camera,
@@ -67,8 +57,8 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
 
     setState(() => _isAnalyzing = true);
 
-    final geminiService = await _getGeminiService();
-    if (geminiService == null) {
+    final scannerService = await _getScannerService();
+    if (scannerService == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l10n.errorApiKey)),
@@ -79,7 +69,7 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
     }
 
     final analysisResult =
-        await geminiService.analyzeNutritionLabel(File(image.path));
+        await scannerService.scanLabel(File(image.path));
 
     if (!mounted) return;
 
@@ -93,7 +83,6 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
           return;
         }
 
-        // Build servings from label data
         List<ServingSize> servings = [];
         final servingSizeG = result.servingSizeG;
         if (servingSizeG != null && servingSizeG > 0) {
@@ -118,7 +107,6 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
           servings: servings,
         );
 
-        // Cache the result
         await widget.lookupService.cacheResult(
           widget.barcode,
           product,
@@ -138,17 +126,21 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
     if (mounted) setState(() => _isAnalyzing = false);
   }
 
-  Future<GeminiFoodService?> _getGeminiService() async {
+  Future<NutritionLabelScannerService?> _getScannerService() async {
     final settings = context.read<SettingsProvider>();
     final apiKey = settings.geminiApiKey;
-    if (apiKey == null || apiKey.isEmpty) return null;
 
-    final service = GeminiFoodService();
-    final result = service.initialize(apiKey);
-    if (result.isSuccess) {
-      return service;
+    final scannerService = NutritionLabelScannerService();
+
+    if (apiKey != null && apiKey.isNotEmpty) {
+      final geminiService = GeminiFoodService();
+      final result = geminiService.initialize(apiKey);
+      if (result.isSuccess) {
+        scannerService.setGeminiFallback(geminiService);
+      }
     }
-    return null;
+
+    return scannerService;
   }
 
   void _enterManually() {

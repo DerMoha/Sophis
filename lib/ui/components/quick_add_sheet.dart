@@ -11,6 +11,7 @@ import 'package:sophis/ui/screens/add_food_screen.dart';
 import 'package:sophis/ui/screens/ai_food_camera_screen.dart';
 import 'package:sophis/ui/screens/barcode_scanner_screen.dart';
 import 'package:sophis/ui/screens/food_search_screen.dart';
+import 'package:sophis/ui/screens/nutrition_label_scanner_screen.dart';
 
 Future<void> showQuickAddSheet(
   BuildContext context, {
@@ -176,6 +177,18 @@ class _QuickAddContent extends StatelessWidget {
             Navigator.push(
               context,
               AppTheme.slideRoute(BarcodeScannerScreen(meal: mealType)),
+            );
+          },
+        ),
+        _ActionTile(
+          icon: Icons.document_scanner_outlined,
+          label: l10n.nutritionLabelScannerTitle,
+          color: theme.colorScheme.primary,
+          onTap: () {
+            Navigator.pop(sheetContext);
+            Navigator.push(
+              context,
+              AppTheme.slideRoute(NutritionLabelScannerScreen(meal: mealType)),
             );
           },
         ),
