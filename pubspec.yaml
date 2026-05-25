@@ -26,6 +26,7 @@ dependencies:
   
   # Phase 3: AI
   google_generative_ai: ^0.4.6
+  google_mlkit_text_recognition: ^0.15.1
   image_picker: ^1.0.7
   
   # Phase 5: Notifications
