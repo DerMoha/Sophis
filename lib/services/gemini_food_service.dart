@@ -628,6 +628,80 @@ If no recipe is visible or readable, return:
     return parts;
   }
 
+  /// Parse raw OCR text into nutrition values using Gemini (text-only, no image).
+  /// This is used as a fallback when local ML Kit OCR succeeds but local
+  /// parsing fails on complex or unusual label formats.
+  Future<ServiceResult<NutritionLabelResult?>> parseNutritionText(
+    String ocrText,
+  ) async {
+    if (!_isInitialized || _model == null) {
+      return const Failure(
+        ServiceErrorType.unknown,
+        'Gemini service not initialized',
+      );
+    }
+
+    if (!await canMakeRequest()) {
+      return const Failure(
+        ServiceErrorType.rateLimited,
+        'Daily limit reached (20 requests/day). Try again tomorrow.',
+      );
+    }
+
+    final promptText = '''
+Parse this raw OCR text from a nutrition label and extract per-100g values.
+The text may have OCR errors. Extract what you can.
+
+Raw OCR text:
+$ocrText
+
+Respond ONLY with valid JSON in this exact format, no other text:
+{
+  "product_name": "Product Name or null",
+  "brand": "Brand or null",
+  "calories_per_100g": 200,
+  "protein_per_100g": 10.0,
+  "carbs_per_100g": 25.0,
+  "fat_per_100g": 8.0,
+  "fiber_per_100g": 3.0,
+  "serving_size_g": 30,
+  "serving_name": "1 Portion"
+}
+
+If values appear to be per serving, scale them to per-100g.
+If the text is clearly not a nutrition label, return all zeros.
+''';
+
+    final prompt = TextPart(promptText);
+
+    await _incrementRequestCount();
+
+    try {
+      final response = await _model!.generateContent([
+        Content.multi([prompt]),
+      ]).timeout(const Duration(seconds: 15));
+
+      final text = response.text;
+      if (text == null || text.isEmpty) return const Success(null);
+
+      return Success(_parseNutritionLabelResponse(text));
+    } on TimeoutException {
+      await _decrementRequestCount();
+      debugPrint('Gemini nutrition text parsing timed out');
+      return const Failure(
+        ServiceErrorType.network,
+        'Request timed out. Please try again.',
+      );
+    } catch (e) {
+      await _decrementRequestCount();
+      debugPrint('Gemini nutrition text parsing failed: $e');
+      return Failure(
+        ServiceErrorType.unknown,
+        'Failed to parse nutrition text: $e',
+      );
+    }
+  }
+
   void dispose() {
     _model = null;
     _isInitialized = false;
