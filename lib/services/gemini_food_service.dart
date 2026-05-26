@@ -232,7 +232,8 @@ If no food is visible, return: {"foods": []}
                 '${food.calories.toStringAsFixed(0)} kcal, '
                 'P ${food.protein.toStringAsFixed(1)}g, '
                 'C ${food.carbs.toStringAsFixed(1)}g, '
-                'F ${food.fat.toStringAsFixed(1)}g)';
+                'F ${food.fat.toStringAsFixed(1)}g, '
+                'Fi ${food.fiber.toStringAsFixed(1)}g)';
           }).join('\n');
 
     // Build prompt
@@ -249,6 +250,7 @@ Food to correct:
 - Protein: ${currentFood.protein.toStringAsFixed(1)}
 - Carbs: ${currentFood.carbs.toStringAsFixed(1)}
 - Fat: ${currentFood.fat.toStringAsFixed(1)}
+- Fiber: ${currentFood.fiber.toStringAsFixed(1)}
 
 Correction from user: $correctionHint
 

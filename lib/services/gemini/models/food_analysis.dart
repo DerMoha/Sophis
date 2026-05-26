@@ -21,7 +21,7 @@ class FoodAnalysis {
   String get portionDisplay => '${portionGrams.toStringAsFixed(0)}g';
   String get caloriesDisplay => '${calories.toStringAsFixed(0)} kcal';
   String get macrosDisplay =>
-      'P: ${protein.toStringAsFixed(0)}g | C: ${carbs.toStringAsFixed(0)}g | F: ${fat.toStringAsFixed(0)}g';
+      'P: ${protein.toStringAsFixed(0)}g | C: ${carbs.toStringAsFixed(0)}g | F: ${fat.toStringAsFixed(0)}g | Fi: ${fiber.toStringAsFixed(0)}g';
 
   FoodAnalysis copyWith({
     String? name,
