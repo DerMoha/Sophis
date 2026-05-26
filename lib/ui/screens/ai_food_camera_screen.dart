@@ -307,6 +307,8 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
           result.carbsController.text =
               updatedAnalysis.carbs.toStringAsFixed(1);
           result.fatController.text = updatedAnalysis.fat.toStringAsFixed(1);
+          result.fiberController.text =
+              updatedAnalysis.fiber.toStringAsFixed(1);
 
           _remainingRequests = remaining;
           _isLoading = false;

@@ -625,5 +625,18 @@
   "nutritionLabelNotParsed": "Could not read nutrition values from the label. Try taking a clearer photo.",
   "scannedProductName": "Scanned Product",
   "takePhoto": "Take Photo",
-  "chooseFromGallery": "Choose from Gallery"
+  "chooseFromGallery": "Choose from Gallery",
+
+  "nutritionLabelPreview": "Nutrition Label Preview",
+  "nutritionLabelPreviewSubtitle": "Verify the scanned values before adding",
+  "per100gLabel": "Per 100g",
+  "servingInfo": "Serving",
+  "looksGood": "Looks Good",
+  "rescanLabel": "Rescan",
+  "aiQuickActions": "Quick Fixes",
+  "aiQuickActionsSubtitle": "Tell the AI what to fix",
+  "expectMoreCalories": "More calories",
+  "expectFewerCalories": "Fewer calories",
+  "portionLooksBigger": "Bigger portion",
+  "portionLooksSmaller": "Smaller portion"
 }

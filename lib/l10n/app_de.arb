@@ -499,5 +499,18 @@
   "nutritionLabelNotParsed": "Nährwerte konnten nicht gelesen werden. Bitte versuche ein klareres Foto.",
   "scannedProductName": "Gescanntes Produkt",
   "takePhoto": "Foto aufnehmen",
-  "chooseFromGallery": "Aus Galerie wählen"
+  "chooseFromGallery": "Aus Galerie wählen",
+
+  "nutritionLabelPreview": "Nährwerttabelle Vorschau",
+  "nutritionLabelPreviewSubtitle": "Überprüfe die gescannten Werte vor dem Hinzufügen",
+  "per100gLabel": "Pro 100g",
+  "servingInfo": "Portion",
+  "looksGood": "Sieht gut aus",
+  "rescanLabel": "Erneut scannen",
+  "aiQuickActions": "Schnelle Korrekturen",
+  "aiQuickActionsSubtitle": "Sage der KI, was korrigiert werden soll",
+  "expectMoreCalories": "Mehr Kalorien",
+  "expectFewerCalories": "Weniger Kalorien",
+  "portionLooksBigger": "Größere Portion",
+  "portionLooksSmaller": "Kleinere Portion"
 }

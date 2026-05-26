@@ -45,7 +45,6 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
 
   @override
   void dispose() {
-    // Remove listeners to prevent memory leaks
     widget.result.portionController.removeListener(_portionListener);
 
     final controllers = [
@@ -55,6 +54,7 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
       widget.result.proteinController,
       widget.result.carbsController,
       widget.result.fatController,
+      widget.result.fiberController,
     ];
 
     for (final controller in controllers) {
@@ -79,6 +79,7 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
       widget.result.proteinController.text = scaled.protein.toStringAsFixed(1);
       widget.result.carbsController.text = scaled.carbs.toStringAsFixed(1);
       widget.result.fatController.text = scaled.fat.toStringAsFixed(1);
+      widget.result.fiberController.text = scaled.fiber.toStringAsFixed(1);
     };
 
     widget.result.portionController.addListener(_portionListener);
@@ -98,6 +99,7 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
       widget.result.proteinController,
       widget.result.carbsController,
       widget.result.fatController,
+      widget.result.fiberController,
     ];
 
     for (final controller in controllers) {
@@ -115,6 +117,7 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
     widget.result.proteinController.text = original.protein.toStringAsFixed(1);
     widget.result.carbsController.text = original.carbs.toStringAsFixed(1);
     widget.result.fatController.text = original.fat.toStringAsFixed(1);
+    widget.result.fiberController.text = original.fiber.toStringAsFixed(1);
     setState(() {});
   }
 
@@ -158,6 +161,40 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
     widget.onReAnalyze(hint);
   }
 
+  void _triggerQuickReAnalyze(String hint) {
+    if (widget.remainingRequests > 3) {
+      widget.onReAnalyze(hint);
+    } else {
+      _showQuickReAnalyzeConfirmation(hint);
+    }
+  }
+
+  void _showQuickReAnalyzeConfirmation(String hint) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(AppLocalizations.of(ctx)!.confirmReanalysis),
+        content: Text(
+          AppLocalizations.of(ctx)!
+              .reanalysisConfirmation(widget.remainingRequests),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(AppLocalizations.of(ctx)!.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              widget.onReAnalyze(hint);
+            },
+            child: Text(AppLocalizations.of(ctx)!.continueAction),
+          ),
+        ],
+      ),
+    );
+  }
+
   bool get _hasChanges {
     final original = widget.result.originalAnalysis;
     const epsilon = 0.01;
@@ -180,7 +217,8 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
         ) ||
         dataField(widget.result.proteinController.text, original.protein, 1) ||
         dataField(widget.result.carbsController.text, original.carbs, 1) ||
-        dataField(widget.result.fatController.text, original.fat, 1);
+        dataField(widget.result.fatController.text, original.fat, 1) ||
+        dataField(widget.result.fiberController.text, original.fiber, 1);
   }
 
   String? _validatePositiveNumber(String? value, String fieldName) {
@@ -437,6 +475,95 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 16),
+
+                    // Fiber
+                    TextFormField(
+                      controller: widget.result.fiberController,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(
+                          RegExp(r'^\d+\.?\d{0,1}'),
+                        ),
+                      ],
+                      decoration: InputDecoration(
+                        labelText: l10n.fiber,
+                        hintText: '3',
+                        prefixIcon: const Icon(
+                          Icons.eco_outlined,
+                          size: 20,
+                          color: AppTheme.fiber,
+                        ),
+                        suffixText: 'g',
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: AppTheme.spaceMD,
+                          vertical: 14,
+                        ),
+                      ),
+                      validator: (v) =>
+                          _validatePositiveNumber(v, l10n.fiber),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Quick action buttons
+                    if (canReAnalyze) ...[
+                      Text(
+                        l10n.aiQuickActions,
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(height: AppTheme.spaceSM2),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          _QuickActionChip(
+                            label: l10n.expectMoreCalories,
+                            icon: Icons.trending_up,
+                            color: AppTheme.warning,
+                            theme: theme,
+                            onTap: () =>
+                                _triggerQuickReAnalyze(
+                                  'The calories should be higher than estimated',
+                                ),
+                          ),
+                          _QuickActionChip(
+                            label: l10n.expectFewerCalories,
+                            icon: Icons.trending_down,
+                            color: AppTheme.warning,
+                            theme: theme,
+                            onTap: () =>
+                                _triggerQuickReAnalyze(
+                                  'The calories should be lower than estimated',
+                                ),
+                          ),
+                          _QuickActionChip(
+                            label: l10n.portionLooksBigger,
+                            icon: Icons.scale,
+                            color: theme.colorScheme.primary,
+                            theme: theme,
+                            onTap: () =>
+                                _triggerQuickReAnalyze(
+                                  'The portion size looks bigger than estimated',
+                                ),
+                          ),
+                          _QuickActionChip(
+                            label: l10n.portionLooksSmaller,
+                            icon: Icons.scale,
+                            color: theme.colorScheme.primary,
+                            theme: theme,
+                            onTap: () =>
+                                _triggerQuickReAnalyze(
+                                  'The portion size looks smaller than estimated',
+                                ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppTheme.spaceSM2),
+                    ],
+
                     const SizedBox(height: 24),
 
                     // Action buttons
@@ -522,6 +649,54 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _QuickActionChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final ThemeData theme;
+  final VoidCallback onTap;
+
+  const _QuickActionChip({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.theme,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: color.withValues(alpha: 0.08),
+      borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 8,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 16, color: color),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
