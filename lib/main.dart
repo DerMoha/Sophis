@@ -16,6 +16,7 @@ import 'package:sophis/services/meal_sharing_service.dart';
 import 'package:sophis/services/barcode_lookup_service.dart';
 import 'package:sophis/services/brocade_service.dart';
 import 'package:sophis/services/database_service.dart';
+import 'package:sophis/services/food_intake_controller.dart';
 import 'package:sophis/services/openfoodfacts_service.dart';
 import 'package:sophis/providers/supplements_provider.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
@@ -60,6 +61,11 @@ void main() async {
         ),
         ChangeNotifierProvider.value(
           value: nutritionProvider,
+        ),
+        Provider<FoodIntakeController>(
+          create: (context) => FoodIntakeController(
+            context.read<NutritionProvider>(),
+          ),
         ),
         ChangeNotifierProvider(
           create: (_) =>
