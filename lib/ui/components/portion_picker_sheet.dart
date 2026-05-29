@@ -5,10 +5,12 @@ import 'package:uuid/uuid.dart';
 
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/custom_portion.dart';
+import 'package:sophis/models/food_entry.dart';
 import 'package:sophis/models/food_item.dart';
 import 'package:sophis/models/nutrition_totals.dart';
 import 'package:sophis/models/serving_size.dart';
 import 'package:sophis/services/barcode_lookup_service.dart';
+import 'package:sophis/services/food_intake_controller.dart';
 import 'package:sophis/services/service_result.dart';
 import 'package:sophis/providers/nutrition_provider.dart';
 
@@ -19,7 +21,7 @@ import 'package:sophis/ui/components/edit_product_sheet.dart';
 class PortionPickerSheet extends StatefulWidget {
   final FoodItem item;
   final String meal;
-  final Function(double grams) onAdd;
+  final Future<void> Function(FoodEntry entry)? onLogged;
   final String? barcode;
   final BarcodeLookupService? lookupService;
   final Function(FoodItem updatedProduct)? onProductUpdated;
@@ -28,7 +30,7 @@ class PortionPickerSheet extends StatefulWidget {
     super.key,
     required this.item,
     required this.meal,
-    required this.onAdd,
+    this.onLogged,
     this.barcode,
     this.lookupService,
     this.onProductUpdated,
@@ -62,6 +64,7 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
   final _customController = TextEditingController(text: '100');
   final _focusNode = FocusNode(); // For keyboard management
   late final FixedExtentScrollController _portionWheelController;
+  bool _isAdding = false;
 
   String get _productKey => CustomPortion.createProductKey(
         barcode: widget.item.barcode,
@@ -109,10 +112,30 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
     FocusScope.of(context).unfocus();
   }
 
-  void _addAndClose() {
+  Future<void> _addAndClose() async {
+    if (_isAdding) return;
+
     _dismissKeyboard();
-    widget.onAdd(_selectedGrams);
-    Navigator.pop(context);
+    setState(() => _isAdding = true);
+
+    final result = await context.read<FoodIntakeController>().logFoodItem(
+          item: widget.item,
+          grams: _selectedGrams,
+          meal: widget.meal,
+        );
+
+    if (!mounted) return;
+
+    switch (result) {
+      case Success<FoodEntry>(value: final entry):
+        Navigator.pop(context);
+        await widget.onLogged?.call(entry);
+      case Failure<FoodEntry>(message: final message):
+        setState(() => _isAdding = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message)),
+        );
+    }
   }
 
   NutritionTotals get _calculatedNutrients =>
@@ -327,6 +350,7 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
                 grams: _selectedGrams,
                 calories: nutrients.calories,
                 keyboardHeight: keyboardHeight,
+                isAdding: _isAdding,
                 onAdd: _addAndClose,
               ),
             ],
@@ -887,12 +911,14 @@ class _AddButton extends StatelessWidget {
   final double grams;
   final double calories;
   final double keyboardHeight;
+  final bool isAdding;
   final VoidCallback onAdd;
 
   const _AddButton({
     required this.grams,
     required this.calories,
     required this.keyboardHeight,
+    required this.isAdding,
     required this.onAdd,
   });
 
@@ -926,20 +952,26 @@ class _AddButton extends StatelessWidget {
         child: SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed: onAdd,
+            onPressed: isAdding ? null : onAdd,
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppTheme.radiusMD),
               ),
             ),
-            child: Text(
-              l10n.addWithAmount(
-                grams.toStringAsFixed(0),
-                calories.toStringAsFixed(0),
-              ),
-              style: theme.textTheme.labelLarge,
-            ),
+            child: isAdding
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Text(
+                    l10n.addWithAmount(
+                      grams.toStringAsFixed(0),
+                      calories.toStringAsFixed(0),
+                    ),
+                    style: theme.textTheme.labelLarge,
+                  ),
           ),
         ),
       ),
