@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/food_item.dart';
-import 'package:sophis/services/food_entry_factory.dart';
 import 'package:sophis/services/openfoodfacts_service.dart';
 import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/services/service_result.dart';
@@ -193,22 +192,8 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
       builder: (_) => PortionPickerSheet(
         item: item,
         meal: widget.meal,
-        onAdd: (grams) => _addFoodEntry(item, grams),
       ),
     );
-  }
-
-  void _addFoodEntry(FoodItem item, double grams) {
-    final entry = FoodEntryFactory.fromFoodItem(
-      item: item,
-      grams: grams,
-      meal: widget.meal,
-    );
-
-    final provider = context.read<NutritionProvider>();
-    provider.addFoodEntry(entry);
-    provider.addRecentFood(item, meal: widget.meal);
-    Navigator.pop(context); // Close search screen
   }
 
   void _showDeleteCustomFoodDialog(FoodItem item) {

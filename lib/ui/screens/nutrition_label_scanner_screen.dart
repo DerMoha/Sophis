@@ -7,12 +7,10 @@ import 'package:gal/gal.dart';
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/food_item.dart';
 import 'package:sophis/models/serving_size.dart';
-import 'package:sophis/services/food_entry_factory.dart';
 import 'package:sophis/services/gemini_food_service.dart';
 import 'package:sophis/services/gemini/models/nutrition_label_result.dart';
 import 'package:sophis/services/nutrition_label_scanner_service.dart';
 import 'package:sophis/services/service_result.dart';
-import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/ui/components/portion_picker_sheet.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
@@ -176,17 +174,6 @@ class _NutritionLabelScannerScreenState
       builder: (_) => PortionPickerSheet(
         item: product,
         meal: widget.meal,
-        onAdd: (grams) {
-          final entry = FoodEntryFactory.fromFoodItem(
-            item: product,
-            grams: grams,
-            meal: widget.meal,
-          );
-          final provider = context.read<NutritionProvider>();
-          provider.addFoodEntry(entry);
-          provider.addRecentFood(product, meal: widget.meal);
-          Navigator.pop(context);
-        },
       ),
     );
   }

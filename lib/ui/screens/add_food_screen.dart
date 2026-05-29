@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:sophis/l10n/generated/app_localizations.dart';
-import 'package:sophis/services/food_entry_factory.dart';
-import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/providers/settings_provider.dart';
+import 'package:sophis/services/food_intake_controller.dart';
+import 'package:sophis/services/service_result.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/theme/animations.dart';
 import 'package:sophis/ui/components/organic_components.dart';
@@ -28,6 +28,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
   final _fatController = TextEditingController();
   final _fiberController = TextEditingController();
   bool _saveAsCustomFood = false;
+  bool _isSaving = false;
 
   @override
   void dispose() {
@@ -59,9 +60,9 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
   }
 
   Future<void> _save() async {
+    if (_isSaving) return;
     if (!_formKey.currentState!.validate()) return;
 
-    final provider = context.read<NutritionProvider>();
     final l10n = AppLocalizations.of(context)!;
     final name = _nameController.text.trim();
     final calories = double.tryParse(_caloriesController.text) ?? 0;
@@ -70,37 +71,35 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
     final fat = double.tryParse(_fatController.text) ?? 0;
     final fiber = double.tryParse(_fiberController.text) ?? 0;
 
-    final entry = FoodEntryFactory.create(
-      name: name,
-      calories: calories,
-      protein: protein,
-      carbs: carbs,
-      fat: fat,
-      fiber: fiber,
-      meal: widget.meal,
-    );
+    setState(() => _isSaving = true);
 
-    await provider.addFoodEntry(entry);
-
-    // Also save as custom food if checkbox is checked
-    if (_saveAsCustomFood) {
-      final customFood = FoodEntryFactory.createCustomFood(
-        name: name,
-        calories: calories,
-        protein: protein,
-        carbs: carbs,
-        fat: fat,
-        fiber: fiber,
-      );
-      await provider.addCustomFood(customFood);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.customFoodSaved)),
+    final result = await context.read<FoodIntakeController>().logManualEntry(
+          name: name,
+          calories: calories,
+          protein: protein,
+          carbs: carbs,
+          fat: fat,
+          fiber: fiber,
+          meal: widget.meal,
+          saveAsCustomFood: _saveAsCustomFood,
         );
-      }
-    }
 
-    if (mounted) Navigator.pop(context);
+    if (!mounted) return;
+
+    switch (result) {
+      case Success():
+        if (_saveAsCustomFood) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.customFoodSaved)),
+          );
+        }
+        Navigator.pop(context);
+      case Failure(message: final message):
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message)),
+        );
+    }
   }
 
   @override
@@ -118,7 +117,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: TextButton(
-              onPressed: _save,
+              onPressed: _isSaving ? null : _save,
               child: Text(
                 l10n.save,
                 style: TextStyle(

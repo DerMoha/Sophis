@@ -3,8 +3,9 @@ import 'package:provider/provider.dart';
 
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/shareable_meal.dart';
-import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/providers/settings_provider.dart';
+import 'package:sophis/services/food_intake_controller.dart';
+import 'package:sophis/services/service_result.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/theme/animations.dart';
 import 'package:sophis/ui/components/organic_components.dart';
@@ -20,6 +21,7 @@ class ImportMealScreen extends StatefulWidget {
 
 class _ImportMealScreenState extends State<ImportMealScreen> {
   String _selectedMeal = '';
+  bool _isImporting = false;
 
   @override
   void didChangeDependencies() {
@@ -32,23 +34,35 @@ class _ImportMealScreenState extends State<ImportMealScreen> {
     }
   }
 
-  void _importMeal() {
-    final entries = widget.meal.toFoodEntries(_selectedMeal);
-    final provider = context.read<NutritionProvider>();
+  Future<void> _importMeal() async {
+    if (_isImporting) return;
 
-    for (final entry in entries) {
-      provider.addFoodEntry(entry);
+    setState(() => _isImporting = true);
+
+    final result = await context.read<FoodIntakeController>().importSharedMeal(
+          meal: widget.meal,
+          targetMeal: _selectedMeal,
+        );
+
+    if (!mounted) return;
+
+    switch (result) {
+      case Success(value: final entries):
+        final messenger = ScaffoldMessenger.of(context);
+        Navigator.of(context).pop();
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              '${entries.length} ${entries.length == 1 ? 'item' : 'items'} imported',
+            ),
+          ),
+        );
+      case Failure(message: final message):
+        setState(() => _isImporting = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message)),
+        );
     }
-
-    Navigator.of(context).pop();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          '${entries.length} ${entries.length == 1 ? 'item' : 'items'} imported',
-        ),
-      ),
-    );
   }
 
   @override
@@ -121,7 +135,8 @@ class _ImportMealScreenState extends State<ImportMealScreen> {
                           ),
                         ),
                         const Divider(height: 1),
-                        ...meal.items.map((item) => _buildItemTile(theme, item)),
+                        ...meal.items
+                            .map((item) => _buildItemTile(theme, item)),
                       ],
                     ),
                   ),
@@ -203,39 +218,39 @@ class _ImportMealScreenState extends State<ImportMealScreen> {
                           Wrap(
                             spacing: AppTheme.spaceSM,
                             children: mealTypes
-                              .map(
-                                (mealType) => ChoiceChip(
-                                  label: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        mealType.icon,
-                                        size: 18,
-                                        color: _selectedMeal == mealType.id
-                                            ? Colors.white
-                                            : theme.colorScheme.onSurface,
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Text(mealType.name),
-                                    ],
+                                .map(
+                                  (mealType) => ChoiceChip(
+                                    label: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          mealType.icon,
+                                          size: 18,
+                                          color: _selectedMeal == mealType.id
+                                              ? Colors.white
+                                              : theme.colorScheme.onSurface,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(mealType.name),
+                                      ],
+                                    ),
+                                    selected: _selectedMeal == mealType.id,
+                                    onSelected: (selected) {
+                                      if (selected) {
+                                        setState(
+                                          () => _selectedMeal = mealType.id,
+                                        );
+                                      }
+                                    },
                                   ),
-                                  selected: _selectedMeal == mealType.id,
-                                  onSelected: (selected) {
-                                    if (selected) {
-                                      setState(
-                                        () => _selectedMeal = mealType.id,
-                                      );
-                                    }
-                                  },
-                                ),
-                              )
-                              .toList(),
-                        ),
-                      ],
+                                )
+                                .toList(),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
 
                 const SizedBox(height: AppTheme.spaceLG),
 
@@ -243,8 +258,14 @@ class _ImportMealScreenState extends State<ImportMealScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: _importMeal,
-                    icon: const Icon(Icons.download_rounded),
+                    onPressed: _isImporting ? null : _importMeal,
+                    icon: _isImporting
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.download_rounded),
                     label: Text(l10n.importAll),
                   ),
                 ),

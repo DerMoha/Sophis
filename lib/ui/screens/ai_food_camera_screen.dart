@@ -8,8 +8,7 @@ import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/services/gemini_food_service.dart';
 import 'package:sophis/services/gemini/models/models.dart';
 import 'package:sophis/services/service_result.dart';
-import 'package:sophis/services/food_entry_factory.dart';
-import 'package:sophis/providers/nutrition_provider.dart';
+import 'package:sophis/services/food_intake_controller.dart';
 import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/models/shareable_meal.dart';
 import 'package:sophis/ui/components/ai_food_image_tile.dart';
@@ -42,6 +41,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
   String? _error;
   bool _serviceInitialized = false;
   bool _isInitializing = false;
+  bool _isAddingFood = false;
   int _remainingRequests = 20;
 
   bool get _canAnalyze => _serviceInitialized;
@@ -117,8 +117,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
           _serviceInitialized = true;
         case Failure<void>(message: final message):
           _serviceInitialized = false;
-          _error =
-              AppLocalizations.of(context)!.errorInit(message);
+          _error = AppLocalizations.of(context)!.errorInit(message);
       }
       _isInitializing = false;
     });
@@ -218,8 +217,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
 
     switch (analysisResult) {
       case Success<List<FoodAnalysis>>(value: final results):
-        _results =
-            results.map((r) => EditableFoodResult(analysis: r)).toList();
+        _results = results.map((r) => EditableFoodResult(analysis: r)).toList();
       case Failure<List<FoodAnalysis>>(message: final message):
         _results = null;
         _error = _getUserFriendlyError(message);
@@ -327,38 +325,58 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     }
   }
 
-  void _addFood(EditableFoodResult result) {
+  Future<bool> _addFood(EditableFoodResult result) async {
+    if (_isAddingFood) return false;
+    if (result.isAdded) return true;
+
     final food = result.currentAnalysis;
 
-    final entry = FoodEntryFactory.create(
-      name: '${food.name} (${food.portionDisplay})',
-      calories: food.calories,
-      protein: food.protein,
-      carbs: food.carbs,
-      fat: food.fat,
-      fiber: food.fiber,
-      meal: widget.meal,
-    );
+    setState(() => _isAddingFood = true);
 
-    context.read<NutritionProvider>().addFoodEntry(entry);
+    final logResult =
+        await context.read<FoodIntakeController>().logNutritionEntry(
+              name: '${food.name} (${food.portionDisplay})',
+              calories: food.calories,
+              protein: food.protein,
+              carbs: food.carbs,
+              fat: food.fat,
+              fiber: food.fiber,
+              meal: widget.meal,
+            );
 
-    setState(() {
-      result.isAdded = true;
-    });
+    if (!mounted) return false;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(AppLocalizations.of(context)!.addedSnack(entry.name)),
-      ),
-    );
+    switch (logResult) {
+      case Success(value: final entry):
+        setState(() {
+          result.isAdded = true;
+          _isAddingFood = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.addedSnack(entry.name)),
+          ),
+        );
+        return true;
+      case Failure(message: final message):
+        setState(() => _isAddingFood = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message)),
+        );
+        return false;
+    }
   }
 
-  void _addAllFoods() {
+  Future<void> _addAllFoods() async {
+    if (_isAddingFood) return;
+
     final results = _results;
     if (results == null || results.isEmpty) return;
 
     for (final result in results) {
-      _addFood(result);
+      final added = await _addFood(result);
+      if (!added || !mounted) return;
     }
 
     Navigator.pop(context);
@@ -419,8 +437,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
             child: Padding(
               padding: const EdgeInsets.only(right: 4),
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: _remainingRequests <= 3
                       ? AppTheme.warning.withValues(alpha: 0.1)
@@ -477,7 +494,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
               tooltip: l10n.share,
             ),
             TextButton(
-              onPressed: _addAllFoods,
+              onPressed: _isAddingFood ? null : _addAllFoods,
               child: Text(l10n.addAll),
             ),
           ],
@@ -512,10 +529,9 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                   children: [
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed:
-                            _canAnalyze && _images.length < maxImages
-                                ? () => _pickImage(ImageSource.camera)
-                                : null,
+                        onPressed: _canAnalyze && _images.length < maxImages
+                            ? () => _pickImage(ImageSource.camera)
+                            : null,
                         icon: const Icon(Icons.camera_alt),
                         label: Text(l10n.camera),
                       ),
@@ -523,10 +539,9 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed:
-                            _canAnalyze && _images.length < maxImages
-                                ? () => _pickImage(ImageSource.gallery)
-                                : null,
+                        onPressed: _canAnalyze && _images.length < maxImages
+                            ? () => _pickImage(ImageSource.gallery)
+                            : null,
                         icon: const Icon(Icons.photo_library),
                         label: Text(l10n.gallery),
                       ),
@@ -537,10 +552,9 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed:
-                        _canAnalyze && _images.isNotEmpty && !_isLoading
-                            ? () => _analyzeFood()
-                            : null,
+                    onPressed: _canAnalyze && _images.isNotEmpty && !_isLoading
+                        ? () => _analyzeFood()
+                        : null,
                     icon: const Icon(Icons.auto_awesome),
                     label: Text(l10n.analyzeWithAI),
                   ),
@@ -648,8 +662,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
               for (final result in results)
                 AiFoodResultCard(
                   result: result,
-                  onEdit: () =>
-                      _showEditSheet(result, allowReAnalyze: true),
+                  onEdit: () => _showEditSheet(result, allowReAnalyze: true),
                   onShare: () => _shareSingleFood(result),
                   onAdd: () => _addFood(result),
                 ),

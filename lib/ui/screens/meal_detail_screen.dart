@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:uuid/uuid.dart';
 
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/food_entry.dart';
-import 'package:sophis/services/food_entry_factory.dart';
 import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/providers/settings_provider.dart';
+import 'package:sophis/services/food_intake_controller.dart';
+import 'package:sophis/services/service_result.dart';
 import 'package:sophis/ui/components/nutrition_entry_fields.dart';
 import 'package:sophis/ui/components/common/ui_primitives.dart';
 import 'package:sophis/ui/components/settings/settings_tiles.dart';
@@ -568,8 +568,7 @@ class _MealEntryCard extends StatelessWidget {
                     double.tryParse(proteinController.text) ?? entry.protein,
                 carbs: double.tryParse(carbsController.text) ?? entry.carbs,
                 fat: double.tryParse(fatController.text) ?? entry.fat,
-                fiber:
-                    double.tryParse(fiberController.text) ?? entry.fiber,
+                fiber: double.tryParse(fiberController.text) ?? entry.fiber,
               );
               context.read<NutritionProvider>().updateFoodEntry(updatedEntry);
               Navigator.pop(ctx);
@@ -584,15 +583,25 @@ class _MealEntryCard extends StatelessWidget {
     );
   }
 
-  void _saveToMyFoods(BuildContext context, AppLocalizations l10n) {
-    final customFood = FoodEntryFactory.customFoodFromEntry(
-      entry,
-      id: 'custom_${const Uuid().v4()}',
-    );
-    context.read<NutritionProvider>().addCustomFood(customFood);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(l10n.customFoodSaved)),
-    );
+  Future<void> _saveToMyFoods(
+    BuildContext context,
+    AppLocalizations l10n,
+  ) async {
+    final result =
+        await context.read<FoodIntakeController>().saveEntryAsCustomFood(entry);
+
+    if (!context.mounted) return;
+
+    switch (result) {
+      case Success():
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.customFoodSaved)),
+        );
+      case Failure(message: final message):
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message)),
+        );
+    }
   }
 
   void _shareEntry(BuildContext context) {
@@ -643,5 +652,3 @@ class _PortionButton extends StatelessWidget {
     );
   }
 }
-
-

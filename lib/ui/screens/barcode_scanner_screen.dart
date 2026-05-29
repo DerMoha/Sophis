@@ -6,9 +6,7 @@ import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/food_item.dart';
 import 'package:sophis/models/shareable_meal.dart';
 import 'package:sophis/services/barcode_lookup_service.dart';
-import 'package:sophis/services/food_entry_factory.dart';
 import 'package:sophis/services/meal_sharing_service.dart';
-import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/services/service_result.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/components/barcode_not_found_sheet.dart';
@@ -152,7 +150,6 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
       builder: (_) => PortionPickerSheet(
         item: product,
         meal: widget.meal,
-        onAdd: (grams) => _addFoodEntry(product, grams),
         barcode: barcode,
         lookupService: _lookupService,
         onProductUpdated: (updatedProduct) {
@@ -172,19 +169,6 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
         _lastScannedCode = null;
       });
     });
-  }
-
-  void _addFoodEntry(FoodItem product, double grams) {
-    final entry = FoodEntryFactory.fromFoodItem(
-      item: product,
-      grams: grams,
-      meal: widget.meal,
-    );
-
-    final provider = context.read<NutritionProvider>();
-    provider.addFoodEntry(entry);
-    provider.addRecentFood(product, meal: widget.meal);
-    Navigator.pop(context); // Close barcode scanner
   }
 
   @override
