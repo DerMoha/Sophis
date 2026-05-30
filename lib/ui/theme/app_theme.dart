@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-
 export 'blob_painter.dart';
 export 'gradient_mesh_painter.dart';
 
@@ -259,7 +258,8 @@ class AppTheme {
         scrolledUnderElevation: 0,
         centerTitle: false,
         systemOverlayStyle: SystemUiOverlayStyle.dark,
-        titleTextStyle: TextStyle(fontFamily: 'DM Serif Display', 
+        titleTextStyle: const TextStyle(
+          fontFamily: 'DM Serif Display',
           color: _lightText,
           fontSize: 24,
           fontWeight: FontWeight.w400,
@@ -300,7 +300,8 @@ class AppTheme {
         ),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        hintStyle: TextStyle(fontFamily: 'Plus Jakarta Sans', 
+        hintStyle: const TextStyle(
+          fontFamily: 'Plus Jakarta Sans',
           color: _lightTextSecondary,
           fontSize: 15,
         ),
@@ -314,7 +315,8 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(radiusFull),
           ),
-          textStyle: TextStyle(fontFamily: 'Plus Jakarta Sans', 
+          textStyle: const TextStyle(
+            fontFamily: 'Plus Jakarta Sans',
             fontSize: 15,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.3,
@@ -330,7 +332,8 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(radiusFull),
           ),
-          textStyle: TextStyle(fontFamily: 'Plus Jakarta Sans', 
+          textStyle: const TextStyle(
+            fontFamily: 'Plus Jakarta Sans',
             fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
@@ -339,7 +342,8 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: accentColor,
-          textStyle: TextStyle(fontFamily: 'Plus Jakarta Sans', 
+          textStyle: const TextStyle(
+            fontFamily: 'Plus Jakarta Sans',
             fontWeight: FontWeight.w600,
             letterSpacing: 0.3,
           ),
@@ -366,7 +370,8 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radiusXL),
         ),
-        titleTextStyle: TextStyle(fontFamily: 'DM Serif Display', 
+        titleTextStyle: const TextStyle(
+          fontFamily: 'DM Serif Display',
           color: _lightText,
           fontSize: 22,
           fontWeight: FontWeight.w400,
@@ -374,7 +379,10 @@ class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: _lightText,
-        contentTextStyle: TextStyle(fontFamily: 'Plus Jakarta Sans', color: _lightSurface),
+        contentTextStyle: const TextStyle(
+          fontFamily: 'Plus Jakarta Sans',
+          color: _lightSurface,
+        ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radiusMD),
         ),
@@ -390,7 +398,8 @@ class AppTheme {
       ),
       chipTheme: ChipThemeData(
         backgroundColor: _lightSurfaceAlt,
-        labelStyle: TextStyle(fontFamily: 'Plus Jakarta Sans', 
+        labelStyle: const TextStyle(
+          fontFamily: 'Plus Jakarta Sans',
           fontSize: 13,
           fontWeight: FontWeight.w500,
         ),
@@ -451,7 +460,8 @@ class AppTheme {
         scrolledUnderElevation: 0,
         centerTitle: false,
         systemOverlayStyle: SystemUiOverlayStyle.light,
-        titleTextStyle: TextStyle(fontFamily: 'DM Serif Display', 
+        titleTextStyle: const TextStyle(
+          fontFamily: 'DM Serif Display',
           color: _darkText,
           fontSize: 24,
           fontWeight: FontWeight.w400,
@@ -492,7 +502,8 @@ class AppTheme {
         ),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        hintStyle: TextStyle(fontFamily: 'Plus Jakarta Sans', 
+        hintStyle: const TextStyle(
+          fontFamily: 'Plus Jakarta Sans',
           color: _darkTextSecondary,
           fontSize: 15,
         ),
@@ -506,7 +517,8 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(radiusFull),
           ),
-          textStyle: TextStyle(fontFamily: 'Plus Jakarta Sans', 
+          textStyle: const TextStyle(
+            fontFamily: 'Plus Jakarta Sans',
             fontSize: 15,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.3,
@@ -522,7 +534,8 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(radiusFull),
           ),
-          textStyle: TextStyle(fontFamily: 'Plus Jakarta Sans', 
+          textStyle: const TextStyle(
+            fontFamily: 'Plus Jakarta Sans',
             fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
@@ -531,7 +544,8 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: accentColor,
-          textStyle: TextStyle(fontFamily: 'Plus Jakarta Sans', 
+          textStyle: const TextStyle(
+            fontFamily: 'Plus Jakarta Sans',
             fontWeight: FontWeight.w600,
             letterSpacing: 0.3,
           ),
@@ -558,7 +572,8 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radiusXL),
         ),
-        titleTextStyle: TextStyle(fontFamily: 'DM Serif Display', 
+        titleTextStyle: const TextStyle(
+          fontFamily: 'DM Serif Display',
           color: _darkText,
           fontSize: 22,
           fontWeight: FontWeight.w400,
@@ -566,7 +581,10 @@ class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: _darkText,
-        contentTextStyle: TextStyle(fontFamily: 'Plus Jakarta Sans', color: _darkSurface),
+        contentTextStyle: const TextStyle(
+          fontFamily: 'Plus Jakarta Sans',
+          color: _darkSurface,
+        ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radiusMD),
         ),
@@ -582,7 +600,8 @@ class AppTheme {
       ),
       chipTheme: ChipThemeData(
         backgroundColor: _darkSurfaceAlt,
-        labelStyle: TextStyle(fontFamily: 'Plus Jakarta Sans', 
+        labelStyle: const TextStyle(
+          fontFamily: 'Plus Jakarta Sans',
           fontSize: 13,
           fontWeight: FontWeight.w500,
         ),
@@ -624,91 +643,106 @@ class AppTheme {
   static TextTheme _buildTextTheme(Color primaryColor, Color secondaryColor) {
     return TextTheme(
       // Display - Large hero text
-      displayLarge: TextStyle(fontFamily: 'DM Serif Display', 
+      displayLarge: TextStyle(
+        fontFamily: 'DM Serif Display',
         fontSize: 48,
         fontWeight: FontWeight.w400,
         color: primaryColor,
         letterSpacing: -1,
       ),
-      displayMedium: TextStyle(fontFamily: 'DM Serif Display', 
+      displayMedium: TextStyle(
+        fontFamily: 'DM Serif Display',
         fontSize: 40,
         fontWeight: FontWeight.w400,
         color: primaryColor,
         letterSpacing: -0.5,
       ),
-      displaySmall: TextStyle(fontFamily: 'DM Serif Display', 
+      displaySmall: TextStyle(
+        fontFamily: 'DM Serif Display',
         fontSize: 32,
         fontWeight: FontWeight.w400,
         color: primaryColor,
       ),
       // Headlines - Section titles
-      headlineLarge: TextStyle(fontFamily: 'DM Serif Display', 
+      headlineLarge: TextStyle(
+        fontFamily: 'DM Serif Display',
         fontSize: 28,
         fontWeight: FontWeight.w400,
         color: primaryColor,
       ),
-      headlineMedium: TextStyle(fontFamily: 'DM Serif Display', 
+      headlineMedium: TextStyle(
+        fontFamily: 'DM Serif Display',
         fontSize: 24,
         fontWeight: FontWeight.w400,
         color: primaryColor,
       ),
-      headlineSmall: TextStyle(fontFamily: 'DM Serif Display', 
+      headlineSmall: TextStyle(
+        fontFamily: 'DM Serif Display',
         fontSize: 20,
         fontWeight: FontWeight.w400,
         color: primaryColor,
       ),
       // Titles - Card headers, list items
-      titleLarge: TextStyle(fontFamily: 'Plus Jakarta Sans', 
+      titleLarge: TextStyle(
+        fontFamily: 'Plus Jakarta Sans',
         fontSize: 20,
         fontWeight: FontWeight.w600,
         color: primaryColor,
         letterSpacing: -0.2,
       ),
-      titleMedium: TextStyle(fontFamily: 'Plus Jakarta Sans', 
+      titleMedium: TextStyle(
+        fontFamily: 'Plus Jakarta Sans',
         fontSize: 16,
         fontWeight: FontWeight.w600,
         color: primaryColor,
         letterSpacing: 0,
       ),
-      titleSmall: TextStyle(fontFamily: 'Plus Jakarta Sans', 
+      titleSmall: TextStyle(
+        fontFamily: 'Plus Jakarta Sans',
         fontSize: 14,
         fontWeight: FontWeight.w600,
         color: primaryColor,
         letterSpacing: 0.1,
       ),
       // Body - Paragraphs, descriptions
-      bodyLarge: TextStyle(fontFamily: 'Plus Jakarta Sans', 
+      bodyLarge: TextStyle(
+        fontFamily: 'Plus Jakarta Sans',
         fontSize: 16,
         fontWeight: FontWeight.w400,
         color: primaryColor,
         height: 1.5,
       ),
-      bodyMedium: TextStyle(fontFamily: 'Plus Jakarta Sans', 
+      bodyMedium: TextStyle(
+        fontFamily: 'Plus Jakarta Sans',
         fontSize: 14,
         fontWeight: FontWeight.w400,
         color: primaryColor,
         height: 1.5,
       ),
-      bodySmall: TextStyle(fontFamily: 'Plus Jakarta Sans', 
+      bodySmall: TextStyle(
+        fontFamily: 'Plus Jakarta Sans',
         fontSize: 12,
         fontWeight: FontWeight.w400,
         color: secondaryColor,
         height: 1.4,
       ),
       // Labels - Buttons, chips, captions
-      labelLarge: TextStyle(fontFamily: 'Plus Jakarta Sans', 
+      labelLarge: TextStyle(
+        fontFamily: 'Plus Jakarta Sans',
         fontSize: 14,
         fontWeight: FontWeight.w600,
         color: primaryColor,
         letterSpacing: 0.5,
       ),
-      labelMedium: TextStyle(fontFamily: 'Plus Jakarta Sans', 
+      labelMedium: TextStyle(
+        fontFamily: 'Plus Jakarta Sans',
         fontSize: 12,
         fontWeight: FontWeight.w600,
         color: primaryColor,
         letterSpacing: 0.5,
       ),
-      labelSmall: TextStyle(fontFamily: 'Plus Jakarta Sans', 
+      labelSmall: TextStyle(
+        fontFamily: 'Plus Jakarta Sans',
         fontSize: 10,
         fontWeight: FontWeight.w600,
         color: secondaryColor,
