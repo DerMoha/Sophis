@@ -37,8 +37,9 @@ class _MealTypesScreenState extends State<MealTypesScreen> {
       body: ReorderableListView.builder(
         padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceSM),
         itemCount: mealTypes.length,
-        onReorder: (oldIndex, newIndex) {
-          settings.reorderMealTypes(oldIndex, newIndex);
+        onReorderItem: (oldIndex, newIndex) {
+          final legacyNewIndex = newIndex > oldIndex ? newIndex + 1 : newIndex;
+          settings.reorderMealTypes(oldIndex, legacyNewIndex);
         },
         itemBuilder: (context, index) {
           final mealType = mealTypes[index];

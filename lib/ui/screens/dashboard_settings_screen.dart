@@ -80,8 +80,13 @@ class DashboardSettingsScreen extends StatelessWidget {
                           physics: const NeverScrollableScrollPhysics(),
                           buildDefaultDragHandles: false,
                           itemCount: cards.length,
-                          onReorder: (oldIndex, newIndex) {
-                            settings.reorderDashboardCards(oldIndex, newIndex);
+                          onReorderItem: (oldIndex, newIndex) {
+                            final legacyNewIndex =
+                                newIndex > oldIndex ? newIndex + 1 : newIndex;
+                            settings.reorderDashboardCards(
+                              oldIndex,
+                              legacyNewIndex,
+                            );
                           },
                           itemBuilder: (context, index) {
                             final card = cards[index];

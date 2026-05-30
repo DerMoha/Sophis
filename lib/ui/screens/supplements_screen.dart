@@ -167,8 +167,10 @@ class _SupplementsScreenState extends State<SupplementsScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   sliver: SliverReorderableList(
                     itemCount: supplements.length,
-                    onReorder: (oldIndex, newIndex) {
-                      provider.reorderSupplements(oldIndex, newIndex);
+                    onReorderItem: (oldIndex, newIndex) {
+                      final legacyNewIndex =
+                          newIndex > oldIndex ? newIndex + 1 : newIndex;
+                      provider.reorderSupplements(oldIndex, legacyNewIndex);
                     },
                     itemBuilder: (context, index) {
                       final supplement = supplements[index];
@@ -224,10 +226,15 @@ class _SupplementsScreenState extends State<SupplementsScreen> {
                               );
                             },
                             onDismissed: (direction) {
-                              final result = provider.deleteSupplement(supplement.id);
+                              final result =
+                                  provider.deleteSupplement(supplement.id);
                               if (result.isFailure) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text((result as Failure).message)),
+                                  SnackBar(
+                                    content: Text(
+                                      (result as Failure).message,
+                                    ),
+                                  ),
                                 );
                                 return;
                               }
