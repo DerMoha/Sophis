@@ -10,13 +10,20 @@ import 'package:sophis/services/health_service.dart';
 /// Settings provider for theme, locale, and AI mode
 class SettingsProvider extends ChangeNotifier {
   final StorageService _storage;
-  final NotificationService _notifications = NotificationService();
+  final NotificationService _notifications;
+  final HealthServiceProtocol _healthService;
   AppSettings _settings;
   String? _geminiApiKey;
   String? _offUserId;
   String? _offPassword;
 
-  SettingsProvider(this._storage) : _settings = _storage.loadSettings() {
+  SettingsProvider(
+    this._storage, {
+    NotificationService? notificationService,
+    HealthServiceProtocol? healthService,
+  })  : _notifications = notificationService ?? NotificationService(),
+        _healthService = healthService ?? HealthService(),
+        _settings = _storage.loadSettings() {
     _loadSecureData();
     // Schedule notifications on startup based on saved settings
     _updateNotifications();
@@ -233,8 +240,7 @@ class SettingsProvider extends ChangeNotifier {
   Future<bool> setHealthSyncEnabled(bool enabled) async {
     if (enabled) {
       // Request permissions when enabling
-      final healthService = HealthService();
-      final granted = await healthService.requestPermissions();
+      final granted = await _healthService.requestPermissions();
       if (!granted) {
         // Permission denied, don't enable health sync
         return false;
@@ -249,8 +255,7 @@ class SettingsProvider extends ChangeNotifier {
 
   Future<bool> setHealthWeightSyncEnabled(bool enabled) async {
     if (enabled) {
-      final healthService = HealthService();
-      final granted = await healthService.requestWeightPermissions();
+      final granted = await _healthService.requestWeightPermissions();
       if (!granted) return false;
     }
 
@@ -262,8 +267,7 @@ class SettingsProvider extends ChangeNotifier {
 
   Future<bool> setHealthNutritionSyncEnabled(bool enabled) async {
     if (enabled) {
-      final healthService = HealthService();
-      final granted = await healthService.requestNutritionPermissions();
+      final granted = await _healthService.requestNutritionPermissions();
       if (!granted) return false;
     }
 
