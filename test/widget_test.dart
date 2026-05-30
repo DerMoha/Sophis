@@ -1,15 +1,28 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sophis/ui/screens/home_screen.dart';
+
+import 'helpers/test_services.dart';
 
 void main() {
-  testWidgets('Placeholder test', (WidgetTester tester) async {
-    // Placeholder - real tests to be added in Phase 2
-    expect(true, isTrue);
+  testWidgets('Home screen showed onboarding state', (
+    WidgetTester tester,
+  ) async {
+    final nutrition = await createLoadedWidgetNutritionProvider(tester);
+    final settings = await createWidgetTestSettingsProvider(tester);
+    nutrition.attachSettingsProvider(settings);
+
+    await pumpTestApp(
+      tester,
+      const HomeScreen(),
+      nutritionProvider: nutrition,
+      settingsProvider: settings,
+    );
+    await tester.pump(const Duration(seconds: 2));
+
+    expect(find.text('Sophis'), findsOneWidget);
+    expect(find.text('Today'), findsOneWidget);
+    expect(find.text('Welcome to Sophis'), findsOneWidget);
+
+    expect(find.text('Set Goals'), findsOneWidget);
   });
 }
