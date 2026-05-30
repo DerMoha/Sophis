@@ -14,8 +14,22 @@ class HomeWidgetService {
   static NutritionProvider? _pendingProvider;
   static bool _isSyncing = false;
   static bool _hasPendingSync = false;
+  static bool _isEnabled = true;
+
+  static void setEnabledForTesting(bool enabled) {
+    _isEnabled = enabled;
+    if (enabled) return;
+
+    _widgetSyncTimer?.cancel();
+    _widgetSyncTimer = null;
+    _pendingProvider = null;
+    _isSyncing = false;
+    _hasPendingSync = false;
+  }
 
   static Future<void> updateWidgetData(NutritionProvider provider) {
+    if (!_isEnabled) return Future.value();
+
     _pendingProvider = provider;
     _hasPendingSync = true;
 

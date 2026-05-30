@@ -210,6 +210,8 @@ class _WavePainter extends CustomPainter {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class FadeInSlide extends StatefulWidget {
+  static bool _animationsEnabled = true;
+
   final Widget child;
   final int index;
   final Duration delay;
@@ -226,6 +228,10 @@ class FadeInSlide extends StatefulWidget {
     this.offset = const Offset(0, 24),
     this.curve = Curves.easeOutCubic,
   });
+
+  static void setEnabledForTesting(bool enabled) {
+    _animationsEnabled = enabled;
+  }
 
   @override
   State<FadeInSlide> createState() => _FadeInSlideState();
@@ -260,6 +266,11 @@ class _FadeInSlideState extends State<FadeInSlide>
       ),
     );
 
+    if (!FadeInSlide._animationsEnabled) {
+      _controller.value = 1;
+      return;
+    }
+
     Future.delayed(widget.delay * widget.index, () {
       if (mounted) _controller.forward();
     });
@@ -273,6 +284,10 @@ class _FadeInSlideState extends State<FadeInSlide>
 
   @override
   Widget build(BuildContext context) {
+    if (!FadeInSlide._animationsEnabled) {
+      return widget.child;
+    }
+
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {

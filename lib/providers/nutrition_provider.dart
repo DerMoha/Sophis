@@ -51,6 +51,7 @@ class NutritionProvider extends ChangeNotifier {
 
   double _healthSyncBurnedCalories = 0.0;
   final HealthServiceProtocol _healthService;
+  final bool _cleanupProgressPhotosOnLoad;
   SettingsProvider? _settingsProvider;
 
   bool _isLoading = true;
@@ -64,7 +65,9 @@ class NutritionProvider extends ChangeNotifier {
     this._storage,
     this._db, {
     HealthServiceProtocol? healthService,
-  }) : _healthService = healthService ?? HealthService() {
+    bool cleanupProgressPhotosOnLoad = true,
+  })  : _healthService = healthService ?? HealthService(),
+        _cleanupProgressPhotosOnLoad = cleanupProgressPhotosOnLoad {
     _foodLog = FoodLogController(
       _db,
       _onFoodChanged,
@@ -121,7 +124,10 @@ class NutritionProvider extends ChangeNotifier {
   /// Triggers streak update and home widget refresh.
   Future<void> _onFoodChanged() async {
     await _updateStreak();
-    await _storage.saveRecentFoods(_foodLog.recentFoods, _foodLog.recentFoodMeals);
+    await _storage.saveRecentFoods(
+      _foodLog.recentFoods,
+      _foodLog.recentFoodMeals,
+    );
     HomeWidgetService.updateWidgetData(this);
     notifyListeners();
   }
@@ -176,7 +182,11 @@ class NutritionProvider extends ChangeNotifier {
     final workouts = await _db.getAllWorkouts();
 
     final recentMeals = <String, String>{};
-    _foodLog.loadData(foods, _storage.loadRecentFoods(outMeals: recentMeals), recentMeals);
+    _foodLog.loadData(
+      foods,
+      _storage.loadRecentFoods(outMeals: recentMeals),
+      recentMeals,
+    );
     _hydration.loadData(water);
     _weightEntries = weights;
     _workouts.loadData(workouts);
@@ -201,8 +211,10 @@ class NutritionProvider extends ChangeNotifier {
     final photos = await _db.getAllPhotos();
     _photos = photos;
 
-    // Clean up orphaned photo files in background
-    _progressPhotos.cleanupOrphanedFiles();
+    if (_cleanupProgressPhotosOnLoad) {
+      // Clean up orphaned photo files in background.
+      _progressPhotos.cleanupOrphanedFiles();
+    }
 
     _cacheDate = null; // Force cache rebuild
     HomeWidgetService.updateWidgetData(this);

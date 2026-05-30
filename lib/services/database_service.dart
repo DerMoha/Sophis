@@ -261,7 +261,11 @@ class ProgressPhotos extends Table {
   ],
 )
 class DatabaseService extends _$DatabaseService {
-  DatabaseService() : super(_openConnection());
+  DatabaseService() : this._(_openConnection());
+
+  DatabaseService.inMemory() : this._(NativeDatabase.memory());
+
+  DatabaseService._(super.executor);
 
   @override
   int get schemaVersion => 8;
@@ -283,17 +287,28 @@ class DatabaseService extends _$DatabaseService {
           await migrator.createTable(progressPhotos);
 
           await _safeAddColumn(migrator, weightLogs, weightLogs.source);
-          await _safeAddColumn(migrator, barcodeProducts, barcodeProducts.cacheStatus);
+          await _safeAddColumn(
+            migrator,
+            barcodeProducts,
+            barcodeProducts.cacheStatus,
+          );
           await _safeAddColumn(migrator, foods, foods.fiber);
           await _safeAddColumn(migrator, plannedMeals, plannedMeals.fiber);
-          await _safeAddColumn(migrator, barcodeProducts, barcodeProducts.fiberPer100g);
+          await _safeAddColumn(
+            migrator,
+            barcodeProducts,
+            barcodeProducts.fiberPer100g,
+          );
           await _safeAddColumn(migrator, customFoods, customFoods.fiberPer100g);
           await _safeAddColumn(migrator, recentFoods, recentFoods.fiberPer100g);
         },
       );
 
   Future<void> _safeAddColumn(
-      Migrator migrator, TableInfo table, GeneratedColumn column,) async {
+    Migrator migrator,
+    TableInfo table,
+    GeneratedColumn column,
+  ) async {
     try {
       await migrator.addColumn(table, column);
     } catch (e) {
@@ -706,14 +721,16 @@ class DatabaseService extends _$DatabaseService {
     final notFoundCutoff = DateTime.now().subtract(const Duration(days: 7));
 
     await (delete(barcodeProducts)
-          ..where((t) =>
-              t.isUserCorrected.equals(false) &
-              (t.cacheStatus.equals('found') &
-                      t.cachedAt.isSmallerThanValue(foundCutoff) |
-                  t.cacheStatus.equals('partial') &
-                      t.cachedAt.isSmallerThanValue(partialCutoff) |
-                  t.cacheStatus.equals('notFound') &
-                      t.cachedAt.isSmallerThanValue(notFoundCutoff)),))
+          ..where(
+            (t) =>
+                t.isUserCorrected.equals(false) &
+                (t.cacheStatus.equals('found') &
+                        t.cachedAt.isSmallerThanValue(foundCutoff) |
+                    t.cacheStatus.equals('partial') &
+                        t.cachedAt.isSmallerThanValue(partialCutoff) |
+                    t.cacheStatus.equals('notFound') &
+                        t.cachedAt.isSmallerThanValue(notFoundCutoff)),
+          ))
         .go();
   }
 
@@ -1076,9 +1093,8 @@ class DatabaseService extends _$DatabaseService {
   }
 
   Future<ProgressPhoto?> getPhotoById(String id) async {
-    final row =
-        await (select(progressPhotos)..where((t) => t.id.equals(id)))
-            .getSingleOrNull();
+    final row = await (select(progressPhotos)..where((t) => t.id.equals(id)))
+        .getSingleOrNull();
     if (row == null) return null;
     return ProgressPhoto(
       id: row.id,
@@ -1091,7 +1107,9 @@ class DatabaseService extends _$DatabaseService {
     );
   }
 
-  Future<List<ProgressPhoto>> getPhotosByCategory(PhotoCategory category) async {
+  Future<List<ProgressPhoto>> getPhotosByCategory(
+    PhotoCategory category,
+  ) async {
     final rows = await (select(progressPhotos)
           ..where((t) => t.category.equals(category.index))
           ..orderBy([(t) => OrderingTerm.desc(t.timestamp)]))
