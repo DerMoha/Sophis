@@ -120,10 +120,10 @@ class _NutritionLabelScannerScreenState
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _NutritionLabelPreview(
+      builder: (bottomSheetContext) => _NutritionLabelPreview(
         result: result,
-        onLooksGood: () => Navigator.pop(_, true),
-        onRescan: () => Navigator.pop(_, false),
+        onLooksGood: () => Navigator.pop(bottomSheetContext, true),
+        onRescan: () => Navigator.pop(bottomSheetContext, false),
         l10n: l10n,
         theme: theme,
       ),

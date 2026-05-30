@@ -68,8 +68,7 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
       return;
     }
 
-    final analysisResult =
-        await scannerService.scanLabel(File(image.path));
+    final analysisResult = await scannerService.scanLabel(File(image.path));
 
     if (!mounted) return;
 
@@ -87,8 +86,7 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
         final servingSizeG = result.servingSizeG;
         if (servingSizeG != null && servingSizeG > 0) {
           final servingName = result.servingName ?? 'Portion';
-          servings =
-              ServingSize.generateFractions(servingName, servingSizeG);
+          servings = ServingSize.generateFractions(servingName, servingSizeG);
         }
 
         final product = FoodItem(
@@ -109,8 +107,7 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
 
         setState(() => _isAnalyzing = false);
 
-        final shouldProceed =
-            await _showLabelPreview(context, result, product);
+        final shouldProceed = await _showLabelPreview(context, result, product);
 
         if (!mounted) return;
 
@@ -164,11 +161,11 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
           context: context,
           isScrollControlled: true,
           backgroundColor: Colors.transparent,
-          builder: (_) => _InlineLabelPreview(
+          builder: (bottomSheetContext) => _InlineLabelPreview(
             result: result,
             product: product,
-            onLooksGood: () => Navigator.pop(_, true),
-            onRescan: () => Navigator.pop(_, false),
+            onLooksGood: () => Navigator.pop(bottomSheetContext, true),
+            onRescan: () => Navigator.pop(bottomSheetContext, false),
             l10n: l10n,
             theme: theme,
           ),
@@ -404,8 +401,7 @@ class _InlineLabelPreview extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    if (product.brand != null &&
-                        product.brand!.isNotEmpty)
+                    if (product.brand != null && product.brand!.isNotEmpty)
                       Text(
                         product.brand!,
                         style: theme.textTheme.labelSmall?.copyWith(
