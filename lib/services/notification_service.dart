@@ -1,60 +1,48 @@
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
+import 'package:sophis/services/local_notifier.dart';
+import 'package:sophis/services/plugin_local_notifier.dart';
 import 'package:sophis/utils/time_utils.dart';
 
-/// Service for handling local push notifications
+/// Service for handling local push notifications.
+///
+/// Holds business logic (parsing stored times, deciding whether a
+/// reminder should land today or tomorrow, picking reminder copy) and
+/// delegates the actual scheduling to an injected [LocalNotifier].
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() => _instance;
   NotificationService._internal();
 
-  final FlutterLocalNotificationsPlugin _notifications =
-      FlutterLocalNotificationsPlugin();
+  /// Convenience constructor for tests and DI: build a service backed
+  /// by a caller-supplied [LocalNotifier] (typically a fake or a
+  /// recording implementation).
+  NotificationService.withNotifier(LocalNotifier notifier)
+      : _notifier = notifier;
 
-  bool _initialized = false;
+  LocalNotifier _notifier = PluginLocalNotifier();
+
+  /// Replaces the underlying notifier. Intended for tests; production
+  /// code should use [NotificationService.withNotifier] at construction
+  /// time instead.
+  set notifier(LocalNotifier value) => _notifier = value;
 
   // Notification ID Ranges:
   // 0-99: Meal reminders (breakfast, lunch, dinner, custom meals)
   // 100-199: Supplement reminders
   // 200+: Reserved for future features
 
-  /// Initialize the notification service
+  /// Initialize the notification service.
   Future<void> initialize() async {
-    if (_initialized) return;
-
-    tz.initializeTimeZones();
-
-    const androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
-    const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-    );
-
-    const settings = InitializationSettings(
-      android: androidSettings,
-      iOS: iosSettings,
-    );
-
-    await _notifications.initialize(settings);
-    _initialized = true;
+    await _notifier.initialize();
   }
 
-  /// Request permissions (iOS)
+  /// Request permissions (iOS / Android 13+).
   Future<bool> requestPermissions() async {
-    final android = _notifications.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
-    if (android != null) {
-      final granted = await android.requestNotificationsPermission();
-      return granted ?? false;
-    }
-    return true;
+    return _notifier.requestPermissions();
   }
 
-  /// Schedule a daily meal reminder
+  /// Schedule a daily meal reminder.
   Future<void> scheduleMealReminder({
     required int id,
     required String title,
@@ -76,56 +64,37 @@ class NotificationService {
     if (startTomorrow) {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
     } else if (scheduledDate.isBefore(now)) {
-      // If the time has passed today, schedule for tomorrow
       scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
 
-    await _notifications.zonedSchedule(
-      id,
-      title,
-      body,
-      scheduledDate,
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'meal_reminders',
-          'Meal Reminders',
-          channelDescription: 'Reminders to log your meals',
-          importance: Importance.high,
-          priority: Priority.high,
-          icon: '@mipmap/ic_launcher',
-        ),
-        iOS: DarwinNotificationDetails(
-          presentAlert: true,
-          presentBadge: true,
-          presentSound: true,
-        ),
-      ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      matchDateTimeComponents: DateTimeComponents.time, // Repeat daily
+    await _notifier.scheduleAt(
+      id: id,
+      title: title,
+      body: body,
+      when: scheduledDate,
     );
   }
 
-  /// Cancel a specific reminder
+  /// Cancel a specific reminder.
   Future<void> cancelReminder(int id) async {
-    await _notifications.cancel(id);
+    await _notifier.cancel(id);
   }
 
-  /// Cancel all reminders
+  /// Cancel all reminders.
   Future<void> cancelAllReminders() async {
-    await _notifications.cancelAll();
+    await _notifier.cancelAll();
   }
 
-  /// Schedule all meal reminders based on settings
+  /// Schedule all meal reminders based on settings.
   Future<void> updateMealReminders({
     required bool enabled,
     String? breakfastTime,
     String? lunchTime,
     String? dinnerTime,
   }) async {
-    // Cancel all existing reminders first
-    await cancelReminder(0); // Breakfast
-    await cancelReminder(1); // Lunch
-    await cancelReminder(2); // Dinner
+    await cancelReminder(0);
+    await cancelReminder(1);
+    await cancelReminder(2);
 
     if (!enabled) return;
 
