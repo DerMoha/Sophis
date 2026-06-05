@@ -1,22 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sophis/l10n/generated/app_localizations.dart';
-import 'package:sophis/models/app_settings.dart';
-import 'package:sophis/models/custom_meal_type.dart';
 import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/theme/animations.dart';
-import 'package:sophis/ui/components/organic_components.dart';
-import 'package:sophis/ui/components/streak_card.dart';
-import 'package:sophis/ui/components/supplements_today_card.dart';
-import 'package:sophis/ui/components/progress_photos_dashboard_card.dart';
 import 'package:sophis/ui/screens/goals_setup_screen.dart';
 import 'package:sophis/ui/screens/settings_screen.dart';
-import 'package:sophis/ui/screens/home/shared/home_refresh.dart';
+import 'package:sophis/ui/screens/home/shared/dashboard_slot.dart';
 import 'package:sophis/ui/screens/home/shared/home_dashboard_vm.dart';
-import 'package:sophis/ui/screens/home/shared/home_actions.dart';
-import 'package:sophis/ui/screens/home/modern/widgets/widgets.dart';
+import 'package:sophis/ui/components/organic_components.dart';
 
 class HomeScreenModern extends StatefulWidget {
   const HomeScreenModern({super.key});
@@ -34,7 +27,7 @@ class _HomeScreenModernState extends State<HomeScreenModern> {
     _scrollController = ScrollController();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      refreshBurnedCalories(context);
+      _refreshBurnedCalories(context);
     });
   }
 
@@ -42,6 +35,17 @@ class _HomeScreenModernState extends State<HomeScreenModern> {
   void dispose() {
     _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _refreshBurnedCalories(BuildContext context) async {
+    final settings = context.read<SettingsProvider>();
+    final nutrition = context.read<NutritionProvider>();
+    await nutrition.refreshBurnedCalories(
+      enabled: settings.healthSyncEnabled,
+    );
+    if (settings.healthWeightSyncEnabled) {
+      await nutrition.syncWeightFromHealth();
+    }
   }
 
   @override
@@ -55,48 +59,9 @@ class _HomeScreenModernState extends State<HomeScreenModern> {
           if (nutrition.goals == null) {
             return _WelcomeView(l10n: l10n, theme: theme);
           }
-          return _buildDashboard(context, l10n, theme, nutrition);
+          return _buildDashboard(context, l10n, theme);
         },
       ),
-    );
-  }
-
-  HomeDashboardVM _buildVM(
-    BuildContext context,
-    NutritionProvider nutrition,
-  ) {
-    final waterGoalMl = context.select<SettingsProvider, double>(
-      (s) => s.waterGoalMl,
-    );
-    final unitSystem = context.select<SettingsProvider, UnitSystem>(
-      (s) => s.unitSystem,
-    );
-    final mealTypes = context.select<SettingsProvider, List<CustomMealType>>(
-      (s) => s.mealTypes,
-    );
-    final showMealMacros = context.select<SettingsProvider, bool>(
-      (s) => s.showMealMacros,
-    );
-    final healthSyncEnabled = context.select<SettingsProvider, bool>(
-      (s) => s.healthSyncEnabled,
-    );
-    final visibleDashboardCards =
-        context.select<SettingsProvider, List<DashboardCard>>(
-      (s) => s.visibleDashboardCards,
-    );
-    final quickActionSize = context.select<SettingsProvider, QuickActionSize>(
-      (s) => s.quickActionSize,
-    );
-
-    return buildHomeDashboardVM(
-      nutrition,
-      waterGoalMl: waterGoalMl,
-      unitSystem: unitSystem,
-      mealTypes: mealTypes,
-      showMealMacros: showMealMacros,
-      healthSyncEnabled: healthSyncEnabled,
-      visibleDashboardCards: visibleDashboardCards,
-      quickActionSize: quickActionSize,
     );
   }
 
@@ -104,92 +69,10 @@ class _HomeScreenModernState extends State<HomeScreenModern> {
     BuildContext context,
     AppLocalizations l10n,
     ThemeData theme,
-    NutritionProvider nutrition,
   ) {
-    final vm = _buildVM(context, nutrition);
-    final showSupplements = context.select<SettingsProvider, bool>(
-      (s) => s.showSupplements,
-    );
-    final actions = buildHomeActions(
-      context,
-      l10n,
-      theme,
-      vm.visibleDashboardCards,
-    );
-    final children = <Widget>[];
-    var fadeIndex = 0;
-
-    void addFade(Widget child) {
-      children.add(FadeInSlide(index: fadeIndex, child: child));
-      fadeIndex += 1;
-    }
-
-    void addSpace(double height) {
-      children.add(SizedBox(height: height));
-    }
-
-    addFade(
-      CalorieHeroCard(
-        consumed: vm.totals.calories,
-        baseGoal: vm.goals.calories.toDouble(),
-        effectiveGoal: vm.effectiveGoal,
-        remaining: vm.remaining,
-        progress: vm.calorieProgress,
-        burnedCalories: vm.burnedCalories,
-      ),
-    );
-    addSpace(12);
-    children.add(const StreakCard());
-    addFade(MacrosCard(totals: vm.totals, goals: vm.goals));
-    addSpace(16);
-    addFade(
-      WaterCard(
-        waterTotal: vm.waterTotal,
-        waterGoal: vm.waterGoal,
-        unitSystem: vm.unitSystem,
-      ),
-    );
-    addSpace(16);
-    addFade(const ProgressPhotosDashboardCard());
-    if (showSupplements) {
-      addSpace(16);
-      addFade(const SupplementsTodayCard());
-      addSpace(24);
-    } else {
-      addSpace(24);
-    }
-    addFade(
-      SectionHeader(
-        title: l10n.today,
-        icon: Icons.restaurant_outlined,
-      ),
-    );
-
-    for (var i = 0; i < vm.mealTypes.length; i++) {
-      final mealType = vm.mealTypes[i];
-      addFade(
-        MealSection(
-          mealType: mealType.id,
-          title: mealType.name,
-          icon: mealType.icon,
-          color: mealType.color,
-          showMacros: vm.showMealMacros,
-        ),
-      );
-      if (i < vm.mealTypes.length - 1) {
-        addSpace(12);
-      }
-    }
-
-    addSpace(24);
-    if (actions.isNotEmpty) {
-      addFade(
-        QuickActionsSection(
-          actions: actions,
-          size: vm.quickActionSize,
-        ),
-      );
-    }
+    final vm = readHomeDashboardVM(context);
+    final slots = buildDashboardSlots(context, vm);
+    final children = dashboardSlotsToWidgets(context, slots);
 
     return CustomScrollView(
       controller: _scrollController,

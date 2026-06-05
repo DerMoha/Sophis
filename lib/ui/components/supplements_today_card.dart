@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:sophis/providers/supplements_provider.dart';
-import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/components/organic_components.dart';
 import 'package:sophis/ui/screens/supplements_screen.dart';
@@ -14,13 +13,6 @@ class SupplementsTodayCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final accentColor = theme.colorScheme.primary;
-    final showSupplements = context.select<SettingsProvider, bool>(
-      (s) => s.showSupplements,
-    );
-
-    if (!showSupplements) {
-      return const SizedBox.shrink();
-    }
 
     return Consumer<SupplementsProvider>(
       builder: (context, provider, _) {

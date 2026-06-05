@@ -18,11 +18,6 @@ class StreakCard extends StatelessWidget {
     );
     final l10n = AppLocalizations.of(context)!;
 
-    // Only show if streak >= 2
-    if (stats.currentStreak < 2) {
-      return const SizedBox.shrink();
-    }
-
     return GlassCard(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
