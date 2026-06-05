@@ -340,122 +340,6 @@ Respond ONLY with valid JSON in this exact format, no other text:
     }
   }
 
-  /// Analyze a nutrition label photo and extract per-100g values
-  Future<ServiceResult<NutritionLabelResult?>> analyzeNutritionLabel(
-    File imageFile,
-  ) async {
-    if (!_isInitialized || _model == null) {
-      return const Failure(
-        ServiceErrorType.unknown,
-        'Gemini service not initialized',
-      );
-    }
-
-    if (!await canMakeRequest()) {
-      return const Failure(
-        ServiceErrorType.rateLimited,
-        'Daily limit reached (20 requests/day). Try again tomorrow.',
-      );
-    }
-
-    final jpegBytes = await _convertImageToJpeg(imageFile);
-    final imagePart = DataPart('image/jpeg', jpegBytes);
-
-    const promptText = '''
-Analyze this photo of a nutrition label (Nährwerttabelle / Nährwertangaben).
-Extract the per-100g values. The label may be in German or English.
-
-Look for:
-- Energie / Energy → convert to kcal (1 kJ = 0.239 kcal)
-- Eiweiß / Protein
-- Kohlenhydrate / Carbohydrates
-- Fett / Fat
-- Ballaststoffe / Fiber
-- Product name if visible on the packaging
-
-Respond ONLY with valid JSON in this exact format, no other text:
-{
-  "product_name": "Product Name or null if not visible",
-  "brand": "Brand or null if not visible",
-  "calories_per_100g": 200,
-  "protein_per_100g": 10.0,
-  "carbs_per_100g": 25.0,
-  "fat_per_100g": 8.0,
-  "fiber_per_100g": 3.0,
-  "serving_size_g": 30,
-  "serving_name": "1 Portion"
-}
-
-If the image is not a nutrition label or values are unreadable, return:
-{"product_name": null, "brand": null, "calories_per_100g": 0, "protein_per_100g": 0, "carbs_per_100g": 0, "fat_per_100g": 0, "fiber_per_100g": 0, "serving_size_g": null, "serving_name": null}
-''';
-
-    final prompt = TextPart(promptText);
-
-    // Increment counter before API call to prevent quota leak on failure
-    await _incrementRequestCount();
-
-    try {
-      final response = await _model!.generateContent([
-        Content.multi([prompt, imagePart]),
-      ]).timeout(const Duration(seconds: 30));
-
-      final text = response.text;
-      if (text == null || text.isEmpty) return const Success(null);
-
-      return Success(_parseNutritionLabelResponse(text));
-    } on TimeoutException {
-      await _decrementRequestCount();
-      debugPrint('Gemini nutrition label analysis timed out');
-      return const Failure(
-        ServiceErrorType.network,
-        'Request timed out. Please try again.',
-      );
-    } catch (e) {
-      await _decrementRequestCount();
-      debugPrint('Gemini nutrition label analysis failed: $e');
-      return Failure(
-        ServiceErrorType.unknown,
-        'Failed to analyze nutrition label: $e',
-      );
-    }
-  }
-
-  NutritionLabelResult? _parseNutritionLabelResponse(String text) {
-    try {
-      var cleaned = text.trim();
-      if (cleaned.startsWith('```json')) {
-        cleaned = cleaned.substring(7);
-      } else if (cleaned.startsWith('```')) {
-        cleaned = cleaned.substring(3);
-      }
-      if (cleaned.endsWith('```')) {
-        cleaned = cleaned.substring(0, cleaned.length - 3);
-      }
-      cleaned = cleaned.trim();
-
-      final json = jsonDecode(cleaned) as Map<String, dynamic>;
-
-      final calories = (json['calories_per_100g'] as num?)?.toDouble() ?? 0;
-      if (calories == 0) return null;
-
-      return NutritionLabelResult(
-        productName: json['product_name']?.toString(),
-        brand: json['brand']?.toString(),
-        caloriesPer100g: calories,
-        proteinPer100g: (json['protein_per_100g'] as num?)?.toDouble() ?? 0,
-        carbsPer100g: (json['carbs_per_100g'] as num?)?.toDouble() ?? 0,
-        fatPer100g: (json['fat_per_100g'] as num?)?.toDouble() ?? 0,
-        fiberPer100g: (json['fiber_per_100g'] as num?)?.toDouble() ?? 0,
-        servingSizeG: (json['serving_size_g'] as num?)?.toDouble(),
-        servingName: json['serving_name']?.toString(),
-      );
-    } catch (e) {
-      debugPrint('Failed to parse nutrition label response: $e\nRaw response: $text');
-      return null;
-    }
-  }
-
   /// Extract recipe ingredients from an image of a recipe (cookbook, screenshot, etc.)
   Future<ServiceResult<RecipeExtraction>> extractRecipeFromImage(
     File imageFile,
@@ -701,6 +585,41 @@ If the text is clearly not a nutrition label, return all zeros.
         ServiceErrorType.unknown,
         'Failed to parse nutrition text: $e',
       );
+    }
+  }
+
+  NutritionLabelResult? _parseNutritionLabelResponse(String text) {
+    try {
+      var cleaned = text.trim();
+      if (cleaned.startsWith('```json')) {
+        cleaned = cleaned.substring(7);
+      } else if (cleaned.startsWith('```')) {
+        cleaned = cleaned.substring(3);
+      }
+      if (cleaned.endsWith('```')) {
+        cleaned = cleaned.substring(0, cleaned.length - 3);
+      }
+      cleaned = cleaned.trim();
+
+      final json = jsonDecode(cleaned) as Map<String, dynamic>;
+
+      final calories = (json['calories_per_100g'] as num?)?.toDouble() ?? 0;
+      if (calories == 0) return null;
+
+      return NutritionLabelResult(
+        productName: json['product_name']?.toString(),
+        brand: json['brand']?.toString(),
+        caloriesPer100g: calories,
+        proteinPer100g: (json['protein_per_100g'] as num?)?.toDouble() ?? 0,
+        carbsPer100g: (json['carbs_per_100g'] as num?)?.toDouble() ?? 0,
+        fatPer100g: (json['fat_per_100g'] as num?)?.toDouble() ?? 0,
+        fiberPer100g: (json['fiber_per_100g'] as num?)?.toDouble() ?? 0,
+        servingSizeG: (json['serving_size_g'] as num?)?.toDouble(),
+        servingName: json['serving_name']?.toString(),
+      );
+    } catch (e) {
+      debugPrint('Failed to parse nutrition label response: $e\nRaw response: $text');
+      return null;
     }
   }
 
