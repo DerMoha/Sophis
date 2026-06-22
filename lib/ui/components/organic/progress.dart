@@ -164,7 +164,6 @@ class MacroRing extends StatelessWidget {
   final Color color;
   final String unit;
   final double size;
-  final bool positiveExcess;
   final Color? excessColor;
 
   const MacroRing({
@@ -174,8 +173,7 @@ class MacroRing extends StatelessWidget {
     required this.goal,
     required this.color,
     this.unit = 'g',
-    this.size = 80,
-    this.positiveExcess = false,
+    this.size = AppTheme.macroRingCompactDefaultSize,
     this.excessColor,
   });
 
@@ -184,36 +182,62 @@ class MacroRing extends StatelessWidget {
     final theme = Theme.of(context);
     final rawProgress = goal > 0 ? (value / goal) : 0.0;
     final isOver = rawProgress > 1.0;
+    final isTier2 = rawProgress > 2.0;
+    final isCapped = rawProgress >= AppTheme.macroExcessCap;
 
+    // Tier 2 is always alarming red, regardless of excessColor.
+    const tier2Color = AppTheme.error;
     final finalExcessColor = excessColor ?? AppTheme.error;
-    final displayColor = isOver ? finalExcessColor : color;
+    final displayColor = isOver
+        ? (isTier2 ? tier2Color : finalExcessColor)
+        : color;
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final ringSize = (constraints.maxWidth - 14).clamp(40.0, size);
+        final ringSize = (constraints.maxWidth -
+                AppTheme.macroRingCompactInnerOffset)
+            .clamp(AppTheme.macroRingCompactMinSize, size);
+
+        final String centerValueText = isCapped
+            ? '>${(AppTheme.macroExcessCap * 100).toInt()}%'
+            : value.toStringAsFixed(0);
 
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             SizedBox(
-              width: ringSize + 14,
-              height: ringSize + 14,
+              width: ringSize + AppTheme.macroRingCompactTier2Offset,
+              height: ringSize + AppTheme.macroRingCompactTier2Offset,
               child: Stack(
                 alignment: Alignment.center,
                 children: [
+                  // Main ring (0-100%)
                   RadialProgress(
                     value: rawProgress.clamp(0.0, 1.0),
                     size: ringSize,
-                    strokeWidth: 6,
+                    strokeWidth: AppTheme.macroRingInnerStroke,
                     color: color,
                     showGlow: false,
                   ),
+                  // Excess ring tier 1 (100-200%)
                   if (isOver)
                     RadialProgress(
                       value: (rawProgress - 1.0).clamp(0.0, 1.0),
-                      size: ringSize + 12,
-                      strokeWidth: 4,
+                      size: ringSize +
+                          AppTheme.macroRingCompactInnerOffset - 2,
+                      strokeWidth: AppTheme.macroRingOuterStroke,
                       color: finalExcessColor,
+                      backgroundColor: Colors.transparent,
+                      showGlow: false,
+                    ),
+                  // Excess ring tier 2 (200-300%), always red
+                  if (isTier2)
+                    RadialProgress(
+                      value: (rawProgress - 2.0).clamp(0.0, 1.0),
+                      size: ringSize +
+                          AppTheme.macroRingCompactTier2Offset - 2,
+                      strokeWidth: AppTheme.macroRingTier2Stroke,
+                      color: tier2Color,
                       backgroundColor: Colors.transparent,
                       showGlow: false,
                     ),
@@ -222,7 +246,7 @@ class MacroRing extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          value.toStringAsFixed(0),
+                          centerValueText,
                           style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: displayColor,
@@ -240,7 +264,7 @@ class MacroRing extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.macroRingCompactLabelGap),
             Text(
               label,
               overflow: TextOverflow.ellipsis,

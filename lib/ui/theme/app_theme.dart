@@ -121,6 +121,34 @@ class AppTheme {
   static const pagePaddingTop = EdgeInsets.fromLTRB(20, 8, 20, 100);
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // MACRO RING SYSTEM - Radial progress sizing
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // Deep-dive screen (MacroDetailsScreen)
+  static const double macroRingContainerSize = 74;
+  static const double macroRingInnerSize = 60;
+  static const double macroRingOuterSize = 72;
+  static const double macroRingTier2Size = 84;
+  static const double macroRingInnerStroke = 6;
+  static const double macroRingOuterStroke = 4;
+  static const double macroRingTier2Stroke = 3;
+
+  // Compact ring (MacroRing on home card) — stroke widths shared with above
+  static const double macroRingCompactInnerOffset = 14;
+  static const double macroRingCompactTier2Offset = 24;
+  static const double macroRingCompactMinSize = 40.0;
+  static const double macroRingCompactDefaultSize = 80;
+  static const double macroRingCompactLabelGap = 8;
+
+  // Progress bar (deep-dive horizontal bar)
+  static const double macroBarHeight = 12;
+  static const double macroBarRadius = 6;
+  static const double macroBarGoalMarkerWidth = 2;
+
+  // Visual cap for the excess rings; beyond this the center text shows ">300%"
+  static const double macroExcessCap = 3.0;
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // SHADOW SYSTEM
   // ═══════════════════════════════════════════════════════════════════════════
 

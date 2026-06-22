@@ -36,7 +36,6 @@ class MacrosCard extends StatelessWidget {
               value: totals.protein,
               goal: goals.protein,
               color: AppTheme.protein,
-              positiveExcess: true,
               excessColor: AppTheme.success,
             ),
           ),
