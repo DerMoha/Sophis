@@ -39,26 +39,6 @@ class NutritionTotals {
     );
   }
 
-  /// Legacy map conversion for backward compatibility.
-  Map<String, double> toMap() => {
-        'calories': calories,
-        'protein': protein,
-        'carbs': carbs,
-        'fat': fat,
-        'fiber': fiber,
-      };
-
-  /// Create from legacy map format.
-  factory NutritionTotals.fromMap(Map<String, double> map) {
-    return NutritionTotals(
-      calories: map['calories'] ?? 0,
-      protein: map['protein'] ?? 0,
-      carbs: map['carbs'] ?? 0,
-      fat: map['fat'] ?? 0,
-      fiber: map['fiber'] ?? 0,
-    );
-  }
-
   @override
   String toString() => 'NutritionTotals(cal: ${calories.toStringAsFixed(0)}, '
       'P: ${protein.toStringAsFixed(0)}g, '

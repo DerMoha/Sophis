@@ -53,7 +53,6 @@ void main() {
       final doubled = totals * 2;
       final summed = totals + const NutritionTotals(calories: 50, protein: 5);
 
-      expect(NutritionTotals.fromMap(totals.toMap()).calories, 100);
       expect(doubled.carbs, 40);
       expect(summed.calories, 150);
       expect(NutritionTotals.zero.isEmpty, isTrue);

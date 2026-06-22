@@ -51,20 +51,68 @@ void main() {
       expect(totals.isEmpty, isFalse);
     });
 
-    test('toMap and fromMap roundtrip', () {
-      const original = NutritionTotals(
-        calories: 500,
-        protein: 30,
-        carbs: 60,
-        fat: 20,
-      );
-      final map = original.toMap();
-      final restored = NutritionTotals.fromMap(map);
+    test('zero totals are empty', () {
+      expect(NutritionTotals.zero.isEmpty, isTrue);
+      expect(const NutritionTotals().isEmpty, isTrue);
+    });
 
-      expect(restored.calories, equals(original.calories));
-      expect(restored.protein, equals(original.protein));
-      expect(restored.carbs, equals(original.carbs));
-      expect(restored.fat, equals(original.fat));
+    test('multiplication by 0 yields zero', () {
+      const base = NutritionTotals(
+        calories: 100,
+        protein: 10,
+        carbs: 20,
+        fat: 5,
+        fiber: 3,
+      );
+      final scaled = base * 0;
+
+      expect(scaled.calories, equals(0));
+      expect(scaled.protein, equals(0));
+      expect(scaled.carbs, equals(0));
+      expect(scaled.fat, equals(0));
+      expect(scaled.fiber, equals(0));
+      expect(scaled.isEmpty, isTrue);
+    });
+
+    test('multiplication by 1 is identity', () {
+      const base = NutritionTotals(
+        calories: 100,
+        protein: 10,
+        carbs: 20,
+        fat: 5,
+        fiber: 3,
+      );
+      final scaled = base * 1;
+
+      expect(scaled.calories, equals(base.calories));
+      expect(scaled.protein, equals(base.protein));
+      expect(scaled.carbs, equals(base.carbs));
+      expect(scaled.fat, equals(base.fat));
+      expect(scaled.fiber, equals(base.fiber));
+    });
+
+    test('adding zero totals is identity', () {
+      const base = NutritionTotals(
+        calories: 100,
+        protein: 10,
+        carbs: 20,
+        fat: 5,
+        fiber: 3,
+      );
+      final summed = base + NutritionTotals.zero;
+
+      expect(summed.calories, equals(base.calories));
+      expect(summed.protein, equals(base.protein));
+      expect(summed.carbs, equals(base.carbs));
+      expect(summed.fat, equals(base.fat));
+      expect(summed.fiber, equals(base.fiber));
+    });
+
+    test('fiber field defaults to 0 when omitted', () {
+      const totals = NutritionTotals(calories: 100, protein: 10);
+      expect(totals.fiber, equals(0));
+      expect(totals.carbs, equals(0));
+      expect(totals.fat, equals(0));
     });
   });
 
@@ -105,6 +153,32 @@ void main() {
       const result = 0.0;
 
       expect(result, equals(0));
+    });
+
+    test('zero calories yields zero default macros', () {
+      final goals = NutritionGoals(calories: 0);
+
+      expect(goals.protein, equals(0));
+      expect(goals.carbs, equals(0));
+      expect(goals.fat, equals(0));
+      expect(goals.fiber, equals(0));
+    });
+
+    test('copyWith overrides only specified fields', () {
+      final goals = NutritionGoals(
+        calories: 2000,
+        protein: 150,
+        carbs: 200,
+        fat: 60,
+        fiber: 28,
+      );
+      final updated = goals.copyWith(protein: 180);
+
+      expect(updated.calories, equals(2000));
+      expect(updated.protein, equals(180));
+      expect(updated.carbs, equals(200));
+      expect(updated.fat, equals(60));
+      expect(updated.fiber, equals(28));
     });
   });
 }
