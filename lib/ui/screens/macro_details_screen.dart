@@ -33,83 +33,77 @@ class MacroDetailsScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
       ),
       extendBodyBehindAppBar: true,
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(
-            24,
-            100,
-            24,
-            100,
-          ), // Top padding for AppBar clearance, Bottom for visual lift
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Removed top spacing to allow true centering
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(
+          AppTheme.spaceLG,
+          100,
+          AppTheme.spaceLG,
+          100,
+        ),
+        child: Column(
+          children: [
+            // Protein Section
+            FadeInSlide(
+              index: 0,
+              child: _buildMacroDeepDive(
+                context,
+                label: l10n.protein,
+                current: totals.protein,
+                goal: goals.protein,
+                color: AppTheme.protein,
+                progress: proteinProgress,
+                icon: Icons.fitness_center_rounded,
+                positiveExcess: true,
+                excessColor: AppTheme.success,
+              ),
+            ),
+            const SizedBox(height: AppTheme.spaceLG2),
 
-              // Protein Section
+            // Carbs Section
+            FadeInSlide(
+              index: 1,
+              child: _buildMacroDeepDive(
+                context,
+                label: l10n.carbs,
+                current: totals.carbs,
+                goal: goals.carbs,
+                color: AppTheme.carbs,
+                progress: carbsProgress,
+                icon: Icons.bolt_rounded,
+              ),
+            ),
+            const SizedBox(height: AppTheme.spaceLG2),
+
+            // Fat Section
+            FadeInSlide(
+              index: 2,
+              child: _buildMacroDeepDive(
+                context,
+                label: l10n.fat,
+                current: totals.fat,
+                goal: goals.fat,
+                color: AppTheme.fat,
+                progress: fatProgress,
+                icon: Icons.water_drop_rounded,
+              ),
+            ),
+            const SizedBox(height: AppTheme.spaceLG2),
+
+            // Fiber Section
+            if (goals.fiber > 0)
               FadeInSlide(
-                index: 0,
+                index: 3,
                 child: _buildMacroDeepDive(
                   context,
-                  label: l10n.protein,
-                  current: totals.protein,
-                  goal: goals.protein,
-                  color: AppTheme.protein,
-                  progress: proteinProgress,
-                  icon: Icons.fitness_center_rounded,
-                  positiveExcess: true,
-                  excessColor: AppTheme.success,
+                  label: l10n.fiber,
+                  current: totals.fiber,
+                  goal: goals.fiber,
+                  color: AppTheme.fiber,
+                  progress: fiberProgress,
+                  icon: Icons.grain_rounded,
                 ),
               ),
-              const SizedBox(height: AppTheme.spaceLG2),
-
-              // Carbs Section
-              FadeInSlide(
-                index: 1,
-                child: _buildMacroDeepDive(
-                  context,
-                  label: l10n.carbs,
-                  current: totals.carbs,
-                  goal: goals.carbs,
-                  color: AppTheme.carbs,
-                  progress: carbsProgress,
-                  icon: Icons.bolt_rounded,
-                ),
-              ),
-              const SizedBox(height: AppTheme.spaceLG2),
-
-              // Fat Section
-              FadeInSlide(
-                index: 2,
-                child: _buildMacroDeepDive(
-                  context,
-                  label: l10n.fat,
-                  current: totals.fat,
-                  goal: goals.fat,
-                  color: AppTheme.fat,
-                  progress: fatProgress,
-                  icon: Icons
-                      .water_drop_rounded, // Assuming fat uses droplet or similar
-                ),
-              ),
-              const SizedBox(height: AppTheme.spaceLG2),
-
-              // Fiber Section
-              if (goals.fiber > 0)
-                FadeInSlide(
-                  index: 3,
-                  child: _buildMacroDeepDive(
-                    context,
-                    label: l10n.fiber,
-                    current: totals.fiber,
-                    goal: goals.fiber,
-                    color: AppTheme.fiber,
-                    progress: fiberProgress,
-                    icon: Icons.grain_rounded,
-                  ),
-                ),
-            ],
-          ),
+          ],
         ),
       ),
     );
@@ -130,15 +124,22 @@ class MacroDetailsScreen extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final remaining = goal - current;
     final isOver = remaining < 0;
+    final isTier2 = progress > 2.0;
+    final isCapped = progress >= AppTheme.macroExcessCap;
 
+    // Tier 2 is always alarming red, regardless of positiveExcess.
+    const tier2Color = AppTheme.error;
     final finalExcessColor = excessColor ?? AppTheme.error;
+    final displayExcessColor = isTier2 ? tier2Color : finalExcessColor;
     final statusText = isOver
-        ? (positiveExcess
-            ? 'Goal exceeding'
-            : l10n.over) // Or specific "Extra" text
+        ? (positiveExcess ? l10n.goalExceeded : l10n.over)
         : l10n.remaining;
     final statusColor =
-        isOver ? finalExcessColor : theme.colorScheme.onSurfaceVariant;
+        isOver ? displayExcessColor : theme.colorScheme.onSurfaceVariant;
+
+    final int percentValue = (progress * 100).round().clamp(0, 999);
+    final String percentText =
+        isCapped ? '>300%' : '$percentValue%';
 
     return GlassCard(
       padding: const EdgeInsets.all(AppTheme.spaceLG),
@@ -154,7 +155,7 @@ class MacroDetailsScreen extends StatelessWidget {
                 ),
                 child: Icon(icon, color: color, size: 24),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: AppTheme.spaceMD),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -173,38 +174,47 @@ class MacroDetailsScreen extends StatelessWidget {
                 ],
               ),
               const Spacer(),
-              const Spacer(),
               SizedBox(
-                width: 74,
-                height: 74,
+                width: AppTheme.macroRingContainerSize,
+                height: AppTheme.macroRingContainerSize,
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
                     // Main Progress
                     RadialProgress(
                       value: progress.clamp(0.0, 1.0),
-                      size: 60,
-                      strokeWidth: 6,
+                      size: AppTheme.macroRingInnerSize,
+                      strokeWidth: AppTheme.macroRingInnerStroke,
                       color: color,
                       showGlow: false,
                     ),
-                    // Excess Progress (Outer Ring)
+                    // Excess Progress (Outer Ring) — tier 1 (100-200%)
                     if (isOver)
                       RadialProgress(
                         value: (progress - 1.0).clamp(0.0, 1.0),
-                        size: 72,
-                        strokeWidth: 4,
+                        size: AppTheme.macroRingOuterSize,
+                        strokeWidth: AppTheme.macroRingOuterStroke,
                         color: finalExcessColor,
+                        backgroundColor: Colors.transparent,
+                        showGlow: false,
+                      ),
+                    // Excess Progress (Tier-2 Outer Ring) — 200-300%, always red
+                    if (isTier2)
+                      RadialProgress(
+                        value: (progress - 2.0).clamp(0.0, 1.0),
+                        size: AppTheme.macroRingTier2Size,
+                        strokeWidth: AppTheme.macroRingTier2Stroke,
+                        color: tier2Color,
                         backgroundColor: Colors.transparent,
                         showGlow: false,
                       ),
                     // Center Text
                     Center(
                       child: Text(
-                        '${(progress * 100).toInt()}%',
+                        percentText,
                         style: theme.textTheme.labelSmall?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: isOver ? finalExcessColor : color,
+                          color: isOver ? displayExcessColor : color,
                         ),
                       ),
                     ),
@@ -213,31 +223,19 @@ class MacroDetailsScreen extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppTheme.spaceLG),
 
-          // Enhanced Progress Bar
-          // Enhanced Scaled Progress Bar
+          // Scaled Progress Bar
           LayoutBuilder(
             builder: (context, constraints) {
-              // Calculate scaling
-              // If over, we scale so the total bar is visible (up to a reasonable limit, e.g. 150%)
-              // If under, we scale so 100% is the full width (Goal = full width)
-
-              // If progress > 1.0, scale max to progress. Add buffer? No, let's fit it.
-              // We want the 'Goal' mark to be visible.
-              // Let's settle on: Total Width represents max(Target, Current).
-
+              // Total width represents max(Target, Current), so the goal mark
+              // stays visible even when over.
               final double maxValue = progress > 1.0 ? progress : 1.0;
-              final double goalPosition =
-                  1.0 / maxValue; // Where the goal line falls (0.0 - 1.0)
+              final double goalPosition = 1.0 / maxValue;
               final double currentPosition = progress / maxValue;
 
-              // If progress is huge (e.g. 500%), the goal line becomes tiny.
-              // We might want to cap visualization at 200%?
-              // For now, simple scaling.
-
               return Container(
-                height: 12,
+                height: AppTheme.macroBarHeight,
                 alignment: Alignment.centerLeft,
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.1),
@@ -247,46 +245,45 @@ class MacroDetailsScreen extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   clipBehavior: Clip.none,
                   children: [
-                    // Goal Marker (Background fill up to goal)
-                    // Actually, let's make the background track opaque primarily relative to goal?
-                    // No, keeping it simple:
-
-                    // 1. Base Content (Macro Color) - Up to Goal or Current, whichever is smaller
+                    // 1. Base Content (Macro Color) — up to goal or current
                     FractionallySizedBox(
                       widthFactor:
                           progress > 1.0 ? goalPosition : currentPosition,
                       child: Container(
-                        height: 12,
+                        height: AppTheme.macroBarHeight,
                         decoration: BoxDecoration(
                           color: color,
                           borderRadius: BorderRadius.horizontal(
-                            left: const Radius.circular(6),
-                            right:
-                                isOver ? Radius.zero : const Radius.circular(6),
+                            left:
+                                const Radius.circular(AppTheme.macroBarRadius),
+                            right: isOver
+                                ? Radius.zero
+                                : const Radius.circular(AppTheme.macroBarRadius),
                           ),
                         ),
                       ),
                     ),
 
-                    // 2. Excess Content (Error/Custom Color) - From Goal to Current
+                    // 2. Excess Content — from goal to current
                     if (isOver)
                       Padding(
                         padding: EdgeInsets.only(
                           left: constraints.maxWidth * goalPosition,
                         ),
                         child: Container(
-                          height: 12,
-                          // Width is the remainder
+                          height: AppTheme.macroBarHeight,
                           width: constraints.maxWidth *
                               (currentPosition - goalPosition),
                           decoration: BoxDecoration(
-                            color: finalExcessColor,
+                            color: displayExcessColor,
                             borderRadius: const BorderRadius.horizontal(
-                              right: Radius.circular(6),
+                              right:
+                                  Radius.circular(AppTheme.macroBarRadius),
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: finalExcessColor.withValues(alpha: 0.4),
+                                color:
+                                    displayExcessColor.withValues(alpha: 0.4),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
@@ -295,15 +292,15 @@ class MacroDetailsScreen extends StatelessWidget {
                         ),
                       ),
 
-                    // 3. Goal Marker Line (if over, to separate blue and red clearly)
+                    // 3. Goal Marker Line — centered on the goal position
                     if (isOver)
                       Positioned(
-                        left: constraints.maxWidth * goalPosition,
+                        left: constraints.maxWidth * goalPosition -
+                            AppTheme.macroBarGoalMarkerWidth / 2,
                         child: Container(
-                          width: 2,
-                          height: 12,
-                          color: Theme.of(context)
-                              .cardColor, // Use card color as separator
+                          width: AppTheme.macroBarGoalMarkerWidth,
+                          height: AppTheme.macroBarHeight,
+                          color: theme.colorScheme.surface,
                         ),
                       ),
                   ],
@@ -312,7 +309,7 @@ class MacroDetailsScreen extends StatelessWidget {
             },
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: AppTheme.spaceMD),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -326,8 +323,9 @@ class MacroDetailsScreen extends StatelessWidget {
               Text(
                 '${remaining.abs().toStringAsFixed(1)} g',
                 style: theme.textTheme.titleMedium?.copyWith(
-                  color:
-                      isOver ? finalExcessColor : theme.colorScheme.onSurface,
+                  color: isOver
+                      ? displayExcessColor
+                      : theme.colorScheme.onSurface,
                   fontWeight: FontWeight.bold,
                 ),
               ),

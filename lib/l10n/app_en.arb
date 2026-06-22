@@ -17,6 +17,8 @@
   "fiber": "Fiber",
   "remaining": "remaining",
   "over": "over",
+  "goalExceeded": "Goal exceeded",
+  "excessTier2": "Well over goal",
   "breakfast": "Breakfast",
   "lunch": "Lunch",
   "dinner": "Dinner",

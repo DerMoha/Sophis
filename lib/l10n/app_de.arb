@@ -17,6 +17,8 @@
   "fiber": "Ballaststoffe",
   "remaining": "übrig",
   "over": "drüber",
+  "goalExceeded": "Ziel übertroffen",
+  "excessTier2": "Deutlich über dem Ziel",
   "breakfast": "Frühstück",
   "lunch": "Mittagessen",
   "dinner": "Abendessen",
