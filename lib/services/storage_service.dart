@@ -274,6 +274,29 @@ class StorageService {
     await _secureStorage.deleteAll();
   }
 
+  /// Clears nutrition-owned preferences while preserving app settings and
+  /// secure credentials. Used by backup restore.
+  Future<void> clearNutritionData() async {
+    for (final key in [
+      _goalsKey,
+      _profileKey,
+      _entriesKey,
+      _waterEntriesKey,
+      _weightEntriesKey,
+      _workoutEntriesKey,
+      _recipesKey,
+      _plannedMealsKey,
+      _shoppingListKey,
+      _customPortionsKey,
+      _recentFoodsKey,
+      _customFoodsKey,
+      _favoriteFoodsKey,
+      _userStatsKey,
+    ]) {
+      await _prefs.remove(key);
+    }
+  }
+
   // Secure API Key Storage
   Future<void> saveApiKey(String? key) async {
     if (key == null || key.isEmpty) {

@@ -84,7 +84,8 @@ class ProgressPhotoController {
       if (imageFile.existsSync()) {
         imageFile.deleteSync();
       }
-      final thumbFile = File('${photo.imagePath.replaceAll('.jpg', '')}_thumb.jpg');
+      final thumbFile =
+          File('${photo.imagePath.replaceAll('.jpg', '')}_thumb.jpg');
       if (thumbFile.existsSync()) {
         thumbFile.deleteSync();
       }
@@ -109,11 +110,15 @@ class ProgressPhotoController {
 
     if (beforeDate != null && afterDate != null) {
       before = photos.lastWhere(
-        (p) => p.timestamp.isBefore(beforeDate) || p.timestamp.isAtSameMomentAs(beforeDate),
+        (p) =>
+            p.timestamp.isBefore(beforeDate) ||
+            p.timestamp.isAtSameMomentAs(beforeDate),
         orElse: () => photos.last,
       );
       after = photos.firstWhere(
-        (p) => p.timestamp.isBefore(afterDate) || p.timestamp.isAtSameMomentAs(afterDate),
+        (p) =>
+            p.timestamp.isBefore(afterDate) ||
+            p.timestamp.isAtSameMomentAs(afterDate),
         orElse: () => photos.first,
       );
     } else {
@@ -138,6 +143,44 @@ class ProgressPhotoController {
         entity.deleteSync();
       }
     }
+  }
+
+  Future<void> deleteAllPhotoFiles() async {
+    final photosDir = await _getPhotosDir();
+    if (!photosDir.existsSync()) return;
+    for (final entity in photosDir.listSync()) {
+      if (entity is File) entity.deleteSync();
+    }
+  }
+
+  Future<ProgressPhoto> stageBackupPhoto(
+    ProgressPhoto metadata,
+    List<int> imageBytes, {
+    List<int>? thumbnailBytes,
+  }) async {
+    final photosDir = await _getPhotosDir();
+    final imagePath = p.join(photosDir.path, '${metadata.id}.jpg');
+    final thumbnailPath = p.join(photosDir.path, '${metadata.id}_thumb.jpg');
+    await File(imagePath).writeAsBytes(imageBytes, flush: true);
+
+    if (thumbnailBytes != null) {
+      await File(thumbnailPath).writeAsBytes(thumbnailBytes, flush: true);
+    } else {
+      final decoded = img.decodeImage(Uint8List.fromList(imageBytes));
+      if (decoded == null) throw const FormatException('Invalid photo data');
+      const thumbMax = 300;
+      final thumbnail = img.copyResize(
+        decoded,
+        width: decoded.width > decoded.height ? thumbMax : null,
+        height: decoded.height >= decoded.width ? thumbMax : null,
+      );
+      await File(thumbnailPath).writeAsBytes(
+        img.encodeJpg(thumbnail, quality: 85),
+        flush: true,
+      );
+    }
+
+    return metadata.copyWith(imagePath: imagePath);
   }
 
   Future<Uint8List?> getImageBytes(String path) async {

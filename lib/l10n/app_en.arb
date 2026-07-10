@@ -640,5 +640,10 @@
   "expectMoreCalories": "More calories",
   "expectFewerCalories": "Fewer calories",
   "portionLooksBigger": "Bigger portion",
-  "portionLooksSmaller": "Smaller portion"
+  "portionLooksSmaller": "Smaller portion",
+  "deleteAllData": "Delete All Local Data",
+  "deleteAllDataSubtitle": "Remove your logs, photos, settings, and saved credentials from this device.",
+  "deleteAllDataTitle": "Delete all local data?",
+  "deleteAllDataConfirmation": "This permanently removes all Sophis data from this device. This action cannot be undone.",
+  "deleteAllDataSuccess": "All local data was deleted"
 }

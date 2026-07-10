@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/services/data_export_service.dart';
 import 'package:sophis/providers/nutrition_provider.dart';
+import 'package:sophis/providers/settings_provider.dart';
+import 'package:sophis/providers/supplements_provider.dart';
 import 'package:sophis/services/service_result.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/components/settings/settings_tiles.dart';
@@ -17,6 +19,7 @@ class DataSection extends StatefulWidget {
 class _DataSectionState extends State<DataSection> {
   bool _isExporting = false;
   bool _isImporting = false;
+  bool _isDeleting = false;
 
   Future<void> _handleExport(
     BuildContext context,
@@ -108,6 +111,46 @@ class _DataSectionState extends State<DataSection> {
     }
   }
 
+  Future<void> _handleDeleteAll(
+    BuildContext context,
+    AppLocalizations l10n,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.deleteAllDataTitle),
+        content: Text(l10n.deleteAllDataConfirmation),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: Text(l10n.delete),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isDeleting = true);
+    final nutrition = this.context.read<NutritionProvider>();
+    final settings = this.context.read<SettingsProvider>();
+    final supplements = this.context.read<SupplementsProvider>();
+    final messenger = ScaffoldMessenger.of(this.context);
+    await nutrition.clearAllData();
+    await supplements.refresh();
+    await settings.resetAfterDataDeletion();
+    if (!mounted) return;
+    setState(() => _isDeleting = false);
+    messenger.showSnackBar(SnackBar(content: Text(l10n.deleteAllDataSuccess)));
+    Navigator.of(this.context).popUntil((route) => route.isFirst);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -136,6 +179,14 @@ class _DataSectionState extends State<DataSection> {
           style: theme.textTheme.bodySmall?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
+        ),
+        const SizedBox(height: AppTheme.spaceLG),
+        DataActionTile(
+          title: l10n.deleteAllData,
+          subtitle: l10n.deleteAllDataSubtitle,
+          icon: Icons.delete_forever_outlined,
+          isLoading: _isDeleting,
+          onTap: () => _handleDeleteAll(context, l10n),
         ),
       ],
     );

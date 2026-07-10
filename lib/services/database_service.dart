@@ -757,13 +757,17 @@ class DatabaseService extends _$DatabaseService {
   // ---------------------------------------------------------------------------
 
   Future<void> deleteAllData() async {
+    await deleteNutritionData();
+    await delete(supplementDefinitions).go();
+    await delete(supplementLogs).go();
+    await delete(barcodeProducts).go();
+  }
+
+  Future<void> deleteNutritionData() async {
     await delete(foods).go();
     await delete(waterLogs).go();
     await delete(weightLogs).go();
     await delete(workoutLogs).go();
-    await delete(supplementDefinitions).go();
-    await delete(supplementLogs).go();
-    await delete(barcodeProducts).go();
     await delete(recipes).go();
     await delete(customFoods).go();
     await delete(favoriteFoods).go();

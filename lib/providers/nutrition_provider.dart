@@ -26,6 +26,7 @@ import 'package:sophis/services/nutrition/food_library_controller.dart';
 import 'package:sophis/services/nutrition/nutrition_persistence.dart';
 import 'package:sophis/services/progress_photo_controller.dart';
 import 'package:sophis/models/progress_photo.dart';
+import 'package:sophis/models/nutrition_backup.dart';
 import 'package:uuid/uuid.dart';
 
 /// Central state management for nutrition tracking.
@@ -515,6 +516,68 @@ class NutritionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  NutritionBackup createBackup() => NutritionBackup(
+        goals: _goals,
+        profile: _profile,
+        foodEntries: List.unmodifiable(entries),
+        waterEntries: List.unmodifiable(waterEntries),
+        weightEntries: List.unmodifiable(_weightEntries),
+        workoutEntries: List.unmodifiable(workoutEntries),
+        recipes: List.unmodifiable(recipes),
+        plannedMeals: List.unmodifiable(plannedMeals),
+        customFoods: List.unmodifiable(customFoods),
+        favoriteFoods: List.unmodifiable(favoriteFoods),
+        customPortions: List.unmodifiable(customPortions),
+        recentFoods: List.unmodifiable(recentFoods),
+        recentFoodMeals: Map.unmodifiable(_foodLog.recentFoodMeals),
+        userStats: _userStats,
+        shoppingListChecked: Set.unmodifiable(shoppingListChecked),
+        progressPhotos: List.unmodifiable(_photos),
+      );
+
+  Future<ProgressPhoto> stageBackupPhoto(
+    ProgressPhoto metadata,
+    List<int> imageBytes, {
+    List<int>? thumbnailBytes,
+  }) {
+    return _progressPhotos.stageBackupPhoto(
+      metadata,
+      imageBytes,
+      thumbnailBytes: thumbnailBytes,
+    );
+  }
+
+  Future<void> clearProgressPhotoFilesForRestore() =>
+      _progressPhotos.deleteAllPhotoFiles();
+
+  Future<void> replaceFromBackup(NutritionBackup backup) async {
+    await _storage.clearNutritionData();
+
+    await _db.transaction(() async {
+      await _db.deleteNutritionData();
+      await _db.insertFoods(backup.foodEntries);
+      await _db.insertWaterList(backup.waterEntries);
+      await _db.insertWeightList(backup.weightEntries);
+      await _db.insertWorkoutList(backup.workoutEntries);
+      await _db.insertPhotos(backup.progressPhotos);
+      await _persistence.saveRecipes(backup.recipes);
+      await _persistence.saveCustomFoods(backup.customFoods);
+      await _persistence.saveFavoriteFoods(backup.favoriteFoods);
+      await _persistence.savePlannedMeals(backup.plannedMeals);
+      await _persistence.saveCustomPortions(backup.customPortions);
+      await _persistence.saveRecentFoods(
+        backup.recentFoods,
+        backup.recentFoodMeals,
+      );
+      await _persistence.saveUserStats(backup.userStats);
+      await _persistence.saveShoppingListChecked(backup.shoppingListChecked);
+    });
+
+    if (backup.goals != null) await _storage.saveGoals(backup.goals!);
+    if (backup.profile != null) await _storage.saveProfile(backup.profile!);
+    await _loadData();
+  }
+
   // ── Recipes ─────────────────────────────────────────────────────────────
 
   Future<void> addRecipe(Recipe recipe) => _foodLibrary.addRecipe(recipe);
@@ -743,8 +806,12 @@ class NutritionProvider extends ChangeNotifier {
     _cacheDate = null;
     _healthSyncBurnedCalories = 0.0;
 
+    if (_cleanupProgressPhotosOnLoad) {
+      await _progressPhotos.deleteAllPhotoFiles();
+    }
     await _db.deleteAllData();
     await _storage.clear();
+    HomeWidgetService.updateWidgetData(this);
     notifyListeners();
   }
 }

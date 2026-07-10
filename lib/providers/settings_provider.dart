@@ -422,6 +422,16 @@ class SettingsProvider extends ChangeNotifier {
     await setMealTypes(updatedTypes);
   }
 
+  /// Resets in-memory settings after StorageService has cleared local data.
+  Future<void> resetAfterDataDeletion() async {
+    _settings = _storage.loadSettings();
+    _geminiApiKey = null;
+    _offUserId = null;
+    _offPassword = null;
+    await _notifications.cancelAllReminders();
+    notifyListeners();
+  }
+
   /// Update notifications based on meal type reminders
   Future<void> _updateNotificationsFromMealTypes() async {
     if (!_settings.remindersEnabled) {
