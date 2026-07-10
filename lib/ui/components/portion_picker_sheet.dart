@@ -459,6 +459,7 @@ class _ProductHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final isDark = theme.brightness == Brightness.dark;
 
     return Container(
@@ -537,7 +538,7 @@ class _ProductHeader extends StatelessWidget {
                 color: theme.colorScheme.onSurfaceVariant,
               ),
               onPressed: onEdit,
-              tooltip: 'Edit',
+              tooltip: l10n.edit,
             ),
         ],
       ),

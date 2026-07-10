@@ -31,6 +31,7 @@ class _AddPhotoSheetState extends State<AddPhotoSheet> {
   }
 
   Future<void> _pickImage(ImageSource source) async {
+    final l10n = AppLocalizations.of(context)!;
     final provider = context.read<NutritionProvider>();
     final picker = ImagePicker();
     final picked = await picker.pickImage(source: source);
@@ -50,7 +51,7 @@ class _AddPhotoSheetState extends State<AddPhotoSheet> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+          SnackBar(content: Text(l10n.errorGeneric(e.toString()))),
         );
       }
     } finally {
@@ -119,7 +120,9 @@ class _AddPhotoSheetState extends State<AddPhotoSheet> {
                 children: [
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: _isLoading ? null : () => _pickImage(ImageSource.camera),
+                      onPressed: _isLoading
+                          ? null
+                          : () => _pickImage(ImageSource.camera),
                       icon: const Icon(Icons.camera_alt_outlined),
                       label: Text(l10n.takePhoto),
                     ),
@@ -127,7 +130,9 @@ class _AddPhotoSheetState extends State<AddPhotoSheet> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: _isLoading ? null : () => _pickImage(ImageSource.gallery),
+                      onPressed: _isLoading
+                          ? null
+                          : () => _pickImage(ImageSource.gallery),
                       icon: const Icon(Icons.photo_library_outlined),
                       label: Text(l10n.chooseFromGallery),
                     ),
@@ -164,7 +169,9 @@ class _AddPhotoSheetState extends State<AddPhotoSheet> {
           onSelected: (_) => setState(() => _category = item.$1),
           selectedColor: theme.colorScheme.primary.withValues(alpha: 0.15),
           labelStyle: TextStyle(
-            color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface,
+            color: isSelected
+                ? theme.colorScheme.primary
+                : theme.colorScheme.onSurface,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
           ),
         );

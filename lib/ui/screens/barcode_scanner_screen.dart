@@ -212,7 +212,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
                     const SizedBox(height: 16),
                     Text(
                       error.errorDetails?.message ??
-                          'Camera initialization failed',
+                          l10n.cameraInitializationFailed,
                       style: const TextStyle(color: Colors.white70),
                       textAlign: TextAlign.center,
                     ),
@@ -220,7 +220,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
                     OutlinedButton.icon(
                       onPressed: () => Navigator.pop(context),
                       icon: const Icon(Icons.arrow_back),
-                      label: const Text('Go Back'),
+                      label: Text(l10n.goBack),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.white,
                         side: const BorderSide(color: Colors.white30),

@@ -249,6 +249,8 @@ Future<void> pumpTestApp(
   NutritionProvider? nutritionProvider,
   SettingsProvider? settingsProvider,
   FoodIntakeController? foodIntakeController,
+  Locale? locale,
+  TextScaler? textScaler,
 }) async {
   FadeInSlide.setEnabledForTesting(false);
   final providers = <SingleChildWidget>[
@@ -261,8 +263,15 @@ Future<void> pumpTestApp(
   ];
 
   final app = MaterialApp(
+    locale: locale,
     localizationsDelegates: AppLocalizations.localizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
+    builder: textScaler == null
+        ? null
+        : (context, child) => MediaQuery(
+              data: MediaQuery.of(context).copyWith(textScaler: textScaler),
+              child: child!,
+            ),
     home: child,
   );
 

@@ -52,6 +52,28 @@ class _QuickAddContent extends StatelessWidget {
     required this.sheetContext,
   });
 
+  Future<bool> _confirmCameraAccess(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
+    return await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text(l10n.cameraAccessTitle),
+            content: Text(l10n.cameraAccessBarcodeExplanation),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(l10n.cancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text(l10n.continueLabel),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -166,7 +188,9 @@ class _QuickAddContent extends StatelessWidget {
           icon: Icons.qr_code_scanner_outlined,
           label: l10n.scanBarcode,
           color: theme.colorScheme.primary,
-          onTap: () {
+          onTap: () async {
+            if (!await _confirmCameraAccess(context)) return;
+            if (!context.mounted) return;
             Navigator.pop(sheetContext);
             Navigator.push(
               context,

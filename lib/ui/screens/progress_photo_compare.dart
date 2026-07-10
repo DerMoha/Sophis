@@ -113,7 +113,7 @@ class _ProgressPhotoCompareState extends State<ProgressPhotoCompare> {
         body: SafeArea(
           child: Column(
             children: [
-              if (showContent) _buildModeSelector(theme),
+              if (showContent) _buildModeSelector(theme, l10n),
               Expanded(
                 child: showContent
                     ? _buildComparisonView(theme, l10n)
@@ -127,7 +127,7 @@ class _ProgressPhotoCompareState extends State<ProgressPhotoCompare> {
     );
   }
 
-  Widget _buildModeSelector(ThemeData theme) {
+  Widget _buildModeSelector(ThemeData theme, AppLocalizations l10n) {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 4, 16, 12),
       padding: const EdgeInsets.all(4),
@@ -139,15 +139,16 @@ class _ProgressPhotoCompareState extends State<ProgressPhotoCompare> {
         children: [
           Expanded(
             child: _buildModeTab(
-              label: 'Side by Side',
+              label: l10n.sideBySide,
               isSelected: _compareMode == CompareMode.sideBySide,
-              onTap: () => setState(() => _compareMode = CompareMode.sideBySide),
+              onTap: () =>
+                  setState(() => _compareMode = CompareMode.sideBySide),
               theme: theme,
             ),
           ),
           Expanded(
             child: _buildModeTab(
-              label: 'Interactive Slider',
+              label: l10n.interactiveSlider,
               isSelected: _compareMode == CompareMode.slider,
               onTap: () => setState(() => _compareMode = CompareMode.slider),
               theme: theme,
@@ -186,7 +187,9 @@ class _ProgressPhotoCompareState extends State<ProgressPhotoCompare> {
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
+            color: isSelected
+                ? theme.colorScheme.primary
+                : theme.colorScheme.onSurfaceVariant,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
             fontSize: 13,
           ),
@@ -270,7 +273,8 @@ class _ProgressPhotoCompareState extends State<ProgressPhotoCompare> {
       child: Container(
         margin: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+          color:
+              theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(AppTheme.radiusMD),
           border: Border.all(
             color: theme.colorScheme.outline.withValues(alpha: 0.08),
@@ -306,7 +310,8 @@ class _ProgressPhotoCompareState extends State<ProgressPhotoCompare> {
                           Icon(
                             Icons.add_photo_alternate_outlined,
                             size: 40,
-                            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.35),
+                            color: theme.colorScheme.onSurfaceVariant
+                                .withValues(alpha: 0.35),
                           ),
                           const SizedBox(height: 8),
                           Text(
@@ -370,7 +375,8 @@ class _ProgressPhotoCompareState extends State<ProgressPhotoCompare> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                if (duration != null) _buildStat(l10n.duration, duration, theme),
+                if (duration != null)
+                  _buildStat(l10n.duration, duration, theme),
                 if (weightDelta != null)
                   _buildStat(l10n.weightDelta, weightDelta, theme),
               ],
@@ -383,13 +389,19 @@ class _ProgressPhotoCompareState extends State<ProgressPhotoCompare> {
                   TextButton.icon(
                     onPressed: () => _selectPhoto(true),
                     icon: const Icon(Icons.edit_outlined, size: 16),
-                    label: const Text('Change Before', style: TextStyle(fontSize: 12)),
+                    label: Text(
+                      l10n.changeBefore,
+                      style: const TextStyle(fontSize: 12),
+                    ),
                   ),
                   const SizedBox(width: 16),
                   TextButton.icon(
                     onPressed: () => _selectPhoto(false),
                     icon: const Icon(Icons.edit_outlined, size: 16),
-                    label: const Text('Change After', style: TextStyle(fontSize: 12)),
+                    label: Text(
+                      l10n.changeAfter,
+                      style: const TextStyle(fontSize: 12),
+                    ),
                   ),
                 ],
               ),

@@ -250,8 +250,8 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
 
                   // Enabled switch
                   SwitchTile(
-                    title: 'Enable Reminder',
-                    subtitle: 'Get daily notifications',
+                    title: l10n.enableReminder,
+                    subtitle: l10n.dailyNotifications,
                     icon: _enabled
                         ? Icons.notifications_active_outlined
                         : Icons.notifications_off_outlined,
@@ -349,6 +349,7 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
   }
 
   Future<void> _save() async {
+    final l10n = AppLocalizations.of(context)!;
     final name = _nameController.text.trim();
 
     if (name.isEmpty) {
@@ -369,7 +370,7 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
     if (isDuplicate) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('A supplement named "$name" already exists'),
+          content: Text(l10n.duplicateSupplementName(name)),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 
 class ApiKeyGuideDialog extends StatelessWidget {
@@ -15,27 +16,13 @@ class ApiKeyGuideDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final steps = [
-      (
-        '1',
-        'Go to Google AI Studio',
-        'Visit aistudio.google.com in your browser',
-        'aistudio.google.com'
-      ),
-      (
-        '2',
-        'Sign in',
-        'Sign in with your Google account (or create one)',
-        null
-      ),
-      ('3', 'Get API Key', 'Click the "Get API Key" button at the top', null),
-      ('4', 'Create Key', 'Click "Create API Key" and copy your new key', null),
-      (
-        '5',
-        'Paste in App',
-        'Return here and paste your key in the field above',
-        null
-      ),
+      ('1', l10n.apiKeyStep1Title, l10n.apiKeyStep1Body, 'aistudio.google.com'),
+      ('2', l10n.apiKeyStep2Title, l10n.apiKeyStep2Body, null),
+      ('3', l10n.apiKeyStep3Title, l10n.apiKeyStep3Body, null),
+      ('4', l10n.apiKeyStep4Title, l10n.apiKeyStep4Body, null),
+      ('5', l10n.apiKeyStep5Title, l10n.apiKeyStep5Body, null),
     ];
 
     return AlertDialog(
@@ -46,7 +33,7 @@ class ApiKeyGuideDialog extends StatelessWidget {
             color: theme.colorScheme.primary,
           ),
           const SizedBox(width: 12),
-          const Text('How to Get Your API Key'),
+          Text(l10n.apiKeyGuideTitle),
         ],
       ),
       content: SingleChildScrollView(
@@ -55,7 +42,7 @@ class ApiKeyGuideDialog extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Get a free Gemini API key from Google AI Studio:',
+              l10n.apiKeyGuideIntro,
               style: theme.textTheme.bodyMedium,
             ),
             const SizedBox(height: AppTheme.spaceLG2),
@@ -139,7 +126,7 @@ class ApiKeyGuideDialog extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'The API key is stored securely on your device only.',
+                      l10n.apiKeyStoredLocally,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -154,12 +141,12 @@ class ApiKeyGuideDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Got it'),
+          child: Text(l10n.gotIt),
         ),
         ElevatedButton.icon(
           onPressed: () => _launchUrl('https://aistudio.google.com'),
           icon: const Icon(Icons.open_in_new, size: 16),
-          label: const Text('Open AI Studio'),
+          label: Text(l10n.openAiStudio),
         ),
       ],
     );

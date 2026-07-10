@@ -20,6 +20,35 @@ class MacrosCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.3;
+
+    final rings = <Widget>[
+      MacroRing(
+        label: l10n.protein,
+        value: totals.protein,
+        goal: goals.protein,
+        color: AppTheme.protein,
+        excessColor: AppTheme.success,
+      ),
+      MacroRing(
+        label: l10n.carbs,
+        value: totals.carbs,
+        goal: goals.carbs,
+        color: AppTheme.carbs,
+      ),
+      MacroRing(
+        label: l10n.fat,
+        value: totals.fat,
+        goal: goals.fat,
+        color: AppTheme.fat,
+      ),
+      MacroRing(
+        label: l10n.fiber,
+        value: totals.fiber,
+        goal: goals.fiber,
+        color: AppTheme.fiber,
+      ),
+    ];
 
     return GlassCard(
       onTap: () => Navigator.push(
@@ -27,44 +56,23 @@ class MacrosCard extends StatelessWidget {
         AppTheme.slideRoute(MacroDetailsScreen(totals: totals, goals: goals)),
       ),
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          Flexible(
-            child: MacroRing(
-              label: l10n.protein,
-              value: totals.protein,
-              goal: goals.protein,
-              color: AppTheme.protein,
-              excessColor: AppTheme.success,
+      child: largeText
+          ? LayoutBuilder(
+              builder: (context, constraints) {
+                final width = (constraints.maxWidth - 12) / 2;
+                return Wrap(
+                  spacing: 12,
+                  runSpacing: 20,
+                  children: rings
+                      .map((ring) => SizedBox(width: width, child: ring))
+                      .toList(),
+                );
+              },
+            )
+          : Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: rings.map((ring) => Flexible(child: ring)).toList(),
             ),
-          ),
-          Flexible(
-            child: MacroRing(
-              label: l10n.carbs,
-              value: totals.carbs,
-              goal: goals.carbs,
-              color: AppTheme.carbs,
-            ),
-          ),
-          Flexible(
-            child: MacroRing(
-              label: l10n.fat,
-              value: totals.fat,
-              goal: goals.fat,
-              color: AppTheme.fat,
-            ),
-          ),
-          Flexible(
-            child: MacroRing(
-              label: l10n.fiber,
-              value: totals.fiber,
-              goal: goals.fiber,
-              color: AppTheme.fiber,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

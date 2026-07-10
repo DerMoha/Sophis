@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:sophis/providers/supplements_provider.dart';
+import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/components/organic_components.dart';
 import 'package:sophis/ui/screens/supplements_screen.dart';
@@ -12,6 +13,7 @@ class SupplementsTodayCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final accentColor = theme.colorScheme.primary;
 
     return Consumer<SupplementsProvider>(
@@ -52,12 +54,12 @@ class SupplementsTodayCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    Text('Supplements', style: theme.textTheme.titleMedium),
+                    Text(l10n.supplements, style: theme.textTheme.titleMedium),
                   ],
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'No supplements added yet',
+                  l10n.noSupplementsAdded,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.textTheme.bodySmall?.color,
                   ),
@@ -72,7 +74,7 @@ class SupplementsTodayCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Tap to add your first supplement',
+                      l10n.tapToAddSupplement,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: accentColor,
                         fontWeight: FontWeight.w600,
@@ -107,7 +109,7 @@ class SupplementsTodayCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Text('Supplements', style: theme.textTheme.titleMedium),
+                  Text(l10n.supplements, style: theme.textTheme.titleMedium),
                   const Spacer(),
                   // Completion badge
                   Container(

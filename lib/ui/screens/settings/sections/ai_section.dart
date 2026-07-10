@@ -92,6 +92,13 @@ class _AiSectionState extends State<AiSection> {
             ),
           ],
         ),
+        const SizedBox(height: 16),
+        Text(
+          l10n.aiAccuracyDisclaimer,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
       ],
     );
   }

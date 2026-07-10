@@ -170,18 +170,21 @@ class _SophisAppState extends State<SophisApp> {
   }
 
   Future<void> _initDeepLinks() async {
-    _appLinks = AppLinks();
-
-    // Handle link when app is started from a link
-    final initialLink = await _appLinks.getInitialLink();
-    if (initialLink != null) {
-      _handleDeepLink(initialLink.toString());
+    try {
+      _appLinks = AppLinks();
+      final initialLink = await _appLinks.getInitialLink();
+      if (initialLink != null && mounted) {
+        _handleDeepLink(initialLink.toString());
+      }
+      _linkSubscription = _appLinks.uriLinkStream.listen(
+        (uri) => _handleDeepLink(uri.toString()),
+        onError: (Object error, StackTrace stackTrace) {
+          debugPrint('Deep-link stream failed: $error');
+        },
+      );
+    } catch (error) {
+      debugPrint('Deep-link initialization failed: $error');
     }
-
-    // Handle links when app is already running
-    _linkSubscription = _appLinks.uriLinkStream.listen((uri) {
-      _handleDeepLink(uri.toString());
-    });
   }
 
   void _handleDeepLink(String url) {
@@ -193,6 +196,7 @@ class _SophisAppState extends State<SophisApp> {
     // Navigate to import screen
     // Use a slight delay to ensure the navigator is ready
     Future.delayed(const Duration(milliseconds: 100), () {
+      if (!mounted) return;
       navigatorKey.currentState?.push(
         AppTheme.slideRoute(ImportMealScreen(meal: meal)),
       );
