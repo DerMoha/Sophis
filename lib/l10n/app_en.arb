@@ -645,5 +645,15 @@
   "deleteAllDataSubtitle": "Remove your logs, photos, settings, and saved credentials from this device.",
   "deleteAllDataTitle": "Delete all local data?",
   "deleteAllDataConfirmation": "This permanently removes all Sophis data from this device. This action cannot be undone.",
-  "deleteAllDataSuccess": "All local data was deleted"
+  "deleteAllDataSuccess": "All local data was deleted",
+  "addFood": "Add Food",
+  "more": "More",
+  "planning": "Planning",
+  "tracking": "Tracking",
+  "optionalAi": "Optional AI",
+  "aiCloudNote": "Photo analysis uses Gemini and sends the selected image to Google using your API key.",
+  "insights": "Insights",
+  "general": "General",
+  "connections": "Connections",
+  "privacyAndData": "Privacy & Data"
 }

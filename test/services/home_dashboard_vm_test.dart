@@ -143,7 +143,7 @@ void main() {
       expect(find.text('500.0'), findsOneWidget);
     });
 
-    testWidgets('includes streak when streak >= 2',
+    testWidgets('keeps streak off the focused dashboard',
         (WidgetTester tester) async {
       await tester.pumpWidget(
         wrapApp((context) {
@@ -153,11 +153,10 @@ void main() {
           );
         }),
       );
-      expect(find.text('yes'), findsOneWidget);
+      expect(find.text('no'), findsOneWidget);
     });
 
-    testWidgets('excludes streak when streak < 2',
-        (WidgetTester tester) async {
+    testWidgets('excludes streak when streak < 2', (WidgetTester tester) async {
       await tester.pumpWidget(
         wrapApp((context) {
           final slots = buildDashboardSlots(context, createVm(streak: 1));
@@ -169,7 +168,7 @@ void main() {
       expect(find.text('no'), findsOneWidget);
     });
 
-    testWidgets('includes supplements when showSupplements true',
+    testWidgets('keeps supplements under More when enabled',
         (WidgetTester tester) async {
       await tester.pumpWidget(
         wrapApp((context) {
@@ -182,7 +181,7 @@ void main() {
           );
         }),
       );
-      expect(find.text('yes'), findsOneWidget);
+      expect(find.text('no'), findsOneWidget);
     });
 
     testWidgets('excludes supplements when showSupplements false',
@@ -221,7 +220,8 @@ void main() {
       ];
       await tester.pumpWidget(
         wrapApp((context) {
-          final slots = buildDashboardSlots(context, createVm(mealTypes: meals));
+          final slots =
+              buildDashboardSlots(context, createVm(mealTypes: meals));
           return Text('${slots.whereType<DashboardMealSection>().length}');
         }),
       );
@@ -254,7 +254,8 @@ void main() {
   });
 
   group('dashboardSlotsToWidgets', () {
-    testWidgets('converts DashboardSpace to SizedBox', (WidgetTester tester) async {
+    testWidgets('converts DashboardSpace to SizedBox',
+        (WidgetTester tester) async {
       final slots = <DashboardSlot>[
         const DashboardSpace(42),
       ];

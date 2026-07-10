@@ -519,5 +519,15 @@
   "deleteAllDataSubtitle": "Protokolle, Fotos, Einstellungen und gespeicherte Zugangsdaten von diesem Gerät entfernen.",
   "deleteAllDataTitle": "Alle lokalen Daten löschen?",
   "deleteAllDataConfirmation": "Dadurch werden alle Sophis-Daten dauerhaft von diesem Gerät entfernt. Diese Aktion kann nicht rückgängig gemacht werden.",
-  "deleteAllDataSuccess": "Alle lokalen Daten wurden gelöscht"
+  "deleteAllDataSuccess": "Alle lokalen Daten wurden gelöscht",
+  "addFood": "Lebensmittel hinzufügen",
+  "more": "Mehr",
+  "planning": "Planung",
+  "tracking": "Tracking",
+  "optionalAi": "Optionale KI",
+  "aiCloudNote": "Die Fotoanalyse verwendet Gemini und sendet das ausgewählte Bild mit deinem API-Schlüssel an Google.",
+  "insights": "Auswertungen",
+  "general": "Allgemein",
+  "connections": "Verbindungen",
+  "privacyAndData": "Datenschutz & Daten"
 }

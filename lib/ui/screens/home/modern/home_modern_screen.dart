@@ -6,7 +6,6 @@ import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/theme/animations.dart';
 import 'package:sophis/ui/screens/goals_setup_screen.dart';
-import 'package:sophis/ui/screens/settings_screen.dart';
 import 'package:sophis/ui/screens/home/shared/dashboard_slot.dart';
 import 'package:sophis/ui/screens/home/shared/home_dashboard_vm.dart';
 import 'package:sophis/ui/components/organic_components.dart';
@@ -82,53 +81,19 @@ class _HomeScreenModernState extends State<HomeScreenModern> {
           child: SafeArea(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l10n.appTitle,
-                        style: theme.textTheme.headlineMedium,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        l10n.today,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
+                  Text(
+                    l10n.today,
+                    style: theme.textTheme.headlineMedium,
                   ),
-                  IconButton(
-                    icon: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surface,
-                        borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-                        border: Border.all(
-                          color:
-                              theme.colorScheme.outline.withValues(alpha: 0.1),
-                        ),
-                      ),
-                      child: const Icon(Icons.settings_outlined, size: 20),
+                  const SizedBox(height: 4),
+                  Text(
+                    l10n.appTitle,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
-                    tooltip: l10n.settings,
-                    onPressed: () async {
-                      final settings = context.read<SettingsProvider>();
-                      final nutrition = context.read<NutritionProvider>();
-                      await Navigator.push(
-                        context,
-                        AppTheme.slideRoute(const SettingsScreen()),
-                      );
-                      if (!mounted) return;
-                      await nutrition.refreshBurnedCalories(
-                        enabled: settings.healthSyncEnabled,
-                      );
-                    },
                   ),
                 ],
               ),

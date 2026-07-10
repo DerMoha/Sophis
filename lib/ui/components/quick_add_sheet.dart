@@ -144,18 +144,11 @@ class _QuickAddContent extends StatelessWidget {
     ThemeData theme,
   ) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _ActionTile(
-          icon: Icons.edit_outlined,
-          label: l10n.manualEntry,
-          color: theme.colorScheme.primary,
-          onTap: () {
-            Navigator.pop(sheetContext);
-            Navigator.push(
-              context,
-              AppTheme.slideRoute(AddFoodScreen(meal: mealType)),
-            );
-          },
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 10),
+          child: Text(l10n.addFood, style: theme.textTheme.titleLarge),
         ),
         _ActionTile(
           icon: Icons.search_outlined,
@@ -194,6 +187,28 @@ class _QuickAddContent extends StatelessWidget {
           },
         ),
         _ActionTile(
+          icon: Icons.edit_outlined,
+          label: l10n.manualEntry,
+          color: theme.colorScheme.primary,
+          onTap: () {
+            Navigator.pop(sheetContext);
+            Navigator.push(
+              context,
+              AppTheme.slideRoute(AddFoodScreen(meal: mealType)),
+            );
+          },
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 4),
+          child: Text(
+            l10n.optionalAi,
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        _ActionTile(
           icon: Icons.auto_awesome_outlined,
           label: l10n.aiRecognition,
           color: theme.colorScheme.primary,
@@ -204,6 +219,15 @@ class _QuickAddContent extends StatelessWidget {
               AppTheme.slideRoute(AIFoodCameraScreen(meal: mealType)),
             );
           },
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+          child: Text(
+            l10n.aiCloudNote,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
         ),
       ],
     );

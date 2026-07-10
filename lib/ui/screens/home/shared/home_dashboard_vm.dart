@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/app_settings.dart';
 import 'package:sophis/models/custom_meal_type.dart';
 import 'package:sophis/models/nutrition_goals.dart';
@@ -10,7 +9,6 @@ import 'package:sophis/models/user_stats.dart';
 import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/ui/screens/home/shared/dashboard_slot.dart';
-import 'package:sophis/ui/screens/home/shared/home_actions.dart';
 
 /// Immutable view model containing all derived dashboard values.
 ///
@@ -122,36 +120,11 @@ List<DashboardSlot> buildDashboardSlots(
   );
   slots.add(const DashboardSpace(12));
 
-  // 2. Streak — only when the user has a meaningful streak
-  if (vm.hasVisibleStreak) {
-    slots.add(const DashboardStreak());
-  }
-
-  // 3. Macro rings
+  // 2. Compact macro summary
   slots.add(DashboardMacros(totals: vm.totals, goals: vm.goals));
-  slots.add(const DashboardSpace(16));
-
-  // 4. Water
-  slots.add(
-    DashboardWater(
-      waterTotal: vm.waterTotal,
-      waterGoal: vm.waterGoal,
-      unitSystem: vm.unitSystem,
-    ),
-  );
-  slots.add(const DashboardSpace(16));
-
-  // 5. Progress photos
-  slots.add(const DashboardProgressPhotos());
-
-  // 6. Supplements — only when the setting allows it
-  if (vm.showSupplements) {
-    slots.add(const DashboardSpace(16));
-    slots.add(const DashboardSupplements());
-  }
   slots.add(const DashboardSpace(24));
 
-  // 7. Meal sections
+  // 3. Today's meals. Secondary trackers live under More.
   slots.add(const DashboardMealHeader());
   for (var i = 0; i < vm.mealTypes.length; i++) {
     final mealType = vm.mealTypes[i];
@@ -164,20 +137,6 @@ List<DashboardSlot> buildDashboardSlots(
     if (i < vm.mealTypes.length - 1) {
       slots.add(const DashboardSpace(12));
     }
-  }
-
-  // 8. Quick actions — only when at least one is visible
-  final l10n = AppLocalizations.of(context)!;
-  final theme = Theme.of(context);
-  final actions = buildHomeActions(
-    context,
-    l10n,
-    theme,
-    vm.visibleDashboardCards,
-  );
-  if (actions.isNotEmpty) {
-    slots.add(const DashboardSpace(24));
-    slots.add(DashboardQuickActions(actions: actions, size: vm.quickActionSize));
   }
 
   return slots;

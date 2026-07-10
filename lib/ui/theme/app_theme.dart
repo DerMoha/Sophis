@@ -217,32 +217,7 @@ class AppTheme {
   }
 
   static Route<T> slideRoute<T>(Widget page) {
-    return PageRouteBuilder<T>(
-      pageBuilder: (context, animation, secondaryAnimation) => page,
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        final offsetAnimation = Tween<Offset>(
-          begin: const Offset(0, 0.05),
-          end: Offset.zero,
-        ).animate(CurvedAnimation(parent: animation, curve: fluidCurve));
-
-        final scaleAnimation = Tween<double>(
-          begin: 0.98,
-          end: 1.0,
-        ).animate(CurvedAnimation(parent: animation, curve: fluidCurve));
-
-        return SlideTransition(
-          position: offsetAnimation,
-          child: ScaleTransition(
-            scale: scaleAnimation,
-            child: FadeTransition(
-              opacity: animation,
-              child: child,
-            ),
-          ),
-        );
-      },
-      transitionDuration: animNormal,
-    );
+    return MaterialPageRoute<T>(builder: (_) => page);
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
