@@ -198,7 +198,7 @@ class _SupplementsScreenState extends State<SupplementsScreen> {
                               ),
                             ),
                             confirmDismiss: (direction) async {
-                              return await showDialog<bool>(
+                              final confirmed = await showDialog<bool>(
                                 context: context,
                                 builder: (context) => AlertDialog(
                                   title: Text(l10n.deleteSupplementTitle),
@@ -224,11 +224,13 @@ class _SupplementsScreenState extends State<SupplementsScreen> {
                                   ],
                                 ),
                               );
-                            },
-                            onDismissed: (direction) {
-                              final result =
-                                  provider.deleteSupplement(supplement.id);
-                              if (result.isFailure) {
+                              if (confirmed != true || !context.mounted) {
+                                return false;
+                              }
+                              final result = await provider.deleteSupplement(
+                                supplement.id,
+                              );
+                              if (result.isFailure && context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(
@@ -236,8 +238,10 @@ class _SupplementsScreenState extends State<SupplementsScreen> {
                                     ),
                                   ),
                                 );
-                                return;
                               }
+                              return result.isSuccess;
+                            },
+                            onDismissed: (direction) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
@@ -245,8 +249,8 @@ class _SupplementsScreenState extends State<SupplementsScreen> {
                                   ),
                                   action: SnackBarAction(
                                     label: l10n.undo,
-                                    onPressed: () {
-                                      provider.addSupplement(supplement);
+                                    onPressed: () async {
+                                      await provider.addSupplement(supplement);
                                     },
                                   ),
                                 ),
@@ -441,7 +445,7 @@ class _SupplementsScreenState extends State<SupplementsScreen> {
         return Material(
           color: Colors.transparent,
           child: InkWell(
-            onTap: () {
+            onTap: () async {
               final supplement = Supplement(
                 id: const Uuid().v4(),
                 name: name,
@@ -450,7 +454,9 @@ class _SupplementsScreenState extends State<SupplementsScreen> {
                 sortOrder: 0,
                 createdAt: DateTime.now(),
               );
-              context.read<SupplementsProvider>().addSupplement(supplement);
+              await context
+                  .read<SupplementsProvider>()
+                  .addSupplement(supplement);
             },
             borderRadius: BorderRadius.circular(AppTheme.radiusMD),
             child: Container(

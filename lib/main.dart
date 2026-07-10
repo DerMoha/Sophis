@@ -8,16 +8,12 @@ import 'package:provider/provider.dart';
 import 'package:sophis/l10n/generated/app_localizations.dart';
 
 import 'package:sophis/models/shareable_meal.dart';
-import 'package:sophis/services/storage_service.dart';
 import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/providers/nutrition_provider.dart';
-import 'package:sophis/services/notification_service.dart';
 import 'package:sophis/services/meal_sharing_service.dart';
 import 'package:sophis/services/barcode_lookup_service.dart';
-import 'package:sophis/services/brocade_service.dart';
-import 'package:sophis/services/database_service.dart';
 import 'package:sophis/services/food_intake_controller.dart';
-import 'package:sophis/services/openfoodfacts_service.dart';
+import 'package:sophis/services/app_runtime.dart';
 import 'package:sophis/providers/supplements_provider.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/screens/home_screen.dart';
@@ -30,52 +26,124 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   HomeWidget.setAppGroupId('group.sophis.sophis');
 
-  final storageService = await StorageService.create();
+  runApp(const SophisBootstrapApp());
+}
 
-  // Initialize settings provider
-  final settingsProvider = SettingsProvider(storageService);
+class SophisBootstrapApp extends StatefulWidget {
+  const SophisBootstrapApp({super.key});
 
-  // Initialize notification service (without requesting permission yet)
-  final notificationService = NotificationService();
-  await notificationService.initialize();
+  @override
+  State<SophisBootstrapApp> createState() => _SophisBootstrapAppState();
+}
 
-  final databaseService = DatabaseService();
+class _SophisBootstrapAppState extends State<SophisBootstrapApp> {
+  late Future<AppRuntime> _runtimeFuture;
+  AppRuntime? _runtime;
 
-  final barcodeLookupService = BarcodeLookupService(
-    db: databaseService,
-    offService: OpenFoodFactsService(),
-    brocadeService: BrocadeService(),
-  );
+  @override
+  void initState() {
+    super.initState();
+    _start();
+  }
 
-  final nutritionProvider = NutritionProvider(storageService, databaseService);
-  nutritionProvider.attachSettingsProvider(settingsProvider);
+  void _start() {
+    _runtimeFuture = AppRuntime.initialize().then((runtime) {
+      _runtime = runtime;
+      return runtime;
+    });
+  }
 
-  // Clean up expired barcode cache in background (don't block first frame)
-  Future.microtask(() => barcodeLookupService.cleanExpiredCache());
+  void _retry() {
+    setState(_start);
+  }
 
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider.value(
-          value: settingsProvider,
-        ),
-        ChangeNotifierProvider.value(
-          value: nutritionProvider,
-        ),
-        Provider<FoodIntakeController>(
-          create: (context) => FoodIntakeController(
-            context.read<NutritionProvider>(),
+  @override
+  void dispose() {
+    final runtime = _runtime;
+    if (runtime != null) unawaited(runtime.dispose());
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<AppRuntime>(
+      future: _runtimeFuture,
+      builder: (context, snapshot) {
+        final runtime = snapshot.data;
+        if (runtime != null) {
+          return MultiProvider(
+            providers: [
+              ChangeNotifierProvider<SettingsProvider>.value(
+                value: runtime.settings,
+              ),
+              ChangeNotifierProvider<NutritionProvider>.value(
+                value: runtime.nutrition,
+              ),
+              ChangeNotifierProvider<SupplementsProvider>.value(
+                value: runtime.supplements,
+              ),
+              Provider<FoodIntakeController>(
+                create: (context) => FoodIntakeController(
+                  context.read<NutritionProvider>(),
+                ),
+              ),
+              Provider<BarcodeLookupService>.value(
+                value: runtime.barcodeLookup,
+              ),
+            ],
+            child: const SophisApp(),
+          );
+        }
+
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          home: Scaffold(
+            body: SafeArea(
+              child: Center(
+                child: snapshot.hasError
+                    ? _StartupError(onRetry: _retry)
+                    : const CircularProgressIndicator.adaptive(),
+              ),
+            ),
           ),
-        ),
-        ChangeNotifierProvider(
-          create: (_) =>
-              SupplementsProvider(databaseService, notificationService),
-        ),
-        Provider<BarcodeLookupService>.value(value: barcodeLookupService),
-      ],
-      child: const SophisApp(),
-    ),
-  );
+        );
+      },
+    );
+  }
+}
+
+class _StartupError extends StatelessWidget {
+  final VoidCallback onRetry;
+
+  const _StartupError({required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.error_outline, size: 40),
+          const SizedBox(height: 16),
+          Text(
+            'Sophis could not load your data.',
+            style: Theme.of(context).textTheme.titleLarge,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Your existing data has not been changed. Please try again.',
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          FilledButton(onPressed: onRetry, child: const Text('Try again')),
+        ],
+      ),
+    );
+  }
 }
 
 class SophisApp extends StatefulWidget {

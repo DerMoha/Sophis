@@ -23,10 +23,11 @@ class SettingsProvider extends ChangeNotifier {
     HealthServiceProtocol? healthService,
   })  : _notifications = notificationService ?? NotificationService(),
         _healthService = healthService ?? HealthService(),
-        _settings = _storage.loadSettings() {
-    _loadSecureData();
-    // Schedule notifications on startup based on saved settings
-    _updateNotifications();
+        _settings = _storage.loadSettings();
+
+  Future<void> initialize() async {
+    await _loadSecureData();
+    await _updateNotifications();
   }
 
   Future<void> _loadSecureData() async {

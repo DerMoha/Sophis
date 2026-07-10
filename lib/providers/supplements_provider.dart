@@ -30,9 +30,9 @@ class SupplementsProvider extends ChangeNotifier {
   Set<String>? _todayCompletedIdsCache;
   DateTime? _todayCompletedCacheDate;
 
-  SupplementsProvider(this._db, this._notifications) {
-    _loadData();
-  }
+  SupplementsProvider(this._db, this._notifications);
+
+  Future<void> initialize() => _loadData();
 
   // ---------------------------------------------------------------------------
   // GETTERS
@@ -124,7 +124,10 @@ class SupplementsProvider extends ChangeNotifier {
       _logs = await _db.getAllSupplementLogs();
       _invalidateDerivedCaches();
     } catch (e) {
-      // Failed to load supplements
+      _lastError = 'Failed to load supplements: $e';
+      _isLoading = false;
+      notifyListeners();
+      rethrow;
     }
 
     _isLoading = false;
@@ -199,18 +202,18 @@ class SupplementsProvider extends ChangeNotifier {
   // ---------------------------------------------------------------------------
 
   /// Add a new supplement
-  ServiceResult<void> addSupplement(Supplement supplement) {
+  Future<ServiceResult<void>> addSupplement(Supplement supplement) async {
     // Validate max supplements limit (notification ID constraint)
     if (_supplements.length >= _maxSupplements) {
-      const message =
-          'Cannot add more than $_maxSupplements supplements. '
+      const message = 'Cannot add more than $_maxSupplements supplements. '
           'This limit exists to prevent notification ID conflicts.';
       _lastError = message;
       notifyListeners();
       return const Failure(ServiceErrorType.unknown, message);
     }
 
-    _db.insertSupplement(supplement).then((_) async {
+    try {
+      await _db.insertSupplement(supplement);
       _supplements.add(supplement);
       _supplements.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
       _invalidateDerivedCaches();
@@ -224,9 +227,13 @@ class SupplementsProvider extends ChangeNotifier {
 
       _lastError = null;
       notifyListeners();
-    });
-
-    return const Success(null);
+      return const Success(null);
+    } catch (e) {
+      final message = 'Failed to add supplement: $e';
+      _lastError = message;
+      notifyListeners();
+      return Failure(ServiceErrorType.unknown, message);
+    }
   }
 
   /// Update an existing supplement
@@ -261,7 +268,7 @@ class SupplementsProvider extends ChangeNotifier {
   }
 
   /// Delete a supplement
-  ServiceResult<void> deleteSupplement(String id) {
+  Future<ServiceResult<void>> deleteSupplement(String id) async {
     final index = _supplements.indexWhere((s) => s.id == id);
     if (index == -1) {
       const message = 'Supplement not found';
@@ -272,7 +279,8 @@ class SupplementsProvider extends ChangeNotifier {
 
     final supplement = _supplements[index];
 
-    _db.deleteSupplement(id).then((_) async {
+    try {
+      await _db.deleteSupplement(id);
       _supplements.removeWhere((s) => s.id == id);
 
       // Delete associated logs
@@ -284,16 +292,23 @@ class SupplementsProvider extends ChangeNotifier {
 
       _lastError = null;
       notifyListeners();
-    });
-
-    return const Success(null);
+      return const Success(null);
+    } catch (e) {
+      final message = 'Failed to delete supplement: $e';
+      _lastError = message;
+      notifyListeners();
+      return Failure(ServiceErrorType.unknown, message);
+    }
   }
 
   /// Reorder supplements by moving from oldIndex to newIndex
   ///
   /// Updates sortOrder for all supplements and performs a batch database update
   /// for optimal performance (single transaction instead of N individual updates).
-  Future<ServiceResult<void>> reorderSupplements(int oldIndex, int newIndex) async {
+  Future<ServiceResult<void>> reorderSupplements(
+    int oldIndex,
+    int newIndex,
+  ) async {
     try {
       if (oldIndex < newIndex) {
         newIndex -= 1;

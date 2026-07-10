@@ -96,8 +96,9 @@ class NutritionProvider extends ChangeNotifier {
     );
     _foodLibrary = FoodLibraryController(_persistence, _onSimpleChanged);
     _progressPhotos = ProgressPhotoController(_db);
-    _loadData();
   }
+
+  Future<void> initialize() => _loadData();
 
   // ── Cache date helpers (shared across controllers) ──────────────────────
 

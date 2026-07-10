@@ -348,7 +348,7 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
     }
   }
 
-  void _save() {
+  Future<void> _save() async {
     final name = _nameController.text.trim();
 
     if (name.isEmpty) {
@@ -385,7 +385,14 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
         reminderTime: reminderTime,
         enabled: _enabled,
       );
-      provider.updateSupplement(updated);
+      final result = await provider.updateSupplement(updated);
+      if (result.isFailure) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text((result as Failure).message)),
+        );
+        return;
+      }
     } else {
       // Add new supplement
       final supplement = Supplement(
@@ -396,8 +403,9 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
         sortOrder: provider.supplements.length,
         createdAt: DateTime.now(),
       );
-      final result = provider.addSupplement(supplement);
+      final result = await provider.addSupplement(supplement);
       if (result.isFailure) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text((result as Failure).message)),
         );
@@ -405,6 +413,7 @@ class _SupplementEditSheetState extends State<SupplementEditSheet> {
       }
     }
 
+    if (!mounted) return;
     HapticFeedback.mediumImpact();
     Navigator.pop(context);
   }

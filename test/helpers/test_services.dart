@@ -182,6 +182,7 @@ Future<NutritionProvider> createLoadedNutritionProvider({
     healthService: healthService ?? FakeHealthService(),
     cleanupProgressPhotosOnLoad: false,
   );
+  await provider.initialize();
   if (shouldCloseDatabase) {
     addTearDown(db.close);
   }
@@ -204,6 +205,7 @@ Future<NutritionProvider> createLoadedWidgetNutritionProvider(
     healthService: healthService ?? FakeHealthService(),
     cleanupProgressPhotosOnLoad: false,
   );
+  await provider.initialize();
   if (shouldCloseDatabase) {
     addTearDown(db.close);
   }
@@ -221,7 +223,7 @@ Future<SettingsProvider> createTestSettingsProvider({
     notificationService: notifications ?? createMockNotificationService(),
     healthService: healthService ?? FakeHealthService(),
   );
-  await Future<void>.delayed(Duration.zero);
+  await provider.initialize();
   return provider;
 }
 
@@ -236,6 +238,7 @@ Future<SettingsProvider> createWidgetTestSettingsProvider(
     notificationService: notifications ?? createMockNotificationService(),
     healthService: healthService ?? FakeHealthService(),
   );
+  await provider.initialize();
   await tester.pump();
   return provider;
 }
