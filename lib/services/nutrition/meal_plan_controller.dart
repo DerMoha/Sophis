@@ -2,11 +2,11 @@ import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:sophis/models/meal_plan.dart';
 import 'package:sophis/models/nutrition_totals.dart';
-import 'package:sophis/services/storage_service.dart';
+import 'package:sophis/services/nutrition/nutrition_persistence.dart';
 
 /// Manages planned meals, shopping list, and planned meal cache.
 class MealPlanController {
-  final StorageService _storage;
+  final NutritionPersistence _persistence;
   final VoidCallback _onChanged;
   final int Function(DateTime) _dayKey;
 
@@ -19,7 +19,7 @@ class MealPlanController {
   Map<int, NutritionTotals>? _plannedTotalsByDateCache;
 
   MealPlanController(
-    this._storage,
+    this._persistence,
     this._onChanged,
     this._dayKey,
   );
@@ -81,14 +81,14 @@ class MealPlanController {
   Future<void> addPlannedMeal(PlannedMeal meal) async {
     _plannedMeals.add(meal);
     invalidatePlannedMealsCache();
-    await _storage.savePlannedMeals(_plannedMeals);
+    await _persistence.savePlannedMeals(_plannedMeals);
     _onChanged();
   }
 
   Future<void> removePlannedMeal(String id) async {
     _plannedMeals.removeWhere((m) => m.id == id);
     invalidatePlannedMealsCache();
-    await _storage.savePlannedMeals(_plannedMeals);
+    await _persistence.savePlannedMeals(_plannedMeals);
     _onChanged();
   }
 
@@ -97,7 +97,7 @@ class MealPlanController {
     if (i != -1) {
       _plannedMeals[i] = meal;
       invalidatePlannedMealsCache();
-      await _storage.savePlannedMeals(_plannedMeals);
+      await _persistence.savePlannedMeals(_plannedMeals);
       _onChanged();
     }
   }
@@ -202,13 +202,13 @@ class MealPlanController {
     } else {
       _shoppingListChecked.add(key);
     }
-    await _storage.saveShoppingListChecked(_shoppingListChecked);
+    await _persistence.saveShoppingListChecked(_shoppingListChecked);
     _onChanged();
   }
 
   Future<void> clearCheckedShoppingItems() async {
     _shoppingListChecked.clear();
-    await _storage.saveShoppingListChecked(_shoppingListChecked);
+    await _persistence.saveShoppingListChecked(_shoppingListChecked);
     _onChanged();
   }
 

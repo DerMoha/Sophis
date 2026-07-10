@@ -2,11 +2,11 @@ import 'package:flutter/foundation.dart';
 import 'package:sophis/models/food_item.dart';
 import 'package:sophis/models/recipe.dart';
 import 'package:sophis/models/custom_portion.dart';
-import 'package:sophis/services/storage_service.dart';
+import 'package:sophis/services/nutrition/nutrition_persistence.dart';
 
 /// Manages recipes, custom foods, favorites, and custom portions.
 class FoodLibraryController {
-  final StorageService _storage;
+  final NutritionPersistence _persistence;
   final VoidCallback _onChanged;
 
   List<Recipe> _recipes = [];
@@ -15,7 +15,7 @@ class FoodLibraryController {
   Set<String> _favoriteFoodIds = {};
   List<CustomPortion> _customPortions = [];
 
-  FoodLibraryController(this._storage, this._onChanged);
+  FoodLibraryController(this._persistence, this._onChanged);
 
   List<Recipe> get recipes => _recipes;
   List<FoodItem> get customFoods => _customFoods;
@@ -38,7 +38,7 @@ class FoodLibraryController {
   // Recipes
   Future<void> addRecipe(Recipe recipe) async {
     _recipes.add(recipe);
-    await _storage.saveRecipes(_recipes);
+    await _persistence.saveRecipes(_recipes);
     _onChanged();
   }
 
@@ -46,14 +46,14 @@ class FoodLibraryController {
     final i = _recipes.indexWhere((r) => r.id == recipe.id);
     if (i != -1) {
       _recipes[i] = recipe;
-      await _storage.saveRecipes(_recipes);
+      await _persistence.saveRecipes(_recipes);
       _onChanged();
     }
   }
 
   Future<void> removeRecipe(String id) async {
     _recipes.removeWhere((r) => r.id == id);
-    await _storage.saveRecipes(_recipes);
+    await _persistence.saveRecipes(_recipes);
     _onChanged();
   }
 
@@ -61,13 +61,13 @@ class FoodLibraryController {
   Future<void> addCustomFood(FoodItem food) async {
     if (_customFoods.any((f) => f.id == food.id)) return;
     _customFoods.insert(0, food);
-    await _storage.saveCustomFoods(_customFoods);
+    await _persistence.saveCustomFoods(_customFoods);
     _onChanged();
   }
 
   Future<void> removeCustomFood(String id) async {
     _customFoods.removeWhere((f) => f.id == id);
-    await _storage.saveCustomFoods(_customFoods);
+    await _persistence.saveCustomFoods(_customFoods);
     _onChanged();
   }
 
@@ -88,14 +88,14 @@ class FoodLibraryController {
     if (isFavorite(food.id)) return;
     _favoriteFoods.insert(0, food.copyWith(isFavorite: true));
     _favoriteFoodIds.add(food.id);
-    await _storage.saveFavoriteFoods(_favoriteFoods);
+    await _persistence.saveFavoriteFoods(_favoriteFoods);
     _onChanged();
   }
 
   Future<void> removeFavorite(String id) async {
     _favoriteFoods.removeWhere((f) => f.id == id);
     _favoriteFoodIds.remove(id);
-    await _storage.saveFavoriteFoods(_favoriteFoods);
+    await _persistence.saveFavoriteFoods(_favoriteFoods);
     _onChanged();
   }
 
@@ -114,13 +114,13 @@ class FoodLibraryController {
 
   Future<void> addCustomPortion(CustomPortion portion) async {
     _customPortions.add(portion);
-    await _storage.saveCustomPortions(_customPortions);
+    await _persistence.saveCustomPortions(_customPortions);
     _onChanged();
   }
 
   Future<void> removeCustomPortion(String id) async {
     _customPortions.removeWhere((p) => p.id == id);
-    await _storage.saveCustomPortions(_customPortions);
+    await _persistence.saveCustomPortions(_customPortions);
     _onChanged();
   }
 

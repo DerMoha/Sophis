@@ -5734,6 +5734,197 @@ class PlannedMealsCheckedCompanion
   }
 }
 
+class $NutritionDocumentsTable extends NutritionDocuments
+    with TableInfo<$NutritionDocumentsTable, NutritionDocument> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $NutritionDocumentsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _keyMeta = const VerificationMeta('key');
+  @override
+  late final GeneratedColumn<String> key = GeneratedColumn<String>(
+      'key', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _jsonMeta = const VerificationMeta('json');
+  @override
+  late final GeneratedColumn<String> json = GeneratedColumn<String>(
+      'json', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [key, json];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'nutrition_documents';
+  @override
+  VerificationContext validateIntegrity(Insertable<NutritionDocument> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('key')) {
+      context.handle(
+          _keyMeta, key.isAcceptableOrUnknown(data['key']!, _keyMeta));
+    } else if (isInserting) {
+      context.missing(_keyMeta);
+    }
+    if (data.containsKey('json')) {
+      context.handle(
+          _jsonMeta, json.isAcceptableOrUnknown(data['json']!, _jsonMeta));
+    } else if (isInserting) {
+      context.missing(_jsonMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {key};
+  @override
+  NutritionDocument map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return NutritionDocument(
+      key: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}key'])!,
+      json: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}json'])!,
+    );
+  }
+
+  @override
+  $NutritionDocumentsTable createAlias(String alias) {
+    return $NutritionDocumentsTable(attachedDatabase, alias);
+  }
+}
+
+class NutritionDocument extends DataClass
+    implements Insertable<NutritionDocument> {
+  final String key;
+  final String json;
+  const NutritionDocument({required this.key, required this.json});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['key'] = Variable<String>(key);
+    map['json'] = Variable<String>(json);
+    return map;
+  }
+
+  NutritionDocumentsCompanion toCompanion(bool nullToAbsent) {
+    return NutritionDocumentsCompanion(
+      key: Value(key),
+      json: Value(json),
+    );
+  }
+
+  factory NutritionDocument.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return NutritionDocument(
+      key: serializer.fromJson<String>(json['key']),
+      json: serializer.fromJson<String>(json['json']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'key': serializer.toJson<String>(key),
+      'json': serializer.toJson<String>(json),
+    };
+  }
+
+  NutritionDocument copyWith({String? key, String? json}) => NutritionDocument(
+        key: key ?? this.key,
+        json: json ?? this.json,
+      );
+  NutritionDocument copyWithCompanion(NutritionDocumentsCompanion data) {
+    return NutritionDocument(
+      key: data.key.present ? data.key.value : this.key,
+      json: data.json.present ? data.json.value : this.json,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NutritionDocument(')
+          ..write('key: $key, ')
+          ..write('json: $json')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(key, json);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is NutritionDocument &&
+          other.key == this.key &&
+          other.json == this.json);
+}
+
+class NutritionDocumentsCompanion extends UpdateCompanion<NutritionDocument> {
+  final Value<String> key;
+  final Value<String> json;
+  final Value<int> rowid;
+  const NutritionDocumentsCompanion({
+    this.key = const Value.absent(),
+    this.json = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  NutritionDocumentsCompanion.insert({
+    required String key,
+    required String json,
+    this.rowid = const Value.absent(),
+  })  : key = Value(key),
+        json = Value(json);
+  static Insertable<NutritionDocument> custom({
+    Expression<String>? key,
+    Expression<String>? json,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (key != null) 'key': key,
+      if (json != null) 'json': json,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  NutritionDocumentsCompanion copyWith(
+      {Value<String>? key, Value<String>? json, Value<int>? rowid}) {
+    return NutritionDocumentsCompanion(
+      key: key ?? this.key,
+      json: json ?? this.json,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (key.present) {
+      map['key'] = Variable<String>(key.value);
+    }
+    if (json.present) {
+      map['json'] = Variable<String>(json.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NutritionDocumentsCompanion(')
+          ..write('key: $key, ')
+          ..write('json: $json, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $ProgressPhotosTable extends ProgressPhotos
     with TableInfo<$ProgressPhotosTable, ProgressPhotoRow> {
   @override
@@ -6138,6 +6329,8 @@ abstract class _$DatabaseService extends GeneratedDatabase {
   late final $UserStatsTableTable userStatsTable = $UserStatsTableTable(this);
   late final $PlannedMealsCheckedTable plannedMealsChecked =
       $PlannedMealsCheckedTable(this);
+  late final $NutritionDocumentsTable nutritionDocuments =
+      $NutritionDocumentsTable(this);
   late final $ProgressPhotosTable progressPhotos = $ProgressPhotosTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
@@ -6159,6 +6352,7 @@ abstract class _$DatabaseService extends GeneratedDatabase {
         recentFoods,
         userStatsTable,
         plannedMealsChecked,
+        nutritionDocuments,
         progressPhotos
       ];
 }
@@ -9156,6 +9350,138 @@ typedef $$PlannedMealsCheckedTableProcessedTableManager = ProcessedTableManager<
     ),
     PlannedMealCheckedRow,
     PrefetchHooks Function()>;
+typedef $$NutritionDocumentsTableCreateCompanionBuilder
+    = NutritionDocumentsCompanion Function({
+  required String key,
+  required String json,
+  Value<int> rowid,
+});
+typedef $$NutritionDocumentsTableUpdateCompanionBuilder
+    = NutritionDocumentsCompanion Function({
+  Value<String> key,
+  Value<String> json,
+  Value<int> rowid,
+});
+
+class $$NutritionDocumentsTableFilterComposer
+    extends Composer<_$DatabaseService, $NutritionDocumentsTable> {
+  $$NutritionDocumentsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get key => $composableBuilder(
+      column: $table.key, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get json => $composableBuilder(
+      column: $table.json, builder: (column) => ColumnFilters(column));
+}
+
+class $$NutritionDocumentsTableOrderingComposer
+    extends Composer<_$DatabaseService, $NutritionDocumentsTable> {
+  $$NutritionDocumentsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get key => $composableBuilder(
+      column: $table.key, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get json => $composableBuilder(
+      column: $table.json, builder: (column) => ColumnOrderings(column));
+}
+
+class $$NutritionDocumentsTableAnnotationComposer
+    extends Composer<_$DatabaseService, $NutritionDocumentsTable> {
+  $$NutritionDocumentsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get key =>
+      $composableBuilder(column: $table.key, builder: (column) => column);
+
+  GeneratedColumn<String> get json =>
+      $composableBuilder(column: $table.json, builder: (column) => column);
+}
+
+class $$NutritionDocumentsTableTableManager extends RootTableManager<
+    _$DatabaseService,
+    $NutritionDocumentsTable,
+    NutritionDocument,
+    $$NutritionDocumentsTableFilterComposer,
+    $$NutritionDocumentsTableOrderingComposer,
+    $$NutritionDocumentsTableAnnotationComposer,
+    $$NutritionDocumentsTableCreateCompanionBuilder,
+    $$NutritionDocumentsTableUpdateCompanionBuilder,
+    (
+      NutritionDocument,
+      BaseReferences<_$DatabaseService, $NutritionDocumentsTable,
+          NutritionDocument>
+    ),
+    NutritionDocument,
+    PrefetchHooks Function()> {
+  $$NutritionDocumentsTableTableManager(
+      _$DatabaseService db, $NutritionDocumentsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$NutritionDocumentsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$NutritionDocumentsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$NutritionDocumentsTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> key = const Value.absent(),
+            Value<String> json = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              NutritionDocumentsCompanion(
+            key: key,
+            json: json,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String key,
+            required String json,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              NutritionDocumentsCompanion.insert(
+            key: key,
+            json: json,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$NutritionDocumentsTableProcessedTableManager = ProcessedTableManager<
+    _$DatabaseService,
+    $NutritionDocumentsTable,
+    NutritionDocument,
+    $$NutritionDocumentsTableFilterComposer,
+    $$NutritionDocumentsTableOrderingComposer,
+    $$NutritionDocumentsTableAnnotationComposer,
+    $$NutritionDocumentsTableCreateCompanionBuilder,
+    $$NutritionDocumentsTableUpdateCompanionBuilder,
+    (
+      NutritionDocument,
+      BaseReferences<_$DatabaseService, $NutritionDocumentsTable,
+          NutritionDocument>
+    ),
+    NutritionDocument,
+    PrefetchHooks Function()>;
 typedef $$ProgressPhotosTableCreateCompanionBuilder = ProgressPhotosCompanion
     Function({
   required String id,
@@ -9394,6 +9720,8 @@ class $DatabaseServiceManager {
       $$UserStatsTableTableTableManager(_db, _db.userStatsTable);
   $$PlannedMealsCheckedTableTableManager get plannedMealsChecked =>
       $$PlannedMealsCheckedTableTableManager(_db, _db.plannedMealsChecked);
+  $$NutritionDocumentsTableTableManager get nutritionDocuments =>
+      $$NutritionDocumentsTableTableManager(_db, _db.nutritionDocuments);
   $$ProgressPhotosTableTableManager get progressPhotos =>
       $$ProgressPhotosTableTableManager(_db, _db.progressPhotos);
 }

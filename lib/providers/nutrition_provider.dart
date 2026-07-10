@@ -23,6 +23,7 @@ import 'package:sophis/services/nutrition/hydration_controller.dart';
 import 'package:sophis/services/nutrition/workout_controller.dart';
 import 'package:sophis/services/nutrition/meal_plan_controller.dart';
 import 'package:sophis/services/nutrition/food_library_controller.dart';
+import 'package:sophis/services/nutrition/nutrition_persistence.dart';
 import 'package:sophis/services/progress_photo_controller.dart';
 import 'package:sophis/models/progress_photo.dart';
 import 'package:uuid/uuid.dart';
@@ -42,6 +43,7 @@ class NutritionProvider extends ChangeNotifier {
   late final MealPlanController _mealPlan;
   late final FoodLibraryController _foodLibrary;
   late final ProgressPhotoController _progressPhotos;
+  late final NutritionPersistence _persistence;
 
   NutritionGoals? _goals;
   UserProfile? _profile;
@@ -86,12 +88,13 @@ class NutritionProvider extends ChangeNotifier {
       _isCacheValid,
       _currentCacheDate,
     );
+    _persistence = NutritionPersistence(_db, _storage);
     _mealPlan = MealPlanController(
-      _storage,
+      _persistence,
       _onSimpleChanged,
       _dayKey,
     );
-    _foodLibrary = FoodLibraryController(_storage, _onSimpleChanged);
+    _foodLibrary = FoodLibraryController(_persistence, _onSimpleChanged);
     _progressPhotos = ProgressPhotoController(_db);
     _loadData();
   }
@@ -124,7 +127,7 @@ class NutritionProvider extends ChangeNotifier {
   /// Triggers streak update and home widget refresh.
   Future<void> _onFoodChanged() async {
     await _updateStreak();
-    await _storage.saveRecentFoods(
+    await _persistence.saveRecentFoods(
       _foodLog.recentFoods,
       _foodLog.recentFoodMeals,
     );
@@ -175,17 +178,17 @@ class NutritionProvider extends ChangeNotifier {
     notifyListeners();
 
     await _migrateToDbIfNeeded();
+    final persistentState = await _persistence.initialize();
 
     final foods = await _db.getAllFoods();
     final water = await _db.getAllWater();
     final weights = await _db.getAllWeights();
     final workouts = await _db.getAllWorkouts();
 
-    final recentMeals = <String, String>{};
     _foodLog.loadData(
       foods,
-      _storage.loadRecentFoods(outMeals: recentMeals),
-      recentMeals,
+      persistentState.recentFoods,
+      persistentState.recentFoodMeals,
     );
     _hydration.loadData(water);
     _weightEntries = weights;
@@ -195,18 +198,18 @@ class NutritionProvider extends ChangeNotifier {
     _profile = _storage.loadProfile();
 
     _foodLibrary.loadData(
-      recipes: _storage.loadRecipes(),
-      customFoods: _storage.loadCustomFoods(),
-      favoriteFoods: _storage.loadFavoriteFoods(),
-      customPortions: _storage.loadCustomPortions(),
+      recipes: persistentState.recipes,
+      customFoods: persistentState.customFoods,
+      favoriteFoods: persistentState.favoriteFoods,
+      customPortions: persistentState.customPortions,
     );
 
     _mealPlan.loadData(
-      _storage.loadPlannedMeals(),
-      _storage.loadShoppingListChecked(),
+      persistentState.plannedMeals,
+      persistentState.shoppingListChecked,
     );
 
-    _userStats = _storage.loadUserStats();
+    _userStats = persistentState.userStats;
 
     final photos = await _db.getAllPhotos();
     _photos = photos;
@@ -229,7 +232,6 @@ class NutritionProvider extends ChangeNotifier {
     }
 
     if (_storage.isMigrationV2Complete()) {
-      await _storage.clearLegacyMigratedV2Data();
       return;
     }
 
@@ -257,7 +259,6 @@ class NutritionProvider extends ChangeNotifier {
 
   Future<void> _migrateV2Data() async {
     if (_storage.isMigrationV2Complete()) {
-      await _storage.clearLegacyMigratedV2Data();
       return;
     }
 
@@ -291,7 +292,6 @@ class NutritionProvider extends ChangeNotifier {
       await _db.migratePlannedMealsChecked(legacyShoppingChecked);
 
       await _storage.setMigrationV2Complete();
-      await _storage.clearLegacyMigratedV2Data();
     } catch (e) {
       debugPrint(
         'Database v2 migration failed, will retry on next app start: $e',
@@ -676,7 +676,7 @@ class NutritionProvider extends ChangeNotifier {
     }
 
     await _checkAchievements();
-    await _storage.saveUserStats(_userStats);
+    await _persistence.saveUserStats(_userStats);
   }
 
   Future<void> _checkAchievements() async {

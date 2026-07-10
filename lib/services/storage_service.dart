@@ -29,6 +29,7 @@ class StorageService {
   static const _offPasswordKey = 'off_password';
   static const _dbMigrationKey = 'db_migration_v1_complete';
   static const _dbMigrationV2Key = 'db_migration_v2_complete';
+  static const _dbMigrationV3Key = 'db_migration_v3_complete';
   static const _plannedMealsKey = 'planned_meals';
   static const _shoppingListKey = 'shopping_list_checked';
   static const _customPortionsKey = 'custom_portions';
@@ -197,12 +198,15 @@ class StorageService {
     List<FoodItem> foods,
     Map<String, String> meals,
   ) async {
-    final list = foods.take(_maxRecentFoods).map(
-      (f) => <String, dynamic>{
-        'f': f.toJson(),
-        'm': meals[f.id] ?? '',
-      },
-    ).toList();
+    final list = foods
+        .take(_maxRecentFoods)
+        .map(
+          (f) => <String, dynamic>{
+            'f': f.toJson(),
+            'm': meals[f.id] ?? '',
+          },
+        )
+        .toList();
     await _prefs.setString(_recentFoodsKey, jsonEncode(list));
   }
 
@@ -322,6 +326,56 @@ class StorageService {
     return _prefs.getBool(_dbMigrationV2Key) ?? false;
   }
 
+  Future<void> setMigrationV3Complete({bool complete = true}) async {
+    await _prefs.setBool(_dbMigrationV3Key, complete);
+  }
+
+  bool isMigrationV3Complete() {
+    return _prefs.getBool(_dbMigrationV3Key) ?? false;
+  }
+
+  /// Captures both legacy values and key presence. Presence matters during the
+  /// v3 reconciliation: an existing empty list represents a deliberate user
+  /// deletion, while an absent key means SQLite should remain authoritative.
+  LegacyNutritionState loadLegacyNutritionState() {
+    final recentMeals = <String, String>{};
+    final recentFoods = loadRecentFoods(outMeals: recentMeals);
+    return LegacyNutritionState(
+      recipes: LegacyValue(
+        isPresent: _prefs.containsKey(_recipesKey),
+        value: loadRecipes(),
+      ),
+      customFoods: LegacyValue(
+        isPresent: _prefs.containsKey(_customFoodsKey),
+        value: loadCustomFoods(),
+      ),
+      favoriteFoods: LegacyValue(
+        isPresent: _prefs.containsKey(_favoriteFoodsKey),
+        value: loadFavoriteFoods(),
+      ),
+      plannedMeals: LegacyValue(
+        isPresent: _prefs.containsKey(_plannedMealsKey),
+        value: loadPlannedMeals(),
+      ),
+      customPortions: LegacyValue(
+        isPresent: _prefs.containsKey(_customPortionsKey),
+        value: loadCustomPortions(),
+      ),
+      recentFoods: LegacyValue(
+        isPresent: _prefs.containsKey(_recentFoodsKey),
+        value: RecentFoodState(foods: recentFoods, meals: recentMeals),
+      ),
+      userStats: LegacyValue(
+        isPresent: _prefs.containsKey(_userStatsKey),
+        value: loadUserStats(),
+      ),
+      shoppingListChecked: LegacyValue(
+        isPresent: _prefs.containsKey(_shoppingListKey),
+        value: loadShoppingListChecked(),
+      ),
+    );
+  }
+
   /// Remove legacy SharedPreferences data that has been migrated to SQLite
   Future<void> clearLegacyMigratedData() async {
     if (!isMigrationComplete()) return;
@@ -333,7 +387,7 @@ class StorageService {
 
   /// Remove legacy SharedPreferences v2 data that has been migrated to SQLite
   Future<void> clearLegacyMigratedV2Data() async {
-    if (!isMigrationV2Complete()) return;
+    if (!isMigrationV3Complete()) return;
     await _prefs.remove(_recipesKey);
     await _prefs.remove(_customFoodsKey);
     await _prefs.remove(_favoriteFoodsKey);
@@ -343,4 +397,40 @@ class StorageService {
     await _prefs.remove(_userStatsKey);
     await _prefs.remove(_shoppingListKey);
   }
+}
+
+class LegacyValue<T> {
+  final bool isPresent;
+  final T value;
+
+  const LegacyValue({required this.isPresent, required this.value});
+}
+
+class RecentFoodState {
+  final List<FoodItem> foods;
+  final Map<String, String> meals;
+
+  const RecentFoodState({required this.foods, required this.meals});
+}
+
+class LegacyNutritionState {
+  final LegacyValue<List<Recipe>> recipes;
+  final LegacyValue<List<FoodItem>> customFoods;
+  final LegacyValue<List<FoodItem>> favoriteFoods;
+  final LegacyValue<List<PlannedMeal>> plannedMeals;
+  final LegacyValue<List<CustomPortion>> customPortions;
+  final LegacyValue<RecentFoodState> recentFoods;
+  final LegacyValue<UserStats> userStats;
+  final LegacyValue<Set<String>> shoppingListChecked;
+
+  const LegacyNutritionState({
+    required this.recipes,
+    required this.customFoods,
+    required this.favoriteFoods,
+    required this.plannedMeals,
+    required this.customPortions,
+    required this.recentFoods,
+    required this.userStats,
+    required this.shoppingListChecked,
+  });
 }

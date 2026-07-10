@@ -11,6 +11,7 @@ import 'package:sophis/services/nutrition/food_library_controller.dart';
 import 'package:sophis/services/nutrition/food_log_controller.dart';
 import 'package:sophis/services/nutrition/hydration_controller.dart';
 import 'package:sophis/services/nutrition/meal_plan_controller.dart';
+import 'package:sophis/services/nutrition/nutrition_persistence.dart';
 import 'package:sophis/services/nutrition/workout_controller.dart';
 
 import '../helpers/test_services.dart';
@@ -150,9 +151,12 @@ void main() {
 
     test('planned meals aggregated totals and shopping list state', () async {
       final storage = await createTestStorage();
+      final db = createTestDatabase();
+      addTearDown(db.close);
+      final persistence = NutritionPersistence(db, storage);
       var changes = 0;
       final controller =
-          MealPlanController(storage, () => changes += 1, dayKey);
+          MealPlanController(persistence, () => changes += 1, dayKey);
       final date = DateTime(2026, 1, 2, 19, 30);
       final mealA = PlannedMeal(
         id: 'meal-a',
@@ -209,7 +213,10 @@ void main() {
 
       await controller.toggleShoppingItem('Tomato', 'pcs');
       expect(controller.isShoppingItemChecked('tomato', 'pcs'), isTrue);
-      expect(storage.loadShoppingListChecked(), contains('tomato_pcs'));
+      expect(
+        (await persistence.load()).shoppingListChecked,
+        contains('tomato_pcs'),
+      );
 
       await controller.removePlannedMeal('meal-b');
       expect(controller.getPlannedTotalsForDate(date).calories, 600);
@@ -218,8 +225,14 @@ void main() {
 
     test('managed recipes, custom foods, favorites, and portions', () async {
       final storage = await createTestStorage();
+      final db = createTestDatabase();
+      addTearDown(db.close);
+      final persistence = NutritionPersistence(db, storage);
       var changes = 0;
-      final controller = FoodLibraryController(storage, () => changes += 1);
+      final controller = FoodLibraryController(
+        persistence,
+        () => changes += 1,
+      );
       final timestamp = DateTime(2026, 1, 2);
       final recipe = Recipe(
         id: 'recipe-1',

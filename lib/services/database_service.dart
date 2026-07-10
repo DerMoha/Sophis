@@ -222,6 +222,17 @@ class PlannedMealsChecked extends Table {
   Set<Column> get primaryKey => {key};
 }
 
+/// Canonical JSON documents for nutrition collections that are loaded and
+/// replaced as a whole. Keeping these in SQLite gives migration and backup a
+/// single transactional authority without leaking Drift row types to callers.
+class NutritionDocuments extends Table {
+  TextColumn get key => text()();
+  TextColumn get json => text()();
+
+  @override
+  Set<Column> get primaryKey => {key};
+}
+
 @DataClassName('ProgressPhotoRow')
 class ProgressPhotos extends Table {
   TextColumn get id => text()();
@@ -257,6 +268,7 @@ class ProgressPhotos extends Table {
     RecentFoods,
     UserStatsTable,
     PlannedMealsChecked,
+    NutritionDocuments,
     ProgressPhotos,
   ],
 )
@@ -268,7 +280,7 @@ class DatabaseService extends _$DatabaseService {
   DatabaseService._(super.executor);
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -284,6 +296,7 @@ class DatabaseService extends _$DatabaseService {
           await migrator.createTable(recentFoods);
           await migrator.createTable(userStatsTable);
           await migrator.createTable(plannedMealsChecked);
+          await migrator.createTable(nutritionDocuments);
           await migrator.createTable(progressPhotos);
 
           await _safeAddColumn(migrator, weightLogs, weightLogs.source);
@@ -759,7 +772,42 @@ class DatabaseService extends _$DatabaseService {
     await delete(recentFoods).go();
     await delete(userStatsTable).go();
     await delete(plannedMealsChecked).go();
+    await delete(nutritionDocuments).go();
     await delete(progressPhotos).go();
+  }
+
+  // ---------------------------------------------------------------------------
+  // CANONICAL NUTRITION DOCUMENTS
+  // ---------------------------------------------------------------------------
+
+  Future<String?> readNutritionDocument(String key) async {
+    final row = await (select(nutritionDocuments)
+          ..where((document) => document.key.equals(key)))
+        .getSingleOrNull();
+    return row?.json;
+  }
+
+  Future<void> writeNutritionDocument(String key, String json) async {
+    await into(nutritionDocuments).insertOnConflictUpdate(
+      NutritionDocumentsCompanion(
+        key: Value(key),
+        json: Value(json),
+      ),
+    );
+  }
+
+  Future<void> writeNutritionDocuments(Map<String, String> documents) async {
+    await transaction(() async {
+      for (final entry in documents.entries) {
+        await writeNutritionDocument(entry.key, entry.value);
+      }
+    });
+  }
+
+  Future<void> deleteNutritionDocument(String key) async {
+    await (delete(nutritionDocuments)
+          ..where((document) => document.key.equals(key)))
+        .go();
   }
 
   // ---------------------------------------------------------------------------
@@ -967,6 +1015,10 @@ class DatabaseService extends _$DatabaseService {
   // RECENT FOODS
   // ---------------------------------------------------------------------------
 
+  Future<List<RecentFoodRow>> getAllRecentFoods() async {
+    return select(recentFoods).get();
+  }
+
   Future<void> replaceRecentFoods(List<RecentFoodRow> foodsList) async {
     await delete(recentFoods).go();
     await batch((batch) {
@@ -998,6 +1050,12 @@ class DatabaseService extends _$DatabaseService {
   // USER STATS
   // ---------------------------------------------------------------------------
 
+  Future<UserStatsRow?> getUserStats() async {
+    return (select(userStatsTable)
+          ..where((stats) => stats.id.equals('default')))
+        .getSingleOrNull();
+  }
+
   Future<void> upsertUserStats(UserStatsRow stats) async {
     await into(userStatsTable).insertOnConflictUpdate(
       UserStatsTableCompanion(
@@ -1014,6 +1072,11 @@ class DatabaseService extends _$DatabaseService {
   // ---------------------------------------------------------------------------
   // PLANNED MEALS CHECKED
   // ---------------------------------------------------------------------------
+
+  Future<List<String>> getPlannedMealsChecked() async {
+    final rows = await select(plannedMealsChecked).get();
+    return rows.map((row) => row.key).toList();
+  }
 
   Future<void> replacePlannedMealsChecked(List<String> keys) async {
     await delete(plannedMealsChecked).go();

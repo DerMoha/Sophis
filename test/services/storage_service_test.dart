@@ -200,6 +200,7 @@ void main() {
 
       await storage.setMigrationComplete();
       await storage.setMigrationV2Complete();
+      await storage.setMigrationV3Complete();
       await storage.clearLegacyMigratedData();
       await storage.clearLegacyMigratedV2Data();
 
