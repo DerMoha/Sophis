@@ -18,6 +18,7 @@ import 'package:sophis/providers/supplements_provider.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/screens/home_screen.dart';
 import 'package:sophis/ui/screens/import_meal_screen.dart';
+import 'package:sophis/ui/screens/onboarding_screen.dart';
 
 /// Global navigator key for deep link navigation
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -230,7 +231,9 @@ class _SophisAppState extends State<SophisApp> {
             GlobalCupertinoLocalizations.delegate,
           ],
 
-          home: const HomeScreen(),
+          home: settings.onboardingCompleted
+              ? const HomeScreen()
+              : const OnboardingScreen(),
         );
       },
     );

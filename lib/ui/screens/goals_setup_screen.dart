@@ -174,7 +174,7 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
     );
     await provider.setGoals(goals);
 
-    if (mounted) Navigator.pop(context);
+    if (mounted) Navigator.pop(context, true);
   }
 
   @override
