@@ -214,5 +214,63 @@ Protein 8 g
       expect(result.fatPer100g, 10);
       expect(result.carbsPer100g, 60);
     });
+
+    test('uses layout to select the per-100g column', () {
+      const lines = [
+        NutritionOcrLine(
+          text: 'Nutrition per 100g per serving',
+          top: 0,
+          tokens: [
+            NutritionOcrToken(text: 'Nutrition', centerX: 20),
+            NutritionOcrToken(text: '100g', centerX: 200),
+            NutritionOcrToken(text: 'serving', centerX: 320),
+          ],
+        ),
+        NutritionOcrLine(
+          text: 'Energy 400kcal 200kcal',
+          top: 20,
+          tokens: [
+            NutritionOcrToken(text: 'Energy', centerX: 20),
+            NutritionOcrToken(text: '400kcal', centerX: 200),
+            NutritionOcrToken(text: '200kcal', centerX: 320),
+          ],
+        ),
+        NutritionOcrLine(
+          text: 'Fat 10g 5g',
+          top: 40,
+          tokens: [
+            NutritionOcrToken(text: 'Fat', centerX: 20),
+            NutritionOcrToken(text: '10g', centerX: 200),
+            NutritionOcrToken(text: '5g', centerX: 320),
+          ],
+        ),
+        NutritionOcrLine(
+          text: 'Carbohydrate 60g 30g',
+          top: 60,
+          tokens: [
+            NutritionOcrToken(text: 'Carbohydrate', centerX: 20),
+            NutritionOcrToken(text: '60g', centerX: 200),
+            NutritionOcrToken(text: '30g', centerX: 320),
+          ],
+        ),
+        NutritionOcrLine(
+          text: 'Protein 8g 4g',
+          top: 80,
+          tokens: [
+            NutritionOcrToken(text: 'Protein', centerX: 20),
+            NutritionOcrToken(text: '8g', centerX: 200),
+            NutritionOcrToken(text: '4g', centerX: 320),
+          ],
+        ),
+      ];
+
+      final result = NutritionLabelParser.parseLayout(lines);
+
+      expect(result, isNotNull);
+      expect(result!.caloriesPer100g, 400);
+      expect(result.fatPer100g, 10);
+      expect(result.carbsPer100g, 60);
+      expect(result.proteinPer100g, 8);
+    });
   });
 }

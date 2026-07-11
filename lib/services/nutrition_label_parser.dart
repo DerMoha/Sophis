@@ -1,5 +1,24 @@
 import 'package:sophis/services/gemini/models/nutrition_label_result.dart';
 
+class NutritionOcrToken {
+  final String text;
+  final double centerX;
+
+  const NutritionOcrToken({required this.text, required this.centerX});
+}
+
+class NutritionOcrLine {
+  final String text;
+  final double top;
+  final List<NutritionOcrToken> tokens;
+
+  const NutritionOcrLine({
+    required this.text,
+    required this.top,
+    required this.tokens,
+  });
+}
+
 class NutritionLabelParser {
   static final RegExp _kcalPattern = RegExp(
     r'(\d+[\.,]?\d*)\s*(?:kcal|Cal|Kal)',
@@ -146,6 +165,76 @@ class NutritionLabelParser {
       servingSizeG: servingSizeG,
       servingName: servingName,
     );
+  }
+
+  static NutritionLabelResult? parseLayout(List<NutritionOcrLine> lines) {
+    final anchor = _findPer100Anchor(lines);
+    if (anchor == null) {
+      return parse(lines.map((line) => line.text).join('\n'));
+    }
+
+    final reconstructed = lines.map((line) {
+      if (!_isNutrientRow(line.text)) return line.text;
+      final numericTokens = line.tokens
+          .where((token) => RegExp(r'\d').hasMatch(token.text))
+          .toList();
+      if (numericTokens.length < 2) return line.text;
+
+      final candidates = _kcalPattern.hasMatch(line.text)
+          ? numericTokens
+              .where((token) => token.text.toLowerCase().contains('kcal'))
+              .toList()
+          : numericTokens;
+      final selectable = candidates.isEmpty ? numericTokens : candidates;
+      selectable.sort(
+        (a, b) =>
+            (a.centerX - anchor).abs().compareTo((b.centerX - anchor).abs()),
+      );
+      final keyword = _rowKeyword(line.text);
+      return '$keyword ${selectable.first.text}';
+    }).join('\n');
+
+    return parse(reconstructed);
+  }
+
+  static double? _findPer100Anchor(List<NutritionOcrLine> lines) {
+    for (final line in lines) {
+      if (!_per100Pattern.hasMatch(line.text)) continue;
+      for (final token in line.tokens) {
+        if (RegExp(r'100\s*(?:g|ml)?', caseSensitive: false)
+            .hasMatch(token.text)) {
+          return token.centerX;
+        }
+      }
+    }
+    return null;
+  }
+
+  static bool _isNutrientRow(String text) =>
+      _proteinRegexp.hasMatch(text) ||
+      _carbsRegexp.hasMatch(text) ||
+      _fatRegexp.hasMatch(text) ||
+      _fiberRegexp.hasMatch(text) ||
+      _kcalPattern.hasMatch(text) ||
+      _calKeywordPattern.hasMatch(text) ||
+      _kjPattern.hasMatch(text);
+
+  static String _rowKeyword(String text) {
+    if (_kcalPattern.hasMatch(text) ||
+        _calKeywordPattern.hasMatch(text) ||
+        _kjPattern.hasMatch(text)) {
+      return 'Energy';
+    }
+    for (final pattern in [
+      _proteinRegexp,
+      _carbsRegexp,
+      _fatRegexp,
+      _fiberRegexp,
+    ]) {
+      final match = pattern.firstMatch(text);
+      if (match != null) return match.group(0)!;
+    }
+    return text;
   }
 
   static double? _extractKcal(String text) {

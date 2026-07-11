@@ -68,16 +68,17 @@ class LabelIntakeFlow {
   Future<ServiceResult<LabelIntakeResult>> processImage(
     LabelIntakeRequest request,
   ) async {
-    final ocrText = await _recognize(request.imageFile);
-    if (ocrText == null || ocrText.trim().isEmpty) {
+    final document = await _recognize(request.imageFile);
+    if (document == null || document.text.trim().isEmpty) {
       return const Failure(
         ServiceErrorType.parseError,
         'No text found in image',
       );
     }
 
-    return processOcrText(
-      ocrText: ocrText,
+    return _processParsedText(
+      ocrText: document.text,
+      localLabel: NutritionLabelParser.parseLayout(document.lines),
       idGenerator: request.idGenerator,
       fallbackProductName: request.fallbackProductName,
       fallbackBrand: request.fallbackBrand,
@@ -95,7 +96,24 @@ class LabelIntakeFlow {
     String? fallbackBrand,
     String? barcode,
   }) async {
-    final localLabel = NutritionLabelParser.parse(ocrText);
+    return _processParsedText(
+      ocrText: ocrText,
+      localLabel: NutritionLabelParser.parse(ocrText),
+      idGenerator: idGenerator,
+      fallbackProductName: fallbackProductName,
+      fallbackBrand: fallbackBrand,
+      barcode: barcode,
+    );
+  }
+
+  Future<ServiceResult<LabelIntakeResult>> _processParsedText({
+    required String ocrText,
+    required NutritionLabelResult? localLabel,
+    required String Function() idGenerator,
+    String? fallbackProductName,
+    String? fallbackBrand,
+    String? barcode,
+  }) async {
     final localValidation = localLabel == null
         ? null
         : NutritionLabelValidator.validate(localLabel);
@@ -177,12 +195,35 @@ class LabelIntakeFlow {
     );
   }
 
-  Future<String?> _recognize(File imageFile) async {
+  Future<_RecognizedNutritionDocument?> _recognize(File imageFile) async {
     try {
       final inputImage = InputImage.fromFile(imageFile);
       final recognizedText = await _recognizer.processImage(inputImage);
-      final text = recognizedText.text;
-      return text.isEmpty ? null : text;
+      if (recognizedText.text.isEmpty) return null;
+      final lines = <NutritionOcrLine>[];
+      for (final block in recognizedText.blocks) {
+        for (final line in block.lines) {
+          lines.add(
+            NutritionOcrLine(
+              text: line.text,
+              top: line.boundingBox.top,
+              tokens: line.elements
+                  .map(
+                    (element) => NutritionOcrToken(
+                      text: element.text,
+                      centerX: element.boundingBox.center.dx,
+                    ),
+                  )
+                  .toList(),
+            ),
+          );
+        }
+      }
+      lines.sort((a, b) => a.top.compareTo(b.top));
+      return _RecognizedNutritionDocument(
+        text: recognizedText.text,
+        lines: lines,
+      );
     } catch (e) {
       debugPrint('ML Kit OCR failed: $e');
       return null;
@@ -193,4 +234,11 @@ class LabelIntakeFlow {
     _recognizer.close();
     _gemini?.dispose();
   }
+}
+
+class _RecognizedNutritionDocument {
+  final String text;
+  final List<NutritionOcrLine> lines;
+
+  const _RecognizedNutritionDocument({required this.text, required this.lines});
 }
