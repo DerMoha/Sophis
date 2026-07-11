@@ -47,6 +47,7 @@ class SettingsProvider extends ChangeNotifier {
   ThemeMode get themeMode => _settings.themeMode;
   String? get localeOverride => _settings.localeOverride;
   AIMode get aiMode => _settings.aiMode;
+  bool get onboardingCompleted => _settings.onboardingCompleted;
 
   String? get geminiApiKey => _geminiApiKey;
   bool get hasGeminiApiKey =>
@@ -112,6 +113,12 @@ class SettingsProvider extends ChangeNotifier {
 
   Future<void> setAIMode(AIMode mode) async {
     await _persistSettings(settings: _settings.copyWith(aiMode: mode));
+  }
+
+  Future<void> completeOnboarding() async {
+    await _persistSettings(
+      settings: _settings.copyWith(onboardingCompleted: true),
+    );
   }
 
   Future<void> setGeminiApiKey(String? key) async {

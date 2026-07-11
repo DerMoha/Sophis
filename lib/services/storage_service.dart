@@ -151,7 +151,19 @@ class StorageService {
 
   AppSettings loadSettings() {
     final json = _prefs.getString(_settingsKey);
-    if (json == null) return const AppSettings();
+    if (json == null) {
+      final hasExistingUserData = [
+        _goalsKey,
+        _profileKey,
+        _entriesKey,
+        _waterEntriesKey,
+        _weightEntriesKey,
+        _recipesKey,
+        _plannedMealsKey,
+        _workoutEntriesKey,
+      ].any(_prefs.containsKey);
+      return AppSettings(onboardingCompleted: hasExistingUserData);
+    }
     return AppSettings.fromJson(jsonDecode(json));
   }
 

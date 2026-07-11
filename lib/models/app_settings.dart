@@ -99,6 +99,8 @@ class AppSettings {
   final QuickActionSize quickActionSize;
   // Require device authentication before showing progress photos
   final bool progressPhotoLockEnabled;
+  // Whether the first-run introduction has been completed or skipped
+  final bool onboardingCompleted;
 
   const AppSettings({
     this.aiMode = AIMode.offlineBasic,
@@ -124,6 +126,7 @@ class AppSettings {
     this.showSupplements = true,
     this.quickActionSize = QuickActionSize.small,
     this.progressPhotoLockEnabled = false,
+    this.onboardingCompleted = false,
   });
 
   Color get accentColor => Color(accentColorValue);
@@ -152,6 +155,7 @@ class AppSettings {
         'showSupplements': showSupplements,
         'quickActionSize': quickActionSize.index,
         'progressPhotoLockEnabled': progressPhotoLockEnabled,
+        'onboardingCompleted': onboardingCompleted,
       };
 
   factory AppSettings.fromJson(Map<String, dynamic> json) => AppSettings(
@@ -196,6 +200,9 @@ class AppSettings {
             : QuickActionSize.small,
         progressPhotoLockEnabled:
             json['progressPhotoLockEnabled'] as bool? ?? false,
+        // Settings written before onboarding existed belong to an existing
+        // installation and must not unexpectedly interrupt the user.
+        onboardingCompleted: json['onboardingCompleted'] as bool? ?? true,
       );
 
   AppSettings copyWith({
@@ -222,6 +229,7 @@ class AppSettings {
     bool? showSupplements,
     QuickActionSize? quickActionSize,
     bool? progressPhotoLockEnabled,
+    bool? onboardingCompleted,
     bool clearLocale = false,
     bool clearBreakfast = false,
     bool clearLunch = false,
@@ -260,5 +268,6 @@ class AppSettings {
         quickActionSize: quickActionSize ?? this.quickActionSize,
         progressPhotoLockEnabled:
             progressPhotoLockEnabled ?? this.progressPhotoLockEnabled,
+        onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
       );
 }

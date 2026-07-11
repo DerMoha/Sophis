@@ -18,6 +18,18 @@ import '../helpers/test_services.dart';
 
 void main() {
   group('StorageService', () {
+    test('distinguished fresh installs from existing user data', () async {
+      final freshStorage = await createTestStorage();
+      expect(freshStorage.loadSettings().onboardingCompleted, isFalse);
+
+      final existingStorage = await createTestStorage(
+        initialValues: const <String, Object>{
+          'nutrition_goals': '{}',
+        },
+      );
+      expect(existingStorage.loadSettings().onboardingCompleted, isTrue);
+    });
+
     test('persisted goals, profile, settings, and entry lists', () async {
       final storage = await createTestStorage();
       final timestamp = DateTime(2026, 1, 2, 8, 30);

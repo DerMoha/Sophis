@@ -22,5 +22,25 @@ void main() {
 
       expect(settings.progressPhotoLockEnabled, isFalse);
     });
+
+    test('showed onboarding for a fresh install', () {
+      const settings = AppSettings();
+
+      expect(settings.onboardingCompleted, isFalse);
+    });
+
+    test('preserved the experience for settings from an older install', () {
+      final settings = AppSettings.fromJson(const <String, dynamic>{});
+
+      expect(settings.onboardingCompleted, isTrue);
+    });
+
+    test('serialized onboarding completion', () {
+      const settings = AppSettings(onboardingCompleted: true);
+
+      final restored = AppSettings.fromJson(settings.toJson());
+
+      expect(restored.onboardingCompleted, isTrue);
+    });
   });
 }

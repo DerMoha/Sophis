@@ -28,6 +28,7 @@ void main() {
       await provider.setShowSupplements(false);
       await provider.setQuickActionSize(QuickActionSize.large);
       await provider.setProgressPhotoLockEnabled(true);
+      await provider.completeOnboarding();
 
       final settings = storage.loadSettings();
       expect(settings.themeMode, ThemeMode.dark);
@@ -40,6 +41,7 @@ void main() {
       expect(settings.showSupplements, isFalse);
       expect(settings.quickActionSize, QuickActionSize.large);
       expect(settings.progressPhotoLockEnabled, isTrue);
+      expect(settings.onboardingCompleted, isTrue);
       expect(await storage.loadApiKey(), 'gemini-key');
       expect(await storage.loadOffUserId(), 'off-user');
       expect(await storage.loadOffPassword(), 'off-password');
