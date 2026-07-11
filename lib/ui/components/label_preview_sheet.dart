@@ -54,6 +54,8 @@ class LabelPreviewSheet extends StatefulWidget {
 }
 
 class _LabelPreviewSheetState extends State<LabelPreviewSheet> {
+  late final TextEditingController _productName;
+  late final TextEditingController _brand;
   late final TextEditingController _calories;
   late final TextEditingController _protein;
   late final TextEditingController _carbs;
@@ -63,6 +65,8 @@ class _LabelPreviewSheetState extends State<LabelPreviewSheet> {
   @override
   void initState() {
     super.initState();
+    _productName = TextEditingController(text: widget.label.productName);
+    _brand = TextEditingController(text: widget.label.brand);
     _calories = _controller(widget.label.caloriesPer100g);
     _protein = _controller(widget.label.proteinPer100g);
     _carbs = _controller(widget.label.carbsPer100g);
@@ -83,6 +87,11 @@ class _LabelPreviewSheetState extends State<LabelPreviewSheet> {
     if (values.any((value) => value == null || value < 0)) return;
     widget.onLooksGood(
       widget.label.copyWith(
+        productName:
+            _productName.text.trim().isEmpty ? null : _productName.text.trim(),
+        brand: _brand.text.trim().isEmpty ? null : _brand.text.trim(),
+        clearProductName: _productName.text.trim().isEmpty,
+        clearBrand: _brand.text.trim().isEmpty,
         caloriesPer100g: values[0],
         proteinPer100g: values[1],
         carbsPer100g: values[2],
@@ -94,7 +103,15 @@ class _LabelPreviewSheetState extends State<LabelPreviewSheet> {
 
   @override
   void dispose() {
-    for (final controller in [_calories, _protein, _carbs, _fat, _fiber]) {
+    for (final controller in [
+      _productName,
+      _brand,
+      _calories,
+      _protein,
+      _carbs,
+      _fat,
+      _fiber,
+    ]) {
       controller.dispose();
     }
     super.dispose();
@@ -136,6 +153,8 @@ class _LabelPreviewSheetState extends State<LabelPreviewSheet> {
                   theme: theme,
                   l10n: l10n,
                   label: widget.label,
+                  productNameController: _productName,
+                  brandController: _brand,
                   controllers: [_calories, _protein, _carbs, _fat, _fiber],
                 ),
               ),
@@ -256,12 +275,16 @@ class _ValueList extends StatelessWidget {
   final ThemeData theme;
   final AppLocalizations l10n;
   final NutritionLabelResult label;
+  final TextEditingController productNameController;
+  final TextEditingController brandController;
   final List<TextEditingController> controllers;
 
   const _ValueList({
     required this.theme,
     required this.l10n,
     required this.label,
+    required this.productNameController,
+    required this.brandController,
     required this.controllers,
   });
 
@@ -270,28 +293,24 @@ class _ValueList extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (label.productName != null) ...[
-          Text(
-            label.productName!,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
+        TextField(
+          controller: productNameController,
+          textCapitalization: TextCapitalization.words,
+          decoration: InputDecoration(
+            labelText: l10n.foodName,
           ),
-          if (label.brand != null)
-            Text(
-              label.brand!,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.primary,
-              ),
-            ),
-          const SizedBox(height: 16),
-          Divider(
-            color: theme.colorScheme.outline.withValues(alpha: 0.2),
+        ),
+        const SizedBox(height: 10),
+        TextField(
+          controller: brandController,
+          textCapitalization: TextCapitalization.words,
+          decoration: const InputDecoration(
+            labelText: 'Brand',
           ),
-          const SizedBox(height: 12),
-        ],
+        ),
+        const SizedBox(height: 16),
+        Divider(color: theme.colorScheme.outline.withValues(alpha: 0.2)),
+        const SizedBox(height: 12),
         Center(
           child: Text(
             l10n.per100gLabel,

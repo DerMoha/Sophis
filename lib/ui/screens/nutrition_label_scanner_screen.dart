@@ -132,6 +132,8 @@ class _NutritionLabelScannerScreenState
       backgroundColor: Colors.transparent,
       builder: (_) => PortionPickerSheet(
         item: intake.product.copyWith(
+          name: confirmedLabel.productName,
+          brand: confirmedLabel.brand,
           caloriesPer100g: confirmedLabel.caloriesPer100g,
           proteinPer100g: confirmedLabel.proteinPer100g,
           carbsPer100g: confirmedLabel.carbsPer100g,

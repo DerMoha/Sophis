@@ -24,6 +24,8 @@ class NutritionLabelResult {
   NutritionLabelResult copyWith({
     String? productName,
     String? brand,
+    bool clearProductName = false,
+    bool clearBrand = false,
     double? caloriesPer100g,
     double? proteinPer100g,
     double? carbsPer100g,
@@ -33,8 +35,8 @@ class NutritionLabelResult {
     String? servingName,
   }) =>
       NutritionLabelResult(
-        productName: productName ?? this.productName,
-        brand: brand ?? this.brand,
+        productName: clearProductName ? null : productName ?? this.productName,
+        brand: clearBrand ? null : brand ?? this.brand,
         caloriesPer100g: caloriesPer100g ?? this.caloriesPer100g,
         proteinPer100g: proteinPer100g ?? this.proteinPer100g,
         carbsPer100g: carbsPer100g ?? this.carbsPer100g,

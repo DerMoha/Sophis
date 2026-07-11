@@ -179,7 +179,7 @@ void main() {
       await tester.tap(find.text('open'));
       await tester.pumpAndSettle();
 
-      final caloriesField = find.byType(TextField).first;
+      final caloriesField = find.byType(TextField).at(2);
       await tester.enterText(caloriesField, '123');
       final l10n = await AppLocalizations.delegate.load(const Locale('en'));
       await tester.ensureVisible(find.text(l10n.looksGood));
@@ -187,6 +187,22 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(result!.caloriesPer100g, 123);
+    });
+
+    testWidgets('returns corrected product identity',
+        (WidgetTester tester) async {
+      NutritionLabelResult? result;
+      await tester.pumpWidget(
+        _wrap(label: _fullLabel, onResult: (value) => result = value),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).first, 'Corrected Yogurt');
+      final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+      await tester.ensureVisible(find.text(l10n.looksGood));
+      await tester.tap(find.text(l10n.looksGood));
+      await tester.pumpAndSettle();
+      expect(result!.productName, 'Corrected Yogurt');
     });
   });
 }
