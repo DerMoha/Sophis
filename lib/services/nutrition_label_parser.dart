@@ -40,7 +40,11 @@ class NutritionLabelParser {
     r'\((\d+[\.,]?\d*)\s*(?:g|ml)\)',
   );
   static final RegExp _perServingKeywordPattern = RegExp(
-    r'(?:per|pro|je)\s*(?:Portion|Serving|portion|serving)',
+    r'(?:per|pro|je)\s*(?:Portion|Serving|portion|serving)|Amount\s+Per\s+Serving',
+    caseSensitive: false,
+  );
+  static final RegExp _per100Pattern = RegExp(
+    r'(?:per|pro|je|pour)\s*100\s*(?:g|ml)',
     caseSensitive: false,
   );
   static final RegExp _subLineRegexp = RegExp(
@@ -53,13 +57,14 @@ class NutritionLabelParser {
   );
 
   static NutritionLabelResult? parse(String ocrText) {
+    ocrText = _normalizeOcrText(ocrText);
     if (!_isNutritionLabelPattern.hasMatch(ocrText)) {
       return null;
     }
 
     final lines = ocrText.split('\n');
-    final isPerServing =
-        _perServingKeywordPattern.hasMatch(ocrText);
+    final isPerServing = _perServingKeywordPattern.hasMatch(ocrText) &&
+        !_per100Pattern.hasMatch(ocrText);
 
     String? productLine1;
     String? productLine2;
@@ -147,7 +152,7 @@ class NutritionLabelParser {
     final match = _kcalPattern.firstMatch(text);
     if (match != null) {
       final value = _parseNumber(match.group(1)!);
-      if (value <= 9000) return value;
+      if (value <= 950) return value;
     }
     final calMatch = _calKeywordPattern.firstMatch(text);
     if (calMatch != null) {
@@ -156,7 +161,7 @@ class NutritionLabelParser {
         return null;
       }
       final value = _parseNumber(calMatch.group(1)!);
-      if (value <= 9000) return value;
+      if (value <= 950) return value;
     }
     return null;
   }
@@ -170,7 +175,7 @@ class NutritionLabelParser {
       final match = _numberPattern.firstMatch(line);
       if (match == null) continue;
       final value = _parseNumber(match.group(1)!);
-      if (value > 9000) continue;
+      if (value > 100) continue;
       return value;
     }
     return null;
@@ -200,8 +205,10 @@ class NutritionLabelParser {
       final line = rawLine.trim();
       final match = _servingSizeLinePattern.firstMatch(line);
       if (match != null) {
-        final cleaned =
-            match.group(0)!.replaceAll(RegExp(r'\d+[\.,]?\d*\s*(?:g|ml)'), '').trim();
+        final cleaned = match
+            .group(0)!
+            .replaceAll(RegExp(r'\d+[\.,]?\d*\s*(?:g|ml)'), '')
+            .trim();
         return cleaned.isNotEmpty ? cleaned : null;
       }
     }
@@ -211,5 +218,25 @@ class NutritionLabelParser {
   static double _parseNumber(String raw) {
     final normalized = raw.replaceAll(',', '.');
     return double.tryParse(normalized) ?? 0;
+  }
+
+  static String _normalizeOcrText(String text) {
+    final characters = text.split('');
+    for (var index = 0; index < characters.length; index++) {
+      final character = characters[index];
+      if (character != 'O' &&
+          character != 'o' &&
+          character != 'I' &&
+          character != 'l') {
+        continue;
+      }
+      final previous = index > 0 ? characters[index - 1] : '';
+      final next = index + 1 < characters.length ? characters[index + 1] : '';
+      final nextLooksNumeric = RegExp(r'[\d\.,]').hasMatch(next);
+      final previousLooksNumeric = RegExp(r'[\d\.,]').hasMatch(previous);
+      if (!previousLooksNumeric && !nextLooksNumeric) continue;
+      characters[index] = character == 'O' || character == 'o' ? '0' : '1';
+    }
+    return characters.join();
   }
 }

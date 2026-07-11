@@ -25,7 +25,8 @@ Eiweiß 10 g
       expect(result.fiberPer100g, 5);
     });
 
-    test('parses an English nutrition label and scales per-serving to per-100g', () {
+    test('parses an English nutrition label and scales per-serving to per-100g',
+        () {
       const text = '''
 Nutrition Facts
 Serving Size 1 cup (240g)
@@ -178,6 +179,40 @@ Ballaststoffe 10 g
 
       expect(result, isNotNull);
       expect(result!.productName, contains('Kölln'));
+    });
+
+    test('does not scale per-100g values when a portion is also listed', () {
+      const text = '''
+Nährwerte pro 100 g
+Portion (25 g)
+Energie 400 kcal
+Fett 10 g
+Kohlenhydrate 60 g
+Eiweiß 8 g
+''';
+
+      final result = NutritionLabelParser.parse(text);
+
+      expect(result, isNotNull);
+      expect(result!.caloriesPer100g, 400);
+      expect(result.fatPer100g, 10);
+    });
+
+    test('normalizes common OCR substitutions inside numbers', () {
+      const text = '''
+Nutrition per 100g
+Energy 4O0 kcal
+Fat 1O g
+Carbohydrate 6O g
+Protein 8 g
+''';
+
+      final result = NutritionLabelParser.parse(text);
+
+      expect(result, isNotNull);
+      expect(result!.caloriesPer100g, 400);
+      expect(result.fatPer100g, 10);
+      expect(result.carbsPer100g, 60);
     });
   });
 }

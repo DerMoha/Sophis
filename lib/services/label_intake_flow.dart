@@ -8,6 +8,7 @@ import 'package:sophis/models/serving_size.dart';
 import 'package:sophis/services/gemini/models/nutrition_label_result.dart';
 import 'package:sophis/services/gemini_food_service.dart';
 import 'package:sophis/services/nutrition_label_parser.dart';
+import 'package:sophis/services/nutrition_label_validator.dart';
 import 'package:sophis/services/service_result.dart';
 
 /// Inputs for a single label-intake scan. The flow owns the OCR + parsing +
@@ -94,8 +95,19 @@ class LabelIntakeFlow {
     String? fallbackBrand,
     String? barcode,
   }) async {
-    var label = NutritionLabelParser.parse(ocrText);
-    label ??= await _tryGemini(ocrText, label);
+    final localLabel = NutritionLabelParser.parse(ocrText);
+    final localValidation = localLabel == null
+        ? null
+        : NutritionLabelValidator.validate(localLabel);
+    var label = localLabel;
+
+    if (localValidation == null || !localValidation.isHighConfidence) {
+      final geminiLabel = await _tryGemini(ocrText);
+      if (geminiLabel != null &&
+          NutritionLabelValidator.validate(geminiLabel).isUsable) {
+        label = geminiLabel;
+      }
+    }
 
     if (label == null) {
       return const Failure(
@@ -104,7 +116,7 @@ class LabelIntakeFlow {
       );
     }
 
-    if (label.caloriesPer100g == 0) {
+    if (!NutritionLabelValidator.validate(label).isUsable) {
       return const Failure(
         ServiceErrorType.parseError,
         'Could not read nutrition values from the label',
@@ -124,11 +136,10 @@ class LabelIntakeFlow {
 
   Future<NutritionLabelResult?> _tryGemini(
     String ocrText,
-    NutritionLabelResult? localResult,
   ) async {
     final gemini = _gemini;
-    if (localResult != null || gemini == null || !gemini.hasApiKey) {
-      return localResult;
+    if (gemini == null || !gemini.hasApiKey) {
+      return null;
     }
     final result = await gemini.parseNutritionText(ocrText);
     return switch (result) {

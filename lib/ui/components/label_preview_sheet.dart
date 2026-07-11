@@ -5,35 +5,32 @@ import 'package:sophis/services/gemini/models/nutrition_label_result.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 
 /// Shows a modal bottom sheet that previews the values parsed from a nutrition
-/// label photo. Returns `true` if the user confirms ("Looks good") and `false`
-/// (or null) if they want to rescan. The caller retains ownership of the
-/// constructed FoodItem — the sheet is presentational only.
-Future<bool> showLabelPreviewSheet({
+/// label photo. Returns the confirmed, possibly corrected label, or `null`
+/// when the user requests another scan.
+Future<NutritionLabelResult?> showLabelPreviewSheet({
   required BuildContext context,
   required NutritionLabelResult label,
 }) async {
   final l10n = AppLocalizations.of(context)!;
   final theme = Theme.of(context);
 
-  final result = await showModalBottomSheet<bool>(
+  return showModalBottomSheet<NutritionLabelResult>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     builder: (bottomSheetContext) => LabelPreviewSheet(
       label: label,
-      onLooksGood: () => Navigator.pop(bottomSheetContext, true),
-      onRescan: () => Navigator.pop(bottomSheetContext, false),
+      onLooksGood: (confirmed) => Navigator.pop(bottomSheetContext, confirmed),
+      onRescan: () => Navigator.pop(bottomSheetContext),
       l10n: l10n,
       theme: theme,
     ),
   );
-
-  return result == true;
 }
 
-class LabelPreviewSheet extends StatelessWidget {
+class LabelPreviewSheet extends StatefulWidget {
   final NutritionLabelResult label;
-  final VoidCallback onLooksGood;
+  final ValueChanged<NutritionLabelResult> onLooksGood;
   final VoidCallback onRescan;
   final AppLocalizations l10n;
   final ThemeData theme;
@@ -48,37 +45,103 @@ class LabelPreviewSheet extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+  State<LabelPreviewSheet> createState() => _LabelPreviewSheetState();
+}
+
+class _LabelPreviewSheetState extends State<LabelPreviewSheet> {
+  late final TextEditingController _calories;
+  late final TextEditingController _protein;
+  late final TextEditingController _carbs;
+  late final TextEditingController _fat;
+  late final TextEditingController _fiber;
+
+  @override
+  void initState() {
+    super.initState();
+    _calories = _controller(widget.label.caloriesPer100g);
+    _protein = _controller(widget.label.proteinPer100g);
+    _carbs = _controller(widget.label.carbsPer100g);
+    _fat = _controller(widget.label.fatPer100g);
+    _fiber = _controller(widget.label.fiberPer100g);
+  }
+
+  TextEditingController _controller(double value) => TextEditingController(
+        text: value.toStringAsFixed(value % 1 == 0 ? 0 : 1),
+      );
+
+  double? _value(TextEditingController controller) =>
+      double.tryParse(controller.text.trim().replaceAll(',', '.'));
+
+  void _confirm() {
+    final values =
+        [_calories, _protein, _carbs, _fat, _fiber].map(_value).toList();
+    if (values.any((value) => value == null || value < 0)) return;
+    widget.onLooksGood(
+      widget.label.copyWith(
+        caloriesPer100g: values[0],
+        proteinPer100g: values[1],
+        carbsPer100g: values[2],
+        fatPer100g: values[3],
+        fiberPer100g: values[4],
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _DragHandle(theme: theme),
-          _Header(theme: theme, l10n: l10n),
-          const SizedBox(height: 20),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest
-                    .withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-                border: Border.all(
-                  color: theme.colorScheme.outline.withValues(alpha: 0.15),
+    );
+  }
+
+  @override
+  void dispose() {
+    for (final controller in [_calories, _protein, _carbs, _fat, _fiber]) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = widget.theme;
+    final l10n = widget.l10n;
+    return SingleChildScrollView(
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: Container(
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _DragHandle(theme: theme),
+            _Header(theme: theme, l10n: l10n),
+            const SizedBox(height: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest
+                      .withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+                  border: Border.all(
+                    color: theme.colorScheme.outline.withValues(alpha: 0.15),
+                  ),
+                ),
+                child: _ValueList(
+                  theme: theme,
+                  l10n: l10n,
+                  label: widget.label,
+                  controllers: [_calories, _protein, _carbs, _fat, _fiber],
                 ),
               ),
-              child: _ValueList(theme: theme, l10n: l10n, label: label),
             ),
-          ),
-          const SizedBox(height: 20),
-          _Actions(theme: theme, l10n: l10n, onLooksGood: onLooksGood, onRescan: onRescan),
-          SizedBox(height: MediaQuery.of(context).padding.bottom + 24),
-        ],
+            const SizedBox(height: 20),
+            _Actions(
+              theme: theme,
+              l10n: l10n,
+              onLooksGood: _confirm,
+              onRescan: widget.onRescan,
+            ),
+            SizedBox(height: MediaQuery.of(context).padding.bottom + 24),
+          ],
+        ),
       ),
     );
   }
@@ -151,11 +214,13 @@ class _ValueList extends StatelessWidget {
   final ThemeData theme;
   final AppLocalizations l10n;
   final NutritionLabelResult label;
+  final List<TextEditingController> controllers;
 
   const _ValueList({
     required this.theme,
     required this.l10n,
     required this.label,
+    required this.controllers,
   });
 
   @override
@@ -197,7 +262,7 @@ class _ValueList extends StatelessWidget {
         const SizedBox(height: 16),
         _LabelRow(
           label: l10n.calories,
-          value: label.caloriesPer100g.toStringAsFixed(0),
+          controller: controllers[0],
           unit: 'kcal',
           color: theme.colorScheme.primary,
           theme: theme,
@@ -205,7 +270,7 @@ class _ValueList extends StatelessWidget {
         const SizedBox(height: 10),
         _LabelRow(
           label: l10n.protein,
-          value: label.proteinPer100g.toStringAsFixed(1),
+          controller: controllers[1],
           unit: 'g',
           color: AppTheme.protein,
           theme: theme,
@@ -213,7 +278,7 @@ class _ValueList extends StatelessWidget {
         const SizedBox(height: 10),
         _LabelRow(
           label: l10n.carbs,
-          value: label.carbsPer100g.toStringAsFixed(1),
+          controller: controllers[2],
           unit: 'g',
           color: AppTheme.carbs,
           theme: theme,
@@ -221,21 +286,19 @@ class _ValueList extends StatelessWidget {
         const SizedBox(height: 10),
         _LabelRow(
           label: l10n.fat,
-          value: label.fatPer100g.toStringAsFixed(1),
+          controller: controllers[3],
           unit: 'g',
           color: AppTheme.fat,
           theme: theme,
         ),
-        if (label.fiberPer100g > 0) ...[
-          const SizedBox(height: 10),
-          _LabelRow(
-            label: l10n.fiber,
-            value: label.fiberPer100g.toStringAsFixed(1),
-            unit: 'g',
-            color: AppTheme.fiber,
-            theme: theme,
-          ),
-        ],
+        const SizedBox(height: 10),
+        _LabelRow(
+          label: l10n.fiber,
+          controller: controllers[4],
+          unit: 'g',
+          color: AppTheme.fiber,
+          theme: theme,
+        ),
         if (label.servingSizeG != null && label.servingSizeG! > 0) ...[
           const SizedBox(height: 16),
           Divider(
@@ -306,14 +369,14 @@ class _Actions extends StatelessWidget {
 
 class _LabelRow extends StatelessWidget {
   final String label;
-  final String value;
+  final TextEditingController controller;
   final String unit;
   final Color color;
   final ThemeData theme;
 
   const _LabelRow({
     required this.label,
-    required this.value,
+    required this.controller,
     required this.unit,
     required this.color,
     required this.theme,
@@ -340,10 +403,19 @@ class _LabelRow extends StatelessWidget {
             ),
           ),
         ),
-        Text(
-          value,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.w700,
+        SizedBox(
+          width: 64,
+          child: TextField(
+            controller: controller,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            textAlign: TextAlign.end,
+            decoration: const InputDecoration(
+              isDense: true,
+              contentPadding: EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+            ),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
         const SizedBox(width: 2),

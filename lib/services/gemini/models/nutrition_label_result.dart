@@ -20,4 +20,27 @@ class NutritionLabelResult {
     this.servingSizeG,
     this.servingName,
   });
+
+  NutritionLabelResult copyWith({
+    String? productName,
+    String? brand,
+    double? caloriesPer100g,
+    double? proteinPer100g,
+    double? carbsPer100g,
+    double? fatPer100g,
+    double? fiberPer100g,
+    double? servingSizeG,
+    String? servingName,
+  }) =>
+      NutritionLabelResult(
+        productName: productName ?? this.productName,
+        brand: brand ?? this.brand,
+        caloriesPer100g: caloriesPer100g ?? this.caloriesPer100g,
+        proteinPer100g: proteinPer100g ?? this.proteinPer100g,
+        carbsPer100g: carbsPer100g ?? this.carbsPer100g,
+        fatPer100g: fatPer100g ?? this.fatPer100g,
+        fiberPer100g: fiberPer100g ?? this.fiberPer100g,
+        servingSizeG: servingSizeG ?? this.servingSizeG,
+        servingName: servingName ?? this.servingName,
+      );
 }

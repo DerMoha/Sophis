@@ -54,9 +54,9 @@ class _NutritionLabelScannerScreenState
     try {
       final picked = await _picker.pickImage(
         source: source,
-        maxWidth: 1024,
-        maxHeight: 1024,
-        imageQuality: 85,
+        maxWidth: 2048,
+        maxHeight: 2048,
+        imageQuality: 95,
       );
 
       if (picked == null) return;
@@ -102,14 +102,14 @@ class _NutritionLabelScannerScreenState
   }
 
   Future<void> _onSuccess(LabelIntakeResult intake) async {
-    final confirmed = await showLabelPreviewSheet(
+    final confirmedLabel = await showLabelPreviewSheet(
       context: context,
       label: intake.label,
     );
 
     if (!mounted) return;
 
-    if (!confirmed) {
+    if (confirmedLabel == null) {
       setState(() {
         _isAnalyzing = false;
       });
@@ -123,7 +123,13 @@ class _NutritionLabelScannerScreenState
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => PortionPickerSheet(
-        item: intake.product,
+        item: intake.product.copyWith(
+          caloriesPer100g: confirmedLabel.caloriesPer100g,
+          proteinPer100g: confirmedLabel.proteinPer100g,
+          carbsPer100g: confirmedLabel.carbsPer100g,
+          fatPer100g: confirmedLabel.fatPer100g,
+          fiberPer100g: confirmedLabel.fiberPer100g,
+        ),
         meal: widget.meal,
       ),
     );

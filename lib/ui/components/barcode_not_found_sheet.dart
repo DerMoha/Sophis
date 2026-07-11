@@ -71,8 +71,7 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
       LabelIntakeRequest(
         imageFile: File(image.path),
         idGenerator: () => widget.barcode,
-        fallbackProductName:
-            widget.partialName ?? l10n.productNotFoundTitle,
+        fallbackProductName: widget.partialName ?? l10n.productNotFoundTitle,
         fallbackBrand: widget.partialBrand,
         barcode: widget.barcode,
       ),
@@ -105,23 +104,31 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
   }
 
   Future<void> _onSuccess(LabelIntakeResult intake) async {
-    final confirmed = await showLabelPreviewSheet(
+    final confirmedLabel = await showLabelPreviewSheet(
       context: context,
       label: intake.label,
     );
 
     if (!mounted) return;
-    if (!confirmed) return;
+    if (confirmedLabel == null) return;
+
+    final confirmedProduct = intake.product.copyWith(
+      caloriesPer100g: confirmedLabel.caloriesPer100g,
+      proteinPer100g: confirmedLabel.proteinPer100g,
+      carbsPer100g: confirmedLabel.carbsPer100g,
+      fatPer100g: confirmedLabel.fatPer100g,
+      fiberPer100g: confirmedLabel.fiberPer100g,
+    );
 
     await widget.lookupService.cacheResult(
       widget.barcode,
-      intake.product,
+      confirmedProduct,
       LookupSource.gemini,
     );
 
     if (!mounted) return;
     Navigator.pop(context);
-    widget.onProductResolved(intake.product);
+    widget.onProductResolved(confirmedProduct);
   }
 
   void _enterManually() {

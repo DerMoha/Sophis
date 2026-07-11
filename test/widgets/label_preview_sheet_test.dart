@@ -12,7 +12,7 @@ class _SheetOpener extends StatefulWidget {
   });
 
   final NutritionLabelResult label;
-  final ValueChanged<bool> onResult;
+  final ValueChanged<NutritionLabelResult?> onResult;
 
   @override
   State<_SheetOpener> createState() => _SheetOpenerState();
@@ -40,7 +40,10 @@ class _SheetOpenerState extends State<_SheetOpener> {
   }
 }
 
-Widget _wrap({required NutritionLabelResult label, ValueChanged<bool>? onResult}) {
+Widget _wrap({
+  required NutritionLabelResult label,
+  ValueChanged<NutritionLabelResult?>? onResult,
+}) {
   return MaterialApp(
     localizationsDelegates: AppLocalizations.localizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
@@ -64,7 +67,8 @@ const _fullLabel = NutritionLabelResult(
 
 void main() {
   group('showLabelPreviewSheet', () {
-    testWidgets('shows the product name and brand', (WidgetTester tester) async {
+    testWidgets('shows the product name and brand',
+        (WidgetTester tester) async {
       await tester.pumpWidget(_wrap(label: _fullLabel));
       await tester.tap(find.text('open'));
       await tester.pumpAndSettle();
@@ -86,14 +90,14 @@ void main() {
       expect(find.text(l10n.fat), findsOneWidget);
     });
 
-    testWidgets('hides fiber row when fiberPer100g == 0',
+    testWidgets('keeps fiber editable when fiberPer100g == 0',
         (WidgetTester tester) async {
       await tester.pumpWidget(_wrap(label: _fullLabel));
       await tester.tap(find.text('open'));
       await tester.pumpAndSettle();
 
       final l10n = await AppLocalizations.delegate.load(const Locale('en'));
-      expect(find.text(l10n.fiber), findsNothing);
+      expect(find.text(l10n.fiber), findsOneWidget);
     });
 
     testWidgets('shows fiber row when fiberPer100g > 0',
@@ -123,37 +127,66 @@ void main() {
     });
 
     testWidgets('"Looks good" returns true', (WidgetTester tester) async {
-      bool? result;
+      NutritionLabelResult? result;
 
-      await tester.pumpWidget(_wrap(
-        label: _fullLabel,
-        onResult: (r) => result = r,
-      ),);
+      await tester.pumpWidget(
+        _wrap(
+          label: _fullLabel,
+          onResult: (r) => result = r,
+        ),
+      );
       await tester.tap(find.text('open'));
       await tester.pumpAndSettle();
 
       final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+      await tester.ensureVisible(find.text(l10n.looksGood));
       await tester.tap(find.text(l10n.looksGood));
       await tester.pumpAndSettle();
 
-      expect(result, isTrue);
+      expect(result, isNotNull);
+      expect(result!.caloriesPer100g, 97);
     });
 
     testWidgets('"Rescan" returns false', (WidgetTester tester) async {
-      bool? result;
+      NutritionLabelResult? result = _fullLabel;
 
-      await tester.pumpWidget(_wrap(
-        label: _fullLabel,
-        onResult: (r) => result = r,
-      ),);
+      await tester.pumpWidget(
+        _wrap(
+          label: _fullLabel,
+          onResult: (r) => result = r,
+        ),
+      );
       await tester.tap(find.text('open'));
       await tester.pumpAndSettle();
 
       final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+      await tester.ensureVisible(find.text(l10n.rescanLabel));
       await tester.tap(find.text(l10n.rescanLabel));
       await tester.pumpAndSettle();
 
-      expect(result, isFalse);
+      expect(result, isNull);
+    });
+
+    testWidgets('returns corrected nutrition values',
+        (WidgetTester tester) async {
+      NutritionLabelResult? result;
+      await tester.pumpWidget(
+        _wrap(
+          label: _fullLabel,
+          onResult: (value) => result = value,
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+
+      final caloriesField = find.byType(TextField).first;
+      await tester.enterText(caloriesField, '123');
+      final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+      await tester.ensureVisible(find.text(l10n.looksGood));
+      await tester.tap(find.text(l10n.looksGood));
+      await tester.pumpAndSettle();
+
+      expect(result!.caloriesPer100g, 123);
     });
   });
 }
