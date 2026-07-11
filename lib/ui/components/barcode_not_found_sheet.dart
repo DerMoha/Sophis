@@ -107,6 +107,7 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
     final confirmedLabel = await showLabelPreviewSheet(
       context: context,
       label: intake.label,
+      validation: intake.validation,
     );
 
     if (!mounted) return;

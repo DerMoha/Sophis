@@ -105,6 +105,7 @@ class _NutritionLabelScannerScreenState
     final confirmedLabel = await showLabelPreviewSheet(
       context: context,
       label: intake.label,
+      validation: intake.validation,
     );
 
     if (!mounted) return;

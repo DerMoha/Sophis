@@ -38,8 +38,13 @@ class LabelIntakeRequest {
 class LabelIntakeResult {
   final NutritionLabelResult label;
   final FoodItem product;
+  final NutritionLabelValidation validation;
 
-  const LabelIntakeResult({required this.label, required this.product});
+  const LabelIntakeResult({
+    required this.label,
+    required this.product,
+    required this.validation,
+  });
 }
 
 /// Deep service that owns the label-intake pipeline:
@@ -151,7 +156,8 @@ class LabelIntakeFlow {
       );
     }
 
-    if (!NutritionLabelValidator.validate(label).isUsable) {
+    final validation = NutritionLabelValidator.validate(label);
+    if (!validation.isUsable) {
       return const Failure(
         ServiceErrorType.parseError,
         'Could not read nutrition values from the label',
@@ -166,7 +172,13 @@ class LabelIntakeFlow {
       barcode: barcode,
     );
 
-    return Success(LabelIntakeResult(label: label, product: product));
+    return Success(
+      LabelIntakeResult(
+        label: label,
+        product: product,
+        validation: validation,
+      ),
+    );
   }
 
   Future<NutritionLabelResult?> _tryGemini(

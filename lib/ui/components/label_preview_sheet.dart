@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/services/gemini/models/nutrition_label_result.dart';
+import 'package:sophis/services/nutrition_label_validator.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 
 /// Shows a modal bottom sheet that previews the values parsed from a nutrition
@@ -10,6 +11,7 @@ import 'package:sophis/ui/theme/app_theme.dart';
 Future<NutritionLabelResult?> showLabelPreviewSheet({
   required BuildContext context,
   required NutritionLabelResult label,
+  NutritionLabelValidation? validation,
 }) async {
   final l10n = AppLocalizations.of(context)!;
   final theme = Theme.of(context);
@@ -20,6 +22,7 @@ Future<NutritionLabelResult?> showLabelPreviewSheet({
     backgroundColor: Colors.transparent,
     builder: (bottomSheetContext) => LabelPreviewSheet(
       label: label,
+      validation: validation,
       onLooksGood: (confirmed) => Navigator.pop(bottomSheetContext, confirmed),
       onRescan: () => Navigator.pop(bottomSheetContext),
       l10n: l10n,
@@ -30,6 +33,7 @@ Future<NutritionLabelResult?> showLabelPreviewSheet({
 
 class LabelPreviewSheet extends StatefulWidget {
   final NutritionLabelResult label;
+  final NutritionLabelValidation? validation;
   final ValueChanged<NutritionLabelResult> onLooksGood;
   final VoidCallback onRescan;
   final AppLocalizations l10n;
@@ -38,6 +42,7 @@ class LabelPreviewSheet extends StatefulWidget {
   const LabelPreviewSheet({
     super.key,
     required this.label,
+    this.validation,
     required this.onLooksGood,
     required this.onRescan,
     required this.l10n,
@@ -111,6 +116,9 @@ class _LabelPreviewSheetState extends State<LabelPreviewSheet> {
           children: [
             _DragHandle(theme: theme),
             _Header(theme: theme, l10n: l10n),
+            if (widget.validation case final validation?
+                when !validation.isHighConfidence)
+              _ConfidenceWarning(theme: theme, issues: validation.issues),
             const SizedBox(height: 20),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -142,6 +150,40 @@ class _LabelPreviewSheetState extends State<LabelPreviewSheet> {
             SizedBox(height: MediaQuery.of(context).padding.bottom + 24),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ConfidenceWarning extends StatelessWidget {
+  final ThemeData theme;
+  final List<String> issues;
+
+  const _ConfidenceWarning({required this.theme, required this.issues});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.tertiaryContainer,
+        borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.warning_amber_rounded, color: theme.colorScheme.tertiary),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              issues.isEmpty
+                  ? 'Some values may be uncertain. Please check each field.'
+                  : issues.join('\n'),
+              style: theme.textTheme.bodySmall,
+            ),
+          ),
+        ],
       ),
     );
   }
