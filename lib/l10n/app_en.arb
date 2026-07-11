@@ -623,6 +623,7 @@
   "unlockProgressPhotos": "Unlock Photos",
   "nutritionLabelScannerTitle": "Scan Nutrition Label",
   "nutritionLabelScannerDescription": "Take a photo of a nutrition label (Nährwerttabelle) to extract calories, protein, carbs, fat, and fiber values.",
+  "nutritionLabelCaptureGuide": "Fill the frame • avoid glare • hold steady",
   "nutritionLabelAnalyzing": "Analyzing nutrition label…",
   "nutritionLabelNotParsed": "Could not read nutrition values from the label. Try taking a clearer photo.",
   "scannedProductName": "Scanned Product",

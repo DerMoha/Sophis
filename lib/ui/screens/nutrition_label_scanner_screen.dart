@@ -207,6 +207,11 @@ class _NutritionLabelScannerScreenState
                           ),
                           textAlign: TextAlign.center,
                         ),
+                        const SizedBox(height: 20),
+                        _CaptureGuide(
+                          theme: theme,
+                          caption: l10n.nutritionLabelCaptureGuide,
+                        ),
                         if (_error != null) ...[
                           const SizedBox(height: 16),
                           Container(
@@ -282,6 +287,59 @@ class _NutritionLabelScannerScreenState
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _CaptureGuide extends StatelessWidget {
+  final ThemeData theme;
+  final String caption;
+
+  const _CaptureGuide({required this.theme, required this.caption});
+
+  @override
+  Widget build(BuildContext context) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 320),
+      child: Column(
+        children: [
+          AspectRatio(
+            aspectRatio: 1.7,
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.6),
+                  width: 2,
+                ),
+                borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: List.generate(
+                  6,
+                  (index) => Expanded(
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(vertical: 3),
+                      color: theme.colorScheme.onSurface.withValues(
+                        alpha: index == 0 ? 0.35 : 0.14,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            caption,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }

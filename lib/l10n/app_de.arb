@@ -497,6 +497,7 @@
   "unlockProgressPhotos": "Fotos entsperren",
   "nutritionLabelScannerTitle": "Nährwerttabelle scannen",
   "nutritionLabelScannerDescription": "Fotografiere eine Nährwerttabelle, um Kalorien, Eiweiß, Kohlenhydrate, Fett und Ballaststoffe zu erfassen.",
+  "nutritionLabelCaptureGuide": "Rahmen ausfüllen • Spiegelungen vermeiden • ruhig halten",
   "nutritionLabelAnalyzing": "Nährwerttabelle wird analysiert …",
   "nutritionLabelNotParsed": "Nährwerte konnten nicht gelesen werden. Bitte versuche ein klareres Foto.",
   "scannedProductName": "Gescanntes Produkt",
