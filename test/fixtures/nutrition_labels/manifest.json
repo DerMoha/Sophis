@@ -1,0 +1,24 @@
+[
+  {
+    "id": "de_two_column_cracker",
+    "ocr_text": "Nährwerte pro 100 g\nEnergie 1840 kJ 440 kcal\nFett 14 g\nKohlenhydrate 64 g\nEiweiß 9 g\nBallaststoffe 5 g",
+    "expected": {
+      "calories": 440,
+      "protein": 9,
+      "carbs": 64,
+      "fat": 14,
+      "fiber": 5
+    }
+  },
+  {
+    "id": "nl_decimal_comma_yogurt",
+    "ocr_text": "Voedingswaarde per 100 g\nEnergie 98 kcal\nVetten 3,5 g\nKoolhydraten 11,2 g\nEiwitten 5,1 g\nVezels 0,4 g",
+    "expected": {
+      "calories": 98,
+      "protein": 5.1,
+      "carbs": 11.2,
+      "fat": 3.5,
+      "fiber": 0.4
+    }
+  }
+]
