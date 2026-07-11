@@ -39,7 +39,7 @@ class PluginLocalNotifier implements LocalNotifier {
       iOS: iosSettings,
     );
 
-    await _plugin.initialize(settings);
+    await _plugin.initialize(settings: settings);
     _initialized = true;
   }
 
@@ -62,11 +62,11 @@ class PluginLocalNotifier implements LocalNotifier {
     required tz.TZDateTime when,
   }) async {
     await _plugin.zonedSchedule(
-      id,
-      title,
-      body,
-      when,
-      const NotificationDetails(
+      id: id,
+      title: title,
+      body: body,
+      scheduledDate: when,
+      notificationDetails: const NotificationDetails(
         android: AndroidNotificationDetails(
           _mealChannelId,
           _mealChannelName,
@@ -88,7 +88,7 @@ class PluginLocalNotifier implements LocalNotifier {
 
   @override
   Future<void> cancel(int id) async {
-    await _plugin.cancel(id);
+    await _plugin.cancel(id: id);
   }
 
   @override

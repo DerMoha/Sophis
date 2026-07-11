@@ -41,7 +41,9 @@ class _ProgressPhotoCompareState extends State<ProgressPhotoCompare> {
       XFile(_before!.imagePath),
       XFile(_after!.imagePath),
     ];
-    await Share.shareXFiles(files, text: 'Progress Comparison');
+    await SharePlus.instance.share(
+      ShareParams(files: files, text: 'Progress Comparison'),
+    );
   }
 
   Future<void> _selectPhoto(bool isBefore) async {

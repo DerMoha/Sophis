@@ -18,9 +18,7 @@ class ProgressPhotoLockService {
 
       final didAuthenticate = await _auth.authenticate(
         localizedReason: localizedReason,
-        options: const AuthenticationOptions(
-          stickyAuth: true,
-        ),
+        persistAcrossBackgrounding: true,
       );
 
       return didAuthenticate

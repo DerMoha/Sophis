@@ -46,7 +46,9 @@ class _ProgressPhotoViewerState extends State<ProgressPhotoViewer> {
     final photo = widget.photos[_currentIndex];
     final file = File(photo.imagePath);
     if (file.existsSync()) {
-      await Share.shareXFiles([XFile(file.path)]);
+      await SharePlus.instance.share(
+        ShareParams(files: [XFile(file.path)]),
+      );
     }
   }
 

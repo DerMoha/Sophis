@@ -42,9 +42,11 @@ class DataExportService {
           .first;
       final file = File('${tempDir.path}/sophis_backup_$timestamp.zip');
       await file.writeAsBytes(bytes, flush: true);
-      await Share.shareXFiles(
-        [XFile(file.path, mimeType: 'application/zip')],
-        subject: 'Sophis Data Backup',
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path, mimeType: 'application/zip')],
+          subject: 'Sophis Data Backup',
+        ),
       );
       return const Success(null);
     } catch (e) {
@@ -57,7 +59,7 @@ class DataExportService {
     NutritionProvider nutrition,
   ) async {
     try {
-      final result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: const ['zip'],
       );

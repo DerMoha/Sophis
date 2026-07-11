@@ -58,7 +58,9 @@ class MealSharingService {
           'Shared meal ($itemCount ${itemCount == 1 ? 'item' : 'items'}, $totalCal kcal)\n\n$link';
     }
 
-    await Share.share(text, subject: meal.title ?? 'Shared Meal');
+    await SharePlus.instance.share(
+      ShareParams(text: text, subject: meal.title ?? 'Shared Meal'),
+    );
   }
 
   /// Copy the deep link to clipboard
