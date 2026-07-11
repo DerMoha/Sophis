@@ -7,6 +7,31 @@ import 'package:sophis/ui/screens/home_screen.dart';
 import '../helpers/test_services.dart';
 
 void main() {
+  testWidgets('AppShell remained available without nutrition goals', (
+    tester,
+  ) async {
+    final nutrition = await createLoadedWidgetNutritionProvider(tester);
+    final settings = await createWidgetTestSettingsProvider(tester);
+    nutrition.attachSettingsProvider(settings);
+
+    await pumpTestApp(
+      tester,
+      const HomeScreen(),
+      nutritionProvider: nutrition,
+      settingsProvider: settings,
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Food Diary'), findsWidgets);
+    expect(find.text('Add Food'), findsOneWidget);
+
+    await tester.tap(find.text('Food Diary').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Food Diary'), findsWidgets);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('AppShell exposed focused navigation and Add Food choices', (
     tester,
   ) async {
@@ -24,7 +49,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Today'), findsWidgets);
-    expect(find.text('Food Diary'), findsOneWidget);
+    expect(find.text('Food Diary'), findsWidgets);
     expect(find.text('More'), findsOneWidget);
     expect(find.text('Add Food'), findsOneWidget);
 

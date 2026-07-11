@@ -121,14 +121,48 @@ void main() {
       );
     }
 
-    testWidgets('first slot is CalorieHero', (WidgetTester tester) async {
+    testWidgets('first slot is configured quick actions',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
         wrapApp((context) {
           final slots = buildDashboardSlots(context, createVm());
-          return Text(slots.first is DashboardCalorieHero ? 'hero' : 'other');
+          final quickActions = slots.first as DashboardQuickActions;
+          return Text(quickActions.actions.first.id);
         }),
       );
-      expect(find.text('hero'), findsOneWidget);
+      expect(find.text(DashboardCardIds.foodDiary), findsOneWidget);
+    });
+
+    testWidgets('keeps quick actions out when all are hidden',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        wrapApp((context) {
+          final vm = createVm();
+          final hiddenVm = HomeDashboardVM(
+            totals: vm.totals,
+            goals: vm.goals,
+            remaining: vm.remaining,
+            burnedCalories: vm.burnedCalories,
+            effectiveGoal: vm.effectiveGoal,
+            calorieProgress: vm.calorieProgress,
+            waterTotal: vm.waterTotal,
+            waterGoal: vm.waterGoal,
+            unitSystem: vm.unitSystem,
+            mealTypes: vm.mealTypes,
+            showMealMacros: vm.showMealMacros,
+            healthSyncEnabled: vm.healthSyncEnabled,
+            visibleDashboardCards: const [],
+            quickActionSize: vm.quickActionSize,
+            userStats: vm.userStats,
+            showSupplements: vm.showSupplements,
+          );
+          final slots = buildDashboardSlots(context, hiddenVm);
+          return Text(
+            slots.any((slot) => slot is DashboardQuickActions) ? 'yes' : 'no',
+          );
+        }),
+      );
+      expect(find.text('no'), findsOneWidget);
     });
 
     testWidgets('CalorieHero carries correct consumed value',
@@ -244,8 +278,9 @@ void main() {
       await tester.pumpWidget(
         wrapApp((context) {
           final slots = buildDashboardSlots(context, createVm(streak: 1));
-          // Index: 0=CalorieHero, 1=Space(12), 2=Macros
-          final space = slots[1] as DashboardSpace;
+          final heroIndex =
+              slots.indexWhere((slot) => slot is DashboardCalorieHero);
+          final space = slots[heroIndex + 1] as DashboardSpace;
           return Text('${space.height}');
         }),
       );

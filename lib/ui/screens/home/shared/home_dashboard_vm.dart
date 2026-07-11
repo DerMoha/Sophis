@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/app_settings.dart';
 import 'package:sophis/models/custom_meal_type.dart';
 import 'package:sophis/models/nutrition_goals.dart';
@@ -9,6 +10,7 @@ import 'package:sophis/models/user_stats.dart';
 import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/ui/screens/home/shared/dashboard_slot.dart';
+import 'package:sophis/ui/screens/home/shared/home_actions.dart';
 
 /// Immutable view model containing all derived dashboard values.
 ///
@@ -17,7 +19,7 @@ import 'package:sophis/ui/screens/home/shared/dashboard_slot.dart';
 /// passed as a single struct into the slot-building logic.
 class HomeDashboardVM {
   final NutritionTotals totals;
-  final NutritionGoals goals;
+  final NutritionGoals? goals;
   final double remaining;
   final double burnedCalories;
   final double effectiveGoal;
@@ -52,7 +54,7 @@ class HomeDashboardVM {
     required this.showSupplements,
   });
 
-  bool get isOverGoal => remaining < 0;
+  bool get isOverGoal => goals != null && remaining < 0;
 
   /// Streak is only shown on the dashboard when it reaches a meaningful
   /// threshold. The screen-side check used to live inside the [StreakCard]
@@ -72,10 +74,10 @@ HomeDashboardVM readHomeDashboardVM(BuildContext context) {
   final settings = context.read<SettingsProvider>();
 
   final totals = nutrition.getTodayTotals();
-  final goals = nutrition.goals!;
+  final goals = nutrition.goals;
   final burned = nutrition.burnedCalories;
-  final effectiveGoal = goals.calories + burned;
-  final remaining = effectiveGoal - totals.calories;
+  final effectiveGoal = (goals?.calories ?? 0) + burned;
+  final remaining = goals == null ? 0.0 : effectiveGoal - totals.calories;
 
   return HomeDashboardVM(
     totals: totals,
@@ -83,7 +85,9 @@ HomeDashboardVM readHomeDashboardVM(BuildContext context) {
     remaining: remaining,
     burnedCalories: burned,
     effectiveGoal: effectiveGoal,
-    calorieProgress: (totals.calories / effectiveGoal).clamp(0.0, 1.0),
+    calorieProgress: effectiveGoal > 0
+        ? (totals.calories / effectiveGoal).clamp(0.0, 1.0)
+        : 0,
     waterTotal: nutrition.getTodayWaterTotal(),
     waterGoal: settings.waterGoalMl,
     unitSystem: settings.unitSystem,
@@ -107,24 +111,44 @@ List<DashboardSlot> buildDashboardSlots(
 ) {
   final slots = <DashboardSlot>[];
 
-  // 1. Calorie hero
-  slots.add(
-    DashboardCalorieHero(
-      consumed: vm.totals.calories,
-      baseGoal: vm.goals.calories.toDouble(),
-      effectiveGoal: vm.effectiveGoal,
-      remaining: vm.remaining,
-      progress: vm.calorieProgress,
-      burnedCalories: vm.burnedCalories,
-    ),
+  // 1. User-configured shortcuts. These use the same visibility and ordering
+  // settings as the dashboard customization screen.
+  final actions = buildHomeActions(
+    context,
+    AppLocalizations.of(context)!,
+    Theme.of(context),
+    vm.visibleDashboardCards,
   );
-  slots.add(const DashboardSpace(12));
+  if (actions.isNotEmpty) {
+    slots.add(
+      DashboardQuickActions(
+        actions: actions,
+        size: vm.quickActionSize,
+      ),
+    );
+    slots.add(const DashboardSpace(24));
+  }
 
-  // 2. Compact macro summary
-  slots.add(DashboardMacros(totals: vm.totals, goals: vm.goals));
-  slots.add(const DashboardSpace(24));
+  // 2. Goal progress is optional. Without nutrition goals, the dashboard
+  // remains a focused food log and starts directly with today's meals.
+  final goals = vm.goals;
+  if (goals != null) {
+    slots.add(
+      DashboardCalorieHero(
+        consumed: vm.totals.calories,
+        baseGoal: goals.calories.toDouble(),
+        effectiveGoal: vm.effectiveGoal,
+        remaining: vm.remaining,
+        progress: vm.calorieProgress,
+        burnedCalories: vm.burnedCalories,
+      ),
+    );
+    slots.add(const DashboardSpace(12));
+    slots.add(DashboardMacros(totals: vm.totals, goals: goals));
+    slots.add(const DashboardSpace(24));
+  }
 
-  // 3. Today's meals. Secondary trackers live under More.
+  // 4. Today's meals. Secondary trackers live under More.
   slots.add(const DashboardMealHeader());
   for (var i = 0; i < vm.mealTypes.length; i++) {
     final mealType = vm.mealTypes[i];
@@ -157,10 +181,10 @@ HomeDashboardVM buildHomeDashboardVM(
   required bool showSupplements,
 }) {
   final totals = nutrition.getTodayTotals();
-  final goals = nutrition.goals!;
+  final goals = nutrition.goals;
   final burned = nutrition.burnedCalories;
-  final effectiveGoal = goals.calories + burned;
-  final remaining = effectiveGoal - totals.calories;
+  final effectiveGoal = (goals?.calories ?? 0) + burned;
+  final remaining = goals == null ? 0.0 : effectiveGoal - totals.calories;
 
   return HomeDashboardVM(
     totals: totals,
@@ -168,7 +192,9 @@ HomeDashboardVM buildHomeDashboardVM(
     remaining: remaining,
     burnedCalories: burned,
     effectiveGoal: effectiveGoal,
-    calorieProgress: (totals.calories / effectiveGoal).clamp(0.0, 1.0),
+    calorieProgress: effectiveGoal > 0
+        ? (totals.calories / effectiveGoal).clamp(0.0, 1.0)
+        : 0,
     waterTotal: nutrition.getTodayWaterTotal(),
     waterGoal: waterGoalMl,
     unitSystem: unitSystem,

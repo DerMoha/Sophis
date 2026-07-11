@@ -4,11 +4,9 @@ import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
-import 'package:sophis/ui/theme/animations.dart';
-import 'package:sophis/ui/screens/goals_setup_screen.dart';
+import 'package:sophis/ui/screens/dashboard_settings_screen.dart';
 import 'package:sophis/ui/screens/home/shared/dashboard_slot.dart';
 import 'package:sophis/ui/screens/home/shared/home_dashboard_vm.dart';
-import 'package:sophis/ui/components/organic_components.dart';
 
 class HomeScreenModern extends StatefulWidget {
   const HomeScreenModern({super.key});
@@ -54,12 +52,8 @@ class _HomeScreenModernState extends State<HomeScreenModern> {
 
     return Scaffold(
       body: Consumer<NutritionProvider>(
-        builder: (context, nutrition, _) {
-          if (nutrition.goals == null) {
-            return _WelcomeView(l10n: l10n, theme: theme);
-          }
-          return _buildDashboard(context, l10n, theme);
-        },
+        builder: (context, nutrition, _) =>
+            _buildDashboard(context, l10n, theme),
       ),
     );
   }
@@ -84,9 +78,25 @@ class _HomeScreenModernState extends State<HomeScreenModern> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    l10n.today,
-                    style: theme.textTheme.headlineMedium,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          l10n.today,
+                          style: theme.textTheme.headlineMedium,
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: l10n.customizeDashboard,
+                        onPressed: () => Navigator.push(
+                          context,
+                          AppTheme.slideRoute(
+                            const DashboardSettingsScreen(),
+                          ),
+                        ),
+                        icon: const Icon(Icons.tune_rounded),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -107,96 +117,6 @@ class _HomeScreenModernState extends State<HomeScreenModern> {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _WelcomeView extends StatelessWidget {
-  final AppLocalizations l10n;
-  final ThemeData theme;
-
-  const _WelcomeView({required this.l10n, required this.theme});
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 40),
-            FadeInSlide(
-              index: 0,
-              child: Text(l10n.appTitle, style: theme.textTheme.displaySmall),
-            ),
-            const SizedBox(height: 8),
-            FadeInSlide(
-              index: 1,
-              child: Text(
-                l10n.today,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ),
-            const SizedBox(height: 32),
-            FadeInSlide(
-              index: 2,
-              child: OrganicCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 64,
-                      height: 64,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            theme.colorScheme.primary,
-                            theme.colorScheme.primary.withValues(alpha: 0.7),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-                      ),
-                      child: Icon(
-                        Icons.restaurant_menu_rounded,
-                        size: 32,
-                        color: theme.colorScheme.onPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      l10n.welcomeTitle,
-                      style: theme.textTheme.headlineMedium,
-                    ),
-                    const SizedBox(height: AppTheme.spaceSM2),
-                    Text(
-                      l10n.welcomeSubtitle,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        height: 1.6,
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () => Navigator.push(
-                          context,
-                          AppTheme.slideRoute(const GoalsSetupScreen()),
-                        ),
-                        child: Text(l10n.setGoals),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-          ],
-        ),
-      ),
     );
   }
 }
