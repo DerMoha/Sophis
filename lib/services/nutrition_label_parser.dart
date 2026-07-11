@@ -33,19 +33,19 @@ class NutritionLabelParser {
     caseSensitive: false,
   );
   static final RegExp _proteinRegexp = RegExp(
-    r'(?:Protein|Eiwei[ßs]|Eiweiss|Protéines|proteine)',
+    r'(?:Protein|Eiwei[ßs]|Eiweiss|Protéines|proteine|Eiwitten|Proteínas|Proteine|Białko|Bialko|Proteiner)',
     caseSensitive: false,
   );
   static final RegExp _carbsRegexp = RegExp(
-    r'(?:Kohlenhydrate|Carbohydrates|Carbohydrate|Carbs|Glucides|glucides)',
+    r'(?:Kohlenhydrate|Carbohydrates|Carbohydrate|Carbs|Glucides|Koolhydraten|Hidratos\s+de\s+carbono|Carboidrati|Węglowodany|Weglowodany|Kolhydrater)',
     caseSensitive: false,
   );
   static final RegExp _fatRegexp = RegExp(
-    r'(?:Fett|Fat|Matières\s*grasses|matieres\s*grasses|lipides|Lipides)',
+    r'(?:Fett|Fat|Matières\s*grasses|matieres\s*grasses|lipides|Vetten|Grasas|Grassi|Tłuszcz|Tluszcz|Fedt)',
     caseSensitive: false,
   );
   static final RegExp _fiberRegexp = RegExp(
-    r'(?:Ballaststoffe|Fiber|Fibre|Fibres|fibres)',
+    r'(?:Ballaststoffe|Fiber|Fibre|Fibres|Vezels|Fibra|Błonnik|Blonnik|Kostfibre)',
     caseSensitive: false,
   );
   static final RegExp _numberPattern = RegExp(
@@ -63,7 +63,7 @@ class NutritionLabelParser {
     caseSensitive: false,
   );
   static final RegExp _per100Pattern = RegExp(
-    r'(?:per|pro|je|pour)\s*100\s*(?:g|ml)',
+    r'(?:per|pro|je|pour|por|w)\s*100\s*(?:g|ml)',
     caseSensitive: false,
   );
   static final RegExp _subLineRegexp = RegExp(
@@ -71,7 +71,7 @@ class NutritionLabelParser {
     caseSensitive: false,
   );
   static final RegExp _isNutritionLabelPattern = RegExp(
-    r'(?:Energie|Energy|Brennwert|Calories|Eiwei[ßs]|Protein|Kohlenhydrate|Carbohydrate|Fett|Fat|Ballaststoffe|Fiber|fibre|Nährwert|Nutrition)',
+    r'(?:Energie|Energy|Energia|Brennwert|Calories|Calorías|Eiwei[ßs]|Protein|Proteínas|Białko|Kohlenhydrate|Carbohydrate|Koolhydraten|Carboidrati|Węglowodany|Fett|Fat|Vetten|Grasas|Grassi|Tłuszcz|Ballaststoffe|Fiber|Fibre|Vezels|Fibra|Błonnik|Nährwert|Nutrition|Voedingswaarde|Valor\s+nutricional|Wartość\s+odżywcza)',
     caseSensitive: false,
   );
 

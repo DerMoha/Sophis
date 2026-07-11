@@ -272,5 +272,35 @@ Protein 8 g
       expect(result.carbsPer100g, 60);
       expect(result.proteinPer100g, 8);
     });
+
+    test('parses Spanish nutrition vocabulary', () {
+      const text = '''
+Valor nutricional por 100 g
+Energia 400 kcal
+Grasas 10 g
+Hidratos de carbono 60 g
+Proteínas 8 g
+Fibra 4 g
+''';
+      final result = NutritionLabelParser.parse(text);
+      expect(result, isNotNull);
+      expect(result!.fatPer100g, 10);
+      expect(result.carbsPer100g, 60);
+      expect(result.proteinPer100g, 8);
+    });
+
+    test('parses Dutch nutrition vocabulary', () {
+      const text = '''
+Voedingswaarde per 100 g
+Energie 400 kcal
+Vetten 10 g
+Koolhydraten 60 g
+Eiwitten 8 g
+Vezels 4 g
+''';
+      final result = NutritionLabelParser.parse(text);
+      expect(result, isNotNull);
+      expect(result!.fiberPer100g, 4);
+    });
   });
 }
