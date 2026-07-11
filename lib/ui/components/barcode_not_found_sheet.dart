@@ -11,6 +11,7 @@ import 'package:sophis/services/barcode_lookup_service.dart';
 import 'package:sophis/services/gemini_food_service.dart';
 import 'package:sophis/services/label_intake_flow.dart';
 import 'package:sophis/services/service_result.dart';
+import 'package:sophis/services/nutrition_scan_feedback_service.dart';
 import 'package:sophis/ui/components/edit_product_sheet.dart';
 import 'package:sophis/ui/components/label_preview_sheet.dart';
 import 'package:sophis/ui/components/settings/settings_tiles.dart';
@@ -112,6 +113,11 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
 
     if (!mounted) return;
     if (confirmedLabel == null) return;
+
+    await const NutritionScanFeedbackService().record(
+      scanned: intake.label,
+      confirmed: confirmedLabel,
+    );
 
     final confirmedProduct = intake.product.copyWith(
       caloriesPer100g: confirmedLabel.caloriesPer100g,

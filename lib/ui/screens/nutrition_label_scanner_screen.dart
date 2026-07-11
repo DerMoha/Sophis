@@ -10,6 +10,7 @@ import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/services/gemini_food_service.dart';
 import 'package:sophis/services/label_intake_flow.dart';
 import 'package:sophis/services/service_result.dart';
+import 'package:sophis/services/nutrition_scan_feedback_service.dart';
 import 'package:sophis/ui/components/label_preview_sheet.dart';
 import 'package:sophis/ui/components/portion_picker_sheet.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
@@ -117,6 +118,12 @@ class _NutritionLabelScannerScreenState
       return;
     }
 
+    await const NutritionScanFeedbackService().record(
+      scanned: intake.label,
+      confirmed: confirmedLabel,
+    );
+
+    if (!mounted) return;
     setState(() => _isAnalyzing = false);
 
     await showModalBottomSheet<void>(
