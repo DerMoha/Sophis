@@ -10,6 +10,7 @@ import 'package:sophis/services/gemini_food_service.dart';
 import 'package:sophis/services/nutrition_label_parser.dart';
 import 'package:sophis/services/nutrition_label_validator.dart';
 import 'package:sophis/services/nutrition_image_quality_service.dart';
+import 'package:sophis/services/nutrition_image_preprocessor.dart';
 import 'package:sophis/services/service_result.dart';
 
 /// Inputs for a single label-intake scan. The flow owns the OCR + parsing +
@@ -57,14 +58,18 @@ class LabelIntakeFlow {
   final TextRecognizer _recognizer;
   final GeminiFoodService? _gemini;
   final NutritionImageQualityService _qualityService;
+  final NutritionImagePreprocessor _preprocessor;
 
   LabelIntakeFlow({
     GeminiFoodService? gemini,
     NutritionImageQualityService qualityService =
         const NutritionImageQualityService(),
+    NutritionImagePreprocessor preprocessor =
+        const NutritionImagePreprocessor(),
   })  : _recognizer = TextRecognizer(script: TextRecognitionScript.latin),
         _gemini = gemini,
-        _qualityService = qualityService;
+        _qualityService = qualityService,
+        _preprocessor = preprocessor;
 
   bool get hasGeminiFallback => _gemini?.hasApiKey ?? false;
 
@@ -78,7 +83,9 @@ class LabelIntakeFlow {
     if (!quality.isAcceptable) {
       return Failure(ServiceErrorType.parseError, quality.message);
     }
-    final document = await _recognize(request.imageFile);
+    final prepared = await _preprocessor.prepare(request.imageFile);
+    final document = await _recognize(prepared ?? request.imageFile);
+    await _preprocessor.cleanUp(prepared);
     if (document == null || document.text.trim().isEmpty) {
       return const Failure(
         ServiceErrorType.parseError,
