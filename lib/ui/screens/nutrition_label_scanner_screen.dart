@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:gal/gal.dart';
 import 'package:image_picker/image_picker.dart';
@@ -13,6 +14,7 @@ import 'package:sophis/services/service_result.dart';
 import 'package:sophis/services/nutrition_scan_feedback_service.dart';
 import 'package:sophis/ui/components/label_preview_sheet.dart';
 import 'package:sophis/ui/components/portion_picker_sheet.dart';
+import 'package:sophis/ui/screens/nutrition_label_camera_screen.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 
 class NutritionLabelScannerScreen extends StatefulWidget {
@@ -50,24 +52,37 @@ class _NutritionLabelScannerScreenState
     super.dispose();
   }
 
-  Future<void> _pickAndScan(ImageSource source) async {
+  Future<void> _captureAndScan() async {
+    final l10n = AppLocalizations.of(context)!;
+    final captured = await Navigator.push<XFile>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => NutritionLabelCameraScreen(
+          title: l10n.nutritionLabelScannerTitle,
+          guidance: l10n.nutritionLabelCaptureGuide,
+        ),
+      ),
+    );
+    if (captured == null || !mounted) return;
+    try {
+      await Gal.putImage(captured.path);
+    } catch (_) {}
+    await _scanImage(captured);
+  }
+
+  Future<void> _pickFromGallery() async {
+    final picked = await _picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 2048,
+      maxHeight: 2048,
+      imageQuality: 95,
+    );
+    if (picked != null) await _scanImage(picked);
+  }
+
+  Future<void> _scanImage(XFile picked) async {
     final l10n = AppLocalizations.of(context)!;
     try {
-      final picked = await _picker.pickImage(
-        source: source,
-        maxWidth: 2048,
-        maxHeight: 2048,
-        imageQuality: 95,
-      );
-
-      if (picked == null) return;
-
-      if (source == ImageSource.camera) {
-        try {
-          await Gal.putImage(picked.path);
-        } catch (_) {}
-      }
-
       setState(() {
         _isAnalyzing = true;
         _error = null;
@@ -268,7 +283,7 @@ class _NutritionLabelScannerScreenState
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton.icon(
-                        onPressed: () => _pickAndScan(ImageSource.camera),
+                        onPressed: _captureAndScan,
                         icon: const Icon(Icons.camera_alt_outlined),
                         label: Text(l10n.takePhoto),
                       ),
@@ -277,7 +292,7 @@ class _NutritionLabelScannerScreenState
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(
-                        onPressed: () => _pickAndScan(ImageSource.gallery),
+                        onPressed: _pickFromGallery,
                         icon: const Icon(Icons.photo_library_outlined),
                         label: Text(l10n.chooseFromGallery),
                       ),
