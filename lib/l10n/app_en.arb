@@ -632,6 +632,8 @@
 
   "nutritionLabelPreview": "Nutrition Label Preview",
   "nutritionLabelPreviewSubtitle": "Verify the scanned values before adding",
+  "nutritionLabelUncertain": "Some values may be uncertain. Check the fields before adding.",
+  "productBrand": "Brand",
   "per100gLabel": "Per 100g",
   "servingInfo": "Serving",
   "looksGood": "Looks Good",

@@ -506,6 +506,8 @@
 
   "nutritionLabelPreview": "Nährwerttabelle Vorschau",
   "nutritionLabelPreviewSubtitle": "Überprüfe die gescannten Werte vor dem Hinzufügen",
+  "nutritionLabelUncertain": "Einige Werte sind möglicherweise ungenau. Bitte kurz überprüfen.",
+  "productBrand": "Marke",
   "per100gLabel": "Pro 100g",
   "servingInfo": "Portion",
   "looksGood": "Sieht gut aus",

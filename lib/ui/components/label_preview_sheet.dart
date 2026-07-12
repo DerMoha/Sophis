@@ -135,12 +135,16 @@ class _LabelPreviewSheetState extends State<LabelPreviewSheet> {
             _Header(theme: theme, l10n: l10n),
             if (widget.validation case final validation?
                 when !validation.isHighConfidence)
-              _ConfidenceWarning(theme: theme, issues: validation.issues),
-            const SizedBox(height: 20),
+              _ConfidenceWarning(
+                theme: theme,
+                issues: validation.issues,
+                fallbackMessage: l10n.nutritionLabelUncertain,
+              ),
+            const SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Container(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surfaceContainerHighest
                       .withValues(alpha: 0.3),
@@ -177,14 +181,19 @@ class _LabelPreviewSheetState extends State<LabelPreviewSheet> {
 class _ConfidenceWarning extends StatelessWidget {
   final ThemeData theme;
   final List<String> issues;
+  final String fallbackMessage;
 
-  const _ConfidenceWarning({required this.theme, required this.issues});
+  const _ConfidenceWarning({
+    required this.theme,
+    required this.issues,
+    required this.fallbackMessage,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.fromLTRB(24, 10, 24, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: theme.colorScheme.tertiaryContainer,
         borderRadius: BorderRadius.circular(AppTheme.radiusSM),
@@ -196,9 +205,7 @@ class _ConfidenceWarning extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              issues.isEmpty
-                  ? 'Some values may be uncertain. Please check each field.'
-                  : issues.join('\n'),
+              issues.isEmpty ? fallbackMessage : issues.join('\n'),
               style: theme.textTheme.bodySmall,
             ),
           ),
@@ -234,12 +241,12 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
-      child: Column(
+      padding: const EdgeInsets.fromLTRB(24, 6, 24, 0),
+      child: Row(
         children: [
           Container(
-            width: 56,
-            height: 56,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
               color: theme.colorScheme.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(AppTheme.radiusMD),
@@ -247,23 +254,28 @@ class _Header extends StatelessWidget {
             child: Icon(
               Icons.checklist_outlined,
               color: theme.colorScheme.primary,
-              size: 28,
+              size: 22,
             ),
           ),
-          const SizedBox(height: 12),
-          Text(
-            l10n.nutritionLabelPreview,
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w600,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.nutritionLabelPreview,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Text(
+                  l10n.nutritionLabelPreviewSubtitle,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            l10n.nutritionLabelPreviewSubtitle,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -298,17 +310,19 @@ class _ValueList extends StatelessWidget {
           textCapitalization: TextCapitalization.words,
           decoration: InputDecoration(
             labelText: l10n.foodName,
+            isDense: true,
           ),
         ),
         const SizedBox(height: 10),
         TextField(
           controller: brandController,
           textCapitalization: TextCapitalization.words,
-          decoration: const InputDecoration(
-            labelText: 'Brand',
+          decoration: InputDecoration(
+            labelText: l10n.productBrand,
+            isDense: true,
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         Divider(color: theme.colorScheme.outline.withValues(alpha: 0.2)),
         const SizedBox(height: 12),
         Center(
@@ -320,7 +334,7 @@ class _ValueList extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 10),
         _LabelRow(
           label: l10n.calories,
           controller: controllers[0],
@@ -328,7 +342,7 @@ class _ValueList extends StatelessWidget {
           color: theme.colorScheme.primary,
           theme: theme,
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 6),
         _LabelRow(
           label: l10n.protein,
           controller: controllers[1],
@@ -336,7 +350,7 @@ class _ValueList extends StatelessWidget {
           color: AppTheme.protein,
           theme: theme,
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 6),
         _LabelRow(
           label: l10n.carbs,
           controller: controllers[2],
@@ -344,7 +358,7 @@ class _ValueList extends StatelessWidget {
           color: AppTheme.carbs,
           theme: theme,
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 6),
         _LabelRow(
           label: l10n.fat,
           controller: controllers[3],
@@ -352,7 +366,7 @@ class _ValueList extends StatelessWidget {
           color: AppTheme.fat,
           theme: theme,
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 6),
         _LabelRow(
           label: l10n.fiber,
           controller: controllers[4],
@@ -405,22 +419,21 @@ class _Actions extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Row(
+      child: Column(
         children: [
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: onRescan,
-              icon: const Icon(Icons.refresh, size: 18),
-              label: Text(l10n.rescanLabel),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
+          SizedBox(
+            width: double.infinity,
             child: FilledButton.icon(
               onPressed: onLooksGood,
               icon: const Icon(Icons.check, size: 18),
               label: Text(l10n.looksGood),
             ),
+          ),
+          const SizedBox(height: 4),
+          TextButton.icon(
+            onPressed: onRescan,
+            icon: const Icon(Icons.refresh, size: 18),
+            label: Text(l10n.rescanLabel),
           ),
         ],
       ),
@@ -459,20 +472,23 @@ class _LabelRow extends StatelessWidget {
         Expanded(
           child: Text(
             label,
-            style: theme.textTheme.bodyMedium?.copyWith(
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
         ),
         SizedBox(
-          width: 64,
+          width: 76,
           child: TextField(
             controller: controller,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             textAlign: TextAlign.end,
             decoration: const InputDecoration(
               isDense: true,
-              contentPadding: EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+              contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              border: OutlineInputBorder(),
             ),
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.w700,
