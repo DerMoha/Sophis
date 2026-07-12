@@ -63,3 +63,6 @@ macos/Flutter/GeneratedPluginRegistrant.swift
 .claude
 CLAUDE.md
 BUILD_NOTES.md
+
+# Local Codegraph runtime data
+.codegraph/
