@@ -88,16 +88,18 @@ class LabelIntakeFlow {
     if (!quality.isAcceptable) {
       return Failure(ServiceErrorType.parseError, quality.message);
     }
+    final originalDocument = await _recognize(request.imageFile);
     final prepared = await _preprocessor.prepare(request.imageFile);
-    final document = await _recognize(prepared ?? request.imageFile);
+    final enhancedDocument =
+        prepared == null ? null : await _recognize(prepared);
     await _preprocessor.cleanUp(prepared);
+    final document = _bestDocument(originalDocument, enhancedDocument);
     if (document == null || document.text.trim().isEmpty) {
       return const Failure(
         ServiceErrorType.parseError,
         'No text found in image',
       );
     }
-
     return _processParsedText(
       ocrText: document.text,
       localLabel: NutritionLabelParser.parseLayout(document.lines),
@@ -106,6 +108,29 @@ class LabelIntakeFlow {
       fallbackBrand: request.fallbackBrand,
       barcode: request.barcode,
     );
+  }
+
+  _RecognizedNutritionDocument? _bestDocument(
+    _RecognizedNutritionDocument? original,
+    _RecognizedNutritionDocument? enhanced,
+  ) {
+    if (original == null) return enhanced;
+    if (enhanced == null) return original;
+    final originalScore = _nutritionTextScore(original.text);
+    final enhancedScore = _nutritionTextScore(enhanced.text);
+    return originalScore >= enhancedScore ? original : enhanced;
+  }
+
+  int _nutritionTextScore(String text) {
+    final keywords = RegExp(
+      r'N.hr|Nutri|Energ|Brenn|Fett|Fat|Kohl|Carb|Eiwei|Protein|Ballast|Fiber|Salz|Salt',
+      caseSensitive: false,
+    ).allMatches(text).length;
+    final values = RegExp(
+      r'\d+[\.,]?\d*\s*(?:kcal|kJ|g)',
+      caseSensitive: false,
+    ).allMatches(text).length;
+    return keywords * 3 + values;
   }
 
   /// Pure pipeline: OCR text -> `ServiceResult<LabelIntakeResult>`.

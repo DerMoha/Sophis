@@ -273,6 +273,51 @@ Protein 8 g
       expect(result.proteinPer100g, 8);
     });
 
+    test('joins nutrient names and values from separate OCR blocks', () {
+      const lines = [
+        NutritionOcrLine(
+          text: 'Nährwerte pro 100 ml',
+          top: 10,
+          tokens: [NutritionOcrToken(text: '100 ml', centerX: 200)],
+        ),
+        NutritionOcrLine(text: 'Energie', top: 30, tokens: []),
+        NutritionOcrLine(
+          text: '1510 kJ / 355 kcal',
+          top: 31,
+          tokens: [
+            NutritionOcrToken(text: '1510 kJ', centerX: 200),
+            NutritionOcrToken(text: '355 kcal', centerX: 260),
+          ],
+        ),
+        NutritionOcrLine(text: 'Fett', top: 50, tokens: []),
+        NutritionOcrLine(
+          text: '0g',
+          top: 51,
+          tokens: [NutritionOcrToken(text: '0g', centerX: 250)],
+        ),
+        NutritionOcrLine(text: 'Kohlenhydrate', top: 70, tokens: []),
+        NutritionOcrLine(
+          text: '87,6g',
+          top: 71,
+          tokens: [NutritionOcrToken(text: '87,6g', centerX: 250)],
+        ),
+        NutritionOcrLine(text: 'Eiweiß', top: 90, tokens: []),
+        NutritionOcrLine(
+          text: '1,2g',
+          top: 91,
+          tokens: [NutritionOcrToken(text: '1,2g', centerX: 250)],
+        ),
+      ];
+
+      final result = NutritionLabelParser.parseLayout(lines);
+
+      expect(result, isNotNull);
+      expect(result!.caloriesPer100g, 355);
+      expect(result.fatPer100g, 0);
+      expect(result.carbsPer100g, 87.6);
+      expect(result.proteinPer100g, 1.2);
+    });
+
     test('parses Spanish nutrition vocabulary', () {
       const text = '''
 Valor nutricional por 100 g

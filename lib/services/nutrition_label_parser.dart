@@ -32,6 +32,10 @@ class NutritionLabelParser {
     r'(\d+[\.,]?\d*)\s*kJ',
     caseSensitive: false,
   );
+  static final RegExp _energyKeywordPattern = RegExp(
+    r'(?:Energie|Energy|Energia|Brennwert|Calories)',
+    caseSensitive: false,
+  );
   static final RegExp _proteinRegexp = RegExp(
     r'(?:Protein|Eiwei[ßs]|Eiweiss|Protéines|proteine|Eiwitten|Proteínas|Proteine|Białko|Bialko|Proteiner)',
     caseSensitive: false,
@@ -169,16 +173,19 @@ class NutritionLabelParser {
 
   static NutritionLabelResult? parseLayout(List<NutritionOcrLine> lines) {
     final anchor = _findPer100Anchor(lines);
-    if (anchor == null) {
-      return parse(lines.map((line) => line.text).join('\n'));
-    }
 
     final reconstructed = lines.map((line) {
       if (!_isNutrientRow(line.text)) return line.text;
+      if (_subLineRegexp.hasMatch(line.text)) return line.text;
       final numericTokens = line.tokens
           .where((token) => RegExp(r'\d').hasMatch(token.text))
           .toList();
-      if (numericTokens.length < 2) return line.text;
+      if (numericTokens.isEmpty) {
+        final neighboringValue = _nearestValueLine(line, lines);
+        if (neighboringValue == null) return line.text;
+        return '${_rowKeyword(line.text)} ${neighboringValue.text}';
+      }
+      if (numericTokens.length < 2 || anchor == null) return line.text;
 
       final candidates = _kcalPattern.hasMatch(line.text)
           ? numericTokens
@@ -195,6 +202,30 @@ class NutritionLabelParser {
     }).join('\n');
 
     return parse(reconstructed);
+  }
+
+  static NutritionOcrLine? _nearestValueLine(
+    NutritionOcrLine nutrientLine,
+    List<NutritionOcrLine> lines,
+  ) {
+    final isEnergy = _energyKeywordPattern.hasMatch(nutrientLine.text);
+    final candidates = lines.where((line) {
+      final trimmed = line.text.trim();
+      if (isEnergy) {
+        return _kcalPattern.hasMatch(trimmed) || _kjPattern.hasMatch(trimmed);
+      }
+      return RegExp(
+        r'^<?\s*\d+[\.,]?\d*\s*g?$',
+        caseSensitive: false,
+      ).hasMatch(trimmed);
+    }).toList();
+    if (candidates.isEmpty) return null;
+    candidates.sort(
+      (a, b) => (a.top - nutrientLine.top)
+          .abs()
+          .compareTo((b.top - nutrientLine.top).abs()),
+    );
+    return candidates.first;
   }
 
   static double? _findPer100Anchor(List<NutritionOcrLine> lines) {
@@ -215,12 +246,14 @@ class NutritionLabelParser {
       _carbsRegexp.hasMatch(text) ||
       _fatRegexp.hasMatch(text) ||
       _fiberRegexp.hasMatch(text) ||
+      _energyKeywordPattern.hasMatch(text) ||
       _kcalPattern.hasMatch(text) ||
       _calKeywordPattern.hasMatch(text) ||
       _kjPattern.hasMatch(text);
 
   static String _rowKeyword(String text) {
-    if (_kcalPattern.hasMatch(text) ||
+    if (_energyKeywordPattern.hasMatch(text) ||
+        _kcalPattern.hasMatch(text) ||
         _calKeywordPattern.hasMatch(text) ||
         _kjPattern.hasMatch(text)) {
       return 'Energy';
