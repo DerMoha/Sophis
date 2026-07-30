@@ -15,7 +15,11 @@ class MealMacrosSettingsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.showMealMacros),
+        title: Text(
+          l10n.showMealMacros,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         backgroundColor: theme.scaffoldBackgroundColor,
       ),
       body: Consumer<SettingsProvider>(
@@ -101,13 +105,17 @@ class MealMacrosSettingsScreen extends StatelessWidget {
                   color: theme.colorScheme.primary,
                 ),
               if (isActive) const SizedBox(width: 6),
-              Text(
-                title,
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: isActive
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.onSurfaceVariant,
-                  fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+              Flexible(
+                child: Text(
+                  title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: isActive
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.onSurfaceVariant,
+                    fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                  ),
                 ),
               ),
             ],
@@ -165,14 +173,13 @@ class MealMacrosSettingsScreen extends StatelessWidget {
                 ),
                 if (showMacros) ...[
                   const SizedBox(height: 4),
-                  Row(
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
                     children: [
                       _buildMiniMacro('P', 25, AppTheme.protein, theme),
-                      const SizedBox(width: 8),
                       _buildMiniMacro('C', 45, AppTheme.carbs, theme),
-                      const SizedBox(width: 8),
                       _buildMiniMacro('F', 15, AppTheme.fat, theme),
-                      const SizedBox(width: 8),
                       _buildMiniMacro('Fi', 6, AppTheme.fiber, theme),
                     ],
                   ),

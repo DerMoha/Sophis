@@ -51,11 +51,16 @@ class MealDetailScreen extends StatelessWidget {
         return Scaffold(
           appBar: AppBar(
             title: Row(
-              mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(mealIcon, size: 24),
                 const SizedBox(width: 8),
-                Text(mealTitle),
+                Flexible(
+                  child: Text(
+                    mealTitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ],
             ),
             actions: [
@@ -104,9 +109,10 @@ class MealDetailScreen extends StatelessWidget {
                                 ],
                               ),
                               const SizedBox(height: AppTheme.spaceSM2),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
+                              Wrap(
+                                spacing: 16,
+                                runSpacing: 12,
+                                alignment: WrapAlignment.spaceEvenly,
                                 children: [
                                   MacroSummary(
                                     label: l10n.protein,

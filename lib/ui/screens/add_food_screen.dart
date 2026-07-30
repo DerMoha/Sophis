@@ -161,7 +161,6 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                               final mealColor = _getMealColor(context) ??
                                   theme.colorScheme.primary;
                               return Row(
-                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(
                                     _getMealIcon(context),
@@ -169,10 +168,15 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                                     color: mealColor,
                                   ),
                                   const SizedBox(width: 8),
-                                  Text(
-                                    _getMealTitle(context, l10n),
-                                    style: theme.textTheme.labelLarge?.copyWith(
-                                      color: mealColor,
+                                  Flexible(
+                                    child: Text(
+                                      _getMealTitle(context, l10n),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style:
+                                          theme.textTheme.labelLarge?.copyWith(
+                                        color: mealColor,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -251,25 +255,28 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                                 ),
                               ),
                               const SizedBox(height: AppTheme.spaceLG2),
-                              Row(
+                              Wrap(
+                                spacing: 12,
+                                runSpacing: 12,
                                 children: [
-                                  Expanded(
+                                  SizedBox(
+                                    width: 110,
                                     child: _MacroField(
                                       controller: _proteinController,
                                       label: l10n.protein,
                                       color: AppTheme.protein,
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
+                                  SizedBox(
+                                    width: 110,
                                     child: _MacroField(
                                       controller: _carbsController,
                                       label: l10n.carbs,
                                       color: AppTheme.carbs,
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
+                                  SizedBox(
+                                    width: 110,
                                     child: _MacroField(
                                       controller: _fatController,
                                       label: l10n.fat,
@@ -279,17 +286,13 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                                 ],
                               ),
                               const SizedBox(height: 12),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _MacroField(
-                                      controller: _fiberController,
-                                      label: l10n.fiber,
-                                      color: AppTheme.fiber,
-                                    ),
-                                  ),
-                                  const Spacer(flex: 2),
-                                ],
+                              SizedBox(
+                                width: 110,
+                                child: _MacroField(
+                                  controller: _fiberController,
+                                  label: l10n.fiber,
+                                  color: AppTheme.fiber,
+                                ),
                               ),
                             ],
                           ),
@@ -373,10 +376,14 @@ class _MacroField extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 6),
-            Text(
-              label,
-              style: theme.textTheme.labelMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
           ],
@@ -394,7 +401,7 @@ class _MacroField extends StatelessWidget {
             hintText: '0',
             suffixText: 'g',
             contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppTheme.radiusMD),
               borderSide: BorderSide(color: color.withValues(alpha: 0.3)),

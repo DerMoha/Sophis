@@ -19,19 +19,41 @@ class SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.3;
+
+    final titleWidget = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (icon != null) ...[
+          Icon(icon, size: 20, color: theme.colorScheme.primary),
+          const SizedBox(width: 8),
+        ],
+        Flexible(
+          child: Text(title, style: theme.textTheme.headlineSmall),
+        ),
+      ],
+    );
 
     return Padding(
       padding: padding ?? const EdgeInsets.only(bottom: 16),
-      child: Row(
-        children: [
-          if (icon != null) ...[
-            Icon(icon, size: 20, color: theme.colorScheme.primary),
-            const SizedBox(width: 8),
-          ],
-          Text(title, style: theme.textTheme.headlineSmall),
-          if (trailing != null) ...[const Spacer(), trailing!],
-        ],
-      ),
+      child: trailing == null
+          ? titleWidget
+          : largeText
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    titleWidget,
+                    const SizedBox(height: 8),
+                    Align(alignment: Alignment.centerRight, child: trailing!),
+                  ],
+                )
+              : Row(
+                  children: [
+                    Expanded(child: titleWidget),
+                    const SizedBox(width: 12),
+                    trailing!,
+                  ],
+                ),
     );
   }
 }

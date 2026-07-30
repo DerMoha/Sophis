@@ -158,8 +158,10 @@ class _ImportMealScreenState extends State<ImportMealScreen> {
                             style: theme.textTheme.titleMedium,
                           ),
                           const SizedBox(height: AppTheme.spaceSM),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          Wrap(
+                            spacing: 12,
+                            runSpacing: 12,
+                            alignment: WrapAlignment.spaceAround,
                             children: [
                               _buildMacroChip(
                                 theme,
@@ -293,6 +295,8 @@ class _ImportMealScreenState extends State<ImportMealScreen> {
               children: [
                 Text(
                   item.name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.bodyLarge,
                 ),
                 if (item.portionGrams != null)
@@ -303,10 +307,14 @@ class _ImportMealScreenState extends State<ImportMealScreen> {
               ],
             ),
           ),
-          Text(
-            '${item.calories.round()} kcal',
-            style: theme.textTheme.titleSmall?.copyWith(
-              color: theme.colorScheme.primary,
+          Flexible(
+            child: Text(
+              '${item.calories.round()} kcal',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.titleSmall?.copyWith(
+                color: theme.colorScheme.primary,
+              ),
             ),
           ),
         ],

@@ -419,6 +419,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.3;
 
     final hasApiKey =
         context.select<SettingsProvider, bool>((s) => s.hasGeminiApiKey);
@@ -431,7 +432,11 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.aiFoodRecognition),
+        title: Text(
+          l10n.aiFoodRecognition,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         actions: [
           Center(
             child: Padding(
@@ -454,17 +459,19 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                           ? AppTheme.warning
                           : AppTheme.success,
                     ),
-                    const SizedBox(width: 2),
-                    Text(
-                      l10n.imagesLeft(_remainingRequests),
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: _remainingRequests <= 3
-                            ? AppTheme.warning
-                            : AppTheme.success,
+                    if (!largeText) ...[
+                      const SizedBox(width: 2),
+                      Text(
+                        l10n.imagesLeft(_remainingRequests),
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: _remainingRequests <= 3
+                              ? AppTheme.warning
+                              : AppTheme.success,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
@@ -576,10 +583,11 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       final isApiKeyError = _error!.contains('API key');
       return FadeInSlide(
         index: 0,
-        child: Center(
+        child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Icon(

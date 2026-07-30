@@ -112,7 +112,7 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
             // Horizontal scrollable day selector
             FadeInSlide(
               index: 0,
-              child: _buildDaySelector(theme, isDark, l10n),
+              child: _buildDaySelector(context, theme, isDark, l10n),
             ),
 
             // Swipeable day content
@@ -228,15 +228,17 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
   }
 
   Widget _buildDaySelector(
+    BuildContext context,
     ThemeData theme,
     bool isDark,
     AppLocalizations l10n,
   ) {
+    final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.3;
     final today = DateTime.now();
     final todayNorm = DateTime(today.year, today.month, today.day);
 
     return SizedBox(
-      height: 90,
+      height: largeText ? 180 : 90,
       child: ListView.builder(
         controller: _dayScrollController,
         scrollDirection: Axis.horizontal,
@@ -268,7 +270,7 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
                 },
                 child: AnimatedContainer(
                   duration: AppTheme.animFast,
-                  width: 72,
+                  width: largeText ? 88 : 72,
                   margin: const EdgeInsets.symmetric(horizontal: 4),
                   decoration: BoxDecoration(
                     color: isSelected
@@ -304,7 +306,8 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
                         _formatDayName(context, date),
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: isSelected
-                              ? theme.colorScheme.onPrimary.withValues(alpha: 0.8)
+                              ? theme.colorScheme.onPrimary
+                                  .withValues(alpha: 0.8)
                               : theme.colorScheme.onSurfaceVariant,
                           fontWeight: FontWeight.w500,
                           letterSpacing: 0.5,

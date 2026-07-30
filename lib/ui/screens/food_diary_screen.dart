@@ -145,91 +145,153 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
     String locale,
   ) {
     final canGoForward = _selectedDayOffset < 0;
+    final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.3;
+    final dateTitle = Column(
+      children: [
+        AnimatedSwitcher(
+          duration: AppTheme.animFast,
+          child: Text(
+            _getDayName(selectedDate, l10n, locale),
+            key: ValueKey('name_$selectedDate'),
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        AnimatedSwitcher(
+          duration: AppTheme.animFast,
+          child: Text(
+            _getFormattedDate(selectedDate, locale),
+            key: ValueKey('date_$selectedDate'),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+      ],
+    );
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-      child: Row(
-        children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded),
-            onPressed: () => Navigator.pop(context),
-            style: IconButton.styleFrom(
-              backgroundColor: theme.colorScheme.surface,
-            ),
-          ),
-          const SizedBox(width: 12),
-          // Previous day button
-          IconButton(
-            icon: const Icon(Icons.chevron_left_rounded),
-            onPressed: _goToPreviousDay,
-            style: IconButton.styleFrom(
-              backgroundColor: theme.colorScheme.surface,
-            ),
-          ),
-          // Date display
-          Expanded(
-            child: Column(
+      child: largeText
+          ? Column(
               children: [
-                AnimatedSwitcher(
-                  duration: AppTheme.animFast,
-                  child: Text(
-                    _getDayName(selectedDate, l10n, locale),
-                    key: ValueKey('name_$selectedDate'),
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                      onPressed: () => Navigator.pop(context),
+                      style: IconButton.styleFrom(
+                        backgroundColor: theme.colorScheme.surface,
+                      ),
                     ),
+                    const SizedBox(width: 12),
+                    IconButton(
+                      icon: const Icon(Icons.chevron_left_rounded),
+                      onPressed: _goToPreviousDay,
+                      style: IconButton.styleFrom(
+                        backgroundColor: theme.colorScheme.surface,
+                      ),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      icon: Icon(
+                        Icons.chevron_right_rounded,
+                        color: canGoForward
+                            ? null
+                            : theme.colorScheme.onSurfaceVariant
+                                .withValues(alpha: 0.3),
+                      ),
+                      onPressed: canGoForward ? _goToNextDay : null,
+                      style: IconButton.styleFrom(
+                        backgroundColor: theme.colorScheme.surface,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    if (_selectedDayOffset != 0)
+                      IconButton(
+                        icon: const Icon(Icons.today_rounded),
+                        onPressed: () {
+                          _pageController.animateToPage(
+                            _daysRange,
+                            duration: AppTheme.animNormal,
+                            curve: Curves.easeOutCubic,
+                          );
+                          HapticFeedback.mediumImpact();
+                        },
+                        tooltip: l10n.today,
+                        style: IconButton.styleFrom(
+                          backgroundColor:
+                              theme.colorScheme.primary.withValues(alpha: 0.1),
+                          foregroundColor: theme.colorScheme.primary,
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                dateTitle,
+              ],
+            )
+          : Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                  onPressed: () => Navigator.pop(context),
+                  style: IconButton.styleFrom(
+                    backgroundColor: theme.colorScheme.surface,
                   ),
                 ),
-                AnimatedSwitcher(
-                  duration: AppTheme.animFast,
-                  child: Text(
-                    _getFormattedDate(selectedDate, locale),
-                    key: ValueKey('date_$selectedDate'),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
+                const SizedBox(width: 12),
+                // Previous day button
+                IconButton(
+                  icon: const Icon(Icons.chevron_left_rounded),
+                  onPressed: _goToPreviousDay,
+                  style: IconButton.styleFrom(
+                    backgroundColor: theme.colorScheme.surface,
                   ),
                 ),
+                // Date display
+                Expanded(child: dateTitle),
+                // Next day button
+                IconButton(
+                  icon: Icon(
+                    Icons.chevron_right_rounded,
+                    color: canGoForward
+                        ? null
+                        : theme.colorScheme.onSurfaceVariant
+                            .withValues(alpha: 0.3),
+                  ),
+                  onPressed: canGoForward ? _goToNextDay : null,
+                  style: IconButton.styleFrom(
+                    backgroundColor: theme.colorScheme.surface,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Jump to today button (only show if not on today)
+                if (_selectedDayOffset != 0)
+                  IconButton(
+                    icon: const Icon(Icons.today_rounded),
+                    onPressed: () {
+                      _pageController.animateToPage(
+                        _daysRange,
+                        duration: AppTheme.animNormal,
+                        curve: Curves.easeOutCubic,
+                      );
+                      HapticFeedback.mediumImpact();
+                    },
+                    tooltip: l10n.today,
+                    style: IconButton.styleFrom(
+                      backgroundColor:
+                          theme.colorScheme.primary.withValues(alpha: 0.1),
+                      foregroundColor: theme.colorScheme.primary,
+                    ),
+                  )
+                else
+                  const SizedBox(
+                    width: 48,
+                  ), // Placeholder for layout consistency
               ],
             ),
-          ),
-          // Next day button
-          IconButton(
-            icon: Icon(
-              Icons.chevron_right_rounded,
-              color: canGoForward
-                  ? null
-                  : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
-            ),
-            onPressed: canGoForward ? _goToNextDay : null,
-            style: IconButton.styleFrom(
-              backgroundColor: theme.colorScheme.surface,
-            ),
-          ),
-          const SizedBox(width: 12),
-          // Jump to today button (only show if not on today)
-          if (_selectedDayOffset != 0)
-            IconButton(
-              icon: const Icon(Icons.today_rounded),
-              onPressed: () {
-                _pageController.animateToPage(
-                  _daysRange,
-                  duration: AppTheme.animNormal,
-                  curve: Curves.easeOutCubic,
-                );
-                HapticFeedback.mediumImpact();
-              },
-              tooltip: l10n.today,
-              style: IconButton.styleFrom(
-                backgroundColor:
-                    theme.colorScheme.primary.withValues(alpha: 0.1),
-                foregroundColor: theme.colorScheme.primary,
-              ),
-            )
-          else
-            const SizedBox(width: 48), // Placeholder for layout consistency
-        ],
-      ),
     );
   }
 

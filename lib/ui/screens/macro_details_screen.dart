@@ -138,14 +138,16 @@ class MacroDetailsScreen extends StatelessWidget {
         isOver ? displayExcessColor : theme.colorScheme.onSurfaceVariant;
 
     final int percentValue = (progress * 100).round().clamp(0, 999);
-    final String percentText =
-        isCapped ? '>300%' : '$percentValue%';
+    final String percentText = isCapped ? '>300%' : '$percentValue%';
 
     return GlassCard(
       padding: const EdgeInsets.all(AppTheme.spaceLG),
       child: Column(
         children: [
-          Row(
+          Wrap(
+            spacing: AppTheme.spaceMD,
+            runSpacing: AppTheme.spaceMD,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Container(
                 padding: const EdgeInsets.all(AppTheme.spaceSM),
@@ -173,7 +175,6 @@ class MacroDetailsScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              const Spacer(),
               SizedBox(
                 width: AppTheme.macroRingContainerSize,
                 height: AppTheme.macroRingContainerSize,
@@ -258,7 +259,9 @@ class MacroDetailsScreen extends StatelessWidget {
                                 const Radius.circular(AppTheme.macroBarRadius),
                             right: isOver
                                 ? Radius.zero
-                                : const Radius.circular(AppTheme.macroBarRadius),
+                                : const Radius.circular(
+                                    AppTheme.macroBarRadius,
+                                  ),
                           ),
                         ),
                       ),
@@ -277,8 +280,7 @@ class MacroDetailsScreen extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: displayExcessColor,
                             borderRadius: const BorderRadius.horizontal(
-                              right:
-                                  Radius.circular(AppTheme.macroBarRadius),
+                              right: Radius.circular(AppTheme.macroBarRadius),
                             ),
                             boxShadow: [
                               BoxShadow(
@@ -310,8 +312,10 @@ class MacroDetailsScreen extends StatelessWidget {
           ),
 
           const SizedBox(height: AppTheme.spaceMD),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            spacing: AppTheme.spaceMD,
+            runSpacing: AppTheme.spaceSM2,
+            alignment: WrapAlignment.spaceBetween,
             children: [
               Text(
                 statusText,
@@ -323,9 +327,8 @@ class MacroDetailsScreen extends StatelessWidget {
               Text(
                 '${remaining.abs().toStringAsFixed(1)} g',
                 style: theme.textTheme.titleMedium?.copyWith(
-                  color: isOver
-                      ? displayExcessColor
-                      : theme.colorScheme.onSurface,
+                  color:
+                      isOver ? displayExcessColor : theme.colorScheme.onSurface,
                   fontWeight: FontWeight.bold,
                 ),
               ),

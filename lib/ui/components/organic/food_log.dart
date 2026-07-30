@@ -34,6 +34,81 @@ class NutritionSummaryCard extends StatelessWidget {
     final calorieGoal = goals?.calories ?? 2000;
     final calorieProgress = (totals.calories / calorieGoal).clamp(0.0, 1.5);
     final isOverGoal = totals.calories > calorieGoal;
+    final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.3;
+    final ringSize = largeText ? 120.0 : 80.0;
+
+    final progressRing = SizedBox(
+      width: ringSize,
+      height: ringSize,
+      child: RadialProgress(
+        value: calorieProgress,
+        size: ringSize,
+        strokeWidth: 8,
+        color: isOverGoal ? AppTheme.error : theme.colorScheme.primary,
+        showGlow: true,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                totals.calories.toStringAsFixed(0),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: isOverGoal ? AppTheme.error : null,
+                ),
+              ),
+              Text(
+                'kcal',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    final details = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: theme.textTheme.titleSmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: AppTheme.spaceSM2),
+        Wrap(
+          spacing: 16,
+          runSpacing: 8,
+          children: [
+            _SummaryMacroStat(
+              label: proteinLabel,
+              value: totals.protein,
+              color: AppTheme.protein,
+            ),
+            _SummaryMacroStat(
+              label: carbsLabel,
+              value: totals.carbs,
+              color: AppTheme.carbs,
+            ),
+            _SummaryMacroStat(
+              label: fatLabel,
+              value: totals.fat,
+              color: AppTheme.fat,
+            ),
+            if (fiberLabel != null)
+              _SummaryMacroStat(
+                label: fiberLabel!,
+                value: totals.fiber,
+                color: AppTheme.fiber,
+              ),
+          ],
+        ),
+      ],
+    );
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -53,84 +128,22 @@ class NutritionSummaryCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Row(
-            children: [
-              SizedBox(
-                width: 80,
-                height: 80,
-                child: RadialProgress(
-                  value: calorieProgress,
-                  size: 80,
-                  strokeWidth: 8,
-                  color:
-                      isOverGoal ? AppTheme.error : theme.colorScheme.primary,
-                  showGlow: true,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        totals.calories.toStringAsFixed(0),
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: isOverGoal ? AppTheme.error : null,
-                        ),
-                      ),
-                      Text(
-                        'kcal',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 20),
-              Expanded(
-                child: Column(
+          largeText
+              ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: AppTheme.spaceSM2),
-                    Row(
-                      children: [
-                        _SummaryMacroStat(
-                          label: proteinLabel,
-                          value: totals.protein,
-                          color: AppTheme.protein,
-                        ),
-                        const SizedBox(width: 16),
-                        _SummaryMacroStat(
-                          label: carbsLabel,
-                          value: totals.carbs,
-                          color: AppTheme.carbs,
-                        ),
-                        const SizedBox(width: 16),
-                        _SummaryMacroStat(
-                          label: fatLabel,
-                          value: totals.fat,
-                          color: AppTheme.fat,
-                        ),
-                        if (fiberLabel != null) ...[
-                          const SizedBox(width: 16),
-                          _SummaryMacroStat(
-                            label: fiberLabel!,
-                            value: totals.fiber,
-                            color: AppTheme.fiber,
-                          ),
-                        ],
-                      ],
-                    ),
+                    progressRing,
+                    const SizedBox(height: 16),
+                    details,
+                  ],
+                )
+              : Row(
+                  children: [
+                    progressRing,
+                    const SizedBox(width: 20),
+                    Expanded(child: details),
                   ],
                 ),
-              ),
-            ],
-          ),
           if (isOverGoal && overGoalLabel != null) ...[
             const SizedBox(height: AppTheme.spaceSM2),
             Container(
@@ -253,9 +266,13 @@ class MealCard extends StatelessWidget {
                             children: [
                               Row(
                                 children: [
-                                  Text(
-                                    title,
-                                    style: theme.textTheme.titleMedium,
+                                  Expanded(
+                                    child: Text(
+                                      title,
+                                      style: theme.textTheme.titleMedium,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ),
                                   if (onHeaderTap != null &&
                                       showHeaderChevron) ...[
@@ -286,7 +303,9 @@ class MealCard extends StatelessWidget {
                                 ),
                               if (calories > 0 && showMacros) ...[
                                 const SizedBox(height: 2),
-                                Row(
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 4,
                                   children: [
                                     _buildMiniMacro(
                                       'P',
@@ -470,23 +489,26 @@ class FoodEntryTile extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
-                  Row(
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
                     children: [
                       MacroChip(
                         label: 'P',
                         value: protein,
                         color: AppTheme.protein,
                       ),
-                      const SizedBox(width: 8),
                       MacroChip(
                         label: 'C',
                         value: carbs,
                         color: AppTheme.carbs,
                       ),
-                      const SizedBox(width: 8),
                       MacroChip(label: 'F', value: fat, color: AppTheme.fat),
-                      const SizedBox(width: 8),
-                      MacroChip(label: 'Fi', value: fiber, color: AppTheme.fiber),
+                      MacroChip(
+                        label: 'Fi',
+                        value: fiber,
+                        color: AppTheme.fiber,
+                      ),
                     ],
                   ),
                 ],
@@ -505,5 +527,3 @@ class FoodEntryTile extends StatelessWidget {
     );
   }
 }
-
-
