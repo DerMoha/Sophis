@@ -93,16 +93,19 @@ class _ProgressPhotosScreenState extends State<ProgressPhotosScreen> {
           ],
         ),
         body: SafeArea(
-          child: Column(
-            children: [
-              _buildFilterBar(l10n, theme),
-              Expanded(
-                child: filtered.isEmpty
-                    ? _buildEmptyState(l10n, theme)
-                    : _buildPhotoGrid(filtered, theme),
-              ),
-            ],
-          ),
+          child: filtered.isEmpty
+              ? ListView(
+                  children: [
+                    _buildFilterBar(l10n, theme),
+                    _buildEmptyState(l10n, theme),
+                  ],
+                )
+              : Column(
+                  children: [
+                    _buildFilterBar(l10n, theme),
+                    Expanded(child: _buildPhotoGrid(filtered, theme)),
+                  ],
+                ),
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () => _showAddSheet(context),
@@ -148,11 +151,13 @@ class _ProgressPhotosScreenState extends State<ProgressPhotosScreen> {
                 },
                 child: AnimatedContainer(
                   duration: AppTheme.animFast,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   decoration: BoxDecoration(
                     color: isSelected
                         ? theme.colorScheme.primary
-                        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+                        : theme.colorScheme.surfaceContainerHighest
+                            .withValues(alpha: 0.6),
                     borderRadius: BorderRadius.circular(100),
                     border: Border.all(
                       color: isSelected
@@ -166,7 +171,8 @@ class _ProgressPhotosScreenState extends State<ProgressPhotosScreen> {
                       color: isSelected
                           ? theme.colorScheme.onPrimary
                           : theme.colorScheme.onSurfaceVariant,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.w500,
                       fontSize: 13,
                     ),
                   ),
@@ -312,7 +318,8 @@ class _PhotoTile extends StatelessWidget {
           onLongPress: onLongPress,
           child: Container(
             decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+              color: theme.colorScheme.surfaceContainerHighest
+                  .withValues(alpha: 0.4),
               borderRadius: BorderRadius.circular(AppTheme.radiusMD),
               border: Border.all(
                 color: theme.colorScheme.outline.withValues(alpha: 0.08),
@@ -335,13 +342,17 @@ class _PhotoTile extends StatelessWidget {
                         top: 8,
                         left: 8,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.black.withValues(alpha: 0.65),
                             borderRadius: BorderRadius.circular(100),
                           ),
                           child: Text(
-                            _getCategoryLabel(photo.category, l10n).toUpperCase(),
+                            _getCategoryLabel(photo.category, l10n)
+                                .toUpperCase(),
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 9,
@@ -382,15 +393,23 @@ class _PhotoTile extends StatelessWidget {
                             ),
                           if (deltaText != null)
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
-                                color: (isLoss ? AppTheme.success : AppTheme.warning).withValues(alpha: 0.1),
+                                color: (isLoss
+                                        ? AppTheme.success
+                                        : AppTheme.warning)
+                                    .withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
                                 deltaText,
                                 style: TextStyle(
-                                  color: isLoss ? AppTheme.success : AppTheme.warning,
+                                  color: isLoss
+                                      ? AppTheme.success
+                                      : AppTheme.warning,
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
                                 ),

@@ -126,22 +126,25 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
                                   ),
                                 ),
                                 const SizedBox(width: 14),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      l10n.logWeight,
-                                      style: theme.textTheme.titleMedium,
-                                    ),
-                                    Text(
-                                      l10n.trackYourProgress,
-                                      style:
-                                          theme.textTheme.bodySmall?.copyWith(
-                                        color:
-                                            theme.colorScheme.onSurfaceVariant,
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        l10n.logWeight,
+                                        style: theme.textTheme.titleMedium,
                                       ),
-                                    ),
-                                  ],
+                                      Text(
+                                        l10n.trackYourProgress,
+                                        style:
+                                            theme.textTheme.bodySmall?.copyWith(
+                                          color: theme
+                                              .colorScheme.onSurfaceVariant,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),

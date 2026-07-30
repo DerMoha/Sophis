@@ -13,29 +13,42 @@ class DashboardSettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.3;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.customizeDashboard),
+        title: Text(
+          l10n.customizeDashboard,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: TextButton(
-              onPressed: () {
-                context.read<SettingsProvider>().resetDashboardCards();
-              },
-              child: Text(
-                l10n.resetToDefault,
-                style: TextStyle(
-                  color: theme.colorScheme.primary,
-                  fontWeight: FontWeight.w600,
+          largeText
+              ? IconButton(
+                  tooltip: l10n.resetToDefault,
+                  onPressed: () {
+                    context.read<SettingsProvider>().resetDashboardCards();
+                  },
+                  icon: const Icon(Icons.restart_alt_rounded),
+                )
+              : Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: TextButton(
+                    onPressed: () {
+                      context.read<SettingsProvider>().resetDashboardCards();
+                    },
+                    child: Text(
+                      l10n.resetToDefault,
+                      style: TextStyle(
+                        color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          ),
         ],
       ),
       body: CustomScrollView(
@@ -130,6 +143,7 @@ class _DashboardCardTile extends StatelessWidget {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
     final isDark = theme.brightness == Brightness.dark;
+    final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.3;
 
     final cardInfo = _getCardInfo(card.id, l10n);
 
@@ -148,21 +162,27 @@ class _DashboardCardTile extends StatelessWidget {
                 ? Colors.white.withValues(alpha: 0.02)
                 : Colors.black.withValues(alpha: 0.02)),
         child: ListTile(
+          isThreeLine: true,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          leading: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: card.visible
-                  ? cardInfo.color.withValues(alpha: 0.1)
-                  : theme.colorScheme.outline.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-            ),
-            child: Icon(
-              cardInfo.icon,
-              color: card.visible ? cardInfo.color : theme.colorScheme.outline,
-              size: 20,
+          leading: ReorderableDragStartListener(
+            enabled: largeText,
+            index: index,
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: card.visible
+                    ? cardInfo.color.withValues(alpha: 0.1)
+                    : theme.colorScheme.outline.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+              ),
+              child: Icon(
+                cardInfo.icon,
+                color:
+                    card.visible ? cardInfo.color : theme.colorScheme.outline,
+                size: 20,
+              ),
             ),
           ),
           title: Text(
@@ -180,35 +200,43 @@ class _DashboardCardTile extends StatelessWidget {
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Visibility toggle
-              Switch(
-                value: card.visible,
-                onChanged: (_) => onToggleVisibility(),
-                activeThumbColor: theme.colorScheme.primary,
-              ),
-              const SizedBox(width: 8),
-              // Drag handle
-              ReorderableDragStartListener(
-                index: index,
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.outline.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(AppTheme.radiusXS),
-                  ),
-                  child: Icon(
-                    Icons.drag_handle,
-                    color: theme.colorScheme.onSurfaceVariant,
-                    size: 20,
-                  ),
+          trailing: largeText
+              ? Switch(
+                  value: card.visible,
+                  onChanged: (_) => onToggleVisibility(),
+                  activeThumbColor: theme.colorScheme.primary,
+                )
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Switch(
+                      value: card.visible,
+                      onChanged: (_) => onToggleVisibility(),
+                      activeThumbColor: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(height: 4),
+                    ReorderableDragStartListener(
+                      index: index,
+                      child: Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.outline.withValues(
+                            alpha: 0.1,
+                          ),
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.radiusXS,
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.drag_handle,
+                          color: theme.colorScheme.onSurfaceVariant,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
-          ),
         ),
       ),
     );

@@ -406,10 +406,11 @@ class _SupplementsScreenState extends State<SupplementsScreen> {
 
   Widget _buildEmptyState(BuildContext context, ThemeData theme) {
     final l10n = AppLocalizations.of(context)!;
-    return Center(
+    return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(40),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             EmptyState(

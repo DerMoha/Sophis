@@ -32,7 +32,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     if (calories == null || calories <= 0) return;
 
     final nutrition = context.read<NutritionProvider>();
-    
+
     nutrition.addWorkoutEntry(
       calories,
       note: _noteController.text.isEmpty ? null : _noteController.text,
@@ -52,6 +52,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final l10n = AppLocalizations.of(context)!;
+    final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.3;
 
     return Scaffold(
       appBar: AppBar(
@@ -80,7 +81,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                           style: theme.textTheme.titleMedium,
                         ),
                         const SizedBox(height: 16),
-                        Row(
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 12,
                           children: [
                             _QuickAddButton(
                               amount: 100,
@@ -88,21 +91,18 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                   .read<NutritionProvider>()
                                   .addWorkoutEntry(100),
                             ),
-                            const SizedBox(width: 12),
                             _QuickAddButton(
                               amount: 200,
                               onTap: () => context
                                   .read<NutritionProvider>()
                                   .addWorkoutEntry(200),
                             ),
-                            const SizedBox(width: 12),
                             _QuickAddButton(
                               amount: 300,
                               onTap: () => context
                                   .read<NutritionProvider>()
                                   .addWorkoutEntry(300),
                             ),
-                            const SizedBox(width: 12),
                             _QuickAddButton(
                               amount: 500,
                               onTap: () => context
@@ -147,53 +147,86 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                               ),
                             ),
                             const SizedBox(width: 14),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  l10n.logWorkout,
-                                  style: theme.textTheme.titleMedium,
-                                ),
-                              ],
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    l10n.logWorkout,
+                                    style: theme.textTheme.titleMedium,
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 24),
-                        Row(
-                          children: [
-                            Expanded(
-                              flex: 2,
-                              child: TextField(
-                                controller: _caloriesController,
-                                keyboardType: TextInputType.number,
-                                decoration: InputDecoration(
-                                  hintText: l10n.caloriesBurned,
-                                  suffixText: 'kcal',
-                                  prefixIcon: const Icon(
-                                    Icons.local_fire_department_outlined,
-                                    size: 20,
+                        largeText
+                            ? Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  TextField(
+                                    controller: _caloriesController,
+                                    keyboardType: TextInputType.number,
+                                    decoration: InputDecoration(
+                                      hintText: l10n.caloriesBurned,
+                                      suffixText: 'kcal',
+                                      prefixIcon: const Icon(
+                                        Icons.local_fire_department_outlined,
+                                        size: 20,
+                                      ),
+                                    ),
+                                    onSubmitted: (_) => _saveEntry(),
                                   ),
-                                ),
-                                onSubmitted: (_) => _saveEntry(),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              flex: 3,
-                              child: TextField(
-                                controller: _noteController,
-                                decoration: InputDecoration(
-                                  hintText: l10n.noteOptional,
-                                  prefixIcon: const Icon(
-                                    Icons.note_outlined,
-                                    size: 20,
+                                  const SizedBox(height: 12),
+                                  TextField(
+                                    controller: _noteController,
+                                    decoration: InputDecoration(
+                                      hintText: l10n.noteOptional,
+                                      prefixIcon: const Icon(
+                                        Icons.note_outlined,
+                                        size: 20,
+                                      ),
+                                    ),
+                                    onSubmitted: (_) => _saveEntry(),
                                   ),
-                                ),
-                                onSubmitted: (_) => _saveEntry(),
+                                ],
+                              )
+                            : Row(
+                                children: [
+                                  Expanded(
+                                    flex: 2,
+                                    child: TextField(
+                                      controller: _caloriesController,
+                                      keyboardType: TextInputType.number,
+                                      decoration: InputDecoration(
+                                        hintText: l10n.caloriesBurned,
+                                        suffixText: 'kcal',
+                                        prefixIcon: const Icon(
+                                          Icons.local_fire_department_outlined,
+                                          size: 20,
+                                        ),
+                                      ),
+                                      onSubmitted: (_) => _saveEntry(),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    flex: 3,
+                                    child: TextField(
+                                      controller: _noteController,
+                                      decoration: InputDecoration(
+                                        hintText: l10n.noteOptional,
+                                        prefixIcon: const Icon(
+                                          Icons.note_outlined,
+                                          size: 20,
+                                        ),
+                                      ),
+                                      onSubmitted: (_) => _saveEntry(),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
-                          ],
-                        ),
                         const SizedBox(height: 16),
                         SizedBox(
                           width: double.infinity,
@@ -269,7 +302,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                   decoration: BoxDecoration(
                                     color: AppTheme.fire.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(
-                                        AppTheme.radiusSM,
+                                      AppTheme.radiusSM,
                                     ),
                                   ),
                                   child: const Icon(
@@ -281,7 +314,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                 const SizedBox(width: 14),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         '${entry.caloriesBurned.toStringAsFixed(0)} kcal',
@@ -296,8 +330,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                               context,
                                               entry.timestamp,
                                             ),
-                                        style: theme.textTheme.bodySmall
-                                            ?.copyWith(
+                                        style:
+                                            theme.textTheme.bodySmall?.copyWith(
                                           color: theme
                                               .colorScheme.onSurfaceVariant,
                                         ),
@@ -364,7 +398,8 @@ class _QuickAddButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Expanded(
+    return SizedBox(
+      width: 104,
       child: Material(
         color: Colors.transparent,
         child: InkWell(

@@ -81,7 +81,9 @@ class _WaterScreenState extends State<WaterScreen> {
                               style: theme.textTheme.titleMedium,
                             ),
                             const SizedBox(height: 16),
-                            Row(
+                            Wrap(
+                              spacing: 12,
+                              runSpacing: 12,
                               children: [
                                 _QuickAddButton(
                                   amountMl: sizes[0],
@@ -93,7 +95,6 @@ class _WaterScreenState extends State<WaterScreen> {
                                         .addWater(sizes[0].toDouble());
                                   },
                                 ),
-                                const SizedBox(width: 12),
                                 _QuickAddButton(
                                   amountMl: sizes[1],
                                   unitSystem: unitSystem,
@@ -104,7 +105,6 @@ class _WaterScreenState extends State<WaterScreen> {
                                         .addWater(sizes[1].toDouble());
                                   },
                                 ),
-                                const SizedBox(width: 12),
                                 _QuickAddButton(
                                   amountMl: sizes[2],
                                   unitSystem: unitSystem,
@@ -115,7 +115,6 @@ class _WaterScreenState extends State<WaterScreen> {
                                         .addWater(sizes[2].toDouble());
                                   },
                                 ),
-                                const SizedBox(width: 12),
                                 _QuickAddButton(
                                   amountMl: sizes[3],
                                   unitSystem: unitSystem,
@@ -142,7 +141,10 @@ class _WaterScreenState extends State<WaterScreen> {
                   child: Consumer<SettingsProvider>(
                     builder: (context, settings, _) {
                       final unitSystem = settings.unitSystem;
-                      final waterUnit = UnitConverter.waterUnitShort(unitSystem);
+                      final waterUnit =
+                          UnitConverter.waterUnitShort(unitSystem);
+                      final largeText =
+                          MediaQuery.textScalerOf(context).scale(1) > 1.3;
                       return OrganicCard(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -170,51 +172,85 @@ class _WaterScreenState extends State<WaterScreen> {
                                   ),
                                 ),
                                 const SizedBox(width: 14),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      l10n.add,
-                                      style: theme.textTheme.titleMedium,
-                                    ),
-                                  ],
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        l10n.add,
+                                        style: theme.textTheme.titleMedium,
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 24),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: TextField(
-                                    controller: _customController,
-                                    keyboardType: TextInputType.number,
-                                    decoration: InputDecoration(
-                                      hintText: waterUnit,
-                                      prefixIcon: const Icon(
-                                        Icons.water_drop_outlined,
-                                        size: 20,
+                            largeText
+                                ? Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      TextField(
+                                        controller: _customController,
+                                        keyboardType: TextInputType.number,
+                                        decoration: InputDecoration(
+                                          hintText: waterUnit,
+                                          prefixIcon: const Icon(
+                                            Icons.water_drop_outlined,
+                                            size: 20,
+                                          ),
+                                        ),
+                                        onSubmitted: (_) => _addCustomWater(),
                                       ),
-                                    ),
-                                    onSubmitted: (_) => _addCustomWater(),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                SizedBox(
-                                  height: 52,
-                                  child: ElevatedButton(
-                                    onPressed: _addCustomWater,
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppTheme.water,
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 24,
+                                      const SizedBox(height: 12),
+                                      SizedBox(
+                                        height: 52,
+                                        child: ElevatedButton(
+                                          onPressed: _addCustomWater,
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: AppTheme.water,
+                                            foregroundColor: Colors.white,
+                                          ),
+                                          child: Text(l10n.add),
+                                        ),
                                       ),
-                                    ),
-                                    child: Text(l10n.add),
+                                    ],
+                                  )
+                                : Row(
+                                    children: [
+                                      Expanded(
+                                        child: TextField(
+                                          controller: _customController,
+                                          keyboardType: TextInputType.number,
+                                          decoration: InputDecoration(
+                                            hintText: waterUnit,
+                                            prefixIcon: const Icon(
+                                              Icons.water_drop_outlined,
+                                              size: 20,
+                                            ),
+                                          ),
+                                          onSubmitted: (_) => _addCustomWater(),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      SizedBox(
+                                        height: 52,
+                                        child: ElevatedButton(
+                                          onPressed: _addCustomWater,
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: AppTheme.water,
+                                            foregroundColor: Colors.white,
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 24,
+                                            ),
+                                          ),
+                                          child: Text(l10n.add),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                              ],
-                            ),
                           ],
                         ),
                       );
@@ -235,7 +271,8 @@ class _WaterScreenState extends State<WaterScreen> {
                 Selector<NutritionProvider, List<WaterEntry>>(
                   selector: (_, n) => n.getTodayWaterEntries(),
                   builder: (context, entries, _) {
-                    final unitSystem = context.select<SettingsProvider, UnitSystem>(
+                    final unitSystem =
+                        context.select<SettingsProvider, UnitSystem>(
                       (s) => s.unitSystem,
                     );
 
@@ -283,7 +320,7 @@ class _WaterScreenState extends State<WaterScreen> {
                                     color:
                                         AppTheme.water.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(
-                                        AppTheme.radiusSM,
+                                      AppTheme.radiusSM,
                                     ),
                                   ),
                                   child: const Icon(
@@ -295,7 +332,8 @@ class _WaterScreenState extends State<WaterScreen> {
                                 const SizedBox(width: 14),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         UnitConverter.formatWaterShort(
@@ -312,8 +350,8 @@ class _WaterScreenState extends State<WaterScreen> {
                                           context,
                                           entry.timestamp,
                                         ),
-                                        style: theme.textTheme.bodySmall
-                                            ?.copyWith(
+                                        style:
+                                            theme.textTheme.bodySmall?.copyWith(
                                           color: theme
                                               .colorScheme.onSurfaceVariant,
                                         ),
@@ -368,7 +406,8 @@ class _QuickAddButton extends StatelessWidget {
     final displayText =
         UnitConverter.formatWaterShort(amountMl.toDouble(), unitSystem);
 
-    return Expanded(
+    return SizedBox(
+      width: 104,
       child: Material(
         color: Colors.transparent,
         child: InkWell(

@@ -56,7 +56,11 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.bar_chart, size: AppTheme.iconHero, color: theme.disabledColor),
+                  Icon(
+                    Icons.bar_chart,
+                    size: AppTheme.iconHero,
+                    color: theme.disabledColor,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     l10n.noActivityData,
@@ -215,8 +219,10 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Wrap(
+              spacing: 12,
+              runSpacing: 4,
+              alignment: WrapAlignment.spaceBetween,
               children: [
                 Text(title, style: theme.textTheme.titleMedium),
                 Text(
@@ -357,8 +363,7 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
         data.map((d) => d.protein).reduce((a, b) => a + b) / data.length;
     final avgCarbs =
         data.map((d) => d.carbs).reduce((a, b) => a + b) / data.length;
-    final avgFat =
-        data.map((d) => d.fat).reduce((a, b) => a + b) / data.length;
+    final avgFat = data.map((d) => d.fat).reduce((a, b) => a + b) / data.length;
     final avgFiber =
         data.map((d) => d.fiber).reduce((a, b) => a + b) / data.length;
 
@@ -452,9 +457,11 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
                     color: AppTheme.success,
                   ),
                   const SizedBox(width: 4),
-                  Text(
-                    l10n.daysOnTrack(daysMetCalories, data.length),
-                    style: theme.textTheme.bodySmall,
+                  Flexible(
+                    child: Text(
+                      l10n.daysOnTrack(daysMetCalories, data.length),
+                      style: theme.textTheme.bodySmall,
+                    ),
                   ),
                 ],
               ),
@@ -483,9 +490,9 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
         children: [
           Text(label, style: theme.textTheme.bodySmall),
           const SizedBox(height: 4),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
+          Wrap(
+            spacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Text(
                 value,
