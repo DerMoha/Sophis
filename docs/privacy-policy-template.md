@@ -1,4 +1,4 @@
-# Sophis Privacy Policy
+# Sophis Privacy Policy (publication draft)
 
 **Effective date:** [DATE]
 
@@ -6,48 +6,84 @@
 
 **Contact:** [SUPPORT EMAIL AND POSTAL/LEGAL CONTACT AS REQUIRED]
 
-Sophis is a local-first nutrition tracking application. This policy explains
-what information the app handles and when information leaves your device.
+Sophis is a local-first nutrition tracking application. Sophis does not
+require an account, operate a user-data backend, use advertising, include
+cross-app tracking, or include third-party analytics.
 
-## Information stored on your device
+This policy explains what is processed on the device and what leaves the
+device when a user chooses an external feature. The final published version
+must include the developer's legal identity, contact details, applicable
+jurisdictional rights, and links to the current policies of each external
+provider.
+
+## Information processed locally
 
 Sophis stores nutrition goals and logs, water and weight entries, workouts,
-meal plans, recipes, supplement records, preferences, and progress photos on
-your device. Gemini and Open Food Facts credentials are stored using the
-device's secure credential storage. Sophis does not require an account.
+meal plans, recipes, supplement records, preferences, barcode results, and
+progress photos locally on the device. The app uses SQLite and local
+preferences for app data and the operating system's secure credential storage
+for a user-provided Gemini API key and optional Open Food Facts credentials.
+
+Nutrition-label scanning is local by default. Google ML Kit performs on-device
+text recognition, and Sophis applies a local parser and validation rules to
+the OCR result. The original label image is not sent to Gemini during this
+local pass. Captured label images are currently also saved to the device's
+Photos library; users can manage or delete those copies there.
+
+Apple Health data is read or written only after the user grants the relevant
+HealthKit permission. Notifications and progress-photo biometric protection
+are handled locally by the operating system.
 
 ## Optional external features
 
-- Food search and barcode lookup send a search term or barcode to Open Food
-  Facts and Brocade so product information can be returned.
-- Gemini features send the image or text selected by the user to Google using
-  the user's Gemini API key. Gemini results are estimates and must be reviewed.
-- Apple Health synchronization reads or writes only the categories the user
-  explicitly authorizes. Health data is not used for advertising or tracking.
+- Food search sends the search term to Open Food Facts. Barcode lookup sends
+  the barcode to Open Food Facts and, if needed, Brocade to find product
+  information. Returned results may be cached locally.
+- AI food, recipe, and image features send the image or text selected by the
+  user directly from the app to Google Gemini using the user's own API key.
+- If local nutrition-label parsing is uncertain and the user has configured a
+  Gemini API key, Sophis sends the OCR text—not the original label image—to
+  Gemini as a fallback. Gemini results are estimates and must be reviewed.
+- If the user submits a product to Open Food Facts, the entered Open Food
+  Facts credentials and product data are sent to that service.
 
-Link the final policy to the current privacy terms of each external provider
-and describe their role accurately. Sophis does not include advertising,
-cross-app tracking, third-party analytics, or a developer-operated backend.
+Sophis does not proxy these requests through a developer-operated server.
+Google, Open Food Facts, Brocade, and Apple control their own processing and
+retention under their respective terms and privacy policies. Sophis does not
+use health, fitness, or photo data for advertising, marketing, or tracking.
 
-## Photos, camera, and notifications
+## Photos, camera, sharing, and export
 
-Camera access is used for barcode, nutrition-label, meal, and progress-photo
-capture. Progress photos remain local unless the user exports or shares them.
-Notifications are scheduled locally for reminders. Biometric authentication is
-used only by the operating system to unlock progress photos.
-
-## Export and deletion
+Camera and photo-library access is used for barcode, nutrition-label, meal,
+and progress-photo features. Progress photos remain local unless the user
+chooses to export or share them. The operating system's share sheet can send
+user-selected content to an app or recipient chosen by the user.
 
 Users can export a versioned backup containing their nutrition records and
-progress-photo files. “Delete All Local Data” removes Sophis records, photos,
-settings, reminders, and saved credentials from the device. Device or cloud
-backups controlled by the operating system may follow the platform's retention
-rules.
+progress-photo files. Exported files are controlled by the user after they
+leave Sophis.
 
-## Children, security, changes, and contact
+## Deletion, retention, and security
+
+“Delete All Local Data” removes Sophis records, Sophis-owned progress-photo
+files, settings, reminders, and saved credentials from the app. It does not
+remove copies that the user has exported, shared, or that the label scanner
+has saved to the system Photos library; users can manage those copies in
+Photos. Users can also remove their saved API keys and Open Food Facts
+credentials from Settings. Device or cloud backups controlled by the
+operating system may follow the platform's retention rules.
+
+Sophis does not retain external requests on a developer-operated server.
+Requests sent to external providers may be retained or processed by those
+providers according to their current terms; users should review those terms
+before enabling an external feature.
+
+## Children, medical use, changes, and contact
 
 [ADD THE AGE POLICY, SECURITY PRACTICES, JURISDICTION-SPECIFIC RIGHTS, POLICY
-CHANGE PROCESS, RETENTION DETAILS, AND CONTACT/COMPLAINT PROCESS REVIEWED FOR
-THE DEVELOPER'S ACTUAL LOCATION AND TARGET MARKETS.]
+CHANGE PROCESS, AND CONTACT/COMPLAINT PROCESS REVIEWED FOR THE DEVELOPER'S
+ACTUAL LOCATION AND TARGET MARKETS.]
 
-Sophis provides general nutrition tracking and is not medical advice.
+Sophis provides general nutrition tracking and is not medical advice. Users
+should consult a qualified professional before making medical or dietary
+decisions.

@@ -5,6 +5,12 @@
 - Install full Xcode, then run:
   - `sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer`
   - `sudo xcodebuild -runFirstLaunch`
+- Open `ios/Runner.xcworkspace` and verify that the Runner and
+  SophisWidgetExtension targets both use iOS 17.0, automatic signing, and the
+  expected App Group, HealthKit, and keychain entitlements.
+- Xcode 27 beta builds are currently accepted for TestFlight only when the
+  exact beta/SDK combination is listed in Apple's App Store Connect release
+  notes. Use a stable Xcode release for the eventual App Store submission.
 - Configure App Store distribution signing for `com.sophis.sophis` and the
   `SophisWidgetExtension` target.
 - Verify the HealthKit entitlement, keychain access group, and
