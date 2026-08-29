@@ -1,6 +1,7 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 
+import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 
 class NutritionLabelCameraScreen extends StatefulWidget {
@@ -47,7 +48,7 @@ class _NutritionLabelCameraScreenState extends State<NutritionLabelCameraScreen>
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        _error = error.toString();
+        _error = AppLocalizations.of(context)!.nutritionLabelCameraUnavailable;
         _initializing = false;
       });
     }
@@ -126,7 +127,9 @@ class _NutritionLabelCameraScreenState extends State<NutritionLabelCameraScreen>
       if (!mounted) return;
       setState(() {
         _capturing = false;
-        _error = error.toString();
+        _error = AppLocalizations.of(
+          context,
+        )!.nutritionLabelCameraCaptureFailed;
       });
     }
   }
@@ -220,8 +223,10 @@ class _NutritionLabelCameraScreenState extends State<NutritionLabelCameraScreen>
                   margin: const EdgeInsets.only(top: 72, left: 24, right: 24),
                   padding: const EdgeInsets.all(12),
                   color: Colors.red.shade900,
-                  child:
-                      Text(error, style: const TextStyle(color: Colors.white)),
+                  child: Text(
+                    error,
+                    style: const TextStyle(color: Colors.white),
+                  ),
                 ),
               ),
             ),
@@ -259,9 +264,9 @@ class _TopBar extends StatelessWidget {
               title,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                  ),
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
           IconButton.filledTonal(

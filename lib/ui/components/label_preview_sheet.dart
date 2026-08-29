@@ -5,6 +5,22 @@ import 'package:sophis/services/gemini/models/nutrition_label_result.dart';
 import 'package:sophis/services/nutrition_label_validator.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 
+String _validationIssueMessage(
+  NutritionLabelIssue issue,
+  AppLocalizations l10n,
+) {
+  return switch (issue) {
+    NutritionLabelIssue.caloriesOutOfRange =>
+      l10n.nutritionLabelCaloriesRangeWarning,
+    NutritionLabelIssue.nutrientOutOfRange =>
+      l10n.nutritionLabelNutrientRangeWarning,
+    NutritionLabelIssue.nutrientTotalTooHigh =>
+      l10n.nutritionLabelNutrientTotalWarning,
+    NutritionLabelIssue.calorieMacroMismatch =>
+      l10n.nutritionLabelCaloriesMismatchWarning,
+  };
+}
+
 /// Shows a modal bottom sheet that previews the values parsed from a nutrition
 /// label photo. Returns the confirmed, possibly corrected label, or `null`
 /// when the user requests another scan.
@@ -79,20 +95,26 @@ class _LabelPreviewSheetState extends State<LabelPreviewSheet> {
   }
 
   TextEditingController _controller(double value) => TextEditingController(
-        text: value.toStringAsFixed(value % 1 == 0 ? 0 : 1),
-      );
+    text: value.toStringAsFixed(value % 1 == 0 ? 0 : 1),
+  );
 
   double? _value(TextEditingController controller) =>
       double.tryParse(controller.text.trim().replaceAll(',', '.'));
 
   void _confirm() {
-    final values =
-        [_calories, _protein, _carbs, _fat, _fiber].map(_value).toList();
+    final values = [
+      _calories,
+      _protein,
+      _carbs,
+      _fat,
+      _fiber,
+    ].map(_value).toList();
     if (values.any((value) => value == null || value < 0)) return;
     widget.onLooksGood(
       widget.label.copyWith(
-        productName:
-            _productName.text.trim().isEmpty ? null : _productName.text.trim(),
+        productName: _productName.text.trim().isEmpty
+            ? null
+            : _productName.text.trim(),
         brand: _brand.text.trim().isEmpty ? null : _brand.text.trim(),
         clearProductName: _productName.text.trim().isEmpty,
         clearBrand: _brand.text.trim().isEmpty,
@@ -148,7 +170,10 @@ class _LabelPreviewSheetState extends State<LabelPreviewSheet> {
                 when !validation.isHighConfidence)
               _ConfidenceWarning(
                 theme: theme,
-                issues: validation.issues,
+                issues: validation.issues
+                    .map((issue) => _validationIssueMessage(issue, l10n))
+                    .toList(),
+                title: l10n.nutritionLabelCheckTitle,
                 fallbackMessage: l10n.nutritionLabelUncertain,
               ),
             const SizedBox(height: 12),
@@ -157,8 +182,9 @@ class _LabelPreviewSheetState extends State<LabelPreviewSheet> {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest
-                      .withValues(alpha: 0.3),
+                  color: theme.colorScheme.surfaceContainerHighest.withValues(
+                    alpha: 0.3,
+                  ),
                   borderRadius: BorderRadius.circular(AppTheme.radiusLG),
                   border: Border.all(
                     color: theme.colorScheme.outline.withValues(alpha: 0.15),
@@ -227,11 +253,13 @@ class _AnalysisSourceNote extends StatelessWidget {
 class _ConfidenceWarning extends StatelessWidget {
   final ThemeData theme;
   final List<String> issues;
+  final String title;
   final String fallbackMessage;
 
   const _ConfidenceWarning({
     required this.theme,
     required this.issues,
+    required this.title,
     required this.fallbackMessage,
   });
 
@@ -241,8 +269,11 @@ class _ConfidenceWarning extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(24, 10, 24, 0),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: theme.colorScheme.tertiaryContainer,
+        color: theme.colorScheme.tertiaryContainer.withValues(alpha: 0.7),
         borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+        border: Border.all(
+          color: theme.colorScheme.tertiary.withValues(alpha: 0.35),
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -250,9 +281,21 @@ class _ConfidenceWarning extends StatelessWidget {
           Icon(Icons.warning_amber_rounded, color: theme.colorScheme.tertiary),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              issues.isEmpty ? fallbackMessage : issues.join('\n'),
-              style: theme.textTheme.bodySmall,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  issues.isEmpty ? fallbackMessage : issues.join('\n'),
+                  style: theme.textTheme.bodySmall,
+                ),
+              ],
             ),
           ),
         ],
@@ -354,10 +397,7 @@ class _ValueList extends StatelessWidget {
         TextField(
           controller: productNameController,
           textCapitalization: TextCapitalization.words,
-          decoration: InputDecoration(
-            labelText: l10n.foodName,
-            isDense: true,
-          ),
+          decoration: InputDecoration(labelText: l10n.foodName, isDense: true),
         ),
         const SizedBox(height: 10),
         TextField(
@@ -422,9 +462,7 @@ class _ValueList extends StatelessWidget {
         ),
         if (label.servingSizeG != null && label.servingSizeG! > 0) ...[
           const SizedBox(height: 16),
-          Divider(
-            color: theme.colorScheme.outline.withValues(alpha: 0.2),
-          ),
+          Divider(color: theme.colorScheme.outline.withValues(alpha: 0.2)),
           const SizedBox(height: 12),
           Row(
             children: [

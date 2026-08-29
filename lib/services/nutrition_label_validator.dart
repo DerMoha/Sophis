@@ -2,10 +2,17 @@ import 'dart:math' as math;
 
 import 'package:sophis/services/gemini/models/nutrition_label_result.dart';
 
+enum NutritionLabelIssue {
+  caloriesOutOfRange,
+  nutrientOutOfRange,
+  nutrientTotalTooHigh,
+  calorieMacroMismatch,
+}
+
 class NutritionLabelValidation {
   final bool isUsable;
   final bool isHighConfidence;
-  final List<String> issues;
+  final List<NutritionLabelIssue> issues;
 
   const NutritionLabelValidation({
     required this.isUsable,
@@ -16,7 +23,7 @@ class NutritionLabelValidation {
 
 class NutritionLabelValidator {
   static NutritionLabelValidation validate(NutritionLabelResult label) {
-    final issues = <String>[];
+    final issues = <NutritionLabelIssue>[];
     final macros = <double>[
       label.proteinPer100g,
       label.carbsPer100g,
@@ -27,15 +34,15 @@ class NutritionLabelValidator {
     if (!label.caloriesPer100g.isFinite ||
         label.caloriesPer100g <= 0 ||
         label.caloriesPer100g > 950) {
-      issues.add('Calories are outside the expected per-100g range');
+      issues.add(NutritionLabelIssue.caloriesOutOfRange);
     }
     if (macros.any((value) => !value.isFinite || value < 0 || value > 100)) {
-      issues.add('A nutrient is outside the expected per-100g range');
+      issues.add(NutritionLabelIssue.nutrientOutOfRange);
     }
 
     final macroTotal = macros.reduce((a, b) => a + b);
     if (macroTotal > 105) {
-      issues.add('Nutrient values total more than 100g');
+      issues.add(NutritionLabelIssue.nutrientTotalTooHigh);
     }
 
     final estimatedCalories = label.proteinPer100g * 4 +
@@ -45,13 +52,12 @@ class NutritionLabelValidator {
     final difference = (estimatedCalories - label.caloriesPer100g).abs();
     final tolerance = math.max(80.0, label.caloriesPer100g * 0.35);
     if (estimatedCalories > 0 && difference > tolerance) {
-      issues.add('Calories do not match the detected macronutrients');
+      issues.add(NutritionLabelIssue.calorieMacroMismatch);
     }
 
     final presentMacros = macros.where((value) => value > 0).length;
     final usable = issues.every(
-          (issue) =>
-              issue == 'Calories do not match the detected macronutrients',
+          (issue) => issue == NutritionLabelIssue.calorieMacroMismatch,
         ) &&
         label.caloriesPer100g > 0 &&
         label.caloriesPer100g <= 950 &&

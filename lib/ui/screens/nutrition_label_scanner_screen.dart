@@ -109,11 +109,11 @@ class _NutritionLabelScannerScreenState
             fallback: l10n.nutritionLabelNotParsed,
           );
       }
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         setState(() {
           _isAnalyzing = false;
-          _error = e.toString();
+          _error = l10n.nutritionLabelNotParsed;
         });
       }
     }
@@ -185,9 +185,7 @@ class _NutritionLabelScannerScreenState
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.nutritionLabelScannerTitle),
-      ),
+      appBar: AppBar(title: Text(l10n.nutritionLabelScannerTitle)),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -203,10 +201,12 @@ class _NutritionLabelScannerScreenState
                           width: 80,
                           height: 80,
                           decoration: BoxDecoration(
-                            color: theme.colorScheme.primary
-                                .withValues(alpha: 0.1),
-                            borderRadius:
-                                BorderRadius.circular(AppTheme.radiusMD),
+                            color: theme.colorScheme.primary.withValues(
+                              alpha: 0.1,
+                            ),
+                            borderRadius: BorderRadius.circular(
+                              AppTheme.radiusMD,
+                            ),
                           ),
                           child: Icon(
                             Icons.document_scanner_outlined,
@@ -253,8 +253,9 @@ class _NutritionLabelScannerScreenState
                             decoration: BoxDecoration(
                               color: theme.colorScheme.errorContainer
                                   .withValues(alpha: 0.3),
-                              borderRadius:
-                                  BorderRadius.circular(AppTheme.radiusSM),
+                              borderRadius: BorderRadius.circular(
+                                AppTheme.radiusSM,
+                              ),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
