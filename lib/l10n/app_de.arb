@@ -137,6 +137,7 @@
   "targetWeightLb": "Zielgewicht (lb)",
 
   "customizeDashboard": "Dashboard anpassen",
+  "dashboard": "Dashboard",
   "customizeDashboardSubtitle": "Schnellaktionen neu ordnen und ausblenden",
   "resetToDefault": "Zurücksetzen",
   "dragToReorder": "Ziehen zum Neuordnen",

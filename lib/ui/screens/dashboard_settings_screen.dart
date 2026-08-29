@@ -18,7 +18,7 @@ class DashboardSettingsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          l10n.customizeDashboard,
+          l10n.dashboard,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -161,82 +161,76 @@ class _DashboardCardTile extends StatelessWidget {
             : (isDark
                 ? Colors.white.withValues(alpha: 0.02)
                 : Colors.black.withValues(alpha: 0.02)),
-        child: ListTile(
-          isThreeLine: true,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          leading: ReorderableDragStartListener(
-            enabled: largeText,
-            index: index,
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: card.visible
-                    ? cardInfo.color.withValues(alpha: 0.1)
-                    : theme.colorScheme.outline.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: largeText ? 12 : 8,
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: card.visible
+                      ? cardInfo.color.withValues(alpha: 0.1)
+                      : theme.colorScheme.outline.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+                ),
+                child: Icon(
+                  cardInfo.icon,
+                  color:
+                      card.visible ? cardInfo.color : theme.colorScheme.outline,
+                  size: 20,
+                ),
               ),
-              child: Icon(
-                cardInfo.icon,
-                color:
-                    card.visible ? cardInfo.color : theme.colorScheme.outline,
-                size: 20,
-              ),
-            ),
-          ),
-          title: Text(
-            cardInfo.label,
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: card.visible
-                  ? theme.colorScheme.onSurface
-                  : theme.colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          subtitle: Text(
-            card.visible ? l10n.visible : l10n.hidden,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          trailing: largeText
-              ? Switch(
-                  value: card.visible,
-                  onChanged: (_) => onToggleVisibility(),
-                  activeThumbColor: theme.colorScheme.primary,
-                )
-              : Column(
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Switch(
-                      value: card.visible,
-                      onChanged: (_) => onToggleVisibility(),
-                      activeThumbColor: theme.colorScheme.primary,
+                    Text(
+                      cardInfo.label,
+                      maxLines: largeText ? 3 : 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: card.visible
+                            ? theme.colorScheme.onSurface
+                            : theme.colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                    const SizedBox(height: 4),
-                    ReorderableDragStartListener(
-                      index: index,
-                      child: Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.outline.withValues(
-                            alpha: 0.1,
-                          ),
-                          borderRadius: BorderRadius.circular(
-                            AppTheme.radiusXS,
-                          ),
-                        ),
-                        child: Icon(
-                          Icons.drag_handle,
-                          color: theme.colorScheme.onSurfaceVariant,
-                          size: 20,
-                        ),
+                    const SizedBox(height: 3),
+                    Text(
+                      card.visible ? l10n.visible : l10n.hidden,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],
                 ),
+              ),
+              Switch(
+                value: card.visible,
+                onChanged: (_) => onToggleVisibility(),
+                activeThumbColor: theme.colorScheme.primary,
+              ),
+              const SizedBox(width: 4),
+              ReorderableDragStartListener(
+                index: index,
+                child: SizedBox(
+                  width: 32,
+                  height: 40,
+                  child: Icon(
+                    Icons.drag_handle,
+                    color: theme.colorScheme.onSurfaceVariant,
+                    size: 22,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -279,6 +273,12 @@ class _DashboardCardTile extends StatelessWidget {
           label: l10n.workout,
           icon: Icons.local_fire_department_rounded,
           color: AppTheme.fire,
+        );
+      case DashboardCardIds.progressPhotos:
+        return _CardInfo(
+          label: l10n.progressPhotos,
+          icon: Icons.photo_camera_outlined,
+          color: AppTheme.emerald,
         );
       default:
         return _CardInfo(
