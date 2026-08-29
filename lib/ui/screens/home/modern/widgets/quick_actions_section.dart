@@ -5,7 +5,7 @@ import 'package:sophis/ui/components/organic_components.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/screens/home/shared/home_actions.dart';
 
-/// Displays quick action buttons either as a horizontal row of chips or a grid.
+/// Displays quick action buttons either as a compact grid or a card grid.
 class QuickActionsSection extends StatelessWidget {
   final List<HomeAction> actions;
   final QuickActionSize size;
@@ -38,20 +38,32 @@ class QuickActionsSection extends StatelessWidget {
         ),
         size == QuickActionSize.large
             ? _buildGrid(context, theme)
-            : _buildChipRow(context, theme),
+            : _buildChipRow(theme),
       ],
     );
   }
 
-  Widget _buildChipRow(BuildContext context, ThemeData theme) {
-    return SizedBox(
-      height: 48,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: actions.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (context, index) => _buildChip(theme, actions[index]),
-      ),
+  Widget _buildChipRow(ThemeData theme) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columnCount = actions.length == 1 ? 1 : 2;
+        final itemWidth = columnCount == 1
+            ? constraints.maxWidth
+            : (constraints.maxWidth - 8) / columnCount;
+
+        return Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: actions
+              .map(
+                (action) => SizedBox(
+                  width: itemWidth,
+                  child: _buildChip(theme, action),
+                ),
+              )
+              .toList(),
+        );
+      },
     );
   }
 
@@ -72,15 +84,18 @@ class QuickActionsSection extends StatelessWidget {
             border: Border.all(color: color.withValues(alpha: 0.2)),
           ),
           child: Row(
-            mainAxisSize: MainAxisSize.min,
             children: [
               Icon(action.icon, size: 18, color: color),
               const SizedBox(width: 8),
-              Text(
-                action.label,
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w600,
+              Expanded(
+                child: Text(
+                  action.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],

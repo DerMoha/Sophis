@@ -21,7 +21,7 @@ void main() {
 
     expect(find.text('Sophis'), findsOneWidget);
     expect(find.text('Today'), findsWidgets);
-    expect(find.text('Food Diary'), findsWidgets);
+    expect(find.text('Diary'), findsWidgets);
     expect(find.text('More'), findsOneWidget);
     expect(find.text('Add Food'), findsOneWidget);
     expect(find.text('Breakfast'), findsOneWidget);

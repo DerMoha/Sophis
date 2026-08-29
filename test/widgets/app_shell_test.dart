@@ -22,13 +22,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Food Diary'), findsWidgets);
+    expect(find.text('Diary'), findsWidgets);
     expect(find.text('Add Food'), findsOneWidget);
 
-    await tester.tap(find.text('Food Diary').last);
+    await tester.tap(find.text('Diary').last);
     await tester.pumpAndSettle();
 
-    expect(find.text('Food Diary'), findsWidgets);
+    expect(find.text('Diary'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -49,7 +49,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Today'), findsWidgets);
-    expect(find.text('Food Diary'), findsWidgets);
+    expect(find.text('Diary'), findsOneWidget);
     expect(find.text('More'), findsOneWidget);
     expect(find.text('Add Food'), findsOneWidget);
 

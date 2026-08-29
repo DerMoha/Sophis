@@ -28,6 +28,13 @@ class _AppShellState extends State<AppShell> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final showAddAction = _selectedIndex < 2;
+    final compactAddAction = MediaQuery.sizeOf(context).width < 500 ||
+        MediaQuery.textScalerOf(context).scale(1) > 1.3;
+
+    void addFood() => showQuickAddSheet(
+          context,
+          mealType: _suggestedMeal,
+        );
 
     return Scaffold(
       body: IndexedStack(
@@ -39,14 +46,21 @@ class _AppShellState extends State<AppShell> {
         ],
       ),
       floatingActionButton: showAddAction
-          ? FloatingActionButton.extended(
-              onPressed: () => showQuickAddSheet(
-                context,
-                mealType: _suggestedMeal,
-              ),
-              icon: const Icon(Icons.add),
-              label: Text(l10n.addFood),
-            )
+          ? compactAddAction
+              ? Semantics(
+                  button: true,
+                  label: l10n.addFood,
+                  child: FloatingActionButton(
+                    onPressed: addFood,
+                    tooltip: l10n.addFood,
+                    child: const Icon(Icons.add),
+                  ),
+                )
+              : FloatingActionButton.extended(
+                  onPressed: addFood,
+                  icon: const Icon(Icons.add),
+                  label: Text(l10n.addFood),
+                )
           : null,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
@@ -62,7 +76,7 @@ class _AppShellState extends State<AppShell> {
           NavigationDestination(
             icon: const Icon(Icons.menu_book_outlined),
             selectedIcon: const Icon(Icons.menu_book),
-            label: l10n.foodDiary,
+            label: l10n.diary,
           ),
           NavigationDestination(
             icon: const Icon(Icons.grid_view_outlined),

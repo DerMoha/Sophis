@@ -66,6 +66,7 @@ class _HomeScreenModernState extends State<HomeScreenModern> {
     final vm = readHomeDashboardVM(context);
     final slots = buildDashboardSlots(context, vm);
     final children = dashboardSlotsToWidgets(context, slots);
+    final bottomPadding = MediaQuery.paddingOf(context).bottom + 180;
 
     return CustomScrollView(
       controller: _scrollController,
@@ -111,7 +112,7 @@ class _HomeScreenModernState extends State<HomeScreenModern> {
           ),
         ),
         SliverPadding(
-          padding: AppTheme.pagePaddingTop,
+          padding: EdgeInsets.fromLTRB(20, 8, 20, bottomPadding),
           sliver: SliverList(
             delegate: SliverChildListDelegate(children),
           ),
