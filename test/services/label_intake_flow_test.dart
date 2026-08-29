@@ -41,6 +41,7 @@ Eiweiß 10 g
       expect(intake.label.fiberPer100g, 5);
       expect(intake.product.id, 'test-id-1');
       expect(intake.product.caloriesPer100g, 480);
+      expect(intake.source, NutritionLabelAnalysisSource.localOcr);
     });
 
     test('uses fallbackProductName when label has no product name', () async {
@@ -98,7 +99,8 @@ Eiweiß 10 g
       expect(intake.product.brand, 'Label Brand');
     });
 
-    test('returns Failure when OCR text is unparseable and no Gemini', () async {
+    test('returns Failure when OCR text is unparseable and no Gemini',
+        () async {
       final flow = LabelIntakeFlow();
 
       final result = await flow.processOcrText(
@@ -138,6 +140,7 @@ Eiweiß 10 g
       final intake = result.valueOrNull!;
       expect(intake.label.caloriesPer100g, 250);
       expect(intake.product.name, 'Gemini Product');
+      expect(intake.source, NutritionLabelAnalysisSource.gemini);
       verify(() => gemini.parseNutritionText('totally unreadable')).called(1);
     });
 
@@ -238,7 +241,8 @@ Eiweiß 0 g
       expect(result.isFailure, isTrue);
     });
 
-    test('generates ServingSize fractions when servingSizeG is provided', () async {
+    test('generates ServingSize fractions when servingSizeG is provided',
+        () async {
       const ocrWithServing = '''
 Nährwertangaben pro 100g:
 Brennwert 2000 kJ / 480 kcal

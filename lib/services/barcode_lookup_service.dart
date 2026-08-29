@@ -10,7 +10,7 @@ import 'package:sophis/services/openfoodfacts_service.dart';
 import 'package:sophis/services/brocade_service.dart';
 import 'package:sophis/services/service_result.dart';
 
-enum LookupSource { cache, offDe, offWorld, brocade, manual, gemini }
+enum LookupSource { cache, offDe, offWorld, brocade, manual, localOcr, gemini }
 
 enum CacheStatus {
   found('found'),

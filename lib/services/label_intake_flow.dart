@@ -39,11 +39,13 @@ class LabelIntakeResult {
   final NutritionLabelResult label;
   final FoodItem product;
   final NutritionLabelValidation validation;
+  final NutritionLabelAnalysisSource source;
 
   const LabelIntakeResult({
     required this.label,
     required this.product,
     required this.validation,
+    required this.source,
   });
 }
 
@@ -88,12 +90,39 @@ class LabelIntakeFlow {
     if (!quality.isAcceptable) {
       return Failure(ServiceErrorType.parseError, quality.message);
     }
+    final documents = <_RecognizedNutritionDocument>[];
     final originalDocument = await _recognize(request.imageFile);
-    final prepared = await _preprocessor.prepare(request.imageFile);
-    final enhancedDocument =
-        prepared == null ? null : await _recognize(prepared);
-    await _preprocessor.cleanUp(prepared);
-    final document = _bestDocument(originalDocument, enhancedDocument);
+    if (originalDocument != null) documents.add(originalDocument);
+
+    final originalLabel = originalDocument?.parsedLabel;
+    if (originalLabel != null &&
+        NutritionLabelValidator.validate(originalLabel).isHighConfidence) {
+      return _processParsedText(
+        ocrText: originalDocument!.text,
+        localLabel: originalLabel,
+        idGenerator: request.idGenerator,
+        fallbackProductName: request.fallbackProductName,
+        fallbackBrand: request.fallbackBrand,
+        barcode: request.barcode,
+      );
+    }
+
+    var prepared = const <File>[];
+    try {
+      prepared = await _preprocessor.prepareCandidates(request.imageFile);
+      for (final candidate in prepared) {
+        final document = await _recognize(candidate);
+        if (document != null) documents.add(document);
+      }
+    } catch (error) {
+      // Preprocessing is an enhancement, not a hard dependency. The original
+      // recognition result can still be parsed locally or by the AI fallback.
+      debugPrint('Nutrition image preprocessing failed: $error');
+    } finally {
+      await _preprocessor.cleanUpCandidates(prepared);
+    }
+
+    final document = _bestDocument(documents);
     if (document == null || document.text.trim().isEmpty) {
       return const Failure(
         ServiceErrorType.parseError,
@@ -102,7 +131,7 @@ class LabelIntakeFlow {
     }
     return _processParsedText(
       ocrText: document.text,
-      localLabel: NutritionLabelParser.parseLayout(document.lines),
+      localLabel: document.parsedLabel,
       idGenerator: request.idGenerator,
       fallbackProductName: request.fallbackProductName,
       fallbackBrand: request.fallbackBrand,
@@ -111,14 +140,26 @@ class LabelIntakeFlow {
   }
 
   _RecognizedNutritionDocument? _bestDocument(
-    _RecognizedNutritionDocument? original,
-    _RecognizedNutritionDocument? enhanced,
+    List<_RecognizedNutritionDocument> documents,
   ) {
-    if (original == null) return enhanced;
-    if (enhanced == null) return original;
-    final originalScore = _nutritionTextScore(original.text);
-    final enhancedScore = _nutritionTextScore(enhanced.text);
-    return originalScore >= enhancedScore ? original : enhanced;
+    if (documents.isEmpty) return null;
+    final ranked = [...documents]
+      ..sort((a, b) => _documentScore(b).compareTo(_documentScore(a)));
+    return ranked.first;
+  }
+
+  int _documentScore(_RecognizedNutritionDocument document) {
+    final label = document.parsedLabel;
+    final validation =
+        label == null ? null : NutritionLabelValidator.validate(label);
+    final parseScore = validation == null
+        ? 0
+        : validation.isHighConfidence
+            ? 100
+            : validation.isUsable
+                ? 60
+                : 20;
+    return parseScore + _nutritionTextScore(document.text);
   }
 
   int _nutritionTextScore(String text) {
@@ -165,12 +206,14 @@ class LabelIntakeFlow {
         ? null
         : NutritionLabelValidator.validate(localLabel);
     var label = localLabel;
+    var source = NutritionLabelAnalysisSource.localOcr;
 
     if (localValidation == null || !localValidation.isHighConfidence) {
       final geminiLabel = await _tryGemini(ocrText);
       if (geminiLabel != null &&
           NutritionLabelValidator.validate(geminiLabel).isUsable) {
         label = geminiLabel;
+        source = NutritionLabelAnalysisSource.gemini;
       }
     }
 
@@ -202,6 +245,7 @@ class LabelIntakeFlow {
         label: label,
         product: product,
         validation: validation,
+        source: source,
       ),
     );
   }
@@ -295,4 +339,7 @@ class _RecognizedNutritionDocument {
   final List<NutritionOcrLine> lines;
 
   const _RecognizedNutritionDocument({required this.text, required this.lines});
+
+  NutritionLabelResult? get parsedLabel =>
+      NutritionLabelParser.parseLayout(lines);
 }

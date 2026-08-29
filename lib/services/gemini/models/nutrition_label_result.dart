@@ -1,3 +1,5 @@
+enum NutritionLabelAnalysisSource { localOcr, gemini }
+
 class NutritionLabelResult {
   final String? productName;
   final String? brand;
