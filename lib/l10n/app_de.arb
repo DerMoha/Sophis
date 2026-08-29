@@ -55,7 +55,7 @@
   "errorInit": "Initialisierung fehlgeschlagen: {error}",
   "errorPickImage": "Bildauswahl fehlgeschlagen: {error}",
   "errorAnalysis": "Analyse fehlgeschlagen: {error}",
-  "goToSettings": "Zu den Einstellungen",
+  "goToSettings": "Gemini-Key eintragen",
   "activity": "Aktivität",
   "burned": "+{amount} verbrannt",
   "manualEntry": "Manueller Eintrag",

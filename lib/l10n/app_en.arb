@@ -90,7 +90,7 @@
       }
     }
   },
-  "goToSettings": "Go to Settings",
+  "goToSettings": "Set up Gemini API key",
   "activity": "Activity",
   "burned": "+{amount} burned",
   "@burned": {

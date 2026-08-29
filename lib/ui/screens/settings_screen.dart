@@ -12,7 +12,11 @@ import 'package:sophis/ui/theme/app_theme.dart';
 typedef _SectionBuilder = Widget Function(SettingsProvider settings);
 
 class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({super.key});
+  final bool _showAiSection;
+
+  const SettingsScreen({super.key}) : _showAiSection = false;
+
+  const SettingsScreen.ai({super.key}) : _showAiSection = true;
 
   void _openSection(
     BuildContext context, {
@@ -30,6 +34,13 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+
+    if (_showAiSection) {
+      return _SettingsDetailScreen(
+        title: l10n.aiSection,
+        builder: (settings) => AiSection(settings: settings),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.settings)),

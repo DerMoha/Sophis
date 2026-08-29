@@ -19,6 +19,7 @@ import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/theme/animations.dart';
 import 'package:sophis/ui/components/edit_food_analysis_sheet.dart';
 import 'package:sophis/ui/screens/share_meal_screen.dart';
+import 'package:sophis/ui/screens/settings_screen.dart';
 
 class AIFoodCameraScreen extends StatefulWidget {
   final String meal;
@@ -42,6 +43,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
   bool _serviceInitialized = false;
   bool _isInitializing = false;
   bool _isAddingFood = false;
+  bool _showApiKeyAction = false;
   int _remainingRequests = 20;
 
   bool get _canAnalyze => _serviceInitialized;
@@ -81,6 +83,14 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     return l10n.errorUnableToAnalyzeFood;
   }
 
+  bool _isApiKeyFailure(String message) {
+    final errorStr = message.toLowerCase();
+    return errorStr.contains('api key') ||
+        errorStr.contains('apikey') ||
+        errorStr.contains('unauthorized') ||
+        errorStr.contains('401');
+  }
+
   Future<void> _initService() async {
     final apiKey = context.read<SettingsProvider>().geminiApiKey;
 
@@ -93,6 +103,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
         setState(() {
           _serviceInitialized = false;
           _error = AppLocalizations.of(context)!.errorApiKey;
+          _showApiKeyAction = true;
         });
       }
       return;
@@ -115,9 +126,11 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       switch (cloudInitResult) {
         case Success<void>():
           _serviceInitialized = true;
+          _showApiKeyAction = false;
         case Failure<void>(message: final message):
           _serviceInitialized = false;
           _error = AppLocalizations.of(context)!.errorInit(message);
+          _showApiKeyAction = _isApiKeyFailure(message);
       }
       _isInitializing = false;
     });
@@ -195,7 +208,10 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
   Future<void> _analyzeFood({String? correctionHint}) async {
     if (_images.isEmpty) return;
     if (!_canAnalyze) {
-      setState(() => _error = AppLocalizations.of(context)!.errorApiKey);
+      setState(() {
+        _error = AppLocalizations.of(context)!.errorApiKey;
+        _showApiKeyAction = true;
+      });
       return;
     }
 
@@ -221,6 +237,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       case Failure<List<FoodAnalysis>>(message: final message):
         _results = null;
         _error = _getUserFriendlyError(message);
+        _showApiKeyAction = _isApiKeyFailure(message);
     }
 
     setState(() {
@@ -320,9 +337,20 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       case Failure<FoodAnalysis?>(message: final message):
         setState(() {
           _error = _getUserFriendlyError(message);
+          _showApiKeyAction = _isApiKeyFailure(message);
           _isLoading = false;
         });
     }
+  }
+
+  Future<void> _openApiKeySettings() async {
+    await Navigator.push<void>(
+      context,
+      AppTheme.slideRoute(const SettingsScreen.ai()),
+    );
+
+    if (!mounted || !context.read<SettingsProvider>().hasGeminiApiKey) return;
+    await _initService();
   }
 
   Future<bool> _addFood(EditableFoodResult result) async {
@@ -580,7 +608,6 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
 
   Widget _buildResultsArea(AppLocalizations l10n, ThemeData theme) {
     if (_error != null) {
-      final isApiKeyError = _error!.contains('API key');
       return FadeInSlide(
         index: 0,
         child: SingleChildScrollView(
@@ -597,11 +624,12 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                 ),
                 const SizedBox(height: 16),
                 Text(_error!, textAlign: TextAlign.center),
-                if (isApiKeyError) ...[
+                if (_showApiKeyAction) ...[
                   const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text(l10n.goToSettings),
+                  FilledButton.icon(
+                    onPressed: _openApiKeySettings,
+                    icon: const Icon(Icons.key_outlined),
+                    label: Text(l10n.goToSettings),
                   ),
                 ],
               ],
