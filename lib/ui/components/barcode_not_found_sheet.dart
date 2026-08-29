@@ -1,7 +1,7 @@
 import 'dart:io';
 
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import 'package:sophis/l10n/generated/app_localizations.dart';
@@ -9,12 +9,14 @@ import 'package:sophis/models/food_item.dart';
 import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/services/barcode_lookup_service.dart';
 import 'package:sophis/services/gemini_food_service.dart';
+import 'package:sophis/services/gemini/models/nutrition_label_result.dart';
 import 'package:sophis/services/label_intake_flow.dart';
 import 'package:sophis/services/service_result.dart';
 import 'package:sophis/services/nutrition_scan_feedback_service.dart';
 import 'package:sophis/ui/components/edit_product_sheet.dart';
 import 'package:sophis/ui/components/label_preview_sheet.dart';
 import 'package:sophis/ui/components/settings/settings_tiles.dart';
+import 'package:sophis/ui/screens/nutrition_label_camera_screen.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 
 /// Recovery bottom sheet shown when a barcode product is not found.
@@ -48,51 +50,46 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
 
   Future<void> _scanNutritionLabel() async {
     final l10n = AppLocalizations.of(context)!;
-    final picker = ImagePicker();
-    final image = await picker.pickImage(
-      source: ImageSource.camera,
-      imageQuality: 85,
+    final image = await Navigator.push<XFile>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => NutritionLabelCameraScreen(
+          title: l10n.nutritionLabelScannerTitle,
+          guidance: l10n.nutritionLabelCaptureGuide,
+        ),
+      ),
     );
-    if (image == null) return;
+    if (image == null || !mounted) return;
 
     setState(() => _isAnalyzing = true);
 
     final flow = _buildFlow();
-    if (!flow.hasGeminiFallback) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.errorApiKey)),
-        );
+    try {
+      final result = await flow.processImage(
+        LabelIntakeRequest(
+          imageFile: File(image.path),
+          idGenerator: () => widget.barcode,
+          fallbackProductName: widget.partialName ?? l10n.productNotFoundTitle,
+          fallbackBrand: widget.partialBrand,
+          barcode: widget.barcode,
+        ),
+      );
+
+      if (!mounted) return;
+      switch (result) {
+        case Success<LabelIntakeResult>(value: final intake):
+          await _onSuccess(intake);
+        case Failure<LabelIntakeResult>(message: final message):
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(l10n.errorGeneric(message))),
+            );
+          }
       }
-      setState(() => _isAnalyzing = false);
-      return;
+    } finally {
+      flow.dispose();
+      if (mounted) setState(() => _isAnalyzing = false);
     }
-
-    final result = await flow.processImage(
-      LabelIntakeRequest(
-        imageFile: File(image.path),
-        idGenerator: () => widget.barcode,
-        fallbackProductName: widget.partialName ?? l10n.productNotFoundTitle,
-        fallbackBrand: widget.partialBrand,
-        barcode: widget.barcode,
-      ),
-    );
-
-    if (!mounted) return;
-    flow.dispose();
-
-    switch (result) {
-      case Success<LabelIntakeResult>(value: final intake):
-        await _onSuccess(intake);
-      case Failure<LabelIntakeResult>(message: final message):
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.errorGeneric(message))),
-          );
-        }
-    }
-
-    if (mounted) setState(() => _isAnalyzing = false);
   }
 
   LabelIntakeFlow _buildFlow() {
@@ -109,6 +106,7 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
       context: context,
       label: intake.label,
       validation: intake.validation,
+      source: intake.source,
     );
 
     if (!mounted) return;
@@ -132,7 +130,9 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
     await widget.lookupService.cacheResult(
       widget.barcode,
       confirmedProduct,
-      LookupSource.gemini,
+      intake.source == NutritionLabelAnalysisSource.gemini
+          ? LookupSource.gemini
+          : LookupSource.localOcr,
     );
 
     if (!mounted) return;

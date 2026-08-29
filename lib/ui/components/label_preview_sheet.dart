@@ -12,6 +12,7 @@ Future<NutritionLabelResult?> showLabelPreviewSheet({
   required BuildContext context,
   required NutritionLabelResult label,
   NutritionLabelValidation? validation,
+  NutritionLabelAnalysisSource source = NutritionLabelAnalysisSource.localOcr,
 }) async {
   final l10n = AppLocalizations.of(context)!;
   final theme = Theme.of(context);
@@ -23,6 +24,7 @@ Future<NutritionLabelResult?> showLabelPreviewSheet({
     builder: (bottomSheetContext) => LabelPreviewSheet(
       label: label,
       validation: validation,
+      source: source,
       onLooksGood: (confirmed) => Navigator.pop(bottomSheetContext, confirmed),
       onRescan: () => Navigator.pop(bottomSheetContext),
       l10n: l10n,
@@ -34,6 +36,7 @@ Future<NutritionLabelResult?> showLabelPreviewSheet({
 class LabelPreviewSheet extends StatefulWidget {
   final NutritionLabelResult label;
   final NutritionLabelValidation? validation;
+  final NutritionLabelAnalysisSource source;
   final ValueChanged<NutritionLabelResult> onLooksGood;
   final VoidCallback onRescan;
   final AppLocalizations l10n;
@@ -43,6 +46,7 @@ class LabelPreviewSheet extends StatefulWidget {
     super.key,
     required this.label,
     this.validation,
+    this.source = NutritionLabelAnalysisSource.localOcr,
     required this.onLooksGood,
     required this.onRescan,
     required this.l10n,
@@ -133,6 +137,13 @@ class _LabelPreviewSheetState extends State<LabelPreviewSheet> {
           children: [
             _DragHandle(theme: theme),
             _Header(theme: theme, l10n: l10n),
+            _AnalysisSourceNote(
+              theme: theme,
+              text: widget.source == NutritionLabelAnalysisSource.gemini
+                  ? l10n.nutritionLabelAiResult
+                  : l10n.nutritionLabelLocalResult,
+              isAi: widget.source == NutritionLabelAnalysisSource.gemini,
+            ),
             if (widget.validation case final validation?
                 when !validation.isHighConfidence)
               _ConfidenceWarning(
@@ -173,6 +184,41 @@ class _LabelPreviewSheetState extends State<LabelPreviewSheet> {
             SizedBox(height: MediaQuery.of(context).padding.bottom + 24),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _AnalysisSourceNote extends StatelessWidget {
+  final ThemeData theme;
+  final String text;
+  final bool isAi;
+
+  const _AnalysisSourceNote({
+    required this.theme,
+    required this.text,
+    required this.isAi,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(24, 10, 24, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            isAi ? Icons.auto_awesome_outlined : Icons.phone_android,
+            size: 17,
+            color: theme.colorScheme.primary,
+          ),
+          const SizedBox(width: 8),
+          Expanded(child: Text(text, style: theme.textTheme.labelMedium)),
+        ],
       ),
     );
   }

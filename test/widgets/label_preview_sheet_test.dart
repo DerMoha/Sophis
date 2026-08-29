@@ -75,6 +75,37 @@ void main() {
 
       expect(find.text('Greek Yogurt'), findsOneWidget);
       expect(find.text('Fage'), findsOneWidget);
+      expect(find.text('Read locally on this device'), findsOneWidget);
+    });
+
+    testWidgets('identifies values produced by the AI fallback',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => ElevatedButton(
+                onPressed: () => showLabelPreviewSheet(
+                  context: context,
+                  label: _fullLabel,
+                  source: NutritionLabelAnalysisSource.gemini,
+                ),
+                child: const Text('open'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Gemini fallback used • please verify the values'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('renders calories, protein, carbs, fat rows',

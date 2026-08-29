@@ -33,6 +33,7 @@ class _NutritionLabelScannerScreenState
   late final LabelIntakeFlow _flow;
 
   bool _isAnalyzing = false;
+  bool _hasAiFallback = false;
   String? _error;
 
   @override
@@ -44,6 +45,7 @@ class _NutritionLabelScannerScreenState
       gemini.initialize(apiKey);
     }
     _flow = LabelIntakeFlow(gemini: gemini);
+    _hasAiFallback = _flow.hasGeminiFallback;
   }
 
   @override
@@ -122,6 +124,7 @@ class _NutritionLabelScannerScreenState
       context: context,
       label: intake.label,
       validation: intake.validation,
+      source: intake.source,
     );
 
     if (!mounted) return;
@@ -141,6 +144,7 @@ class _NutritionLabelScannerScreenState
     if (!mounted) return;
     setState(() => _isAnalyzing = false);
 
+    var logged = false;
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -156,8 +160,12 @@ class _NutritionLabelScannerScreenState
           fiberPer100g: confirmedLabel.fiberPer100g,
         ),
         meal: widget.meal,
+        onLogged: (_) async {
+          logged = true;
+        },
       ),
     );
+    if (logged && mounted) Navigator.pop(context);
   }
 
   Future<void> _onFailure({
@@ -221,6 +229,14 @@ class _NutritionLabelScannerScreenState
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                           textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 12),
+                        _PrivacyNote(
+                          theme: theme,
+                          text: _hasAiFallback
+                              ? l10n.nutritionLabelAiFallbackEnabled
+                              : l10n.nutritionLabelLocalOnly,
+                          usesAiFallback: _hasAiFallback,
                         ),
                         const SizedBox(height: 20),
                         _CaptureGuide(
@@ -303,6 +319,42 @@ class _NutritionLabelScannerScreenState
           ),
         ),
       ),
+    );
+  }
+}
+
+class _PrivacyNote extends StatelessWidget {
+  final ThemeData theme;
+  final String text;
+  final bool usesAiFallback;
+
+  const _PrivacyNote({
+    required this.theme,
+    required this.text,
+    required this.usesAiFallback,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          usesAiFallback ? Icons.auto_awesome_outlined : Icons.phone_android,
+          size: 16,
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+        const SizedBox(width: 6),
+        Flexible(
+          child: Text(
+            text,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ],
     );
   }
 }
