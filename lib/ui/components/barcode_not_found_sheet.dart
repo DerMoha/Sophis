@@ -79,10 +79,10 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
       switch (result) {
         case Success<LabelIntakeResult>(value: final intake):
           await _onSuccess(intake);
-        case Failure<LabelIntakeResult>(message: final message):
+        case Failure<LabelIntakeResult>():
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(l10n.errorGeneric(message))),
+              SnackBar(content: Text(l10n.nutritionLabelNotParsed)),
             );
           }
       }

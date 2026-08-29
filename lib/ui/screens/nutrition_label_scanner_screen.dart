@@ -103,11 +103,8 @@ class _NutritionLabelScannerScreenState
       switch (result) {
         case Success<LabelIntakeResult>(value: final intake):
           await _onSuccess(intake);
-        case Failure<LabelIntakeResult>(message: final message):
-          await _onFailure(
-            message: message,
-            fallback: l10n.nutritionLabelNotParsed,
-          );
+        case Failure<LabelIntakeResult>():
+          await _onFailure(fallback: l10n.nutritionLabelNotParsed);
       }
     } catch (_) {
       if (mounted) {
@@ -169,13 +166,12 @@ class _NutritionLabelScannerScreenState
   }
 
   Future<void> _onFailure({
-    required String message,
     required String fallback,
   }) async {
     if (!mounted) return;
     setState(() {
       _isAnalyzing = false;
-      _error = message.isNotEmpty ? message : fallback;
+      _error = fallback;
     });
   }
 
