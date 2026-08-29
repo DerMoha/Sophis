@@ -3,9 +3,9 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
-import 'package:image/image.dart' as img;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:sophis/services/gemini_image_part_builder.dart';
 import 'package:sophis/services/gemini/models/models.dart';
 import 'package:sophis/services/service_result.dart';
 
@@ -14,6 +14,8 @@ class GeminiFoodService {
   GenerativeModel? _model;
   String? _apiKey;
   bool _isInitialized = false;
+  final GeminiImagePartBuilder _imagePartBuilder =
+      const GeminiImagePartBuilder();
 
   // Rate limits for gemini-2.5-flash-lite
   static const int dailyLimit = 20;
@@ -125,9 +127,6 @@ class GeminiFoodService {
       );
     }
 
-    // Build image parts
-    final imageParts = await _buildImageParts(imageFiles);
-
     // Build prompt
     var promptText = '''
 Analyze these food images and identify all food items visible.
@@ -167,12 +166,16 @@ If no food is visible, return: {"foods": []}
 
     final prompt = TextPart(promptText);
 
-    // Increment counter before API call to prevent quota leak on failure
-    await _incrementRequestCount();
-
+    var requestCounted = false;
     try {
+      final imageParts = await _buildImageParts(imageFiles);
+
+      // Increment counter before API call to prevent quota leak on failure
+      await _incrementRequestCount();
+      requestCounted = true;
+
       final response = await _model!.generateContent([
-        Content.multi([prompt, ...imageParts]),
+        Content.multi([...imageParts, prompt]),
       ]).timeout(const Duration(seconds: 30));
 
       final text = response.text;
@@ -183,14 +186,17 @@ If no food is visible, return: {"foods": []}
       final results = _parseResponse(text);
       return Success(results);
     } on TimeoutException {
-      await _decrementRequestCount();
+      if (requestCounted) await _decrementRequestCount();
       debugPrint('Gemini food analysis timed out');
       return const Failure(
         ServiceErrorType.network,
         'Request timed out. Please try again.',
       );
+    } on GeminiImageException catch (e) {
+      debugPrint('Gemini image preparation failed: $e');
+      return Failure(ServiceErrorType.parseError, e.message);
     } catch (e) {
-      await _decrementRequestCount();
+      if (requestCounted) await _decrementRequestCount();
       debugPrint('Gemini food analysis failed: $e');
       return Failure(ServiceErrorType.unknown, 'Failed to analyze image: $e');
     }
@@ -221,9 +227,6 @@ If no food is visible, return: {"foods": []}
         'Daily limit reached (20 requests/day). Try again tomorrow.',
       );
     }
-
-    // Build image parts
-    final imageParts = await _buildImageParts(imageFiles);
 
     final confirmedList = confirmedFoods.isEmpty
         ? 'None'
@@ -276,12 +279,16 @@ Respond ONLY with valid JSON in this exact format, no other text:
 
     final prompt = TextPart(promptText);
 
-    // Increment counter before API call to prevent quota leak on failure
-    await _incrementRequestCount();
-
+    var requestCounted = false;
     try {
+      final imageParts = await _buildImageParts(imageFiles);
+
+      // Increment counter before API call to prevent quota leak on failure
+      await _incrementRequestCount();
+      requestCounted = true;
+
       final response = await _model!.generateContent([
-        Content.multi([prompt, ...imageParts]),
+        Content.multi([...imageParts, prompt]),
       ]).timeout(const Duration(seconds: 30));
 
       final text = response.text;
@@ -293,16 +300,22 @@ Respond ONLY with valid JSON in this exact format, no other text:
       if (results.isEmpty) return const Success(null);
       return Success(results.first);
     } on TimeoutException {
-      await _decrementRequestCount();
+      if (requestCounted) await _decrementRequestCount();
       debugPrint('Gemini re-analysis timed out');
       return const Failure(
         ServiceErrorType.network,
         'Request timed out. Please try again.',
       );
+    } on GeminiImageException catch (e) {
+      debugPrint('Gemini image preparation failed during re-analysis: $e');
+      return Failure(ServiceErrorType.parseError, e.message);
     } catch (e) {
-      await _decrementRequestCount();
+      if (requestCounted) await _decrementRequestCount();
       debugPrint('Gemini re-analysis failed: $e');
-      return Failure(ServiceErrorType.unknown, 'Failed to re-analyze image: $e');
+      return Failure(
+        ServiceErrorType.unknown,
+        'Failed to re-analyze image: $e',
+      );
     }
   }
 
@@ -335,7 +348,9 @@ Respond ONLY with valid JSON in this exact format, no other text:
         );
       }).toList();
     } catch (e) {
-      debugPrint('Failed to parse Gemini food response: $e\nRaw response: $text');
+      debugPrint(
+        'Failed to parse Gemini food response: $e\nRaw response: $text',
+      );
       return [];
     }
   }
@@ -358,9 +373,6 @@ Respond ONLY with valid JSON in this exact format, no other text:
         'Daily limit reached (20 requests/day). Try again tomorrow.',
       );
     }
-
-    final jpegBytes = await _convertImageToJpeg(imageFile);
-    final imagePart = DataPart('image/jpeg', jpegBytes);
 
     const promptText = '''
 Analyze this image of a recipe and extract the following information.
@@ -419,12 +431,16 @@ If no recipe is visible or readable, return:
 
     final prompt = TextPart(promptText);
 
-    // Increment counter before API call to prevent quota leak on failure
-    await _incrementRequestCount();
-
+    var requestCounted = false;
     try {
+      final imagePart = await _imagePartBuilder.buildPart(imageFile);
+
+      // Increment counter before API call to prevent quota leak on failure
+      await _incrementRequestCount();
+      requestCounted = true;
+
       final response = await _model!.generateContent([
-        Content.multi([prompt, imagePart]),
+        Content.multi([imagePart, prompt]),
       ]).timeout(const Duration(seconds: 30));
 
       final text = response.text;
@@ -435,14 +451,19 @@ If no recipe is visible or readable, return:
       final result = _parseRecipeResponse(text);
       return Success(result);
     } on TimeoutException {
-      await _decrementRequestCount();
+      if (requestCounted) await _decrementRequestCount();
       debugPrint('Gemini recipe extraction timed out');
       return const Failure(
         ServiceErrorType.network,
         'Request timed out. Please try again.',
       );
+    } on GeminiImageException catch (e) {
+      debugPrint(
+        'Gemini image preparation failed during recipe extraction: $e',
+      );
+      return Failure(ServiceErrorType.parseError, e.message);
     } catch (e) {
-      await _decrementRequestCount();
+      if (requestCounted) await _decrementRequestCount();
       debugPrint('Gemini recipe extraction failed: $e');
       return Failure(ServiceErrorType.unknown, 'Failed to extract recipe: $e');
     }
@@ -494,24 +515,8 @@ If no recipe is visible or readable, return:
     }
   }
 
-  Future<Uint8List> _convertImageToJpeg(File file) async {
-    final bytes = await file.readAsBytes();
-    final decoded = img.decodeImage(bytes);
-    if (decoded == null) {
-      final path = file.path;
-      debugPrint('Failed to decode image: $path');
-      return Uint8List.fromList(bytes);
-    }
-    return Uint8List.fromList(img.encodeJpg(decoded, quality: 85));
-  }
-
   Future<List<DataPart>> _buildImageParts(List<File> files) async {
-    final parts = <DataPart>[];
-    for (final file in files) {
-      final jpegBytes = await _convertImageToJpeg(file);
-      parts.add(DataPart('image/jpeg', jpegBytes));
-    }
-    return parts;
+    return _imagePartBuilder.buildParts(files);
   }
 
   /// Parse raw OCR text into nutrition values using Gemini (text-only, no image).
@@ -618,7 +623,9 @@ If the text is clearly not a nutrition label, return all zeros.
         servingName: json['serving_name']?.toString(),
       );
     } catch (e) {
-      debugPrint('Failed to parse nutrition label response: $e\nRaw response: $text');
+      debugPrint(
+        'Failed to parse nutrition label response: $e\nRaw response: $text',
+      );
       return null;
     }
   }

@@ -292,9 +292,20 @@ class NutritionLabelParser {
     for (final rawLine in lines) {
       final line = rawLine.trim();
       if (line.isEmpty) continue;
-      if (_subLineRegexp.hasMatch(line)) continue;
-      if (!keywordPattern.hasMatch(line)) continue;
-      final match = _numberPattern.firstMatch(line);
+      final keywordMatch = keywordPattern.firstMatch(line);
+      if (keywordMatch == null) continue;
+
+      // OCR frequently merges a main row and its indented sub-row, e.g.
+      // "Carbohydrate 60g of which sugars 12g". Keep the main value when
+      // the nutrient appears first, but reject genuine sub-rows such as
+      // "of which sugars 12g" or "Saturated Fat 4g".
+      final subLineMatch = _subLineRegexp.firstMatch(line);
+      if (subLineMatch != null && subLineMatch.start < keywordMatch.start) {
+        continue;
+      }
+      final valueEnd = subLineMatch?.start ?? line.length;
+      final valueText = line.substring(keywordMatch.end, valueEnd);
+      final match = _numberPattern.firstMatch(valueText);
       if (match == null) continue;
       final value = _parseNumber(match.group(1)!);
       if (value > 100) continue;
@@ -343,6 +354,12 @@ class NutritionLabelParser {
   }
 
   static String _normalizeOcrText(String text) {
+    text = text
+        .replaceAll(RegExp(r'kca[iI]', caseSensitive: false), 'kcal')
+        .replaceAllMapped(
+          RegExp(r'(\d)\s*([\.,])\s*(\d)'),
+          (match) => '${match.group(1)}${match.group(2)}${match.group(3)}',
+        );
     final characters = text.split('');
     for (var index = 0; index < characters.length; index++) {
       final character = characters[index];

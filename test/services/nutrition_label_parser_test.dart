@@ -347,5 +347,40 @@ Vezels 4 g
       expect(result, isNotNull);
       expect(result!.fiberPer100g, 4);
     });
+
+    test('keeps main macros when OCR merges their sub-rows', () {
+      const text = '''
+Nutrition per 100g
+Energy 400 kcal
+Total Fat 10g Saturated Fat 3g
+Carbohydrate 60g of which sugars 20g
+Protein 8g
+''';
+
+      final result = NutritionLabelParser.parse(text);
+
+      expect(result, isNotNull);
+      expect(result!.fatPer100g, 10);
+      expect(result.carbsPer100g, 60);
+      expect(result.proteinPer100g, 8);
+    });
+
+    test('handles spaced decimal separators and kcal OCR errors', () {
+      const text = '''
+Nährwerte pro 100 g
+Energie 390 kcaI
+Fett 12 , 5 g
+Kohlenhydrate 45 , 8 g
+Eiweiß 8 , 2 g
+''';
+
+      final result = NutritionLabelParser.parse(text);
+
+      expect(result, isNotNull);
+      expect(result!.caloriesPer100g, 390);
+      expect(result.fatPer100g, 12.5);
+      expect(result.carbsPer100g, 45.8);
+      expect(result.proteinPer100g, 8.2);
+    });
   });
 }
