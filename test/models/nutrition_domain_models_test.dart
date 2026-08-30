@@ -239,6 +239,11 @@ void main() {
         ProgressPhoto.fromJson(photo.toJson()).category,
         PhotoCategory.side,
       );
+      expect(photo.toJson()['category'], 'side');
+      expect(
+        ProgressPhoto.fromJson({...photo.toJson(), 'category': 1}).category,
+        PhotoCategory.side,
+      );
       expect(WeightEntry.fromJson(weight.toJson()).source, 'manual');
       expect(WorkoutEntry.fromJson(workout.toJson()).note, 'Run');
       expect(UserStats.fromJson(stats.toJson()).achievements, [

@@ -44,7 +44,7 @@ class ProgressPhoto {
         'timestamp': timestamp.toIso8601String(),
         'weightKg': weightKg,
         'note': note,
-        'category': category.index,
+        'category': _photoCategoryKey(category),
         'createdAt': createdAt.toIso8601String(),
       };
 
@@ -54,7 +54,33 @@ class ProgressPhoto {
         timestamp: DateTime.parse(json['timestamp'] as String),
         weightKg: (json['weightKg'] as num?)?.toDouble(),
         note: json['note'] as String?,
-        category: PhotoCategory.values[json['category'] as int? ?? 0],
+        category: _photoCategoryFromJson(json['category']),
         createdAt: DateTime.parse(json['createdAt'] as String),
       );
+}
+
+String _photoCategoryKey(PhotoCategory category) => switch (category) {
+      PhotoCategory.front => 'front',
+      PhotoCategory.side => 'side',
+      PhotoCategory.back => 'back',
+      PhotoCategory.other => 'other',
+    };
+
+PhotoCategory _photoCategoryFromJson(Object? value) {
+  if (value is String) {
+    return switch (value) {
+      'front' => PhotoCategory.front,
+      'side' => PhotoCategory.side,
+      'back' => PhotoCategory.back,
+      'other' => PhotoCategory.other,
+      _ => PhotoCategory.front,
+    };
+  }
+  if (value is num) {
+    final index = value.toInt();
+    if (index >= 0 && index < PhotoCategory.values.length) {
+      return PhotoCategory.values[index];
+    }
+  }
+  return PhotoCategory.front;
 }

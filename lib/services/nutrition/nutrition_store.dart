@@ -911,7 +911,7 @@ SyncMutation? _syncMutationFor(NutritionCommand command) => switch (command) {
           entityType: 'progress_photo',
           entityId: value.id,
           operation: 'upsert',
-          payloadJson: jsonEncode(value.toJson()),
+          payloadJson: jsonEncode(_progressPhotoSyncPayload(value)),
         ),
       DeleteProgressPhoto(:final id) => SyncMutation(
           entityType: 'progress_photo',
@@ -948,6 +948,12 @@ SyncMutation? _syncMutationFor(NutritionCommand command) => switch (command) {
         ),
       _ => null,
     };
+
+Map<String, dynamic> _progressPhotoSyncPayload(ProgressPhoto photo) {
+  final payload = photo.toJson()..remove('imagePath');
+  payload['blobId'] = photo.id;
+  return payload;
+}
 
 final class NutritionSnapshot {
   final int commitSequence;

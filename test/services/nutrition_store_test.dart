@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sophis/models/food_entry.dart';
 import 'package:sophis/models/meal_plan.dart';
+import 'package:sophis/models/progress_photo.dart';
 import 'package:sophis/models/recipe.dart';
 import 'package:sophis/models/water_entry.dart';
 import 'package:sophis/services/database_service.dart';
@@ -229,6 +230,22 @@ void main() {
       expect(pending, hasLength(1));
       expect(pending.single.entityType, 'nutrition_snapshot');
       expect(pending.single.operation, 'clear');
+    });
+
+    test('keeps local photo paths out of sync payloads', () async {
+      final photo = ProgressPhoto(
+        id: 'sync-photo',
+        imagePath: '/Users/example/Library/progress_photos/sync-photo.jpg',
+        timestamp: DateTime.utc(2026, 1, 2),
+        createdAt: DateTime.utc(2026, 1, 2),
+      );
+
+      await store.commit(SaveProgressPhoto(photo));
+
+      final pending = await store.pendingSyncChanges();
+      expect(pending, hasLength(1));
+      expect(pending.single.payloadJson, contains('"blobId":"sync-photo"'));
+      expect(pending.single.payloadJson, isNot(contains(photo.imagePath)));
     });
 
     test('can retry store initialization after a transient failure', () async {
