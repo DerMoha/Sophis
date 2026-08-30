@@ -117,7 +117,8 @@ class SupplementDefinitions extends Table {
 )
 class SupplementLogs extends Table {
   TextColumn get id => text()();
-  TextColumn get supplementId => text()();
+  TextColumn get supplementId =>
+      text().references(SupplementDefinitions, #id)();
   DateTimeColumn get timestamp => dateTime()();
 
   @override
@@ -524,7 +525,7 @@ class DatabaseService extends _$DatabaseService {
   DatabaseService._(super.executor);
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -606,6 +607,17 @@ class DatabaseService extends _$DatabaseService {
             await migrator.createTable(syncAppliedChanges);
             await migrator.createTable(photoFileIntents);
             await _createVersion10Indexes();
+          }
+          if (from < 11 && to >= 11) {
+            // v10 did not declare the supplement relationship. Remove any
+            // historical orphan rows before Drift recreates the table with a
+            // real foreign-key constraint.
+            await customStatement(
+              'DELETE FROM supplement_logs '
+              'WHERE supplement_id NOT IN '
+              '(SELECT id FROM supplement_definitions)',
+            );
+            await migrator.alterTable(TableMigration(supplementLogs));
           }
         },
         beforeOpen: (_) async {

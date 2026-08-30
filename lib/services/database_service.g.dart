@@ -1631,7 +1631,10 @@ class $SupplementLogsTable extends SupplementLogs
   @override
   late final GeneratedColumn<String> supplementId = GeneratedColumn<String>(
       'supplement_id', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
+      type: DriftSqlType.string,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES supplement_definitions (id)'));
   static const VerificationMeta _timestampMeta =
       const VerificationMeta('timestamp');
   @override
@@ -9872,6 +9875,28 @@ typedef $$SupplementDefinitionsTableUpdateCompanionBuilder
   Value<int> rowid,
 });
 
+final class $$SupplementDefinitionsTableReferences extends BaseReferences<
+    _$DatabaseService, $SupplementDefinitionsTable, SupplementDefinition> {
+  $$SupplementDefinitionsTableReferences(
+      super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$SupplementLogsTable, List<SupplementLog>>
+      _supplementLogsRefsTable(_$DatabaseService db) =>
+          MultiTypedResultKey.fromTable(db.supplementLogs,
+              aliasName:
+                  'supplement_definitions__id__supplement_logs__supplement_id');
+
+  $$SupplementLogsTableProcessedTableManager get supplementLogsRefs {
+    final manager = $$SupplementLogsTableTableManager($_db, $_db.supplementLogs)
+        .filter(
+            (f) => f.supplementId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_supplementLogsRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+}
+
 class $$SupplementDefinitionsTableFilterComposer
     extends Composer<_$DatabaseService, $SupplementDefinitionsTable> {
   $$SupplementDefinitionsTableFilterComposer({
@@ -9898,6 +9923,27 @@ class $$SupplementDefinitionsTableFilterComposer
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  Expression<bool> supplementLogsRefs(
+      Expression<bool> Function($$SupplementLogsTableFilterComposer f) f) {
+    final $$SupplementLogsTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.supplementLogs,
+        getReferencedColumn: (t) => t.supplementId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$SupplementLogsTableFilterComposer(
+              $db: $db,
+              $table: $db.supplementLogs,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
 }
 
 class $$SupplementDefinitionsTableOrderingComposer
@@ -9955,6 +10001,27 @@ class $$SupplementDefinitionsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  Expression<T> supplementLogsRefs<T extends Object>(
+      Expression<T> Function($$SupplementLogsTableAnnotationComposer a) f) {
+    final $$SupplementLogsTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.supplementLogs,
+        getReferencedColumn: (t) => t.supplementId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$SupplementLogsTableAnnotationComposer(
+              $db: $db,
+              $table: $db.supplementLogs,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
 }
 
 class $$SupplementDefinitionsTableTableManager extends RootTableManager<
@@ -9966,13 +10033,9 @@ class $$SupplementDefinitionsTableTableManager extends RootTableManager<
     $$SupplementDefinitionsTableAnnotationComposer,
     $$SupplementDefinitionsTableCreateCompanionBuilder,
     $$SupplementDefinitionsTableUpdateCompanionBuilder,
-    (
-      SupplementDefinition,
-      BaseReferences<_$DatabaseService, $SupplementDefinitionsTable,
-          SupplementDefinition>
-    ),
+    (SupplementDefinition, $$SupplementDefinitionsTableReferences),
     SupplementDefinition,
-    PrefetchHooks Function()> {
+    PrefetchHooks Function({bool supplementLogsRefs})> {
   $$SupplementDefinitionsTableTableManager(
       _$DatabaseService db, $SupplementDefinitionsTable table)
       : super(TableManagerState(
@@ -10024,9 +10087,38 @@ class $$SupplementDefinitionsTableTableManager extends RootTableManager<
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map((e) => (
+                    e.readTable(table),
+                    $$SupplementDefinitionsTableReferences(db, table, e)
+                  ))
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback: ({supplementLogsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (supplementLogsRefs) db.supplementLogs
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (supplementLogsRefs)
+                    await $_getPrefetchedData<SupplementDefinition,
+                            $SupplementDefinitionsTable, SupplementLog>(
+                        currentTable: table,
+                        referencedTable: $$SupplementDefinitionsTableReferences
+                            ._supplementLogsRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$SupplementDefinitionsTableReferences(
+                                    db, table, p0)
+                                .supplementLogsRefs,
+                        referencedItemsForCurrentItem:
+                            (item, referencedItems) => referencedItems
+                                .where((e) => e.supplementId == item.id),
+                        typedResults: items)
+                ];
+              },
+            );
+          },
         ));
 }
 
@@ -10040,13 +10132,9 @@ typedef $$SupplementDefinitionsTableProcessedTableManager
         $$SupplementDefinitionsTableAnnotationComposer,
         $$SupplementDefinitionsTableCreateCompanionBuilder,
         $$SupplementDefinitionsTableUpdateCompanionBuilder,
-        (
-          SupplementDefinition,
-          BaseReferences<_$DatabaseService, $SupplementDefinitionsTable,
-              SupplementDefinition>
-        ),
+        (SupplementDefinition, $$SupplementDefinitionsTableReferences),
         SupplementDefinition,
-        PrefetchHooks Function()>;
+        PrefetchHooks Function({bool supplementLogsRefs})>;
 typedef $$SupplementLogsTableCreateCompanionBuilder = SupplementLogsCompanion
     Function({
   required String id,
@@ -10062,6 +10150,28 @@ typedef $$SupplementLogsTableUpdateCompanionBuilder = SupplementLogsCompanion
   Value<int> rowid,
 });
 
+final class $$SupplementLogsTableReferences extends BaseReferences<
+    _$DatabaseService, $SupplementLogsTable, SupplementLog> {
+  $$SupplementLogsTableReferences(
+      super.$_db, super.$_table, super.$_typedResult);
+
+  static $SupplementDefinitionsTable _supplementIdTable(_$DatabaseService db) =>
+      db.supplementDefinitions.createAlias(
+          'supplement_logs__supplement_id__supplement_definitions__id');
+
+  $$SupplementDefinitionsTableProcessedTableManager get supplementId {
+    final $_column = $_itemColumn<String>('supplement_id')!;
+
+    final manager = $$SupplementDefinitionsTableTableManager(
+            $_db, $_db.supplementDefinitions)
+        .filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_supplementIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+}
+
 class $$SupplementLogsTableFilterComposer
     extends Composer<_$DatabaseService, $SupplementLogsTable> {
   $$SupplementLogsTableFilterComposer({
@@ -10074,11 +10184,29 @@ class $$SupplementLogsTableFilterComposer
   ColumnFilters<String> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<String> get supplementId => $composableBuilder(
-      column: $table.supplementId, builder: (column) => ColumnFilters(column));
-
   ColumnFilters<DateTime> get timestamp => $composableBuilder(
       column: $table.timestamp, builder: (column) => ColumnFilters(column));
+
+  $$SupplementDefinitionsTableFilterComposer get supplementId {
+    final $$SupplementDefinitionsTableFilterComposer composer =
+        $composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.supplementId,
+            referencedTable: $db.supplementDefinitions,
+            getReferencedColumn: (t) => t.id,
+            builder: (joinBuilder,
+                    {$addJoinBuilderToRootComposer,
+                    $removeJoinBuilderFromRootComposer}) =>
+                $$SupplementDefinitionsTableFilterComposer(
+                  $db: $db,
+                  $table: $db.supplementDefinitions,
+                  $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                  joinBuilder: joinBuilder,
+                  $removeJoinBuilderFromRootComposer:
+                      $removeJoinBuilderFromRootComposer,
+                ));
+    return composer;
+  }
 }
 
 class $$SupplementLogsTableOrderingComposer
@@ -10093,12 +10221,29 @@ class $$SupplementLogsTableOrderingComposer
   ColumnOrderings<String> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<String> get supplementId => $composableBuilder(
-      column: $table.supplementId,
-      builder: (column) => ColumnOrderings(column));
-
   ColumnOrderings<DateTime> get timestamp => $composableBuilder(
       column: $table.timestamp, builder: (column) => ColumnOrderings(column));
+
+  $$SupplementDefinitionsTableOrderingComposer get supplementId {
+    final $$SupplementDefinitionsTableOrderingComposer composer =
+        $composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.supplementId,
+            referencedTable: $db.supplementDefinitions,
+            getReferencedColumn: (t) => t.id,
+            builder: (joinBuilder,
+                    {$addJoinBuilderToRootComposer,
+                    $removeJoinBuilderFromRootComposer}) =>
+                $$SupplementDefinitionsTableOrderingComposer(
+                  $db: $db,
+                  $table: $db.supplementDefinitions,
+                  $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                  joinBuilder: joinBuilder,
+                  $removeJoinBuilderFromRootComposer:
+                      $removeJoinBuilderFromRootComposer,
+                ));
+    return composer;
+  }
 }
 
 class $$SupplementLogsTableAnnotationComposer
@@ -10113,11 +10258,29 @@ class $$SupplementLogsTableAnnotationComposer
   GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<String> get supplementId => $composableBuilder(
-      column: $table.supplementId, builder: (column) => column);
-
   GeneratedColumn<DateTime> get timestamp =>
       $composableBuilder(column: $table.timestamp, builder: (column) => column);
+
+  $$SupplementDefinitionsTableAnnotationComposer get supplementId {
+    final $$SupplementDefinitionsTableAnnotationComposer composer =
+        $composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.supplementId,
+            referencedTable: $db.supplementDefinitions,
+            getReferencedColumn: (t) => t.id,
+            builder: (joinBuilder,
+                    {$addJoinBuilderToRootComposer,
+                    $removeJoinBuilderFromRootComposer}) =>
+                $$SupplementDefinitionsTableAnnotationComposer(
+                  $db: $db,
+                  $table: $db.supplementDefinitions,
+                  $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                  joinBuilder: joinBuilder,
+                  $removeJoinBuilderFromRootComposer:
+                      $removeJoinBuilderFromRootComposer,
+                ));
+    return composer;
+  }
 }
 
 class $$SupplementLogsTableTableManager extends RootTableManager<
@@ -10129,12 +10292,9 @@ class $$SupplementLogsTableTableManager extends RootTableManager<
     $$SupplementLogsTableAnnotationComposer,
     $$SupplementLogsTableCreateCompanionBuilder,
     $$SupplementLogsTableUpdateCompanionBuilder,
-    (
-      SupplementLog,
-      BaseReferences<_$DatabaseService, $SupplementLogsTable, SupplementLog>
-    ),
+    (SupplementLog, $$SupplementLogsTableReferences),
     SupplementLog,
-    PrefetchHooks Function()> {
+    PrefetchHooks Function({bool supplementId})> {
   $$SupplementLogsTableTableManager(
       _$DatabaseService db, $SupplementLogsTable table)
       : super(TableManagerState(
@@ -10171,9 +10331,47 @@ class $$SupplementLogsTableTableManager extends RootTableManager<
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map((e) => (
+                    e.readTable(table),
+                    $$SupplementLogsTableReferences(db, table, e)
+                  ))
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback: ({supplementId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins: <
+                  T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic>>(state) {
+                if (supplementId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.supplementId,
+                    referencedTable:
+                        $$SupplementLogsTableReferences._supplementIdTable(db),
+                    referencedColumn: $$SupplementLogsTableReferences
+                        ._supplementIdTable(db)
+                        .id,
+                  ) as T;
+                }
+
+                return state;
+              },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
         ));
 }
 
@@ -10186,12 +10384,9 @@ typedef $$SupplementLogsTableProcessedTableManager = ProcessedTableManager<
     $$SupplementLogsTableAnnotationComposer,
     $$SupplementLogsTableCreateCompanionBuilder,
     $$SupplementLogsTableUpdateCompanionBuilder,
-    (
-      SupplementLog,
-      BaseReferences<_$DatabaseService, $SupplementLogsTable, SupplementLog>
-    ),
+    (SupplementLog, $$SupplementLogsTableReferences),
     SupplementLog,
-    PrefetchHooks Function()>;
+    PrefetchHooks Function({bool supplementId})>;
 typedef $$BarcodeProductsTableCreateCompanionBuilder = BarcodeProductsCompanion
     Function({
   required String barcode,
