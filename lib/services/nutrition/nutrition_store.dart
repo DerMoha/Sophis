@@ -201,36 +201,38 @@ final class NutritionStore {
   }
 
   Future<NutritionSnapshot> _loadSnapshot() async {
-    final persistent = await _persistence.load();
-    final foods = await _database.getAllFoods();
-    final water = await _database.getAllWater();
-    final weights = await _database.getAllWeights();
-    final workouts = await _database.getAllWorkouts();
-    final supplements = await _database.getAllSupplements();
-    final supplementLogs = await _database.getAllSupplementLogs();
-    final photos = await _database.getAllPhotos();
+    return _database.transaction(() async {
+      final persistent = await _persistence.load();
+      final foods = await _database.getAllFoods();
+      final water = await _database.getAllWater();
+      final weights = await _database.getAllWeights();
+      final workouts = await _database.getAllWorkouts();
+      final supplements = await _database.getAllSupplements();
+      final supplementLogs = await _database.getAllSupplementLogs();
+      final photos = await _database.getAllPhotos();
 
-    return NutritionSnapshot(
-      commitSequence: _commitSequence,
-      goals: _storage.loadGoals(),
-      profile: _storage.loadProfile(),
-      foodEntries: List.unmodifiable(foods),
-      waterEntries: List.unmodifiable(water),
-      weightEntries: List.unmodifiable(weights),
-      workoutEntries: List.unmodifiable(workouts),
-      supplements: List.unmodifiable(supplements),
-      supplementLogs: List.unmodifiable(supplementLogs),
-      recipes: List.unmodifiable(persistent.recipes),
-      plannedMeals: List.unmodifiable(persistent.plannedMeals),
-      customFoods: List.unmodifiable(persistent.customFoods),
-      favoriteFoods: List.unmodifiable(persistent.favoriteFoods),
-      customPortions: List.unmodifiable(persistent.customPortions),
-      recentFoods: List.unmodifiable(persistent.recentFoods),
-      recentFoodMeals: Map.unmodifiable(persistent.recentFoodMeals),
-      userStats: persistent.userStats,
-      shoppingListChecked: Set.unmodifiable(persistent.shoppingListChecked),
-      progressPhotos: List.unmodifiable(photos),
-    );
+      return NutritionSnapshot(
+        commitSequence: _commitSequence,
+        goals: _storage.loadGoals(),
+        profile: _storage.loadProfile(),
+        foodEntries: List.unmodifiable(foods),
+        waterEntries: List.unmodifiable(water),
+        weightEntries: List.unmodifiable(weights),
+        workoutEntries: List.unmodifiable(workouts),
+        supplements: List.unmodifiable(supplements),
+        supplementLogs: List.unmodifiable(supplementLogs),
+        recipes: List.unmodifiable(persistent.recipes),
+        plannedMeals: List.unmodifiable(persistent.plannedMeals),
+        customFoods: List.unmodifiable(persistent.customFoods),
+        favoriteFoods: List.unmodifiable(persistent.favoriteFoods),
+        customPortions: List.unmodifiable(persistent.customPortions),
+        recentFoods: List.unmodifiable(persistent.recentFoods),
+        recentFoodMeals: Map.unmodifiable(persistent.recentFoodMeals),
+        userStats: persistent.userStats,
+        shoppingListChecked: Set.unmodifiable(persistent.shoppingListChecked),
+        progressPhotos: List.unmodifiable(photos),
+      );
+    });
   }
 
   Future<void> _saveRecipe(Recipe value) async {

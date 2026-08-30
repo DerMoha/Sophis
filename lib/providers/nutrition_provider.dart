@@ -196,42 +196,35 @@ class NutritionProvider extends ChangeNotifier {
     notifyListeners();
 
     await _migrateToDbIfNeeded();
-    final persistentState = await _persistence.initialize();
-
-    final foods = await _db.getAllFoods();
-    final water = await _db.getAllWater();
-    final weights = await _db.getAllWeights();
-    final workouts = await _db.getAllWorkouts();
+    final snapshot = (await _store.snapshot()).value;
 
     _foodLog.loadData(
-      foods,
-      persistentState.recentFoods,
-      persistentState.recentFoodMeals,
+      [...snapshot.foodEntries],
+      [...snapshot.recentFoods],
+      {...snapshot.recentFoodMeals},
     );
-    _hydration.loadData(water);
-    weights.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-    _weightEntries = weights;
-    _workouts.loadData(workouts);
+    _hydration.loadData([...snapshot.waterEntries]);
+    _weightEntries = [...snapshot.weightEntries];
+    _workouts.loadData([...snapshot.workoutEntries]);
 
-    _goals = _storage.loadGoals();
-    _profile = _storage.loadProfile();
+    _goals = snapshot.goals;
+    _profile = snapshot.profile;
 
     _foodLibrary.loadData(
-      recipes: persistentState.recipes,
-      customFoods: persistentState.customFoods,
-      favoriteFoods: persistentState.favoriteFoods,
-      customPortions: persistentState.customPortions,
+      recipes: [...snapshot.recipes],
+      customFoods: [...snapshot.customFoods],
+      favoriteFoods: [...snapshot.favoriteFoods],
+      customPortions: [...snapshot.customPortions],
     );
 
     _mealPlan.loadData(
-      persistentState.plannedMeals,
-      persistentState.shoppingListChecked,
+      [...snapshot.plannedMeals],
+      {...snapshot.shoppingListChecked},
     );
 
-    _userStats = persistentState.userStats;
+    _userStats = snapshot.userStats;
 
-    final photos = await _db.getAllPhotos();
-    _photos = photos;
+    _photos = [...snapshot.progressPhotos];
 
     if (_cleanupProgressPhotosOnLoad) {
       // Clean up orphaned photo files in background.

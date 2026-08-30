@@ -166,8 +166,10 @@ void main() {
 
       final state = (await store.snapshot()).valueOrNull!;
       expect(state.recipes, hasLength(2));
-      expect(state.recipes.firstWhere((recipe) => recipe.id == 'recipe-1').name,
-          'Updated');
+      expect(
+        state.recipes.firstWhere((recipe) => recipe.id == 'recipe-1').name,
+        'Updated',
+      );
       expect(state.plannedMeals, hasLength(2));
       expect(
         state.plannedMeals.map((meal) => meal.id),
