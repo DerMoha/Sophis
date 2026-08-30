@@ -23,6 +23,13 @@ part 'database_service.g.dart';
 // TABLES
 // -----------------------------------------------------------------------------
 
+@TableIndex(
+  name: 'foods_timestamp_idx',
+  columns: {
+    IndexedColumn(#timestamp, orderBy: OrderingMode.desc),
+    #id,
+  },
+)
 class Foods extends Table {
   TextColumn get id => text()(); // Keeping String ID to match existing models
   TextColumn get name => text()();
@@ -38,6 +45,13 @@ class Foods extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+@TableIndex(
+  name: 'water_logs_timestamp_idx',
+  columns: {
+    IndexedColumn(#timestamp, orderBy: OrderingMode.desc),
+    #id,
+  },
+)
 class WaterLogs extends Table {
   TextColumn get id => text()();
   RealColumn get amountMl => real()();
@@ -47,6 +61,13 @@ class WaterLogs extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+@TableIndex(
+  name: 'weight_logs_timestamp_idx',
+  columns: {
+    IndexedColumn(#timestamp, orderBy: OrderingMode.desc),
+    #id,
+  },
+)
 class WeightLogs extends Table {
   TextColumn get id => text()();
   RealColumn get weightKg => real()();
@@ -58,6 +79,13 @@ class WeightLogs extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+@TableIndex(
+  name: 'workout_logs_timestamp_idx',
+  columns: {
+    IndexedColumn(#timestamp, orderBy: OrderingMode.desc),
+    #id,
+  },
+)
 class WorkoutLogs extends Table {
   TextColumn get id => text()();
   RealColumn get caloriesBurned => real()();
@@ -80,6 +108,13 @@ class SupplementDefinitions extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+@TableIndex(
+  name: 'supplement_logs_timestamp_idx',
+  columns: {
+    IndexedColumn(#timestamp, orderBy: OrderingMode.desc),
+    #id,
+  },
+)
 class SupplementLogs extends Table {
   TextColumn get id => text()();
   TextColumn get supplementId => text()();
@@ -89,6 +124,13 @@ class SupplementLogs extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+@TableIndex(
+  name: 'barcode_products_expiry_idx',
+  columns: {
+    #cacheStatus,
+    IndexedColumn(#cachedAt, orderBy: OrderingMode.asc),
+  },
+)
 class BarcodeProducts extends Table {
   TextColumn get barcode => text()();
   TextColumn get name => text().withDefault(const Constant(''))();
@@ -112,6 +154,13 @@ class BarcodeProducts extends Table {
 }
 
 @DataClassName('RecipeRow')
+@TableIndex(
+  name: 'recipes_created_at_idx',
+  columns: {
+    IndexedColumn(#createdAt, orderBy: OrderingMode.desc),
+    #id,
+  },
+)
 class Recipes extends Table {
   TextColumn get id => text()();
   TextColumn get name => text()();
@@ -147,11 +196,26 @@ class CustomFoods extends Table {
 class FavoriteFoods extends Table {
   TextColumn get id => text()();
 
+  /// Snapshot of the food at the time it was favorited.
+  ///
+  /// This is nullable for backwards compatibility with the original
+  /// id-only favorites table. Newer callers can fill it during the canonical
+  /// library cutover without rewriting existing rows.
+  TextColumn get foodJson => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }
 
 @DataClassName('PlannedMealRow')
+@TableIndex(
+  name: 'planned_meals_schedule_idx',
+  columns: {
+    IndexedColumn(#date, orderBy: OrderingMode.asc),
+    #meal,
+    #id,
+  },
+)
 class PlannedMeals extends Table {
   TextColumn get id => text()();
   DateTimeColumn get date => dateTime()();
@@ -171,6 +235,14 @@ class PlannedMeals extends Table {
 }
 
 @DataClassName('CustomPortionRow')
+@TableIndex(
+  name: 'custom_portions_product_idx',
+  columns: {
+    #productKey,
+    IndexedColumn(#createdAt, orderBy: OrderingMode.asc),
+    #id,
+  },
+)
 class CustomPortions extends Table {
   TextColumn get id => text()();
   TextColumn get productKey => text()();
@@ -234,6 +306,14 @@ class NutritionDocuments extends Table {
 }
 
 @DataClassName('ProgressPhotoRow')
+@TableIndex(
+  name: 'progress_photos_category_timestamp_idx',
+  columns: {
+    #category,
+    IndexedColumn(#timestamp, orderBy: OrderingMode.desc),
+    #id,
+  },
+)
 class ProgressPhotos extends Table {
   TextColumn get id => text()();
   TextColumn get imagePath => text()();
@@ -242,6 +322,163 @@ class ProgressPhotos extends Table {
   TextColumn get note => text().nullable()();
   IntColumn get category => integer().withDefault(const Constant(0))();
   DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// A stable local scope that can later be bound to a cloud account.
+@DataClassName('DataSpaceRow')
+class DataSpaces extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text().nullable()();
+  BoolColumn get isDefault => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Records durable, retryable local migration progress.
+@DataClassName('MigrationStateRow')
+class MigrationState extends Table {
+  TextColumn get key => text()();
+  IntColumn get version => integer()();
+  DateTimeColumn get updatedAt => dateTime()();
+  TextColumn get checksum => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {key};
+}
+
+/// Generic per-entity sync metadata. Domain tables remain unchanged until the
+/// canonical entity cutover; this table provides the future sync seam now.
+@DataClassName('SyncMetadataRow')
+@TableIndex(
+  name: 'sync_metadata_space_entity_idx',
+  columns: {
+    #dataSpaceId,
+    #entityType,
+    #entityId,
+  },
+)
+@TableIndex(
+  name: 'sync_metadata_pending_idx',
+  columns: {
+    #dataSpaceId,
+    IndexedColumn(#updatedAt, orderBy: OrderingMode.desc),
+  },
+)
+class SyncMetadata extends Table {
+  TextColumn get dataSpaceId => text()();
+  TextColumn get entityType => text()();
+  TextColumn get entityId => text()();
+  IntColumn get localRevision => integer().withDefault(const Constant(1))();
+  DateTimeColumn get updatedAt => dateTime()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get remoteVersion => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {dataSpaceId, entityType, entityId};
+}
+
+/// Durable mutation queue for a future cloud synchronizer.
+@DataClassName('SyncOutboxRow')
+@TableIndex(
+  name: 'sync_outbox_pending_idx',
+  columns: {
+    #dataSpaceId,
+    #processedAt,
+    IndexedColumn(#createdAt, orderBy: OrderingMode.asc),
+  },
+)
+@TableIndex(
+  name: 'sync_outbox_entity_idx',
+  columns: {
+    #dataSpaceId,
+    #entityType,
+    #entityId,
+  },
+)
+class SyncOutbox extends Table {
+  TextColumn get id => text()();
+  TextColumn get dataSpaceId => text()();
+  TextColumn get entityType => text()();
+  TextColumn get entityId => text()();
+  TextColumn get operation => text()();
+  TextColumn get payloadJson => text().nullable()();
+  IntColumn get baseRevision => integer().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+  IntColumn get attempts => integer().withDefault(const Constant(0))();
+  DateTimeColumn get nextAttemptAt => dateTime().nullable()();
+  DateTimeColumn get processedAt => dateTime().nullable()();
+  TextColumn get lastError => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Pull cursor for one local data space and remote scope.
+@DataClassName('SyncCheckpointRow')
+class SyncCheckpoints extends Table {
+  TextColumn get dataSpaceId => text()();
+  TextColumn get remoteScope => text()();
+  TextColumn get cursor => text().nullable()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {dataSpaceId, remoteScope};
+}
+
+/// Idempotency ledger for remote changes already applied locally.
+@DataClassName('SyncAppliedChangeRow')
+@TableIndex(
+  name: 'sync_applied_changes_entity_idx',
+  columns: {
+    #dataSpaceId,
+    #entityType,
+    #entityId,
+  },
+)
+class SyncAppliedChanges extends Table {
+  TextColumn get dataSpaceId => text()();
+  TextColumn get remoteChangeId => text()();
+  TextColumn get entityType => text()();
+  TextColumn get entityId => text()();
+  DateTimeColumn get appliedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {dataSpaceId, remoteChangeId};
+}
+
+/// Crash-safe staging intents for progress photo file operations.
+@DataClassName('PhotoFileIntentRow')
+@TableIndex(
+  name: 'photo_file_intents_pending_idx',
+  columns: {
+    #dataSpaceId,
+    #processedAt,
+    IndexedColumn(#createdAt, orderBy: OrderingMode.asc),
+  },
+)
+@TableIndex(
+  name: 'photo_file_intents_photo_idx',
+  columns: {
+    #dataSpaceId,
+    #photoId,
+  },
+)
+class PhotoFileIntents extends Table {
+  TextColumn get id => text()();
+  TextColumn get dataSpaceId => text()();
+  TextColumn get photoId => text()();
+  TextColumn get operation => text()();
+  TextColumn get path => text()();
+  DateTimeColumn get createdAt => dateTime()();
+  IntColumn get attempts => integer().withDefault(const Constant(0))();
+  DateTimeColumn get processedAt => dateTime().nullable()();
+  TextColumn get lastError => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -270,6 +507,13 @@ class ProgressPhotos extends Table {
     PlannedMealsChecked,
     NutritionDocuments,
     ProgressPhotos,
+    DataSpaces,
+    MigrationState,
+    SyncMetadata,
+    SyncOutbox,
+    SyncCheckpoints,
+    SyncAppliedChanges,
+    PhotoFileIntents,
   ],
 )
 class DatabaseService extends _$DatabaseService {
@@ -280,53 +524,133 @@ class DatabaseService extends _$DatabaseService {
   DatabaseService._(super.executor);
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onUpgrade: (migrator, from, to) async {
-          await migrator.createTable(supplementDefinitions);
-          await migrator.createTable(supplementLogs);
-          await migrator.createTable(barcodeProducts);
-          await migrator.createTable(recipes);
-          await migrator.createTable(customFoods);
-          await migrator.createTable(favoriteFoods);
-          await migrator.createTable(plannedMeals);
-          await migrator.createTable(customPortions);
-          await migrator.createTable(recentFoods);
-          await migrator.createTable(userStatsTable);
-          await migrator.createTable(plannedMealsChecked);
-          await migrator.createTable(nutritionDocuments);
-          await migrator.createTable(progressPhotos);
-
-          await _safeAddColumn(migrator, weightLogs, weightLogs.source);
-          await _safeAddColumn(
-            migrator,
-            barcodeProducts,
-            barcodeProducts.cacheStatus,
-          );
-          await _safeAddColumn(migrator, foods, foods.fiber);
-          await _safeAddColumn(migrator, plannedMeals, plannedMeals.fiber);
-          await _safeAddColumn(
-            migrator,
-            barcodeProducts,
-            barcodeProducts.fiberPer100g,
-          );
-          await _safeAddColumn(migrator, customFoods, customFoods.fiberPer100g);
-          await _safeAddColumn(migrator, recentFoods, recentFoods.fiberPer100g);
+          // Keep each historical schema change in its own gate. Drift runs
+          // this callback once for a multi-version upgrade, so range checks
+          // ensure that every intermediate change is applied exactly once and
+          // in dependency order.
+          if (from < 2 && to >= 2) {
+            await migrator.createTable(supplementDefinitions);
+            await migrator.createTable(supplementLogs);
+          }
+          if (from < 3 && to >= 3) {
+            await _addColumnIfMissing(migrator, weightLogs, weightLogs.source);
+          }
+          if (from < 4 && to >= 4) {
+            await migrator.createTable(barcodeProducts);
+          }
+          if (from < 5 && to >= 5) {
+            await migrator.createTable(recipes);
+            await migrator.createTable(customFoods);
+            await migrator.createTable(favoriteFoods);
+            await migrator.createTable(plannedMeals);
+            await migrator.createTable(customPortions);
+            await migrator.createTable(recentFoods);
+            await migrator.createTable(userStatsTable);
+            await migrator.createTable(plannedMealsChecked);
+          }
+          if (from < 6 && to >= 6) {
+            await migrator.createTable(progressPhotos);
+          }
+          if (from < 7 && to >= 7) {
+            await _addColumnIfMissing(
+              migrator,
+              barcodeProducts,
+              barcodeProducts.cacheStatus,
+            );
+          }
+          if (from < 8 && to >= 8) {
+            await _addColumnIfMissing(migrator, foods, foods.fiber);
+            await _addColumnIfMissing(
+              migrator,
+              plannedMeals,
+              plannedMeals.fiber,
+            );
+            await _addColumnIfMissing(
+              migrator,
+              barcodeProducts,
+              barcodeProducts.fiberPer100g,
+            );
+            await _addColumnIfMissing(
+              migrator,
+              customFoods,
+              customFoods.fiberPer100g,
+            );
+            await _addColumnIfMissing(
+              migrator,
+              recentFoods,
+              recentFoods.fiberPer100g,
+            );
+          }
+          if (from < 9 && to >= 9) {
+            await migrator.createTable(nutritionDocuments);
+          }
+          if (from < 10 && to >= 10) {
+            // Existing favorite rows intentionally keep a null snapshot. The
+            // nullable column lets the canonical library migration populate
+            // snapshots later without losing id-only favorites today.
+            await _addColumnIfMissing(
+              migrator,
+              favoriteFoods,
+              favoriteFoods.foodJson,
+            );
+            await migrator.createTable(dataSpaces);
+            await migrator.createTable(migrationState);
+            await migrator.createTable(syncMetadata);
+            await migrator.createTable(syncOutbox);
+            await migrator.createTable(syncCheckpoints);
+            await migrator.createTable(syncAppliedChanges);
+            await migrator.createTable(photoFileIntents);
+            await _createVersion10Indexes();
+          }
+        },
+        beforeOpen: (_) async {
+          await customStatement('PRAGMA foreign_keys = ON');
         },
       );
 
-  Future<void> _safeAddColumn(
+  Future<void> _addColumnIfMissing(
     Migrator migrator,
     TableInfo table,
     GeneratedColumn column,
   ) async {
-    try {
+    final rows = await customSelect(
+      'PRAGMA table_info("${table.actualTableName}")',
+    ).get();
+    final columnExists = rows.any(
+      (row) => row.read<String>('name') == column.name,
+    );
+    if (!columnExists) {
       await migrator.addColumn(table, column);
-    } catch (e) {
-      if (e.toString().contains('duplicate column name')) return;
-      rethrow;
+    }
+  }
+
+  Future<void> _createVersion10Indexes() async {
+    const statements = [
+      'CREATE INDEX IF NOT EXISTS foods_timestamp_idx ON foods (timestamp DESC, id ASC)',
+      'CREATE INDEX IF NOT EXISTS water_logs_timestamp_idx ON water_logs (timestamp DESC, id ASC)',
+      'CREATE INDEX IF NOT EXISTS weight_logs_timestamp_idx ON weight_logs (timestamp DESC, id ASC)',
+      'CREATE INDEX IF NOT EXISTS workout_logs_timestamp_idx ON workout_logs (timestamp DESC, id ASC)',
+      'CREATE INDEX IF NOT EXISTS supplement_logs_timestamp_idx ON supplement_logs (timestamp DESC, id ASC)',
+      'CREATE INDEX IF NOT EXISTS barcode_products_expiry_idx ON barcode_products (cache_status ASC, cached_at ASC)',
+      'CREATE INDEX IF NOT EXISTS recipes_created_at_idx ON recipes (created_at DESC, id ASC)',
+      'CREATE INDEX IF NOT EXISTS planned_meals_schedule_idx ON planned_meals (date ASC, meal ASC, id ASC)',
+      'CREATE INDEX IF NOT EXISTS custom_portions_product_idx ON custom_portions (product_key ASC, created_at ASC, id ASC)',
+      'CREATE INDEX IF NOT EXISTS progress_photos_category_timestamp_idx ON progress_photos (category ASC, timestamp DESC, id ASC)',
+      'CREATE INDEX IF NOT EXISTS sync_metadata_space_entity_idx ON sync_metadata (data_space_id ASC, entity_type ASC, entity_id ASC)',
+      'CREATE INDEX IF NOT EXISTS sync_metadata_pending_idx ON sync_metadata (data_space_id ASC, updated_at DESC)',
+      'CREATE INDEX IF NOT EXISTS sync_outbox_pending_idx ON sync_outbox (data_space_id ASC, processed_at ASC, created_at ASC)',
+      'CREATE INDEX IF NOT EXISTS sync_outbox_entity_idx ON sync_outbox (data_space_id ASC, entity_type ASC, entity_id ASC)',
+      'CREATE INDEX IF NOT EXISTS sync_applied_changes_entity_idx ON sync_applied_changes (data_space_id ASC, entity_type ASC, entity_id ASC)',
+      'CREATE INDEX IF NOT EXISTS photo_file_intents_pending_idx ON photo_file_intents (data_space_id ASC, processed_at ASC, created_at ASC)',
+      'CREATE INDEX IF NOT EXISTS photo_file_intents_photo_idx ON photo_file_intents (data_space_id ASC, photo_id ASC)',
+    ];
+    for (final statement in statements) {
+      await customStatement(statement);
     }
   }
 
@@ -335,7 +659,12 @@ class DatabaseService extends _$DatabaseService {
   // ---------------------------------------------------------------------------
 
   Future<List<FoodEntry>> getAllFoods() async {
-    final rows = await select(foods).get();
+    final rows = await (select(foods)
+          ..orderBy([
+            (t) => OrderingTerm.desc(t.timestamp),
+            (t) => OrderingTerm.asc(t.id),
+          ]))
+        .get();
     return rows
         .map(
           (row) => FoodEntry(
@@ -424,7 +753,12 @@ class DatabaseService extends _$DatabaseService {
   // ---------------------------------------------------------------------------
 
   Future<List<WaterEntry>> getAllWater() async {
-    final rows = await select(waterLogs).get();
+    final rows = await (select(waterLogs)
+          ..orderBy([
+            (t) => OrderingTerm.desc(t.timestamp),
+            (t) => OrderingTerm.asc(t.id),
+          ]))
+        .get();
     return rows
         .map(
           (row) => WaterEntry(
@@ -474,7 +808,12 @@ class DatabaseService extends _$DatabaseService {
   // ---------------------------------------------------------------------------
 
   Future<List<WeightEntry>> getAllWeights() async {
-    final rows = await select(weightLogs).get();
+    final rows = await (select(weightLogs)
+          ..orderBy([
+            (t) => OrderingTerm.desc(t.timestamp),
+            (t) => OrderingTerm.asc(t.id),
+          ]))
+        .get();
     return rows
         .map(
           (row) => WeightEntry(
@@ -527,7 +866,12 @@ class DatabaseService extends _$DatabaseService {
   // ---------------------------------------------------------------------------
 
   Future<List<WorkoutEntry>> getAllWorkouts() async {
-    final rows = await select(workoutLogs).get();
+    final rows = await (select(workoutLogs)
+          ..orderBy([
+            (t) => OrderingTerm.desc(t.timestamp),
+            (t) => OrderingTerm.asc(t.id),
+          ]))
+        .get();
     return rows
         .map(
           (row) => WorkoutEntry(
@@ -655,7 +999,12 @@ class DatabaseService extends _$DatabaseService {
   }
 
   Future<int> deleteSupplement(String id) {
-    return (delete(supplementDefinitions)..where((t) => t.id.equals(id))).go();
+    return transaction(() async {
+      await (delete(supplementLogs)..where((t) => t.supplementId.equals(id)))
+          .go();
+      return (delete(supplementDefinitions)..where((t) => t.id.equals(id)))
+          .go();
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -663,7 +1012,12 @@ class DatabaseService extends _$DatabaseService {
   // ---------------------------------------------------------------------------
 
   Future<List<SupplementLogEntry>> getAllSupplementLogs() async {
-    final rows = await select(supplementLogs).get();
+    final rows = await (select(supplementLogs)
+          ..orderBy([
+            (t) => OrderingTerm.desc(t.timestamp),
+            (t) => OrderingTerm.asc(t.id),
+          ]))
+        .get();
     return rows
         .map(
           (row) => SupplementLogEntry(
@@ -757,13 +1111,19 @@ class DatabaseService extends _$DatabaseService {
   // ---------------------------------------------------------------------------
 
   Future<void> deleteAllData() async {
-    await deleteNutritionData();
-    await delete(supplementDefinitions).go();
-    await delete(supplementLogs).go();
-    await delete(barcodeProducts).go();
+    await transaction(() async {
+      await _deleteNutritionData();
+      await delete(supplementLogs).go();
+      await delete(supplementDefinitions).go();
+      await delete(barcodeProducts).go();
+    });
   }
 
   Future<void> deleteNutritionData() async {
+    await transaction(_deleteNutritionData);
+  }
+
+  Future<void> _deleteNutritionData() async {
     await delete(foods).go();
     await delete(waterLogs).go();
     await delete(weightLogs).go();
@@ -819,7 +1179,12 @@ class DatabaseService extends _$DatabaseService {
   // ---------------------------------------------------------------------------
 
   Future<List<RecipeRow>> getAllRecipes() async {
-    return await select(recipes).get();
+    return (select(recipes)
+          ..orderBy([
+            (t) => OrderingTerm.desc(t.createdAt),
+            (t) => OrderingTerm.asc(t.id),
+          ]))
+        .get();
   }
 
   Future<int> insertRecipe(RecipeRow recipe) {
@@ -941,7 +1306,13 @@ class DatabaseService extends _$DatabaseService {
   // ---------------------------------------------------------------------------
 
   Future<List<PlannedMealRow>> getAllPlannedMeals() async {
-    return await select(plannedMeals).get();
+    return (select(plannedMeals)
+          ..orderBy([
+            (t) => OrderingTerm.asc(t.date),
+            (t) => OrderingTerm.asc(t.meal),
+            (t) => OrderingTerm.asc(t.id),
+          ]))
+        .get();
   }
 
   Future<int> insertPlannedMeal(PlannedMealRow meal) {
@@ -996,7 +1367,12 @@ class DatabaseService extends _$DatabaseService {
   // ---------------------------------------------------------------------------
 
   Future<List<CustomPortionRow>> getAllCustomPortions() async {
-    return await select(customPortions).get();
+    return (select(customPortions)
+          ..orderBy([
+            (t) => OrderingTerm.asc(t.createdAt),
+            (t) => OrderingTerm.asc(t.id),
+          ]))
+        .get();
   }
 
   Future<int> insertCustomPortion(CustomPortionRow portion) {
@@ -1020,7 +1396,8 @@ class DatabaseService extends _$DatabaseService {
   // ---------------------------------------------------------------------------
 
   Future<List<RecentFoodRow>> getAllRecentFoods() async {
-    return select(recentFoods).get();
+    return (select(recentFoods)..orderBy([(t) => OrderingTerm.asc(t.id)]))
+        .get();
   }
 
   Future<void> replaceRecentFoods(List<RecentFoodRow> foodsList) async {

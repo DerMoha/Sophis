@@ -3558,8 +3558,14 @@ class $FavoriteFoodsTable extends FavoriteFoods
   late final GeneratedColumn<String> id = GeneratedColumn<String>(
       'id', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _foodJsonMeta =
+      const VerificationMeta('foodJson');
   @override
-  List<GeneratedColumn> get $columns => [id];
+  late final GeneratedColumn<String> foodJson = GeneratedColumn<String>(
+      'food_json', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [id, foodJson];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -3575,6 +3581,10 @@ class $FavoriteFoodsTable extends FavoriteFoods
     } else if (isInserting) {
       context.missing(_idMeta);
     }
+    if (data.containsKey('food_json')) {
+      context.handle(_foodJsonMeta,
+          foodJson.isAcceptableOrUnknown(data['food_json']!, _foodJsonMeta));
+    }
     return context;
   }
 
@@ -3586,6 +3596,8 @@ class $FavoriteFoodsTable extends FavoriteFoods
     return FavoriteFoodRow(
       id: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      foodJson: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}food_json']),
     );
   }
 
@@ -3597,17 +3609,30 @@ class $FavoriteFoodsTable extends FavoriteFoods
 
 class FavoriteFoodRow extends DataClass implements Insertable<FavoriteFoodRow> {
   final String id;
-  const FavoriteFoodRow({required this.id});
+
+  /// Snapshot of the food at the time it was favorited.
+  ///
+  /// This is nullable for backwards compatibility with the original
+  /// id-only favorites table. Newer callers can fill it during the canonical
+  /// library cutover without rewriting existing rows.
+  final String? foodJson;
+  const FavoriteFoodRow({required this.id, this.foodJson});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
+    if (!nullToAbsent || foodJson != null) {
+      map['food_json'] = Variable<String>(foodJson);
+    }
     return map;
   }
 
   FavoriteFoodsCompanion toCompanion(bool nullToAbsent) {
     return FavoriteFoodsCompanion(
       id: Value(id),
+      foodJson: foodJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(foodJson),
     );
   }
 
@@ -3616,6 +3641,7 @@ class FavoriteFoodRow extends DataClass implements Insertable<FavoriteFoodRow> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return FavoriteFoodRow(
       id: serializer.fromJson<String>(json['id']),
+      foodJson: serializer.fromJson<String?>(json['foodJson']),
     );
   }
   @override
@@ -3623,58 +3649,73 @@ class FavoriteFoodRow extends DataClass implements Insertable<FavoriteFoodRow> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
+      'foodJson': serializer.toJson<String?>(foodJson),
     };
   }
 
-  FavoriteFoodRow copyWith({String? id}) => FavoriteFoodRow(
+  FavoriteFoodRow copyWith(
+          {String? id, Value<String?> foodJson = const Value.absent()}) =>
+      FavoriteFoodRow(
         id: id ?? this.id,
+        foodJson: foodJson.present ? foodJson.value : this.foodJson,
       );
   FavoriteFoodRow copyWithCompanion(FavoriteFoodsCompanion data) {
     return FavoriteFoodRow(
       id: data.id.present ? data.id.value : this.id,
+      foodJson: data.foodJson.present ? data.foodJson.value : this.foodJson,
     );
   }
 
   @override
   String toString() {
     return (StringBuffer('FavoriteFoodRow(')
-          ..write('id: $id')
+          ..write('id: $id, ')
+          ..write('foodJson: $foodJson')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => id.hashCode;
+  int get hashCode => Object.hash(id, foodJson);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is FavoriteFoodRow && other.id == this.id);
+      (other is FavoriteFoodRow &&
+          other.id == this.id &&
+          other.foodJson == this.foodJson);
 }
 
 class FavoriteFoodsCompanion extends UpdateCompanion<FavoriteFoodRow> {
   final Value<String> id;
+  final Value<String?> foodJson;
   final Value<int> rowid;
   const FavoriteFoodsCompanion({
     this.id = const Value.absent(),
+    this.foodJson = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   FavoriteFoodsCompanion.insert({
     required String id,
+    this.foodJson = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id);
   static Insertable<FavoriteFoodRow> custom({
     Expression<String>? id,
+    Expression<String>? foodJson,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (foodJson != null) 'food_json': foodJson,
       if (rowid != null) 'rowid': rowid,
     });
   }
 
-  FavoriteFoodsCompanion copyWith({Value<String>? id, Value<int>? rowid}) {
+  FavoriteFoodsCompanion copyWith(
+      {Value<String>? id, Value<String?>? foodJson, Value<int>? rowid}) {
     return FavoriteFoodsCompanion(
       id: id ?? this.id,
+      foodJson: foodJson ?? this.foodJson,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -3684,6 +3725,9 @@ class FavoriteFoodsCompanion extends UpdateCompanion<FavoriteFoodRow> {
     final map = <String, Expression>{};
     if (id.present) {
       map['id'] = Variable<String>(id.value);
+    }
+    if (foodJson.present) {
+      map['food_json'] = Variable<String>(foodJson.value);
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -3695,6 +3739,7 @@ class FavoriteFoodsCompanion extends UpdateCompanion<FavoriteFoodRow> {
   String toString() {
     return (StringBuffer('FavoriteFoodsCompanion(')
           ..write('id: $id, ')
+          ..write('foodJson: $foodJson, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -6308,6 +6353,2694 @@ class ProgressPhotosCompanion extends UpdateCompanion<ProgressPhotoRow> {
   }
 }
 
+class $DataSpacesTable extends DataSpaces
+    with TableInfo<$DataSpacesTable, DataSpaceRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DataSpacesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+      'name', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _isDefaultMeta =
+      const VerificationMeta('isDefault');
+  @override
+  late final GeneratedColumn<bool> isDefault = GeneratedColumn<bool>(
+      'is_default', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_default" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [id, name, isDefault, createdAt, updatedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'data_spaces';
+  @override
+  VerificationContext validateIntegrity(Insertable<DataSpaceRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    }
+    if (data.containsKey('is_default')) {
+      context.handle(_isDefaultMeta,
+          isDefault.isAcceptableOrUnknown(data['is_default']!, _isDefaultMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  DataSpaceRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DataSpaceRow(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      name: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}name']),
+      isDefault: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_default'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+    );
+  }
+
+  @override
+  $DataSpacesTable createAlias(String alias) {
+    return $DataSpacesTable(attachedDatabase, alias);
+  }
+}
+
+class DataSpaceRow extends DataClass implements Insertable<DataSpaceRow> {
+  final String id;
+  final String? name;
+  final bool isDefault;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const DataSpaceRow(
+      {required this.id,
+      this.name,
+      required this.isDefault,
+      required this.createdAt,
+      required this.updatedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    if (!nullToAbsent || name != null) {
+      map['name'] = Variable<String>(name);
+    }
+    map['is_default'] = Variable<bool>(isDefault);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  DataSpacesCompanion toCompanion(bool nullToAbsent) {
+    return DataSpacesCompanion(
+      id: Value(id),
+      name: name == null && nullToAbsent ? const Value.absent() : Value(name),
+      isDefault: Value(isDefault),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory DataSpaceRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DataSpaceRow(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String?>(json['name']),
+      isDefault: serializer.fromJson<bool>(json['isDefault']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String?>(name),
+      'isDefault': serializer.toJson<bool>(isDefault),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  DataSpaceRow copyWith(
+          {String? id,
+          Value<String?> name = const Value.absent(),
+          bool? isDefault,
+          DateTime? createdAt,
+          DateTime? updatedAt}) =>
+      DataSpaceRow(
+        id: id ?? this.id,
+        name: name.present ? name.value : this.name,
+        isDefault: isDefault ?? this.isDefault,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+      );
+  DataSpaceRow copyWithCompanion(DataSpacesCompanion data) {
+    return DataSpaceRow(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      isDefault: data.isDefault.present ? data.isDefault.value : this.isDefault,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DataSpaceRow(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('isDefault: $isDefault, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, name, isDefault, createdAt, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DataSpaceRow &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.isDefault == this.isDefault &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class DataSpacesCompanion extends UpdateCompanion<DataSpaceRow> {
+  final Value<String> id;
+  final Value<String?> name;
+  final Value<bool> isDefault;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const DataSpacesCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.isDefault = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DataSpacesCompanion.insert({
+    required String id,
+    this.name = const Value.absent(),
+    this.isDefault = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        createdAt = Value(createdAt),
+        updatedAt = Value(updatedAt);
+  static Insertable<DataSpaceRow> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<bool>? isDefault,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (isDefault != null) 'is_default': isDefault,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DataSpacesCompanion copyWith(
+      {Value<String>? id,
+      Value<String?>? name,
+      Value<bool>? isDefault,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<int>? rowid}) {
+    return DataSpacesCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      isDefault: isDefault ?? this.isDefault,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (isDefault.present) {
+      map['is_default'] = Variable<bool>(isDefault.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DataSpacesCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('isDefault: $isDefault, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $MigrationStateTable extends MigrationState
+    with TableInfo<$MigrationStateTable, MigrationStateRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MigrationStateTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _keyMeta = const VerificationMeta('key');
+  @override
+  late final GeneratedColumn<String> key = GeneratedColumn<String>(
+      'key', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _versionMeta =
+      const VerificationMeta('version');
+  @override
+  late final GeneratedColumn<int> version = GeneratedColumn<int>(
+      'version', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _checksumMeta =
+      const VerificationMeta('checksum');
+  @override
+  late final GeneratedColumn<String> checksum = GeneratedColumn<String>(
+      'checksum', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [key, version, updatedAt, checksum];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'migration_state';
+  @override
+  VerificationContext validateIntegrity(Insertable<MigrationStateRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('key')) {
+      context.handle(
+          _keyMeta, key.isAcceptableOrUnknown(data['key']!, _keyMeta));
+    } else if (isInserting) {
+      context.missing(_keyMeta);
+    }
+    if (data.containsKey('version')) {
+      context.handle(_versionMeta,
+          version.isAcceptableOrUnknown(data['version']!, _versionMeta));
+    } else if (isInserting) {
+      context.missing(_versionMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('checksum')) {
+      context.handle(_checksumMeta,
+          checksum.isAcceptableOrUnknown(data['checksum']!, _checksumMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {key};
+  @override
+  MigrationStateRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MigrationStateRow(
+      key: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}key'])!,
+      version: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}version'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      checksum: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}checksum']),
+    );
+  }
+
+  @override
+  $MigrationStateTable createAlias(String alias) {
+    return $MigrationStateTable(attachedDatabase, alias);
+  }
+}
+
+class MigrationStateRow extends DataClass
+    implements Insertable<MigrationStateRow> {
+  final String key;
+  final int version;
+  final DateTime updatedAt;
+  final String? checksum;
+  const MigrationStateRow(
+      {required this.key,
+      required this.version,
+      required this.updatedAt,
+      this.checksum});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['key'] = Variable<String>(key);
+    map['version'] = Variable<int>(version);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || checksum != null) {
+      map['checksum'] = Variable<String>(checksum);
+    }
+    return map;
+  }
+
+  MigrationStateCompanion toCompanion(bool nullToAbsent) {
+    return MigrationStateCompanion(
+      key: Value(key),
+      version: Value(version),
+      updatedAt: Value(updatedAt),
+      checksum: checksum == null && nullToAbsent
+          ? const Value.absent()
+          : Value(checksum),
+    );
+  }
+
+  factory MigrationStateRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MigrationStateRow(
+      key: serializer.fromJson<String>(json['key']),
+      version: serializer.fromJson<int>(json['version']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      checksum: serializer.fromJson<String?>(json['checksum']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'key': serializer.toJson<String>(key),
+      'version': serializer.toJson<int>(version),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'checksum': serializer.toJson<String?>(checksum),
+    };
+  }
+
+  MigrationStateRow copyWith(
+          {String? key,
+          int? version,
+          DateTime? updatedAt,
+          Value<String?> checksum = const Value.absent()}) =>
+      MigrationStateRow(
+        key: key ?? this.key,
+        version: version ?? this.version,
+        updatedAt: updatedAt ?? this.updatedAt,
+        checksum: checksum.present ? checksum.value : this.checksum,
+      );
+  MigrationStateRow copyWithCompanion(MigrationStateCompanion data) {
+    return MigrationStateRow(
+      key: data.key.present ? data.key.value : this.key,
+      version: data.version.present ? data.version.value : this.version,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      checksum: data.checksum.present ? data.checksum.value : this.checksum,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MigrationStateRow(')
+          ..write('key: $key, ')
+          ..write('version: $version, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('checksum: $checksum')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(key, version, updatedAt, checksum);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MigrationStateRow &&
+          other.key == this.key &&
+          other.version == this.version &&
+          other.updatedAt == this.updatedAt &&
+          other.checksum == this.checksum);
+}
+
+class MigrationStateCompanion extends UpdateCompanion<MigrationStateRow> {
+  final Value<String> key;
+  final Value<int> version;
+  final Value<DateTime> updatedAt;
+  final Value<String?> checksum;
+  final Value<int> rowid;
+  const MigrationStateCompanion({
+    this.key = const Value.absent(),
+    this.version = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.checksum = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MigrationStateCompanion.insert({
+    required String key,
+    required int version,
+    required DateTime updatedAt,
+    this.checksum = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : key = Value(key),
+        version = Value(version),
+        updatedAt = Value(updatedAt);
+  static Insertable<MigrationStateRow> custom({
+    Expression<String>? key,
+    Expression<int>? version,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? checksum,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (key != null) 'key': key,
+      if (version != null) 'version': version,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (checksum != null) 'checksum': checksum,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MigrationStateCompanion copyWith(
+      {Value<String>? key,
+      Value<int>? version,
+      Value<DateTime>? updatedAt,
+      Value<String?>? checksum,
+      Value<int>? rowid}) {
+    return MigrationStateCompanion(
+      key: key ?? this.key,
+      version: version ?? this.version,
+      updatedAt: updatedAt ?? this.updatedAt,
+      checksum: checksum ?? this.checksum,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (key.present) {
+      map['key'] = Variable<String>(key.value);
+    }
+    if (version.present) {
+      map['version'] = Variable<int>(version.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (checksum.present) {
+      map['checksum'] = Variable<String>(checksum.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MigrationStateCompanion(')
+          ..write('key: $key, ')
+          ..write('version: $version, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('checksum: $checksum, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SyncMetadataTable extends SyncMetadata
+    with TableInfo<$SyncMetadataTable, SyncMetadataRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SyncMetadataTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _dataSpaceIdMeta =
+      const VerificationMeta('dataSpaceId');
+  @override
+  late final GeneratedColumn<String> dataSpaceId = GeneratedColumn<String>(
+      'data_space_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _entityTypeMeta =
+      const VerificationMeta('entityType');
+  @override
+  late final GeneratedColumn<String> entityType = GeneratedColumn<String>(
+      'entity_type', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _entityIdMeta =
+      const VerificationMeta('entityId');
+  @override
+  late final GeneratedColumn<String> entityId = GeneratedColumn<String>(
+      'entity_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _localRevisionMeta =
+      const VerificationMeta('localRevision');
+  @override
+  late final GeneratedColumn<int> localRevision = GeneratedColumn<int>(
+      'local_revision', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(1));
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _deletedAtMeta =
+      const VerificationMeta('deletedAt');
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+      'deleted_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _remoteVersionMeta =
+      const VerificationMeta('remoteVersion');
+  @override
+  late final GeneratedColumn<String> remoteVersion = GeneratedColumn<String>(
+      'remote_version', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        dataSpaceId,
+        entityType,
+        entityId,
+        localRevision,
+        updatedAt,
+        deletedAt,
+        remoteVersion
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'sync_metadata';
+  @override
+  VerificationContext validateIntegrity(Insertable<SyncMetadataRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('data_space_id')) {
+      context.handle(
+          _dataSpaceIdMeta,
+          dataSpaceId.isAcceptableOrUnknown(
+              data['data_space_id']!, _dataSpaceIdMeta));
+    } else if (isInserting) {
+      context.missing(_dataSpaceIdMeta);
+    }
+    if (data.containsKey('entity_type')) {
+      context.handle(
+          _entityTypeMeta,
+          entityType.isAcceptableOrUnknown(
+              data['entity_type']!, _entityTypeMeta));
+    } else if (isInserting) {
+      context.missing(_entityTypeMeta);
+    }
+    if (data.containsKey('entity_id')) {
+      context.handle(_entityIdMeta,
+          entityId.isAcceptableOrUnknown(data['entity_id']!, _entityIdMeta));
+    } else if (isInserting) {
+      context.missing(_entityIdMeta);
+    }
+    if (data.containsKey('local_revision')) {
+      context.handle(
+          _localRevisionMeta,
+          localRevision.isAcceptableOrUnknown(
+              data['local_revision']!, _localRevisionMeta));
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(_deletedAtMeta,
+          deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta));
+    }
+    if (data.containsKey('remote_version')) {
+      context.handle(
+          _remoteVersionMeta,
+          remoteVersion.isAcceptableOrUnknown(
+              data['remote_version']!, _remoteVersionMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {dataSpaceId, entityType, entityId};
+  @override
+  SyncMetadataRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SyncMetadataRow(
+      dataSpaceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}data_space_id'])!,
+      entityType: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}entity_type'])!,
+      entityId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}entity_id'])!,
+      localRevision: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}local_revision'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      deletedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}deleted_at']),
+      remoteVersion: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}remote_version']),
+    );
+  }
+
+  @override
+  $SyncMetadataTable createAlias(String alias) {
+    return $SyncMetadataTable(attachedDatabase, alias);
+  }
+}
+
+class SyncMetadataRow extends DataClass implements Insertable<SyncMetadataRow> {
+  final String dataSpaceId;
+  final String entityType;
+  final String entityId;
+  final int localRevision;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  final String? remoteVersion;
+  const SyncMetadataRow(
+      {required this.dataSpaceId,
+      required this.entityType,
+      required this.entityId,
+      required this.localRevision,
+      required this.updatedAt,
+      this.deletedAt,
+      this.remoteVersion});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['data_space_id'] = Variable<String>(dataSpaceId);
+    map['entity_type'] = Variable<String>(entityType);
+    map['entity_id'] = Variable<String>(entityId);
+    map['local_revision'] = Variable<int>(localRevision);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || remoteVersion != null) {
+      map['remote_version'] = Variable<String>(remoteVersion);
+    }
+    return map;
+  }
+
+  SyncMetadataCompanion toCompanion(bool nullToAbsent) {
+    return SyncMetadataCompanion(
+      dataSpaceId: Value(dataSpaceId),
+      entityType: Value(entityType),
+      entityId: Value(entityId),
+      localRevision: Value(localRevision),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      remoteVersion: remoteVersion == null && nullToAbsent
+          ? const Value.absent()
+          : Value(remoteVersion),
+    );
+  }
+
+  factory SyncMetadataRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SyncMetadataRow(
+      dataSpaceId: serializer.fromJson<String>(json['dataSpaceId']),
+      entityType: serializer.fromJson<String>(json['entityType']),
+      entityId: serializer.fromJson<String>(json['entityId']),
+      localRevision: serializer.fromJson<int>(json['localRevision']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      remoteVersion: serializer.fromJson<String?>(json['remoteVersion']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'dataSpaceId': serializer.toJson<String>(dataSpaceId),
+      'entityType': serializer.toJson<String>(entityType),
+      'entityId': serializer.toJson<String>(entityId),
+      'localRevision': serializer.toJson<int>(localRevision),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'remoteVersion': serializer.toJson<String?>(remoteVersion),
+    };
+  }
+
+  SyncMetadataRow copyWith(
+          {String? dataSpaceId,
+          String? entityType,
+          String? entityId,
+          int? localRevision,
+          DateTime? updatedAt,
+          Value<DateTime?> deletedAt = const Value.absent(),
+          Value<String?> remoteVersion = const Value.absent()}) =>
+      SyncMetadataRow(
+        dataSpaceId: dataSpaceId ?? this.dataSpaceId,
+        entityType: entityType ?? this.entityType,
+        entityId: entityId ?? this.entityId,
+        localRevision: localRevision ?? this.localRevision,
+        updatedAt: updatedAt ?? this.updatedAt,
+        deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+        remoteVersion:
+            remoteVersion.present ? remoteVersion.value : this.remoteVersion,
+      );
+  SyncMetadataRow copyWithCompanion(SyncMetadataCompanion data) {
+    return SyncMetadataRow(
+      dataSpaceId:
+          data.dataSpaceId.present ? data.dataSpaceId.value : this.dataSpaceId,
+      entityType:
+          data.entityType.present ? data.entityType.value : this.entityType,
+      entityId: data.entityId.present ? data.entityId.value : this.entityId,
+      localRevision: data.localRevision.present
+          ? data.localRevision.value
+          : this.localRevision,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      remoteVersion: data.remoteVersion.present
+          ? data.remoteVersion.value
+          : this.remoteVersion,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncMetadataRow(')
+          ..write('dataSpaceId: $dataSpaceId, ')
+          ..write('entityType: $entityType, ')
+          ..write('entityId: $entityId, ')
+          ..write('localRevision: $localRevision, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('remoteVersion: $remoteVersion')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(dataSpaceId, entityType, entityId,
+      localRevision, updatedAt, deletedAt, remoteVersion);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SyncMetadataRow &&
+          other.dataSpaceId == this.dataSpaceId &&
+          other.entityType == this.entityType &&
+          other.entityId == this.entityId &&
+          other.localRevision == this.localRevision &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.remoteVersion == this.remoteVersion);
+}
+
+class SyncMetadataCompanion extends UpdateCompanion<SyncMetadataRow> {
+  final Value<String> dataSpaceId;
+  final Value<String> entityType;
+  final Value<String> entityId;
+  final Value<int> localRevision;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String?> remoteVersion;
+  final Value<int> rowid;
+  const SyncMetadataCompanion({
+    this.dataSpaceId = const Value.absent(),
+    this.entityType = const Value.absent(),
+    this.entityId = const Value.absent(),
+    this.localRevision = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.remoteVersion = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SyncMetadataCompanion.insert({
+    required String dataSpaceId,
+    required String entityType,
+    required String entityId,
+    this.localRevision = const Value.absent(),
+    required DateTime updatedAt,
+    this.deletedAt = const Value.absent(),
+    this.remoteVersion = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : dataSpaceId = Value(dataSpaceId),
+        entityType = Value(entityType),
+        entityId = Value(entityId),
+        updatedAt = Value(updatedAt);
+  static Insertable<SyncMetadataRow> custom({
+    Expression<String>? dataSpaceId,
+    Expression<String>? entityType,
+    Expression<String>? entityId,
+    Expression<int>? localRevision,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? remoteVersion,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (dataSpaceId != null) 'data_space_id': dataSpaceId,
+      if (entityType != null) 'entity_type': entityType,
+      if (entityId != null) 'entity_id': entityId,
+      if (localRevision != null) 'local_revision': localRevision,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (remoteVersion != null) 'remote_version': remoteVersion,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SyncMetadataCompanion copyWith(
+      {Value<String>? dataSpaceId,
+      Value<String>? entityType,
+      Value<String>? entityId,
+      Value<int>? localRevision,
+      Value<DateTime>? updatedAt,
+      Value<DateTime?>? deletedAt,
+      Value<String?>? remoteVersion,
+      Value<int>? rowid}) {
+    return SyncMetadataCompanion(
+      dataSpaceId: dataSpaceId ?? this.dataSpaceId,
+      entityType: entityType ?? this.entityType,
+      entityId: entityId ?? this.entityId,
+      localRevision: localRevision ?? this.localRevision,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      remoteVersion: remoteVersion ?? this.remoteVersion,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (dataSpaceId.present) {
+      map['data_space_id'] = Variable<String>(dataSpaceId.value);
+    }
+    if (entityType.present) {
+      map['entity_type'] = Variable<String>(entityType.value);
+    }
+    if (entityId.present) {
+      map['entity_id'] = Variable<String>(entityId.value);
+    }
+    if (localRevision.present) {
+      map['local_revision'] = Variable<int>(localRevision.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (remoteVersion.present) {
+      map['remote_version'] = Variable<String>(remoteVersion.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncMetadataCompanion(')
+          ..write('dataSpaceId: $dataSpaceId, ')
+          ..write('entityType: $entityType, ')
+          ..write('entityId: $entityId, ')
+          ..write('localRevision: $localRevision, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('remoteVersion: $remoteVersion, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SyncOutboxTable extends SyncOutbox
+    with TableInfo<$SyncOutboxTable, SyncOutboxRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SyncOutboxTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _dataSpaceIdMeta =
+      const VerificationMeta('dataSpaceId');
+  @override
+  late final GeneratedColumn<String> dataSpaceId = GeneratedColumn<String>(
+      'data_space_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _entityTypeMeta =
+      const VerificationMeta('entityType');
+  @override
+  late final GeneratedColumn<String> entityType = GeneratedColumn<String>(
+      'entity_type', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _entityIdMeta =
+      const VerificationMeta('entityId');
+  @override
+  late final GeneratedColumn<String> entityId = GeneratedColumn<String>(
+      'entity_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _operationMeta =
+      const VerificationMeta('operation');
+  @override
+  late final GeneratedColumn<String> operation = GeneratedColumn<String>(
+      'operation', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _payloadJsonMeta =
+      const VerificationMeta('payloadJson');
+  @override
+  late final GeneratedColumn<String> payloadJson = GeneratedColumn<String>(
+      'payload_json', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _baseRevisionMeta =
+      const VerificationMeta('baseRevision');
+  @override
+  late final GeneratedColumn<int> baseRevision = GeneratedColumn<int>(
+      'base_revision', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _attemptsMeta =
+      const VerificationMeta('attempts');
+  @override
+  late final GeneratedColumn<int> attempts = GeneratedColumn<int>(
+      'attempts', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  static const VerificationMeta _nextAttemptAtMeta =
+      const VerificationMeta('nextAttemptAt');
+  @override
+  late final GeneratedColumn<DateTime> nextAttemptAt =
+      GeneratedColumn<DateTime>('next_attempt_at', aliasedName, true,
+          type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _processedAtMeta =
+      const VerificationMeta('processedAt');
+  @override
+  late final GeneratedColumn<DateTime> processedAt = GeneratedColumn<DateTime>(
+      'processed_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _lastErrorMeta =
+      const VerificationMeta('lastError');
+  @override
+  late final GeneratedColumn<String> lastError = GeneratedColumn<String>(
+      'last_error', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        dataSpaceId,
+        entityType,
+        entityId,
+        operation,
+        payloadJson,
+        baseRevision,
+        createdAt,
+        attempts,
+        nextAttemptAt,
+        processedAt,
+        lastError
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'sync_outbox';
+  @override
+  VerificationContext validateIntegrity(Insertable<SyncOutboxRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('data_space_id')) {
+      context.handle(
+          _dataSpaceIdMeta,
+          dataSpaceId.isAcceptableOrUnknown(
+              data['data_space_id']!, _dataSpaceIdMeta));
+    } else if (isInserting) {
+      context.missing(_dataSpaceIdMeta);
+    }
+    if (data.containsKey('entity_type')) {
+      context.handle(
+          _entityTypeMeta,
+          entityType.isAcceptableOrUnknown(
+              data['entity_type']!, _entityTypeMeta));
+    } else if (isInserting) {
+      context.missing(_entityTypeMeta);
+    }
+    if (data.containsKey('entity_id')) {
+      context.handle(_entityIdMeta,
+          entityId.isAcceptableOrUnknown(data['entity_id']!, _entityIdMeta));
+    } else if (isInserting) {
+      context.missing(_entityIdMeta);
+    }
+    if (data.containsKey('operation')) {
+      context.handle(_operationMeta,
+          operation.isAcceptableOrUnknown(data['operation']!, _operationMeta));
+    } else if (isInserting) {
+      context.missing(_operationMeta);
+    }
+    if (data.containsKey('payload_json')) {
+      context.handle(
+          _payloadJsonMeta,
+          payloadJson.isAcceptableOrUnknown(
+              data['payload_json']!, _payloadJsonMeta));
+    }
+    if (data.containsKey('base_revision')) {
+      context.handle(
+          _baseRevisionMeta,
+          baseRevision.isAcceptableOrUnknown(
+              data['base_revision']!, _baseRevisionMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('attempts')) {
+      context.handle(_attemptsMeta,
+          attempts.isAcceptableOrUnknown(data['attempts']!, _attemptsMeta));
+    }
+    if (data.containsKey('next_attempt_at')) {
+      context.handle(
+          _nextAttemptAtMeta,
+          nextAttemptAt.isAcceptableOrUnknown(
+              data['next_attempt_at']!, _nextAttemptAtMeta));
+    }
+    if (data.containsKey('processed_at')) {
+      context.handle(
+          _processedAtMeta,
+          processedAt.isAcceptableOrUnknown(
+              data['processed_at']!, _processedAtMeta));
+    }
+    if (data.containsKey('last_error')) {
+      context.handle(_lastErrorMeta,
+          lastError.isAcceptableOrUnknown(data['last_error']!, _lastErrorMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SyncOutboxRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SyncOutboxRow(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      dataSpaceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}data_space_id'])!,
+      entityType: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}entity_type'])!,
+      entityId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}entity_id'])!,
+      operation: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}operation'])!,
+      payloadJson: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}payload_json']),
+      baseRevision: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}base_revision']),
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      attempts: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}attempts'])!,
+      nextAttemptAt: attachedDatabase.typeMapping.read(
+          DriftSqlType.dateTime, data['${effectivePrefix}next_attempt_at']),
+      processedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}processed_at']),
+      lastError: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}last_error']),
+    );
+  }
+
+  @override
+  $SyncOutboxTable createAlias(String alias) {
+    return $SyncOutboxTable(attachedDatabase, alias);
+  }
+}
+
+class SyncOutboxRow extends DataClass implements Insertable<SyncOutboxRow> {
+  final String id;
+  final String dataSpaceId;
+  final String entityType;
+  final String entityId;
+  final String operation;
+  final String? payloadJson;
+  final int? baseRevision;
+  final DateTime createdAt;
+  final int attempts;
+  final DateTime? nextAttemptAt;
+  final DateTime? processedAt;
+  final String? lastError;
+  const SyncOutboxRow(
+      {required this.id,
+      required this.dataSpaceId,
+      required this.entityType,
+      required this.entityId,
+      required this.operation,
+      this.payloadJson,
+      this.baseRevision,
+      required this.createdAt,
+      required this.attempts,
+      this.nextAttemptAt,
+      this.processedAt,
+      this.lastError});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['data_space_id'] = Variable<String>(dataSpaceId);
+    map['entity_type'] = Variable<String>(entityType);
+    map['entity_id'] = Variable<String>(entityId);
+    map['operation'] = Variable<String>(operation);
+    if (!nullToAbsent || payloadJson != null) {
+      map['payload_json'] = Variable<String>(payloadJson);
+    }
+    if (!nullToAbsent || baseRevision != null) {
+      map['base_revision'] = Variable<int>(baseRevision);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['attempts'] = Variable<int>(attempts);
+    if (!nullToAbsent || nextAttemptAt != null) {
+      map['next_attempt_at'] = Variable<DateTime>(nextAttemptAt);
+    }
+    if (!nullToAbsent || processedAt != null) {
+      map['processed_at'] = Variable<DateTime>(processedAt);
+    }
+    if (!nullToAbsent || lastError != null) {
+      map['last_error'] = Variable<String>(lastError);
+    }
+    return map;
+  }
+
+  SyncOutboxCompanion toCompanion(bool nullToAbsent) {
+    return SyncOutboxCompanion(
+      id: Value(id),
+      dataSpaceId: Value(dataSpaceId),
+      entityType: Value(entityType),
+      entityId: Value(entityId),
+      operation: Value(operation),
+      payloadJson: payloadJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(payloadJson),
+      baseRevision: baseRevision == null && nullToAbsent
+          ? const Value.absent()
+          : Value(baseRevision),
+      createdAt: Value(createdAt),
+      attempts: Value(attempts),
+      nextAttemptAt: nextAttemptAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(nextAttemptAt),
+      processedAt: processedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(processedAt),
+      lastError: lastError == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastError),
+    );
+  }
+
+  factory SyncOutboxRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SyncOutboxRow(
+      id: serializer.fromJson<String>(json['id']),
+      dataSpaceId: serializer.fromJson<String>(json['dataSpaceId']),
+      entityType: serializer.fromJson<String>(json['entityType']),
+      entityId: serializer.fromJson<String>(json['entityId']),
+      operation: serializer.fromJson<String>(json['operation']),
+      payloadJson: serializer.fromJson<String?>(json['payloadJson']),
+      baseRevision: serializer.fromJson<int?>(json['baseRevision']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      attempts: serializer.fromJson<int>(json['attempts']),
+      nextAttemptAt: serializer.fromJson<DateTime?>(json['nextAttemptAt']),
+      processedAt: serializer.fromJson<DateTime?>(json['processedAt']),
+      lastError: serializer.fromJson<String?>(json['lastError']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'dataSpaceId': serializer.toJson<String>(dataSpaceId),
+      'entityType': serializer.toJson<String>(entityType),
+      'entityId': serializer.toJson<String>(entityId),
+      'operation': serializer.toJson<String>(operation),
+      'payloadJson': serializer.toJson<String?>(payloadJson),
+      'baseRevision': serializer.toJson<int?>(baseRevision),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'attempts': serializer.toJson<int>(attempts),
+      'nextAttemptAt': serializer.toJson<DateTime?>(nextAttemptAt),
+      'processedAt': serializer.toJson<DateTime?>(processedAt),
+      'lastError': serializer.toJson<String?>(lastError),
+    };
+  }
+
+  SyncOutboxRow copyWith(
+          {String? id,
+          String? dataSpaceId,
+          String? entityType,
+          String? entityId,
+          String? operation,
+          Value<String?> payloadJson = const Value.absent(),
+          Value<int?> baseRevision = const Value.absent(),
+          DateTime? createdAt,
+          int? attempts,
+          Value<DateTime?> nextAttemptAt = const Value.absent(),
+          Value<DateTime?> processedAt = const Value.absent(),
+          Value<String?> lastError = const Value.absent()}) =>
+      SyncOutboxRow(
+        id: id ?? this.id,
+        dataSpaceId: dataSpaceId ?? this.dataSpaceId,
+        entityType: entityType ?? this.entityType,
+        entityId: entityId ?? this.entityId,
+        operation: operation ?? this.operation,
+        payloadJson: payloadJson.present ? payloadJson.value : this.payloadJson,
+        baseRevision:
+            baseRevision.present ? baseRevision.value : this.baseRevision,
+        createdAt: createdAt ?? this.createdAt,
+        attempts: attempts ?? this.attempts,
+        nextAttemptAt:
+            nextAttemptAt.present ? nextAttemptAt.value : this.nextAttemptAt,
+        processedAt: processedAt.present ? processedAt.value : this.processedAt,
+        lastError: lastError.present ? lastError.value : this.lastError,
+      );
+  SyncOutboxRow copyWithCompanion(SyncOutboxCompanion data) {
+    return SyncOutboxRow(
+      id: data.id.present ? data.id.value : this.id,
+      dataSpaceId:
+          data.dataSpaceId.present ? data.dataSpaceId.value : this.dataSpaceId,
+      entityType:
+          data.entityType.present ? data.entityType.value : this.entityType,
+      entityId: data.entityId.present ? data.entityId.value : this.entityId,
+      operation: data.operation.present ? data.operation.value : this.operation,
+      payloadJson:
+          data.payloadJson.present ? data.payloadJson.value : this.payloadJson,
+      baseRevision: data.baseRevision.present
+          ? data.baseRevision.value
+          : this.baseRevision,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      attempts: data.attempts.present ? data.attempts.value : this.attempts,
+      nextAttemptAt: data.nextAttemptAt.present
+          ? data.nextAttemptAt.value
+          : this.nextAttemptAt,
+      processedAt:
+          data.processedAt.present ? data.processedAt.value : this.processedAt,
+      lastError: data.lastError.present ? data.lastError.value : this.lastError,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncOutboxRow(')
+          ..write('id: $id, ')
+          ..write('dataSpaceId: $dataSpaceId, ')
+          ..write('entityType: $entityType, ')
+          ..write('entityId: $entityId, ')
+          ..write('operation: $operation, ')
+          ..write('payloadJson: $payloadJson, ')
+          ..write('baseRevision: $baseRevision, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('attempts: $attempts, ')
+          ..write('nextAttemptAt: $nextAttemptAt, ')
+          ..write('processedAt: $processedAt, ')
+          ..write('lastError: $lastError')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      id,
+      dataSpaceId,
+      entityType,
+      entityId,
+      operation,
+      payloadJson,
+      baseRevision,
+      createdAt,
+      attempts,
+      nextAttemptAt,
+      processedAt,
+      lastError);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SyncOutboxRow &&
+          other.id == this.id &&
+          other.dataSpaceId == this.dataSpaceId &&
+          other.entityType == this.entityType &&
+          other.entityId == this.entityId &&
+          other.operation == this.operation &&
+          other.payloadJson == this.payloadJson &&
+          other.baseRevision == this.baseRevision &&
+          other.createdAt == this.createdAt &&
+          other.attempts == this.attempts &&
+          other.nextAttemptAt == this.nextAttemptAt &&
+          other.processedAt == this.processedAt &&
+          other.lastError == this.lastError);
+}
+
+class SyncOutboxCompanion extends UpdateCompanion<SyncOutboxRow> {
+  final Value<String> id;
+  final Value<String> dataSpaceId;
+  final Value<String> entityType;
+  final Value<String> entityId;
+  final Value<String> operation;
+  final Value<String?> payloadJson;
+  final Value<int?> baseRevision;
+  final Value<DateTime> createdAt;
+  final Value<int> attempts;
+  final Value<DateTime?> nextAttemptAt;
+  final Value<DateTime?> processedAt;
+  final Value<String?> lastError;
+  final Value<int> rowid;
+  const SyncOutboxCompanion({
+    this.id = const Value.absent(),
+    this.dataSpaceId = const Value.absent(),
+    this.entityType = const Value.absent(),
+    this.entityId = const Value.absent(),
+    this.operation = const Value.absent(),
+    this.payloadJson = const Value.absent(),
+    this.baseRevision = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.attempts = const Value.absent(),
+    this.nextAttemptAt = const Value.absent(),
+    this.processedAt = const Value.absent(),
+    this.lastError = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SyncOutboxCompanion.insert({
+    required String id,
+    required String dataSpaceId,
+    required String entityType,
+    required String entityId,
+    required String operation,
+    this.payloadJson = const Value.absent(),
+    this.baseRevision = const Value.absent(),
+    required DateTime createdAt,
+    this.attempts = const Value.absent(),
+    this.nextAttemptAt = const Value.absent(),
+    this.processedAt = const Value.absent(),
+    this.lastError = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        dataSpaceId = Value(dataSpaceId),
+        entityType = Value(entityType),
+        entityId = Value(entityId),
+        operation = Value(operation),
+        createdAt = Value(createdAt);
+  static Insertable<SyncOutboxRow> custom({
+    Expression<String>? id,
+    Expression<String>? dataSpaceId,
+    Expression<String>? entityType,
+    Expression<String>? entityId,
+    Expression<String>? operation,
+    Expression<String>? payloadJson,
+    Expression<int>? baseRevision,
+    Expression<DateTime>? createdAt,
+    Expression<int>? attempts,
+    Expression<DateTime>? nextAttemptAt,
+    Expression<DateTime>? processedAt,
+    Expression<String>? lastError,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (dataSpaceId != null) 'data_space_id': dataSpaceId,
+      if (entityType != null) 'entity_type': entityType,
+      if (entityId != null) 'entity_id': entityId,
+      if (operation != null) 'operation': operation,
+      if (payloadJson != null) 'payload_json': payloadJson,
+      if (baseRevision != null) 'base_revision': baseRevision,
+      if (createdAt != null) 'created_at': createdAt,
+      if (attempts != null) 'attempts': attempts,
+      if (nextAttemptAt != null) 'next_attempt_at': nextAttemptAt,
+      if (processedAt != null) 'processed_at': processedAt,
+      if (lastError != null) 'last_error': lastError,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SyncOutboxCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? dataSpaceId,
+      Value<String>? entityType,
+      Value<String>? entityId,
+      Value<String>? operation,
+      Value<String?>? payloadJson,
+      Value<int?>? baseRevision,
+      Value<DateTime>? createdAt,
+      Value<int>? attempts,
+      Value<DateTime?>? nextAttemptAt,
+      Value<DateTime?>? processedAt,
+      Value<String?>? lastError,
+      Value<int>? rowid}) {
+    return SyncOutboxCompanion(
+      id: id ?? this.id,
+      dataSpaceId: dataSpaceId ?? this.dataSpaceId,
+      entityType: entityType ?? this.entityType,
+      entityId: entityId ?? this.entityId,
+      operation: operation ?? this.operation,
+      payloadJson: payloadJson ?? this.payloadJson,
+      baseRevision: baseRevision ?? this.baseRevision,
+      createdAt: createdAt ?? this.createdAt,
+      attempts: attempts ?? this.attempts,
+      nextAttemptAt: nextAttemptAt ?? this.nextAttemptAt,
+      processedAt: processedAt ?? this.processedAt,
+      lastError: lastError ?? this.lastError,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (dataSpaceId.present) {
+      map['data_space_id'] = Variable<String>(dataSpaceId.value);
+    }
+    if (entityType.present) {
+      map['entity_type'] = Variable<String>(entityType.value);
+    }
+    if (entityId.present) {
+      map['entity_id'] = Variable<String>(entityId.value);
+    }
+    if (operation.present) {
+      map['operation'] = Variable<String>(operation.value);
+    }
+    if (payloadJson.present) {
+      map['payload_json'] = Variable<String>(payloadJson.value);
+    }
+    if (baseRevision.present) {
+      map['base_revision'] = Variable<int>(baseRevision.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (attempts.present) {
+      map['attempts'] = Variable<int>(attempts.value);
+    }
+    if (nextAttemptAt.present) {
+      map['next_attempt_at'] = Variable<DateTime>(nextAttemptAt.value);
+    }
+    if (processedAt.present) {
+      map['processed_at'] = Variable<DateTime>(processedAt.value);
+    }
+    if (lastError.present) {
+      map['last_error'] = Variable<String>(lastError.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncOutboxCompanion(')
+          ..write('id: $id, ')
+          ..write('dataSpaceId: $dataSpaceId, ')
+          ..write('entityType: $entityType, ')
+          ..write('entityId: $entityId, ')
+          ..write('operation: $operation, ')
+          ..write('payloadJson: $payloadJson, ')
+          ..write('baseRevision: $baseRevision, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('attempts: $attempts, ')
+          ..write('nextAttemptAt: $nextAttemptAt, ')
+          ..write('processedAt: $processedAt, ')
+          ..write('lastError: $lastError, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SyncCheckpointsTable extends SyncCheckpoints
+    with TableInfo<$SyncCheckpointsTable, SyncCheckpointRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SyncCheckpointsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _dataSpaceIdMeta =
+      const VerificationMeta('dataSpaceId');
+  @override
+  late final GeneratedColumn<String> dataSpaceId = GeneratedColumn<String>(
+      'data_space_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _remoteScopeMeta =
+      const VerificationMeta('remoteScope');
+  @override
+  late final GeneratedColumn<String> remoteScope = GeneratedColumn<String>(
+      'remote_scope', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _cursorMeta = const VerificationMeta('cursor');
+  @override
+  late final GeneratedColumn<String> cursor = GeneratedColumn<String>(
+      'cursor', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [dataSpaceId, remoteScope, cursor, updatedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'sync_checkpoints';
+  @override
+  VerificationContext validateIntegrity(Insertable<SyncCheckpointRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('data_space_id')) {
+      context.handle(
+          _dataSpaceIdMeta,
+          dataSpaceId.isAcceptableOrUnknown(
+              data['data_space_id']!, _dataSpaceIdMeta));
+    } else if (isInserting) {
+      context.missing(_dataSpaceIdMeta);
+    }
+    if (data.containsKey('remote_scope')) {
+      context.handle(
+          _remoteScopeMeta,
+          remoteScope.isAcceptableOrUnknown(
+              data['remote_scope']!, _remoteScopeMeta));
+    } else if (isInserting) {
+      context.missing(_remoteScopeMeta);
+    }
+    if (data.containsKey('cursor')) {
+      context.handle(_cursorMeta,
+          cursor.isAcceptableOrUnknown(data['cursor']!, _cursorMeta));
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {dataSpaceId, remoteScope};
+  @override
+  SyncCheckpointRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SyncCheckpointRow(
+      dataSpaceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}data_space_id'])!,
+      remoteScope: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}remote_scope'])!,
+      cursor: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}cursor']),
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+    );
+  }
+
+  @override
+  $SyncCheckpointsTable createAlias(String alias) {
+    return $SyncCheckpointsTable(attachedDatabase, alias);
+  }
+}
+
+class SyncCheckpointRow extends DataClass
+    implements Insertable<SyncCheckpointRow> {
+  final String dataSpaceId;
+  final String remoteScope;
+  final String? cursor;
+  final DateTime updatedAt;
+  const SyncCheckpointRow(
+      {required this.dataSpaceId,
+      required this.remoteScope,
+      this.cursor,
+      required this.updatedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['data_space_id'] = Variable<String>(dataSpaceId);
+    map['remote_scope'] = Variable<String>(remoteScope);
+    if (!nullToAbsent || cursor != null) {
+      map['cursor'] = Variable<String>(cursor);
+    }
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  SyncCheckpointsCompanion toCompanion(bool nullToAbsent) {
+    return SyncCheckpointsCompanion(
+      dataSpaceId: Value(dataSpaceId),
+      remoteScope: Value(remoteScope),
+      cursor:
+          cursor == null && nullToAbsent ? const Value.absent() : Value(cursor),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory SyncCheckpointRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SyncCheckpointRow(
+      dataSpaceId: serializer.fromJson<String>(json['dataSpaceId']),
+      remoteScope: serializer.fromJson<String>(json['remoteScope']),
+      cursor: serializer.fromJson<String?>(json['cursor']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'dataSpaceId': serializer.toJson<String>(dataSpaceId),
+      'remoteScope': serializer.toJson<String>(remoteScope),
+      'cursor': serializer.toJson<String?>(cursor),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  SyncCheckpointRow copyWith(
+          {String? dataSpaceId,
+          String? remoteScope,
+          Value<String?> cursor = const Value.absent(),
+          DateTime? updatedAt}) =>
+      SyncCheckpointRow(
+        dataSpaceId: dataSpaceId ?? this.dataSpaceId,
+        remoteScope: remoteScope ?? this.remoteScope,
+        cursor: cursor.present ? cursor.value : this.cursor,
+        updatedAt: updatedAt ?? this.updatedAt,
+      );
+  SyncCheckpointRow copyWithCompanion(SyncCheckpointsCompanion data) {
+    return SyncCheckpointRow(
+      dataSpaceId:
+          data.dataSpaceId.present ? data.dataSpaceId.value : this.dataSpaceId,
+      remoteScope:
+          data.remoteScope.present ? data.remoteScope.value : this.remoteScope,
+      cursor: data.cursor.present ? data.cursor.value : this.cursor,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncCheckpointRow(')
+          ..write('dataSpaceId: $dataSpaceId, ')
+          ..write('remoteScope: $remoteScope, ')
+          ..write('cursor: $cursor, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(dataSpaceId, remoteScope, cursor, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SyncCheckpointRow &&
+          other.dataSpaceId == this.dataSpaceId &&
+          other.remoteScope == this.remoteScope &&
+          other.cursor == this.cursor &&
+          other.updatedAt == this.updatedAt);
+}
+
+class SyncCheckpointsCompanion extends UpdateCompanion<SyncCheckpointRow> {
+  final Value<String> dataSpaceId;
+  final Value<String> remoteScope;
+  final Value<String?> cursor;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const SyncCheckpointsCompanion({
+    this.dataSpaceId = const Value.absent(),
+    this.remoteScope = const Value.absent(),
+    this.cursor = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SyncCheckpointsCompanion.insert({
+    required String dataSpaceId,
+    required String remoteScope,
+    this.cursor = const Value.absent(),
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  })  : dataSpaceId = Value(dataSpaceId),
+        remoteScope = Value(remoteScope),
+        updatedAt = Value(updatedAt);
+  static Insertable<SyncCheckpointRow> custom({
+    Expression<String>? dataSpaceId,
+    Expression<String>? remoteScope,
+    Expression<String>? cursor,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (dataSpaceId != null) 'data_space_id': dataSpaceId,
+      if (remoteScope != null) 'remote_scope': remoteScope,
+      if (cursor != null) 'cursor': cursor,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SyncCheckpointsCompanion copyWith(
+      {Value<String>? dataSpaceId,
+      Value<String>? remoteScope,
+      Value<String?>? cursor,
+      Value<DateTime>? updatedAt,
+      Value<int>? rowid}) {
+    return SyncCheckpointsCompanion(
+      dataSpaceId: dataSpaceId ?? this.dataSpaceId,
+      remoteScope: remoteScope ?? this.remoteScope,
+      cursor: cursor ?? this.cursor,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (dataSpaceId.present) {
+      map['data_space_id'] = Variable<String>(dataSpaceId.value);
+    }
+    if (remoteScope.present) {
+      map['remote_scope'] = Variable<String>(remoteScope.value);
+    }
+    if (cursor.present) {
+      map['cursor'] = Variable<String>(cursor.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncCheckpointsCompanion(')
+          ..write('dataSpaceId: $dataSpaceId, ')
+          ..write('remoteScope: $remoteScope, ')
+          ..write('cursor: $cursor, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SyncAppliedChangesTable extends SyncAppliedChanges
+    with TableInfo<$SyncAppliedChangesTable, SyncAppliedChangeRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SyncAppliedChangesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _dataSpaceIdMeta =
+      const VerificationMeta('dataSpaceId');
+  @override
+  late final GeneratedColumn<String> dataSpaceId = GeneratedColumn<String>(
+      'data_space_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _remoteChangeIdMeta =
+      const VerificationMeta('remoteChangeId');
+  @override
+  late final GeneratedColumn<String> remoteChangeId = GeneratedColumn<String>(
+      'remote_change_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _entityTypeMeta =
+      const VerificationMeta('entityType');
+  @override
+  late final GeneratedColumn<String> entityType = GeneratedColumn<String>(
+      'entity_type', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _entityIdMeta =
+      const VerificationMeta('entityId');
+  @override
+  late final GeneratedColumn<String> entityId = GeneratedColumn<String>(
+      'entity_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _appliedAtMeta =
+      const VerificationMeta('appliedAt');
+  @override
+  late final GeneratedColumn<DateTime> appliedAt = GeneratedColumn<DateTime>(
+      'applied_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [dataSpaceId, remoteChangeId, entityType, entityId, appliedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'sync_applied_changes';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<SyncAppliedChangeRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('data_space_id')) {
+      context.handle(
+          _dataSpaceIdMeta,
+          dataSpaceId.isAcceptableOrUnknown(
+              data['data_space_id']!, _dataSpaceIdMeta));
+    } else if (isInserting) {
+      context.missing(_dataSpaceIdMeta);
+    }
+    if (data.containsKey('remote_change_id')) {
+      context.handle(
+          _remoteChangeIdMeta,
+          remoteChangeId.isAcceptableOrUnknown(
+              data['remote_change_id']!, _remoteChangeIdMeta));
+    } else if (isInserting) {
+      context.missing(_remoteChangeIdMeta);
+    }
+    if (data.containsKey('entity_type')) {
+      context.handle(
+          _entityTypeMeta,
+          entityType.isAcceptableOrUnknown(
+              data['entity_type']!, _entityTypeMeta));
+    } else if (isInserting) {
+      context.missing(_entityTypeMeta);
+    }
+    if (data.containsKey('entity_id')) {
+      context.handle(_entityIdMeta,
+          entityId.isAcceptableOrUnknown(data['entity_id']!, _entityIdMeta));
+    } else if (isInserting) {
+      context.missing(_entityIdMeta);
+    }
+    if (data.containsKey('applied_at')) {
+      context.handle(_appliedAtMeta,
+          appliedAt.isAcceptableOrUnknown(data['applied_at']!, _appliedAtMeta));
+    } else if (isInserting) {
+      context.missing(_appliedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {dataSpaceId, remoteChangeId};
+  @override
+  SyncAppliedChangeRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SyncAppliedChangeRow(
+      dataSpaceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}data_space_id'])!,
+      remoteChangeId: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}remote_change_id'])!,
+      entityType: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}entity_type'])!,
+      entityId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}entity_id'])!,
+      appliedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}applied_at'])!,
+    );
+  }
+
+  @override
+  $SyncAppliedChangesTable createAlias(String alias) {
+    return $SyncAppliedChangesTable(attachedDatabase, alias);
+  }
+}
+
+class SyncAppliedChangeRow extends DataClass
+    implements Insertable<SyncAppliedChangeRow> {
+  final String dataSpaceId;
+  final String remoteChangeId;
+  final String entityType;
+  final String entityId;
+  final DateTime appliedAt;
+  const SyncAppliedChangeRow(
+      {required this.dataSpaceId,
+      required this.remoteChangeId,
+      required this.entityType,
+      required this.entityId,
+      required this.appliedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['data_space_id'] = Variable<String>(dataSpaceId);
+    map['remote_change_id'] = Variable<String>(remoteChangeId);
+    map['entity_type'] = Variable<String>(entityType);
+    map['entity_id'] = Variable<String>(entityId);
+    map['applied_at'] = Variable<DateTime>(appliedAt);
+    return map;
+  }
+
+  SyncAppliedChangesCompanion toCompanion(bool nullToAbsent) {
+    return SyncAppliedChangesCompanion(
+      dataSpaceId: Value(dataSpaceId),
+      remoteChangeId: Value(remoteChangeId),
+      entityType: Value(entityType),
+      entityId: Value(entityId),
+      appliedAt: Value(appliedAt),
+    );
+  }
+
+  factory SyncAppliedChangeRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SyncAppliedChangeRow(
+      dataSpaceId: serializer.fromJson<String>(json['dataSpaceId']),
+      remoteChangeId: serializer.fromJson<String>(json['remoteChangeId']),
+      entityType: serializer.fromJson<String>(json['entityType']),
+      entityId: serializer.fromJson<String>(json['entityId']),
+      appliedAt: serializer.fromJson<DateTime>(json['appliedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'dataSpaceId': serializer.toJson<String>(dataSpaceId),
+      'remoteChangeId': serializer.toJson<String>(remoteChangeId),
+      'entityType': serializer.toJson<String>(entityType),
+      'entityId': serializer.toJson<String>(entityId),
+      'appliedAt': serializer.toJson<DateTime>(appliedAt),
+    };
+  }
+
+  SyncAppliedChangeRow copyWith(
+          {String? dataSpaceId,
+          String? remoteChangeId,
+          String? entityType,
+          String? entityId,
+          DateTime? appliedAt}) =>
+      SyncAppliedChangeRow(
+        dataSpaceId: dataSpaceId ?? this.dataSpaceId,
+        remoteChangeId: remoteChangeId ?? this.remoteChangeId,
+        entityType: entityType ?? this.entityType,
+        entityId: entityId ?? this.entityId,
+        appliedAt: appliedAt ?? this.appliedAt,
+      );
+  SyncAppliedChangeRow copyWithCompanion(SyncAppliedChangesCompanion data) {
+    return SyncAppliedChangeRow(
+      dataSpaceId:
+          data.dataSpaceId.present ? data.dataSpaceId.value : this.dataSpaceId,
+      remoteChangeId: data.remoteChangeId.present
+          ? data.remoteChangeId.value
+          : this.remoteChangeId,
+      entityType:
+          data.entityType.present ? data.entityType.value : this.entityType,
+      entityId: data.entityId.present ? data.entityId.value : this.entityId,
+      appliedAt: data.appliedAt.present ? data.appliedAt.value : this.appliedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncAppliedChangeRow(')
+          ..write('dataSpaceId: $dataSpaceId, ')
+          ..write('remoteChangeId: $remoteChangeId, ')
+          ..write('entityType: $entityType, ')
+          ..write('entityId: $entityId, ')
+          ..write('appliedAt: $appliedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(dataSpaceId, remoteChangeId, entityType, entityId, appliedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SyncAppliedChangeRow &&
+          other.dataSpaceId == this.dataSpaceId &&
+          other.remoteChangeId == this.remoteChangeId &&
+          other.entityType == this.entityType &&
+          other.entityId == this.entityId &&
+          other.appliedAt == this.appliedAt);
+}
+
+class SyncAppliedChangesCompanion
+    extends UpdateCompanion<SyncAppliedChangeRow> {
+  final Value<String> dataSpaceId;
+  final Value<String> remoteChangeId;
+  final Value<String> entityType;
+  final Value<String> entityId;
+  final Value<DateTime> appliedAt;
+  final Value<int> rowid;
+  const SyncAppliedChangesCompanion({
+    this.dataSpaceId = const Value.absent(),
+    this.remoteChangeId = const Value.absent(),
+    this.entityType = const Value.absent(),
+    this.entityId = const Value.absent(),
+    this.appliedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SyncAppliedChangesCompanion.insert({
+    required String dataSpaceId,
+    required String remoteChangeId,
+    required String entityType,
+    required String entityId,
+    required DateTime appliedAt,
+    this.rowid = const Value.absent(),
+  })  : dataSpaceId = Value(dataSpaceId),
+        remoteChangeId = Value(remoteChangeId),
+        entityType = Value(entityType),
+        entityId = Value(entityId),
+        appliedAt = Value(appliedAt);
+  static Insertable<SyncAppliedChangeRow> custom({
+    Expression<String>? dataSpaceId,
+    Expression<String>? remoteChangeId,
+    Expression<String>? entityType,
+    Expression<String>? entityId,
+    Expression<DateTime>? appliedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (dataSpaceId != null) 'data_space_id': dataSpaceId,
+      if (remoteChangeId != null) 'remote_change_id': remoteChangeId,
+      if (entityType != null) 'entity_type': entityType,
+      if (entityId != null) 'entity_id': entityId,
+      if (appliedAt != null) 'applied_at': appliedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SyncAppliedChangesCompanion copyWith(
+      {Value<String>? dataSpaceId,
+      Value<String>? remoteChangeId,
+      Value<String>? entityType,
+      Value<String>? entityId,
+      Value<DateTime>? appliedAt,
+      Value<int>? rowid}) {
+    return SyncAppliedChangesCompanion(
+      dataSpaceId: dataSpaceId ?? this.dataSpaceId,
+      remoteChangeId: remoteChangeId ?? this.remoteChangeId,
+      entityType: entityType ?? this.entityType,
+      entityId: entityId ?? this.entityId,
+      appliedAt: appliedAt ?? this.appliedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (dataSpaceId.present) {
+      map['data_space_id'] = Variable<String>(dataSpaceId.value);
+    }
+    if (remoteChangeId.present) {
+      map['remote_change_id'] = Variable<String>(remoteChangeId.value);
+    }
+    if (entityType.present) {
+      map['entity_type'] = Variable<String>(entityType.value);
+    }
+    if (entityId.present) {
+      map['entity_id'] = Variable<String>(entityId.value);
+    }
+    if (appliedAt.present) {
+      map['applied_at'] = Variable<DateTime>(appliedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncAppliedChangesCompanion(')
+          ..write('dataSpaceId: $dataSpaceId, ')
+          ..write('remoteChangeId: $remoteChangeId, ')
+          ..write('entityType: $entityType, ')
+          ..write('entityId: $entityId, ')
+          ..write('appliedAt: $appliedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $PhotoFileIntentsTable extends PhotoFileIntents
+    with TableInfo<$PhotoFileIntentsTable, PhotoFileIntentRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PhotoFileIntentsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _dataSpaceIdMeta =
+      const VerificationMeta('dataSpaceId');
+  @override
+  late final GeneratedColumn<String> dataSpaceId = GeneratedColumn<String>(
+      'data_space_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _photoIdMeta =
+      const VerificationMeta('photoId');
+  @override
+  late final GeneratedColumn<String> photoId = GeneratedColumn<String>(
+      'photo_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _operationMeta =
+      const VerificationMeta('operation');
+  @override
+  late final GeneratedColumn<String> operation = GeneratedColumn<String>(
+      'operation', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _pathMeta = const VerificationMeta('path');
+  @override
+  late final GeneratedColumn<String> path = GeneratedColumn<String>(
+      'path', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _attemptsMeta =
+      const VerificationMeta('attempts');
+  @override
+  late final GeneratedColumn<int> attempts = GeneratedColumn<int>(
+      'attempts', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  static const VerificationMeta _processedAtMeta =
+      const VerificationMeta('processedAt');
+  @override
+  late final GeneratedColumn<DateTime> processedAt = GeneratedColumn<DateTime>(
+      'processed_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _lastErrorMeta =
+      const VerificationMeta('lastError');
+  @override
+  late final GeneratedColumn<String> lastError = GeneratedColumn<String>(
+      'last_error', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        dataSpaceId,
+        photoId,
+        operation,
+        path,
+        createdAt,
+        attempts,
+        processedAt,
+        lastError
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'photo_file_intents';
+  @override
+  VerificationContext validateIntegrity(Insertable<PhotoFileIntentRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('data_space_id')) {
+      context.handle(
+          _dataSpaceIdMeta,
+          dataSpaceId.isAcceptableOrUnknown(
+              data['data_space_id']!, _dataSpaceIdMeta));
+    } else if (isInserting) {
+      context.missing(_dataSpaceIdMeta);
+    }
+    if (data.containsKey('photo_id')) {
+      context.handle(_photoIdMeta,
+          photoId.isAcceptableOrUnknown(data['photo_id']!, _photoIdMeta));
+    } else if (isInserting) {
+      context.missing(_photoIdMeta);
+    }
+    if (data.containsKey('operation')) {
+      context.handle(_operationMeta,
+          operation.isAcceptableOrUnknown(data['operation']!, _operationMeta));
+    } else if (isInserting) {
+      context.missing(_operationMeta);
+    }
+    if (data.containsKey('path')) {
+      context.handle(
+          _pathMeta, path.isAcceptableOrUnknown(data['path']!, _pathMeta));
+    } else if (isInserting) {
+      context.missing(_pathMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('attempts')) {
+      context.handle(_attemptsMeta,
+          attempts.isAcceptableOrUnknown(data['attempts']!, _attemptsMeta));
+    }
+    if (data.containsKey('processed_at')) {
+      context.handle(
+          _processedAtMeta,
+          processedAt.isAcceptableOrUnknown(
+              data['processed_at']!, _processedAtMeta));
+    }
+    if (data.containsKey('last_error')) {
+      context.handle(_lastErrorMeta,
+          lastError.isAcceptableOrUnknown(data['last_error']!, _lastErrorMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PhotoFileIntentRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PhotoFileIntentRow(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      dataSpaceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}data_space_id'])!,
+      photoId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}photo_id'])!,
+      operation: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}operation'])!,
+      path: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}path'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      attempts: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}attempts'])!,
+      processedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}processed_at']),
+      lastError: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}last_error']),
+    );
+  }
+
+  @override
+  $PhotoFileIntentsTable createAlias(String alias) {
+    return $PhotoFileIntentsTable(attachedDatabase, alias);
+  }
+}
+
+class PhotoFileIntentRow extends DataClass
+    implements Insertable<PhotoFileIntentRow> {
+  final String id;
+  final String dataSpaceId;
+  final String photoId;
+  final String operation;
+  final String path;
+  final DateTime createdAt;
+  final int attempts;
+  final DateTime? processedAt;
+  final String? lastError;
+  const PhotoFileIntentRow(
+      {required this.id,
+      required this.dataSpaceId,
+      required this.photoId,
+      required this.operation,
+      required this.path,
+      required this.createdAt,
+      required this.attempts,
+      this.processedAt,
+      this.lastError});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['data_space_id'] = Variable<String>(dataSpaceId);
+    map['photo_id'] = Variable<String>(photoId);
+    map['operation'] = Variable<String>(operation);
+    map['path'] = Variable<String>(path);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['attempts'] = Variable<int>(attempts);
+    if (!nullToAbsent || processedAt != null) {
+      map['processed_at'] = Variable<DateTime>(processedAt);
+    }
+    if (!nullToAbsent || lastError != null) {
+      map['last_error'] = Variable<String>(lastError);
+    }
+    return map;
+  }
+
+  PhotoFileIntentsCompanion toCompanion(bool nullToAbsent) {
+    return PhotoFileIntentsCompanion(
+      id: Value(id),
+      dataSpaceId: Value(dataSpaceId),
+      photoId: Value(photoId),
+      operation: Value(operation),
+      path: Value(path),
+      createdAt: Value(createdAt),
+      attempts: Value(attempts),
+      processedAt: processedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(processedAt),
+      lastError: lastError == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastError),
+    );
+  }
+
+  factory PhotoFileIntentRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PhotoFileIntentRow(
+      id: serializer.fromJson<String>(json['id']),
+      dataSpaceId: serializer.fromJson<String>(json['dataSpaceId']),
+      photoId: serializer.fromJson<String>(json['photoId']),
+      operation: serializer.fromJson<String>(json['operation']),
+      path: serializer.fromJson<String>(json['path']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      attempts: serializer.fromJson<int>(json['attempts']),
+      processedAt: serializer.fromJson<DateTime?>(json['processedAt']),
+      lastError: serializer.fromJson<String?>(json['lastError']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'dataSpaceId': serializer.toJson<String>(dataSpaceId),
+      'photoId': serializer.toJson<String>(photoId),
+      'operation': serializer.toJson<String>(operation),
+      'path': serializer.toJson<String>(path),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'attempts': serializer.toJson<int>(attempts),
+      'processedAt': serializer.toJson<DateTime?>(processedAt),
+      'lastError': serializer.toJson<String?>(lastError),
+    };
+  }
+
+  PhotoFileIntentRow copyWith(
+          {String? id,
+          String? dataSpaceId,
+          String? photoId,
+          String? operation,
+          String? path,
+          DateTime? createdAt,
+          int? attempts,
+          Value<DateTime?> processedAt = const Value.absent(),
+          Value<String?> lastError = const Value.absent()}) =>
+      PhotoFileIntentRow(
+        id: id ?? this.id,
+        dataSpaceId: dataSpaceId ?? this.dataSpaceId,
+        photoId: photoId ?? this.photoId,
+        operation: operation ?? this.operation,
+        path: path ?? this.path,
+        createdAt: createdAt ?? this.createdAt,
+        attempts: attempts ?? this.attempts,
+        processedAt: processedAt.present ? processedAt.value : this.processedAt,
+        lastError: lastError.present ? lastError.value : this.lastError,
+      );
+  PhotoFileIntentRow copyWithCompanion(PhotoFileIntentsCompanion data) {
+    return PhotoFileIntentRow(
+      id: data.id.present ? data.id.value : this.id,
+      dataSpaceId:
+          data.dataSpaceId.present ? data.dataSpaceId.value : this.dataSpaceId,
+      photoId: data.photoId.present ? data.photoId.value : this.photoId,
+      operation: data.operation.present ? data.operation.value : this.operation,
+      path: data.path.present ? data.path.value : this.path,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      attempts: data.attempts.present ? data.attempts.value : this.attempts,
+      processedAt:
+          data.processedAt.present ? data.processedAt.value : this.processedAt,
+      lastError: data.lastError.present ? data.lastError.value : this.lastError,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PhotoFileIntentRow(')
+          ..write('id: $id, ')
+          ..write('dataSpaceId: $dataSpaceId, ')
+          ..write('photoId: $photoId, ')
+          ..write('operation: $operation, ')
+          ..write('path: $path, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('attempts: $attempts, ')
+          ..write('processedAt: $processedAt, ')
+          ..write('lastError: $lastError')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, dataSpaceId, photoId, operation, path,
+      createdAt, attempts, processedAt, lastError);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PhotoFileIntentRow &&
+          other.id == this.id &&
+          other.dataSpaceId == this.dataSpaceId &&
+          other.photoId == this.photoId &&
+          other.operation == this.operation &&
+          other.path == this.path &&
+          other.createdAt == this.createdAt &&
+          other.attempts == this.attempts &&
+          other.processedAt == this.processedAt &&
+          other.lastError == this.lastError);
+}
+
+class PhotoFileIntentsCompanion extends UpdateCompanion<PhotoFileIntentRow> {
+  final Value<String> id;
+  final Value<String> dataSpaceId;
+  final Value<String> photoId;
+  final Value<String> operation;
+  final Value<String> path;
+  final Value<DateTime> createdAt;
+  final Value<int> attempts;
+  final Value<DateTime?> processedAt;
+  final Value<String?> lastError;
+  final Value<int> rowid;
+  const PhotoFileIntentsCompanion({
+    this.id = const Value.absent(),
+    this.dataSpaceId = const Value.absent(),
+    this.photoId = const Value.absent(),
+    this.operation = const Value.absent(),
+    this.path = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.attempts = const Value.absent(),
+    this.processedAt = const Value.absent(),
+    this.lastError = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PhotoFileIntentsCompanion.insert({
+    required String id,
+    required String dataSpaceId,
+    required String photoId,
+    required String operation,
+    required String path,
+    required DateTime createdAt,
+    this.attempts = const Value.absent(),
+    this.processedAt = const Value.absent(),
+    this.lastError = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        dataSpaceId = Value(dataSpaceId),
+        photoId = Value(photoId),
+        operation = Value(operation),
+        path = Value(path),
+        createdAt = Value(createdAt);
+  static Insertable<PhotoFileIntentRow> custom({
+    Expression<String>? id,
+    Expression<String>? dataSpaceId,
+    Expression<String>? photoId,
+    Expression<String>? operation,
+    Expression<String>? path,
+    Expression<DateTime>? createdAt,
+    Expression<int>? attempts,
+    Expression<DateTime>? processedAt,
+    Expression<String>? lastError,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (dataSpaceId != null) 'data_space_id': dataSpaceId,
+      if (photoId != null) 'photo_id': photoId,
+      if (operation != null) 'operation': operation,
+      if (path != null) 'path': path,
+      if (createdAt != null) 'created_at': createdAt,
+      if (attempts != null) 'attempts': attempts,
+      if (processedAt != null) 'processed_at': processedAt,
+      if (lastError != null) 'last_error': lastError,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PhotoFileIntentsCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? dataSpaceId,
+      Value<String>? photoId,
+      Value<String>? operation,
+      Value<String>? path,
+      Value<DateTime>? createdAt,
+      Value<int>? attempts,
+      Value<DateTime?>? processedAt,
+      Value<String?>? lastError,
+      Value<int>? rowid}) {
+    return PhotoFileIntentsCompanion(
+      id: id ?? this.id,
+      dataSpaceId: dataSpaceId ?? this.dataSpaceId,
+      photoId: photoId ?? this.photoId,
+      operation: operation ?? this.operation,
+      path: path ?? this.path,
+      createdAt: createdAt ?? this.createdAt,
+      attempts: attempts ?? this.attempts,
+      processedAt: processedAt ?? this.processedAt,
+      lastError: lastError ?? this.lastError,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (dataSpaceId.present) {
+      map['data_space_id'] = Variable<String>(dataSpaceId.value);
+    }
+    if (photoId.present) {
+      map['photo_id'] = Variable<String>(photoId.value);
+    }
+    if (operation.present) {
+      map['operation'] = Variable<String>(operation.value);
+    }
+    if (path.present) {
+      map['path'] = Variable<String>(path.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (attempts.present) {
+      map['attempts'] = Variable<int>(attempts.value);
+    }
+    if (processedAt.present) {
+      map['processed_at'] = Variable<DateTime>(processedAt.value);
+    }
+    if (lastError.present) {
+      map['last_error'] = Variable<String>(lastError.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PhotoFileIntentsCompanion(')
+          ..write('id: $id, ')
+          ..write('dataSpaceId: $dataSpaceId, ')
+          ..write('photoId: $photoId, ')
+          ..write('operation: $operation, ')
+          ..write('path: $path, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('attempts: $attempts, ')
+          ..write('processedAt: $processedAt, ')
+          ..write('lastError: $lastError, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$DatabaseService extends GeneratedDatabase {
   _$DatabaseService(QueryExecutor e) : super(e);
   $DatabaseServiceManager get managers => $DatabaseServiceManager(this);
@@ -6332,6 +9065,58 @@ abstract class _$DatabaseService extends GeneratedDatabase {
   late final $NutritionDocumentsTable nutritionDocuments =
       $NutritionDocumentsTable(this);
   late final $ProgressPhotosTable progressPhotos = $ProgressPhotosTable(this);
+  late final $DataSpacesTable dataSpaces = $DataSpacesTable(this);
+  late final $MigrationStateTable migrationState = $MigrationStateTable(this);
+  late final $SyncMetadataTable syncMetadata = $SyncMetadataTable(this);
+  late final $SyncOutboxTable syncOutbox = $SyncOutboxTable(this);
+  late final $SyncCheckpointsTable syncCheckpoints =
+      $SyncCheckpointsTable(this);
+  late final $SyncAppliedChangesTable syncAppliedChanges =
+      $SyncAppliedChangesTable(this);
+  late final $PhotoFileIntentsTable photoFileIntents =
+      $PhotoFileIntentsTable(this);
+  late final Index foodsTimestampIdx = Index('foods_timestamp_idx',
+      'CREATE INDEX foods_timestamp_idx ON foods (timestamp DESC, id)');
+  late final Index waterLogsTimestampIdx = Index('water_logs_timestamp_idx',
+      'CREATE INDEX water_logs_timestamp_idx ON water_logs (timestamp DESC, id)');
+  late final Index weightLogsTimestampIdx = Index('weight_logs_timestamp_idx',
+      'CREATE INDEX weight_logs_timestamp_idx ON weight_logs (timestamp DESC, id)');
+  late final Index workoutLogsTimestampIdx = Index('workout_logs_timestamp_idx',
+      'CREATE INDEX workout_logs_timestamp_idx ON workout_logs (timestamp DESC, id)');
+  late final Index supplementLogsTimestampIdx = Index(
+      'supplement_logs_timestamp_idx',
+      'CREATE INDEX supplement_logs_timestamp_idx ON supplement_logs (timestamp DESC, id)');
+  late final Index barcodeProductsExpiryIdx = Index(
+      'barcode_products_expiry_idx',
+      'CREATE INDEX barcode_products_expiry_idx ON barcode_products (cache_status, cached_at ASC)');
+  late final Index recipesCreatedAtIdx = Index('recipes_created_at_idx',
+      'CREATE INDEX recipes_created_at_idx ON recipes (created_at DESC, id)');
+  late final Index plannedMealsScheduleIdx = Index('planned_meals_schedule_idx',
+      'CREATE INDEX planned_meals_schedule_idx ON planned_meals (date ASC, meal, id)');
+  late final Index customPortionsProductIdx = Index(
+      'custom_portions_product_idx',
+      'CREATE INDEX custom_portions_product_idx ON custom_portions (product_key, created_at ASC, id)');
+  late final Index progressPhotosCategoryTimestampIdx = Index(
+      'progress_photos_category_timestamp_idx',
+      'CREATE INDEX progress_photos_category_timestamp_idx ON progress_photos (category, timestamp DESC, id)');
+  late final Index syncMetadataSpaceEntityIdx = Index(
+      'sync_metadata_space_entity_idx',
+      'CREATE INDEX sync_metadata_space_entity_idx ON sync_metadata (data_space_id, entity_type, entity_id)');
+  late final Index syncMetadataPendingIdx = Index('sync_metadata_pending_idx',
+      'CREATE INDEX sync_metadata_pending_idx ON sync_metadata (data_space_id, updated_at DESC)');
+  late final Index syncOutboxPendingIdx = Index('sync_outbox_pending_idx',
+      'CREATE INDEX sync_outbox_pending_idx ON sync_outbox (data_space_id, processed_at, created_at ASC)');
+  late final Index syncOutboxEntityIdx = Index('sync_outbox_entity_idx',
+      'CREATE INDEX sync_outbox_entity_idx ON sync_outbox (data_space_id, entity_type, entity_id)');
+  late final Index syncAppliedChangesEntityIdx = Index(
+      'sync_applied_changes_entity_idx',
+      'CREATE INDEX sync_applied_changes_entity_idx ON sync_applied_changes (data_space_id, entity_type, entity_id)');
+  late final Index photoFileIntentsPendingIdx = Index(
+      'photo_file_intents_pending_idx',
+      'CREATE INDEX photo_file_intents_pending_idx ON photo_file_intents (data_space_id, processed_at, created_at ASC)');
+  late final Index photoFileIntentsPhotoIdx = Index(
+      'photo_file_intents_photo_idx',
+      'CREATE INDEX photo_file_intents_photo_idx ON photo_file_intents (data_space_id, photo_id)');
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -6353,7 +9138,31 @@ abstract class _$DatabaseService extends GeneratedDatabase {
         userStatsTable,
         plannedMealsChecked,
         nutritionDocuments,
-        progressPhotos
+        progressPhotos,
+        dataSpaces,
+        migrationState,
+        syncMetadata,
+        syncOutbox,
+        syncCheckpoints,
+        syncAppliedChanges,
+        photoFileIntents,
+        foodsTimestampIdx,
+        waterLogsTimestampIdx,
+        weightLogsTimestampIdx,
+        workoutLogsTimestampIdx,
+        supplementLogsTimestampIdx,
+        barcodeProductsExpiryIdx,
+        recipesCreatedAtIdx,
+        plannedMealsScheduleIdx,
+        customPortionsProductIdx,
+        progressPhotosCategoryTimestampIdx,
+        syncMetadataSpaceEntityIdx,
+        syncMetadataPendingIdx,
+        syncOutboxPendingIdx,
+        syncOutboxEntityIdx,
+        syncAppliedChangesEntityIdx,
+        photoFileIntentsPendingIdx,
+        photoFileIntentsPhotoIdx
       ];
 }
 
@@ -8186,11 +10995,13 @@ typedef $$CustomFoodsTableProcessedTableManager = ProcessedTableManager<
 typedef $$FavoriteFoodsTableCreateCompanionBuilder = FavoriteFoodsCompanion
     Function({
   required String id,
+  Value<String?> foodJson,
   Value<int> rowid,
 });
 typedef $$FavoriteFoodsTableUpdateCompanionBuilder = FavoriteFoodsCompanion
     Function({
   Value<String> id,
+  Value<String?> foodJson,
   Value<int> rowid,
 });
 
@@ -8205,6 +11016,9 @@ class $$FavoriteFoodsTableFilterComposer
   });
   ColumnFilters<String> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get foodJson => $composableBuilder(
+      column: $table.foodJson, builder: (column) => ColumnFilters(column));
 }
 
 class $$FavoriteFoodsTableOrderingComposer
@@ -8218,6 +11032,9 @@ class $$FavoriteFoodsTableOrderingComposer
   });
   ColumnOrderings<String> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get foodJson => $composableBuilder(
+      column: $table.foodJson, builder: (column) => ColumnOrderings(column));
 }
 
 class $$FavoriteFoodsTableAnnotationComposer
@@ -8231,6 +11048,9 @@ class $$FavoriteFoodsTableAnnotationComposer
   });
   GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get foodJson =>
+      $composableBuilder(column: $table.foodJson, builder: (column) => column);
 }
 
 class $$FavoriteFoodsTableTableManager extends RootTableManager<
@@ -8261,18 +11081,22 @@ class $$FavoriteFoodsTableTableManager extends RootTableManager<
               $$FavoriteFoodsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback: ({
             Value<String> id = const Value.absent(),
+            Value<String?> foodJson = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               FavoriteFoodsCompanion(
             id: id,
+            foodJson: foodJson,
             rowid: rowid,
           ),
           createCompanionCallback: ({
             required String id,
+            Value<String?> foodJson = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               FavoriteFoodsCompanion.insert(
             id: id,
+            foodJson: foodJson,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
@@ -9686,6 +12510,1396 @@ typedef $$ProgressPhotosTableProcessedTableManager = ProcessedTableManager<
     ),
     ProgressPhotoRow,
     PrefetchHooks Function()>;
+typedef $$DataSpacesTableCreateCompanionBuilder = DataSpacesCompanion Function({
+  required String id,
+  Value<String?> name,
+  Value<bool> isDefault,
+  required DateTime createdAt,
+  required DateTime updatedAt,
+  Value<int> rowid,
+});
+typedef $$DataSpacesTableUpdateCompanionBuilder = DataSpacesCompanion Function({
+  Value<String> id,
+  Value<String?> name,
+  Value<bool> isDefault,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<int> rowid,
+});
+
+class $$DataSpacesTableFilterComposer
+    extends Composer<_$DatabaseService, $DataSpacesTable> {
+  $$DataSpacesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isDefault => $composableBuilder(
+      column: $table.isDefault, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$DataSpacesTableOrderingComposer
+    extends Composer<_$DatabaseService, $DataSpacesTable> {
+  $$DataSpacesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isDefault => $composableBuilder(
+      column: $table.isDefault, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$DataSpacesTableAnnotationComposer
+    extends Composer<_$DatabaseService, $DataSpacesTable> {
+  $$DataSpacesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<bool> get isDefault =>
+      $composableBuilder(column: $table.isDefault, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$DataSpacesTableTableManager extends RootTableManager<
+    _$DatabaseService,
+    $DataSpacesTable,
+    DataSpaceRow,
+    $$DataSpacesTableFilterComposer,
+    $$DataSpacesTableOrderingComposer,
+    $$DataSpacesTableAnnotationComposer,
+    $$DataSpacesTableCreateCompanionBuilder,
+    $$DataSpacesTableUpdateCompanionBuilder,
+    (
+      DataSpaceRow,
+      BaseReferences<_$DatabaseService, $DataSpacesTable, DataSpaceRow>
+    ),
+    DataSpaceRow,
+    PrefetchHooks Function()> {
+  $$DataSpacesTableTableManager(_$DatabaseService db, $DataSpacesTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DataSpacesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DataSpacesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DataSpacesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String?> name = const Value.absent(),
+            Value<bool> isDefault = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              DataSpacesCompanion(
+            id: id,
+            name: name,
+            isDefault: isDefault,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            Value<String?> name = const Value.absent(),
+            Value<bool> isDefault = const Value.absent(),
+            required DateTime createdAt,
+            required DateTime updatedAt,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              DataSpacesCompanion.insert(
+            id: id,
+            name: name,
+            isDefault: isDefault,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$DataSpacesTableProcessedTableManager = ProcessedTableManager<
+    _$DatabaseService,
+    $DataSpacesTable,
+    DataSpaceRow,
+    $$DataSpacesTableFilterComposer,
+    $$DataSpacesTableOrderingComposer,
+    $$DataSpacesTableAnnotationComposer,
+    $$DataSpacesTableCreateCompanionBuilder,
+    $$DataSpacesTableUpdateCompanionBuilder,
+    (
+      DataSpaceRow,
+      BaseReferences<_$DatabaseService, $DataSpacesTable, DataSpaceRow>
+    ),
+    DataSpaceRow,
+    PrefetchHooks Function()>;
+typedef $$MigrationStateTableCreateCompanionBuilder = MigrationStateCompanion
+    Function({
+  required String key,
+  required int version,
+  required DateTime updatedAt,
+  Value<String?> checksum,
+  Value<int> rowid,
+});
+typedef $$MigrationStateTableUpdateCompanionBuilder = MigrationStateCompanion
+    Function({
+  Value<String> key,
+  Value<int> version,
+  Value<DateTime> updatedAt,
+  Value<String?> checksum,
+  Value<int> rowid,
+});
+
+class $$MigrationStateTableFilterComposer
+    extends Composer<_$DatabaseService, $MigrationStateTable> {
+  $$MigrationStateTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get key => $composableBuilder(
+      column: $table.key, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get checksum => $composableBuilder(
+      column: $table.checksum, builder: (column) => ColumnFilters(column));
+}
+
+class $$MigrationStateTableOrderingComposer
+    extends Composer<_$DatabaseService, $MigrationStateTable> {
+  $$MigrationStateTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get key => $composableBuilder(
+      column: $table.key, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get checksum => $composableBuilder(
+      column: $table.checksum, builder: (column) => ColumnOrderings(column));
+}
+
+class $$MigrationStateTableAnnotationComposer
+    extends Composer<_$DatabaseService, $MigrationStateTable> {
+  $$MigrationStateTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get key =>
+      $composableBuilder(column: $table.key, builder: (column) => column);
+
+  GeneratedColumn<int> get version =>
+      $composableBuilder(column: $table.version, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get checksum =>
+      $composableBuilder(column: $table.checksum, builder: (column) => column);
+}
+
+class $$MigrationStateTableTableManager extends RootTableManager<
+    _$DatabaseService,
+    $MigrationStateTable,
+    MigrationStateRow,
+    $$MigrationStateTableFilterComposer,
+    $$MigrationStateTableOrderingComposer,
+    $$MigrationStateTableAnnotationComposer,
+    $$MigrationStateTableCreateCompanionBuilder,
+    $$MigrationStateTableUpdateCompanionBuilder,
+    (
+      MigrationStateRow,
+      BaseReferences<_$DatabaseService, $MigrationStateTable, MigrationStateRow>
+    ),
+    MigrationStateRow,
+    PrefetchHooks Function()> {
+  $$MigrationStateTableTableManager(
+      _$DatabaseService db, $MigrationStateTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MigrationStateTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MigrationStateTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MigrationStateTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> key = const Value.absent(),
+            Value<int> version = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<String?> checksum = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              MigrationStateCompanion(
+            key: key,
+            version: version,
+            updatedAt: updatedAt,
+            checksum: checksum,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String key,
+            required int version,
+            required DateTime updatedAt,
+            Value<String?> checksum = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              MigrationStateCompanion.insert(
+            key: key,
+            version: version,
+            updatedAt: updatedAt,
+            checksum: checksum,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$MigrationStateTableProcessedTableManager = ProcessedTableManager<
+    _$DatabaseService,
+    $MigrationStateTable,
+    MigrationStateRow,
+    $$MigrationStateTableFilterComposer,
+    $$MigrationStateTableOrderingComposer,
+    $$MigrationStateTableAnnotationComposer,
+    $$MigrationStateTableCreateCompanionBuilder,
+    $$MigrationStateTableUpdateCompanionBuilder,
+    (
+      MigrationStateRow,
+      BaseReferences<_$DatabaseService, $MigrationStateTable, MigrationStateRow>
+    ),
+    MigrationStateRow,
+    PrefetchHooks Function()>;
+typedef $$SyncMetadataTableCreateCompanionBuilder = SyncMetadataCompanion
+    Function({
+  required String dataSpaceId,
+  required String entityType,
+  required String entityId,
+  Value<int> localRevision,
+  required DateTime updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<String?> remoteVersion,
+  Value<int> rowid,
+});
+typedef $$SyncMetadataTableUpdateCompanionBuilder = SyncMetadataCompanion
+    Function({
+  Value<String> dataSpaceId,
+  Value<String> entityType,
+  Value<String> entityId,
+  Value<int> localRevision,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<String?> remoteVersion,
+  Value<int> rowid,
+});
+
+class $$SyncMetadataTableFilterComposer
+    extends Composer<_$DatabaseService, $SyncMetadataTable> {
+  $$SyncMetadataTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get dataSpaceId => $composableBuilder(
+      column: $table.dataSpaceId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get entityType => $composableBuilder(
+      column: $table.entityType, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get entityId => $composableBuilder(
+      column: $table.entityId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get localRevision => $composableBuilder(
+      column: $table.localRevision, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get remoteVersion => $composableBuilder(
+      column: $table.remoteVersion, builder: (column) => ColumnFilters(column));
+}
+
+class $$SyncMetadataTableOrderingComposer
+    extends Composer<_$DatabaseService, $SyncMetadataTable> {
+  $$SyncMetadataTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get dataSpaceId => $composableBuilder(
+      column: $table.dataSpaceId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get entityType => $composableBuilder(
+      column: $table.entityType, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get entityId => $composableBuilder(
+      column: $table.entityId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get localRevision => $composableBuilder(
+      column: $table.localRevision,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get remoteVersion => $composableBuilder(
+      column: $table.remoteVersion,
+      builder: (column) => ColumnOrderings(column));
+}
+
+class $$SyncMetadataTableAnnotationComposer
+    extends Composer<_$DatabaseService, $SyncMetadataTable> {
+  $$SyncMetadataTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get dataSpaceId => $composableBuilder(
+      column: $table.dataSpaceId, builder: (column) => column);
+
+  GeneratedColumn<String> get entityType => $composableBuilder(
+      column: $table.entityType, builder: (column) => column);
+
+  GeneratedColumn<String> get entityId =>
+      $composableBuilder(column: $table.entityId, builder: (column) => column);
+
+  GeneratedColumn<int> get localRevision => $composableBuilder(
+      column: $table.localRevision, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get remoteVersion => $composableBuilder(
+      column: $table.remoteVersion, builder: (column) => column);
+}
+
+class $$SyncMetadataTableTableManager extends RootTableManager<
+    _$DatabaseService,
+    $SyncMetadataTable,
+    SyncMetadataRow,
+    $$SyncMetadataTableFilterComposer,
+    $$SyncMetadataTableOrderingComposer,
+    $$SyncMetadataTableAnnotationComposer,
+    $$SyncMetadataTableCreateCompanionBuilder,
+    $$SyncMetadataTableUpdateCompanionBuilder,
+    (
+      SyncMetadataRow,
+      BaseReferences<_$DatabaseService, $SyncMetadataTable, SyncMetadataRow>
+    ),
+    SyncMetadataRow,
+    PrefetchHooks Function()> {
+  $$SyncMetadataTableTableManager(
+      _$DatabaseService db, $SyncMetadataTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SyncMetadataTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SyncMetadataTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SyncMetadataTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> dataSpaceId = const Value.absent(),
+            Value<String> entityType = const Value.absent(),
+            Value<String> entityId = const Value.absent(),
+            Value<int> localRevision = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<String?> remoteVersion = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SyncMetadataCompanion(
+            dataSpaceId: dataSpaceId,
+            entityType: entityType,
+            entityId: entityId,
+            localRevision: localRevision,
+            updatedAt: updatedAt,
+            deletedAt: deletedAt,
+            remoteVersion: remoteVersion,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String dataSpaceId,
+            required String entityType,
+            required String entityId,
+            Value<int> localRevision = const Value.absent(),
+            required DateTime updatedAt,
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<String?> remoteVersion = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SyncMetadataCompanion.insert(
+            dataSpaceId: dataSpaceId,
+            entityType: entityType,
+            entityId: entityId,
+            localRevision: localRevision,
+            updatedAt: updatedAt,
+            deletedAt: deletedAt,
+            remoteVersion: remoteVersion,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$SyncMetadataTableProcessedTableManager = ProcessedTableManager<
+    _$DatabaseService,
+    $SyncMetadataTable,
+    SyncMetadataRow,
+    $$SyncMetadataTableFilterComposer,
+    $$SyncMetadataTableOrderingComposer,
+    $$SyncMetadataTableAnnotationComposer,
+    $$SyncMetadataTableCreateCompanionBuilder,
+    $$SyncMetadataTableUpdateCompanionBuilder,
+    (
+      SyncMetadataRow,
+      BaseReferences<_$DatabaseService, $SyncMetadataTable, SyncMetadataRow>
+    ),
+    SyncMetadataRow,
+    PrefetchHooks Function()>;
+typedef $$SyncOutboxTableCreateCompanionBuilder = SyncOutboxCompanion Function({
+  required String id,
+  required String dataSpaceId,
+  required String entityType,
+  required String entityId,
+  required String operation,
+  Value<String?> payloadJson,
+  Value<int?> baseRevision,
+  required DateTime createdAt,
+  Value<int> attempts,
+  Value<DateTime?> nextAttemptAt,
+  Value<DateTime?> processedAt,
+  Value<String?> lastError,
+  Value<int> rowid,
+});
+typedef $$SyncOutboxTableUpdateCompanionBuilder = SyncOutboxCompanion Function({
+  Value<String> id,
+  Value<String> dataSpaceId,
+  Value<String> entityType,
+  Value<String> entityId,
+  Value<String> operation,
+  Value<String?> payloadJson,
+  Value<int?> baseRevision,
+  Value<DateTime> createdAt,
+  Value<int> attempts,
+  Value<DateTime?> nextAttemptAt,
+  Value<DateTime?> processedAt,
+  Value<String?> lastError,
+  Value<int> rowid,
+});
+
+class $$SyncOutboxTableFilterComposer
+    extends Composer<_$DatabaseService, $SyncOutboxTable> {
+  $$SyncOutboxTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get dataSpaceId => $composableBuilder(
+      column: $table.dataSpaceId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get entityType => $composableBuilder(
+      column: $table.entityType, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get entityId => $composableBuilder(
+      column: $table.entityId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get operation => $composableBuilder(
+      column: $table.operation, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get payloadJson => $composableBuilder(
+      column: $table.payloadJson, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get baseRevision => $composableBuilder(
+      column: $table.baseRevision, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get attempts => $composableBuilder(
+      column: $table.attempts, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get nextAttemptAt => $composableBuilder(
+      column: $table.nextAttemptAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get processedAt => $composableBuilder(
+      column: $table.processedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get lastError => $composableBuilder(
+      column: $table.lastError, builder: (column) => ColumnFilters(column));
+}
+
+class $$SyncOutboxTableOrderingComposer
+    extends Composer<_$DatabaseService, $SyncOutboxTable> {
+  $$SyncOutboxTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get dataSpaceId => $composableBuilder(
+      column: $table.dataSpaceId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get entityType => $composableBuilder(
+      column: $table.entityType, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get entityId => $composableBuilder(
+      column: $table.entityId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get operation => $composableBuilder(
+      column: $table.operation, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get payloadJson => $composableBuilder(
+      column: $table.payloadJson, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get baseRevision => $composableBuilder(
+      column: $table.baseRevision,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get attempts => $composableBuilder(
+      column: $table.attempts, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get nextAttemptAt => $composableBuilder(
+      column: $table.nextAttemptAt,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get processedAt => $composableBuilder(
+      column: $table.processedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get lastError => $composableBuilder(
+      column: $table.lastError, builder: (column) => ColumnOrderings(column));
+}
+
+class $$SyncOutboxTableAnnotationComposer
+    extends Composer<_$DatabaseService, $SyncOutboxTable> {
+  $$SyncOutboxTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get dataSpaceId => $composableBuilder(
+      column: $table.dataSpaceId, builder: (column) => column);
+
+  GeneratedColumn<String> get entityType => $composableBuilder(
+      column: $table.entityType, builder: (column) => column);
+
+  GeneratedColumn<String> get entityId =>
+      $composableBuilder(column: $table.entityId, builder: (column) => column);
+
+  GeneratedColumn<String> get operation =>
+      $composableBuilder(column: $table.operation, builder: (column) => column);
+
+  GeneratedColumn<String> get payloadJson => $composableBuilder(
+      column: $table.payloadJson, builder: (column) => column);
+
+  GeneratedColumn<int> get baseRevision => $composableBuilder(
+      column: $table.baseRevision, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<int> get attempts =>
+      $composableBuilder(column: $table.attempts, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get nextAttemptAt => $composableBuilder(
+      column: $table.nextAttemptAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get processedAt => $composableBuilder(
+      column: $table.processedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get lastError =>
+      $composableBuilder(column: $table.lastError, builder: (column) => column);
+}
+
+class $$SyncOutboxTableTableManager extends RootTableManager<
+    _$DatabaseService,
+    $SyncOutboxTable,
+    SyncOutboxRow,
+    $$SyncOutboxTableFilterComposer,
+    $$SyncOutboxTableOrderingComposer,
+    $$SyncOutboxTableAnnotationComposer,
+    $$SyncOutboxTableCreateCompanionBuilder,
+    $$SyncOutboxTableUpdateCompanionBuilder,
+    (
+      SyncOutboxRow,
+      BaseReferences<_$DatabaseService, $SyncOutboxTable, SyncOutboxRow>
+    ),
+    SyncOutboxRow,
+    PrefetchHooks Function()> {
+  $$SyncOutboxTableTableManager(_$DatabaseService db, $SyncOutboxTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SyncOutboxTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SyncOutboxTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SyncOutboxTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> dataSpaceId = const Value.absent(),
+            Value<String> entityType = const Value.absent(),
+            Value<String> entityId = const Value.absent(),
+            Value<String> operation = const Value.absent(),
+            Value<String?> payloadJson = const Value.absent(),
+            Value<int?> baseRevision = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<int> attempts = const Value.absent(),
+            Value<DateTime?> nextAttemptAt = const Value.absent(),
+            Value<DateTime?> processedAt = const Value.absent(),
+            Value<String?> lastError = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SyncOutboxCompanion(
+            id: id,
+            dataSpaceId: dataSpaceId,
+            entityType: entityType,
+            entityId: entityId,
+            operation: operation,
+            payloadJson: payloadJson,
+            baseRevision: baseRevision,
+            createdAt: createdAt,
+            attempts: attempts,
+            nextAttemptAt: nextAttemptAt,
+            processedAt: processedAt,
+            lastError: lastError,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String dataSpaceId,
+            required String entityType,
+            required String entityId,
+            required String operation,
+            Value<String?> payloadJson = const Value.absent(),
+            Value<int?> baseRevision = const Value.absent(),
+            required DateTime createdAt,
+            Value<int> attempts = const Value.absent(),
+            Value<DateTime?> nextAttemptAt = const Value.absent(),
+            Value<DateTime?> processedAt = const Value.absent(),
+            Value<String?> lastError = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SyncOutboxCompanion.insert(
+            id: id,
+            dataSpaceId: dataSpaceId,
+            entityType: entityType,
+            entityId: entityId,
+            operation: operation,
+            payloadJson: payloadJson,
+            baseRevision: baseRevision,
+            createdAt: createdAt,
+            attempts: attempts,
+            nextAttemptAt: nextAttemptAt,
+            processedAt: processedAt,
+            lastError: lastError,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$SyncOutboxTableProcessedTableManager = ProcessedTableManager<
+    _$DatabaseService,
+    $SyncOutboxTable,
+    SyncOutboxRow,
+    $$SyncOutboxTableFilterComposer,
+    $$SyncOutboxTableOrderingComposer,
+    $$SyncOutboxTableAnnotationComposer,
+    $$SyncOutboxTableCreateCompanionBuilder,
+    $$SyncOutboxTableUpdateCompanionBuilder,
+    (
+      SyncOutboxRow,
+      BaseReferences<_$DatabaseService, $SyncOutboxTable, SyncOutboxRow>
+    ),
+    SyncOutboxRow,
+    PrefetchHooks Function()>;
+typedef $$SyncCheckpointsTableCreateCompanionBuilder = SyncCheckpointsCompanion
+    Function({
+  required String dataSpaceId,
+  required String remoteScope,
+  Value<String?> cursor,
+  required DateTime updatedAt,
+  Value<int> rowid,
+});
+typedef $$SyncCheckpointsTableUpdateCompanionBuilder = SyncCheckpointsCompanion
+    Function({
+  Value<String> dataSpaceId,
+  Value<String> remoteScope,
+  Value<String?> cursor,
+  Value<DateTime> updatedAt,
+  Value<int> rowid,
+});
+
+class $$SyncCheckpointsTableFilterComposer
+    extends Composer<_$DatabaseService, $SyncCheckpointsTable> {
+  $$SyncCheckpointsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get dataSpaceId => $composableBuilder(
+      column: $table.dataSpaceId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get remoteScope => $composableBuilder(
+      column: $table.remoteScope, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get cursor => $composableBuilder(
+      column: $table.cursor, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$SyncCheckpointsTableOrderingComposer
+    extends Composer<_$DatabaseService, $SyncCheckpointsTable> {
+  $$SyncCheckpointsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get dataSpaceId => $composableBuilder(
+      column: $table.dataSpaceId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get remoteScope => $composableBuilder(
+      column: $table.remoteScope, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get cursor => $composableBuilder(
+      column: $table.cursor, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$SyncCheckpointsTableAnnotationComposer
+    extends Composer<_$DatabaseService, $SyncCheckpointsTable> {
+  $$SyncCheckpointsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get dataSpaceId => $composableBuilder(
+      column: $table.dataSpaceId, builder: (column) => column);
+
+  GeneratedColumn<String> get remoteScope => $composableBuilder(
+      column: $table.remoteScope, builder: (column) => column);
+
+  GeneratedColumn<String> get cursor =>
+      $composableBuilder(column: $table.cursor, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$SyncCheckpointsTableTableManager extends RootTableManager<
+    _$DatabaseService,
+    $SyncCheckpointsTable,
+    SyncCheckpointRow,
+    $$SyncCheckpointsTableFilterComposer,
+    $$SyncCheckpointsTableOrderingComposer,
+    $$SyncCheckpointsTableAnnotationComposer,
+    $$SyncCheckpointsTableCreateCompanionBuilder,
+    $$SyncCheckpointsTableUpdateCompanionBuilder,
+    (
+      SyncCheckpointRow,
+      BaseReferences<_$DatabaseService, $SyncCheckpointsTable,
+          SyncCheckpointRow>
+    ),
+    SyncCheckpointRow,
+    PrefetchHooks Function()> {
+  $$SyncCheckpointsTableTableManager(
+      _$DatabaseService db, $SyncCheckpointsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SyncCheckpointsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SyncCheckpointsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SyncCheckpointsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> dataSpaceId = const Value.absent(),
+            Value<String> remoteScope = const Value.absent(),
+            Value<String?> cursor = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SyncCheckpointsCompanion(
+            dataSpaceId: dataSpaceId,
+            remoteScope: remoteScope,
+            cursor: cursor,
+            updatedAt: updatedAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String dataSpaceId,
+            required String remoteScope,
+            Value<String?> cursor = const Value.absent(),
+            required DateTime updatedAt,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SyncCheckpointsCompanion.insert(
+            dataSpaceId: dataSpaceId,
+            remoteScope: remoteScope,
+            cursor: cursor,
+            updatedAt: updatedAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$SyncCheckpointsTableProcessedTableManager = ProcessedTableManager<
+    _$DatabaseService,
+    $SyncCheckpointsTable,
+    SyncCheckpointRow,
+    $$SyncCheckpointsTableFilterComposer,
+    $$SyncCheckpointsTableOrderingComposer,
+    $$SyncCheckpointsTableAnnotationComposer,
+    $$SyncCheckpointsTableCreateCompanionBuilder,
+    $$SyncCheckpointsTableUpdateCompanionBuilder,
+    (
+      SyncCheckpointRow,
+      BaseReferences<_$DatabaseService, $SyncCheckpointsTable,
+          SyncCheckpointRow>
+    ),
+    SyncCheckpointRow,
+    PrefetchHooks Function()>;
+typedef $$SyncAppliedChangesTableCreateCompanionBuilder
+    = SyncAppliedChangesCompanion Function({
+  required String dataSpaceId,
+  required String remoteChangeId,
+  required String entityType,
+  required String entityId,
+  required DateTime appliedAt,
+  Value<int> rowid,
+});
+typedef $$SyncAppliedChangesTableUpdateCompanionBuilder
+    = SyncAppliedChangesCompanion Function({
+  Value<String> dataSpaceId,
+  Value<String> remoteChangeId,
+  Value<String> entityType,
+  Value<String> entityId,
+  Value<DateTime> appliedAt,
+  Value<int> rowid,
+});
+
+class $$SyncAppliedChangesTableFilterComposer
+    extends Composer<_$DatabaseService, $SyncAppliedChangesTable> {
+  $$SyncAppliedChangesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get dataSpaceId => $composableBuilder(
+      column: $table.dataSpaceId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get remoteChangeId => $composableBuilder(
+      column: $table.remoteChangeId,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get entityType => $composableBuilder(
+      column: $table.entityType, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get entityId => $composableBuilder(
+      column: $table.entityId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get appliedAt => $composableBuilder(
+      column: $table.appliedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$SyncAppliedChangesTableOrderingComposer
+    extends Composer<_$DatabaseService, $SyncAppliedChangesTable> {
+  $$SyncAppliedChangesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get dataSpaceId => $composableBuilder(
+      column: $table.dataSpaceId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get remoteChangeId => $composableBuilder(
+      column: $table.remoteChangeId,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get entityType => $composableBuilder(
+      column: $table.entityType, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get entityId => $composableBuilder(
+      column: $table.entityId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get appliedAt => $composableBuilder(
+      column: $table.appliedAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$SyncAppliedChangesTableAnnotationComposer
+    extends Composer<_$DatabaseService, $SyncAppliedChangesTable> {
+  $$SyncAppliedChangesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get dataSpaceId => $composableBuilder(
+      column: $table.dataSpaceId, builder: (column) => column);
+
+  GeneratedColumn<String> get remoteChangeId => $composableBuilder(
+      column: $table.remoteChangeId, builder: (column) => column);
+
+  GeneratedColumn<String> get entityType => $composableBuilder(
+      column: $table.entityType, builder: (column) => column);
+
+  GeneratedColumn<String> get entityId =>
+      $composableBuilder(column: $table.entityId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get appliedAt =>
+      $composableBuilder(column: $table.appliedAt, builder: (column) => column);
+}
+
+class $$SyncAppliedChangesTableTableManager extends RootTableManager<
+    _$DatabaseService,
+    $SyncAppliedChangesTable,
+    SyncAppliedChangeRow,
+    $$SyncAppliedChangesTableFilterComposer,
+    $$SyncAppliedChangesTableOrderingComposer,
+    $$SyncAppliedChangesTableAnnotationComposer,
+    $$SyncAppliedChangesTableCreateCompanionBuilder,
+    $$SyncAppliedChangesTableUpdateCompanionBuilder,
+    (
+      SyncAppliedChangeRow,
+      BaseReferences<_$DatabaseService, $SyncAppliedChangesTable,
+          SyncAppliedChangeRow>
+    ),
+    SyncAppliedChangeRow,
+    PrefetchHooks Function()> {
+  $$SyncAppliedChangesTableTableManager(
+      _$DatabaseService db, $SyncAppliedChangesTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SyncAppliedChangesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SyncAppliedChangesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SyncAppliedChangesTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> dataSpaceId = const Value.absent(),
+            Value<String> remoteChangeId = const Value.absent(),
+            Value<String> entityType = const Value.absent(),
+            Value<String> entityId = const Value.absent(),
+            Value<DateTime> appliedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SyncAppliedChangesCompanion(
+            dataSpaceId: dataSpaceId,
+            remoteChangeId: remoteChangeId,
+            entityType: entityType,
+            entityId: entityId,
+            appliedAt: appliedAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String dataSpaceId,
+            required String remoteChangeId,
+            required String entityType,
+            required String entityId,
+            required DateTime appliedAt,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SyncAppliedChangesCompanion.insert(
+            dataSpaceId: dataSpaceId,
+            remoteChangeId: remoteChangeId,
+            entityType: entityType,
+            entityId: entityId,
+            appliedAt: appliedAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$SyncAppliedChangesTableProcessedTableManager = ProcessedTableManager<
+    _$DatabaseService,
+    $SyncAppliedChangesTable,
+    SyncAppliedChangeRow,
+    $$SyncAppliedChangesTableFilterComposer,
+    $$SyncAppliedChangesTableOrderingComposer,
+    $$SyncAppliedChangesTableAnnotationComposer,
+    $$SyncAppliedChangesTableCreateCompanionBuilder,
+    $$SyncAppliedChangesTableUpdateCompanionBuilder,
+    (
+      SyncAppliedChangeRow,
+      BaseReferences<_$DatabaseService, $SyncAppliedChangesTable,
+          SyncAppliedChangeRow>
+    ),
+    SyncAppliedChangeRow,
+    PrefetchHooks Function()>;
+typedef $$PhotoFileIntentsTableCreateCompanionBuilder
+    = PhotoFileIntentsCompanion Function({
+  required String id,
+  required String dataSpaceId,
+  required String photoId,
+  required String operation,
+  required String path,
+  required DateTime createdAt,
+  Value<int> attempts,
+  Value<DateTime?> processedAt,
+  Value<String?> lastError,
+  Value<int> rowid,
+});
+typedef $$PhotoFileIntentsTableUpdateCompanionBuilder
+    = PhotoFileIntentsCompanion Function({
+  Value<String> id,
+  Value<String> dataSpaceId,
+  Value<String> photoId,
+  Value<String> operation,
+  Value<String> path,
+  Value<DateTime> createdAt,
+  Value<int> attempts,
+  Value<DateTime?> processedAt,
+  Value<String?> lastError,
+  Value<int> rowid,
+});
+
+class $$PhotoFileIntentsTableFilterComposer
+    extends Composer<_$DatabaseService, $PhotoFileIntentsTable> {
+  $$PhotoFileIntentsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get dataSpaceId => $composableBuilder(
+      column: $table.dataSpaceId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get photoId => $composableBuilder(
+      column: $table.photoId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get operation => $composableBuilder(
+      column: $table.operation, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get path => $composableBuilder(
+      column: $table.path, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get attempts => $composableBuilder(
+      column: $table.attempts, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get processedAt => $composableBuilder(
+      column: $table.processedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get lastError => $composableBuilder(
+      column: $table.lastError, builder: (column) => ColumnFilters(column));
+}
+
+class $$PhotoFileIntentsTableOrderingComposer
+    extends Composer<_$DatabaseService, $PhotoFileIntentsTable> {
+  $$PhotoFileIntentsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get dataSpaceId => $composableBuilder(
+      column: $table.dataSpaceId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get photoId => $composableBuilder(
+      column: $table.photoId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get operation => $composableBuilder(
+      column: $table.operation, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get path => $composableBuilder(
+      column: $table.path, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get attempts => $composableBuilder(
+      column: $table.attempts, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get processedAt => $composableBuilder(
+      column: $table.processedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get lastError => $composableBuilder(
+      column: $table.lastError, builder: (column) => ColumnOrderings(column));
+}
+
+class $$PhotoFileIntentsTableAnnotationComposer
+    extends Composer<_$DatabaseService, $PhotoFileIntentsTable> {
+  $$PhotoFileIntentsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get dataSpaceId => $composableBuilder(
+      column: $table.dataSpaceId, builder: (column) => column);
+
+  GeneratedColumn<String> get photoId =>
+      $composableBuilder(column: $table.photoId, builder: (column) => column);
+
+  GeneratedColumn<String> get operation =>
+      $composableBuilder(column: $table.operation, builder: (column) => column);
+
+  GeneratedColumn<String> get path =>
+      $composableBuilder(column: $table.path, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<int> get attempts =>
+      $composableBuilder(column: $table.attempts, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get processedAt => $composableBuilder(
+      column: $table.processedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get lastError =>
+      $composableBuilder(column: $table.lastError, builder: (column) => column);
+}
+
+class $$PhotoFileIntentsTableTableManager extends RootTableManager<
+    _$DatabaseService,
+    $PhotoFileIntentsTable,
+    PhotoFileIntentRow,
+    $$PhotoFileIntentsTableFilterComposer,
+    $$PhotoFileIntentsTableOrderingComposer,
+    $$PhotoFileIntentsTableAnnotationComposer,
+    $$PhotoFileIntentsTableCreateCompanionBuilder,
+    $$PhotoFileIntentsTableUpdateCompanionBuilder,
+    (
+      PhotoFileIntentRow,
+      BaseReferences<_$DatabaseService, $PhotoFileIntentsTable,
+          PhotoFileIntentRow>
+    ),
+    PhotoFileIntentRow,
+    PrefetchHooks Function()> {
+  $$PhotoFileIntentsTableTableManager(
+      _$DatabaseService db, $PhotoFileIntentsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PhotoFileIntentsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PhotoFileIntentsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PhotoFileIntentsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> dataSpaceId = const Value.absent(),
+            Value<String> photoId = const Value.absent(),
+            Value<String> operation = const Value.absent(),
+            Value<String> path = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<int> attempts = const Value.absent(),
+            Value<DateTime?> processedAt = const Value.absent(),
+            Value<String?> lastError = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              PhotoFileIntentsCompanion(
+            id: id,
+            dataSpaceId: dataSpaceId,
+            photoId: photoId,
+            operation: operation,
+            path: path,
+            createdAt: createdAt,
+            attempts: attempts,
+            processedAt: processedAt,
+            lastError: lastError,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String dataSpaceId,
+            required String photoId,
+            required String operation,
+            required String path,
+            required DateTime createdAt,
+            Value<int> attempts = const Value.absent(),
+            Value<DateTime?> processedAt = const Value.absent(),
+            Value<String?> lastError = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              PhotoFileIntentsCompanion.insert(
+            id: id,
+            dataSpaceId: dataSpaceId,
+            photoId: photoId,
+            operation: operation,
+            path: path,
+            createdAt: createdAt,
+            attempts: attempts,
+            processedAt: processedAt,
+            lastError: lastError,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$PhotoFileIntentsTableProcessedTableManager = ProcessedTableManager<
+    _$DatabaseService,
+    $PhotoFileIntentsTable,
+    PhotoFileIntentRow,
+    $$PhotoFileIntentsTableFilterComposer,
+    $$PhotoFileIntentsTableOrderingComposer,
+    $$PhotoFileIntentsTableAnnotationComposer,
+    $$PhotoFileIntentsTableCreateCompanionBuilder,
+    $$PhotoFileIntentsTableUpdateCompanionBuilder,
+    (
+      PhotoFileIntentRow,
+      BaseReferences<_$DatabaseService, $PhotoFileIntentsTable,
+          PhotoFileIntentRow>
+    ),
+    PhotoFileIntentRow,
+    PrefetchHooks Function()>;
 
 class $DatabaseServiceManager {
   final _$DatabaseService _db;
@@ -9724,4 +13938,18 @@ class $DatabaseServiceManager {
       $$NutritionDocumentsTableTableManager(_db, _db.nutritionDocuments);
   $$ProgressPhotosTableTableManager get progressPhotos =>
       $$ProgressPhotosTableTableManager(_db, _db.progressPhotos);
+  $$DataSpacesTableTableManager get dataSpaces =>
+      $$DataSpacesTableTableManager(_db, _db.dataSpaces);
+  $$MigrationStateTableTableManager get migrationState =>
+      $$MigrationStateTableTableManager(_db, _db.migrationState);
+  $$SyncMetadataTableTableManager get syncMetadata =>
+      $$SyncMetadataTableTableManager(_db, _db.syncMetadata);
+  $$SyncOutboxTableTableManager get syncOutbox =>
+      $$SyncOutboxTableTableManager(_db, _db.syncOutbox);
+  $$SyncCheckpointsTableTableManager get syncCheckpoints =>
+      $$SyncCheckpointsTableTableManager(_db, _db.syncCheckpoints);
+  $$SyncAppliedChangesTableTableManager get syncAppliedChanges =>
+      $$SyncAppliedChangesTableTableManager(_db, _db.syncAppliedChanges);
+  $$PhotoFileIntentsTableTableManager get photoFileIntents =>
+      $$PhotoFileIntentsTableTableManager(_db, _db.photoFileIntents);
 }
