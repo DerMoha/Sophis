@@ -220,30 +220,42 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       _error = null;
     });
 
-    final analysisResult = await _geminiService.analyzeFoodMultiple(
-      _images,
-      correctionHint: correctionHint,
-    );
+    try {
+      final analysisResult = await _geminiService.analyzeFoodMultiple(
+        _images,
+        correctionHint: correctionHint,
+      );
 
-    final remaining = await GeminiFoodService.getRemainingRequests();
+      final remaining = await GeminiFoodService.getRemainingRequests();
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    _disposeResults(_results);
+      _disposeResults(_results);
 
-    switch (analysisResult) {
-      case Success<List<FoodAnalysis>>(value: final results):
-        _results = results.map((r) => EditableFoodResult(analysis: r)).toList();
-      case Failure<List<FoodAnalysis>>(message: final message):
-        _results = null;
-        _error = _getUserFriendlyError(message);
-        _showApiKeyAction = _isApiKeyFailure(message);
+      switch (analysisResult) {
+        case Success<List<FoodAnalysis>>(value: final results):
+          _results =
+              results.map((r) => EditableFoodResult(analysis: r)).toList();
+        case Failure<List<FoodAnalysis>>(message: final message):
+          _results = null;
+          _error = _getUserFriendlyError(message);
+          _showApiKeyAction = _isApiKeyFailure(message);
+      }
+
+      setState(() {
+        _remainingRequests = remaining;
+        _isLoading = false;
+      });
+    } on Object catch (error, stackTrace) {
+      debugPrint('AI food screen analysis failed: $error\n$stackTrace');
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+        _error = _getUserFriendlyError(error);
+        _showApiKeyAction = _isApiKeyFailure(error.toString());
+      });
     }
-
-    setState(() {
-      _remainingRequests = remaining;
-      _isLoading = false;
-    });
   }
 
   void _showEditSheet(

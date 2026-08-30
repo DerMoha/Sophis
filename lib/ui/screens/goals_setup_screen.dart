@@ -92,8 +92,9 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
   }
 
   double? _parseDouble(String text) {
-    if (text.isEmpty) return null;
-    return double.tryParse(text);
+    final normalized = text.trim().replaceAll(',', '.');
+    if (normalized.isEmpty) return null;
+    return double.tryParse(normalized);
   }
 
   int? _parseInt(String text) {
@@ -291,6 +292,7 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
                                       label: weightLabel,
                                       icon: Icons.monitor_weight_outlined,
                                       suffix: weightUnit,
+                                      allowDecimal: true,
                                     ),
                                   ),
                                   const SizedBox(width: 12),
@@ -300,6 +302,7 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
                                       label: heightLabel,
                                       icon: Icons.height_outlined,
                                       suffix: heightUnit,
+                                      allowDecimal: true,
                                     ),
                                   ),
                                 ],
@@ -446,6 +449,7 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
                             label: targetWeightLabel,
                             icon: Icons.emoji_events_outlined,
                             suffix: weightUnit,
+                            allowDecimal: true,
                           ),
                         ),
                       ),
@@ -466,12 +470,15 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
     IconData? icon,
     String? suffix,
     bool large = false,
+    bool allowDecimal = false,
   }) {
     final theme = Theme.of(context);
 
     return TextField(
       controller: controller,
-      keyboardType: TextInputType.number,
+      keyboardType: allowDecimal
+          ? const TextInputType.numberWithOptions(decimal: true)
+          : TextInputType.number,
       style: large ? theme.textTheme.titleLarge : null,
       decoration: InputDecoration(
         labelText: label,
@@ -596,7 +603,7 @@ class _MacroInput extends StatelessWidget {
         const SizedBox(height: 8),
         TextField(
           controller: controller,
-          keyboardType: TextInputType.number,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
           textAlign: TextAlign.center,
           style: theme.textTheme.titleMedium?.copyWith(
             color: color,

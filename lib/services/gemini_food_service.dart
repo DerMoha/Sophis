@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:sophis/services/gemini_image_part_builder.dart';
@@ -11,13 +12,17 @@ import 'package:sophis/services/service_result.dart';
 
 /// Gemini AI service for accurate food recognition and nutrition estimation
 class GeminiFoodService {
+  static const String modelName = 'gemini-3.5-flash-lite';
+  static const String _fallbackModelName = 'gemini-3.6-flash';
+  static const Duration _foodAnalysisTimeout = Duration(seconds: 45);
+
   GenerativeModel? _model;
   String? _apiKey;
   bool _isInitialized = false;
   final GeminiImagePartBuilder _imagePartBuilder =
       const GeminiImagePartBuilder();
 
-  // Rate limits for gemini-2.5-flash-lite
+  // App-side rate limit for Gemini requests
   static const int dailyLimit = 20;
   static const String _requestCountKey = 'gemini_request_count';
   static const String _requestDateKey = 'gemini_request_date';
@@ -91,7 +96,7 @@ class GeminiFoodService {
 
     _apiKey = apiKey;
     _model = GenerativeModel(
-      model: 'gemini-2.5-flash-lite',
+      model: modelName,
       apiKey: apiKey,
     );
     _isInitialized = true;
@@ -168,20 +173,22 @@ If no food is visible, return: {"foods": []}
 
     var requestCounted = false;
     try {
-      final imageParts = await _buildImageParts(imageFiles);
+      debugPrint(
+        'Gemini food analysis started '
+        '(model: $modelName, images: ${imageFiles.length})',
+      );
+      final imageParts = await _buildImageParts(imageFiles).timeout(
+        const Duration(seconds: 15),
+      );
 
       // Increment counter before API call to prevent quota leak on failure
       await _incrementRequestCount();
       requestCounted = true;
 
-      final response = await _model!.generateContent([
-        Content.multi([...imageParts, prompt]),
-      ]).timeout(const Duration(seconds: 30));
-
-      final text = response.text;
-      if (text == null || text.isEmpty) {
-        return const Success([]);
-      }
+      final text = await _generateFoodAnalysis(
+        imageParts: imageParts,
+        prompt: prompt,
+      );
 
       final results = _parseResponse(text);
       return Success(results);
@@ -200,6 +207,133 @@ If no food is visible, return: {"foods": []}
       debugPrint('Gemini food analysis failed: $e');
       return Failure(ServiceErrorType.unknown, 'Failed to analyze image: $e');
     }
+  }
+
+  Future<String> _generateFoodAnalysis({
+    required List<DataPart> imageParts,
+    required TextPart prompt,
+  }) async {
+    try {
+      return await _generateFoodAnalysisWithModel(
+        model: modelName,
+        imageParts: imageParts,
+        prompt: prompt,
+      );
+    } on _GeminiHttpException catch (error) {
+      final message = error.message.toLowerCase();
+      final modelUnavailable =
+          (error.statusCode == 400 || error.statusCode == 404) &&
+              (message.contains('model') ||
+                  message.contains('not found') ||
+                  message.contains('not supported') ||
+                  message.contains('unsupported'));
+      if (!modelUnavailable) rethrow;
+
+      debugPrint(
+        '$modelName is unavailable for this API project; '
+        'retrying with $_fallbackModelName',
+      );
+      return _generateFoodAnalysisWithModel(
+        model: _fallbackModelName,
+        imageParts: imageParts,
+        prompt: prompt,
+      );
+    }
+  }
+
+  Future<String> _generateFoodAnalysisWithModel({
+    required String model,
+    required List<DataPart> imageParts,
+    required TextPart prompt,
+  }) async {
+    final uri = Uri.https(
+      'generativelanguage.googleapis.com',
+      '/v1beta/models/$model:generateContent',
+    );
+    final response = await http
+        .post(
+          uri,
+          headers: {
+            'x-goog-api-key': _apiKey!,
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({
+            'contents': [
+              Content.multi([...imageParts, prompt]).toJson(),
+            ],
+            'generationConfig': {
+              'responseMimeType': 'application/json',
+              'maxOutputTokens': 2048,
+              'thinkingConfig': {'thinkingLevel': 'low'},
+            },
+          }),
+        )
+        .timeout(_foodAnalysisTimeout);
+
+    if (response.statusCode != 200) {
+      throw _GeminiHttpException(
+        response.statusCode,
+        _extractErrorMessage(response.body),
+      );
+    }
+
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic>) {
+      throw const _GeminiResponseException('Invalid response from Gemini.');
+    }
+
+    final candidates = decoded['candidates'];
+    if (candidates is! List || candidates.isEmpty) {
+      final feedback = decoded['promptFeedback'];
+      final blockReason = feedback is Map<String, dynamic>
+          ? feedback['blockReason']?.toString()
+          : null;
+      final suffix = blockReason == null ? '' : ' ($blockReason)';
+      throw _GeminiResponseException('Gemini returned no answer$suffix.');
+    }
+
+    final candidate = candidates.first;
+    final content =
+        candidate is Map<String, dynamic> ? candidate['content'] : null;
+    final parts = content is Map<String, dynamic> ? content['parts'] : null;
+    if (parts is! List) {
+      throw const _GeminiResponseException('Gemini returned no text.');
+    }
+
+    final text = parts
+        .whereType<Map<String, dynamic>>()
+        .where((part) => part['thought'] != true)
+        .map((part) => part['text'])
+        .whereType<String>()
+        .join();
+
+    if (text.isEmpty) {
+      throw const _GeminiResponseException('Gemini returned no text.');
+    }
+
+    debugPrint('Gemini food analysis completed (model: $model)');
+    return text;
+  }
+
+  String _extractErrorMessage(String body) {
+    try {
+      final decoded = jsonDecode(body);
+      if (decoded is Map<String, dynamic>) {
+        final error = decoded['error'];
+        if (error is Map<String, dynamic>) {
+          final message = error['message']?.toString();
+          if (message != null && message.isNotEmpty) return message;
+        }
+      }
+    } on Object {
+      // Fall through to the bounded raw response below.
+    }
+
+    final normalized = body.trim();
+    if (normalized.isEmpty) return 'Empty response from Gemini.';
+    return normalized.length <= 500
+        ? normalized
+        : '${normalized.substring(0, 500)}...';
   }
 
   /// Re-analyze a single food item while keeping other items unchanged
@@ -634,4 +768,23 @@ If the text is clearly not a nutrition label, return all zeros.
     _model = null;
     _isInitialized = false;
   }
+}
+
+class _GeminiHttpException implements Exception {
+  const _GeminiHttpException(this.statusCode, this.message);
+
+  final int statusCode;
+  final String message;
+
+  @override
+  String toString() => 'Gemini API error [$statusCode]: $message';
+}
+
+class _GeminiResponseException implements Exception {
+  const _GeminiResponseException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
 }
