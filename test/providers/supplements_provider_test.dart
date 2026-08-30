@@ -99,8 +99,16 @@ void main() {
       expect(provider.supplements.first.id, 'magnesium');
       expect((await db.getAllSupplements()).first.id, 'magnesium');
 
+      await provider.toggleCompletion('magnesium');
+      expect(await db.getAllSupplementLogs(), hasLength(1));
       expect((await provider.deleteSupplement('magnesium')).isSuccess, isTrue);
       expect(provider.supplements.single.id, 'zinc');
+      expect(await db.getAllSupplementLogs(), isEmpty);
+
+      await provider.refresh();
+      expect(provider.supplements.single.id, 'zinc');
+      expect(provider.logs, isEmpty);
+
       expect((await provider.deleteSupplement('missing')).isFailure, isTrue);
       expect(provider.lastError, 'Supplement not found');
     });

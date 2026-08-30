@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:sophis/models/workout_entry.dart';
 import 'package:sophis/services/database_service.dart';
@@ -6,7 +5,7 @@ import 'package:sophis/services/database_service.dart';
 /// Manages workout entries and today's workout cache.
 class WorkoutController {
   final DatabaseService _db;
-  final VoidCallback _onChanged;
+  final Future<void> Function() _onChanged;
   final bool Function() _isCacheValid;
   final DateTime Function() _currentCacheDate;
 
@@ -50,27 +49,30 @@ class WorkoutController {
   }
 
   Future<void> restoreWorkoutEntry(WorkoutEntry entry) async {
+    await _db.insertWorkout(entry);
     _workoutEntries.add(entry);
     invalidateCache();
-    await _db.insertWorkout(entry);
-    _onChanged();
+    await _onChanged();
   }
 
   Future<void> updateWorkoutEntry(WorkoutEntry entry) async {
     final index = _workoutEntries.indexWhere((e) => e.id == entry.id);
     if (index != -1) {
+      await _db.updateWorkout(entry);
       _workoutEntries[index] = entry;
       invalidateCache();
-      await _db.updateWorkout(entry);
-      _onChanged();
+      await _onChanged();
     }
   }
 
   Future<void> removeWorkoutEntry(String id) async {
-    _workoutEntries.removeWhere((e) => e.id == id);
-    invalidateCache();
+    final index = _workoutEntries.indexWhere((entry) => entry.id == id);
+    if (index == -1) return;
+
     await _db.deleteWorkout(id);
-    _onChanged();
+    _workoutEntries.removeAt(index);
+    invalidateCache();
+    await _onChanged();
   }
 
   double getTodayWorkoutCalories() {

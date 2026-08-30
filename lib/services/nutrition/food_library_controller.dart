@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:sophis/models/food_item.dart';
 import 'package:sophis/models/recipe.dart';
 import 'package:sophis/models/custom_portion.dart';
@@ -7,7 +6,7 @@ import 'package:sophis/services/nutrition/nutrition_persistence.dart';
 /// Manages recipes, custom foods, favorites, and custom portions.
 class FoodLibraryController {
   final NutritionPersistence _persistence;
-  final VoidCallback _onChanged;
+  final Future<void> Function() _onChanged;
 
   List<Recipe> _recipes = [];
   List<FoodItem> _customFoods = [];
@@ -37,38 +36,47 @@ class FoodLibraryController {
 
   // Recipes
   Future<void> addRecipe(Recipe recipe) async {
-    _recipes.add(recipe);
-    await _persistence.saveRecipes(_recipes);
-    _onChanged();
+    final updatedRecipes = [..._recipes, recipe];
+    await _persistence.saveRecipes(updatedRecipes);
+    _recipes = updatedRecipes;
+    await _onChanged();
   }
 
   Future<void> updateRecipe(Recipe recipe) async {
     final i = _recipes.indexWhere((r) => r.id == recipe.id);
     if (i != -1) {
-      _recipes[i] = recipe;
-      await _persistence.saveRecipes(_recipes);
-      _onChanged();
+      final updatedRecipes = List<Recipe>.of(_recipes)..[i] = recipe;
+      await _persistence.saveRecipes(updatedRecipes);
+      _recipes = updatedRecipes;
+      await _onChanged();
     }
   }
 
   Future<void> removeRecipe(String id) async {
-    _recipes.removeWhere((r) => r.id == id);
-    await _persistence.saveRecipes(_recipes);
-    _onChanged();
+    final updatedRecipes = _recipes.where((recipe) => recipe.id != id).toList();
+    if (updatedRecipes.length == _recipes.length) return;
+
+    await _persistence.saveRecipes(updatedRecipes);
+    _recipes = updatedRecipes;
+    await _onChanged();
   }
 
   // Custom Foods
   Future<void> addCustomFood(FoodItem food) async {
     if (_customFoods.any((f) => f.id == food.id)) return;
-    _customFoods.insert(0, food);
-    await _persistence.saveCustomFoods(_customFoods);
-    _onChanged();
+    final updatedFoods = [food, ..._customFoods];
+    await _persistence.saveCustomFoods(updatedFoods);
+    _customFoods = updatedFoods;
+    await _onChanged();
   }
 
   Future<void> removeCustomFood(String id) async {
-    _customFoods.removeWhere((f) => f.id == id);
-    await _persistence.saveCustomFoods(_customFoods);
-    _onChanged();
+    final updatedFoods = _customFoods.where((food) => food.id != id).toList();
+    if (updatedFoods.length == _customFoods.length) return;
+
+    await _persistence.saveCustomFoods(updatedFoods);
+    _customFoods = updatedFoods;
+    await _onChanged();
   }
 
   List<FoodItem> searchCustomFoods(String query) {
@@ -86,17 +94,21 @@ class FoodLibraryController {
 
   Future<void> addFavorite(FoodItem food) async {
     if (isFavorite(food.id)) return;
-    _favoriteFoods.insert(0, food.copyWith(isFavorite: true));
-    _favoriteFoodIds.add(food.id);
-    await _persistence.saveFavoriteFoods(_favoriteFoods);
-    _onChanged();
+    final updatedFoods = [food.copyWith(isFavorite: true), ..._favoriteFoods];
+    await _persistence.saveFavoriteFoods(updatedFoods);
+    _favoriteFoods = updatedFoods;
+    _favoriteFoodIds = updatedFoods.map((value) => value.id).toSet();
+    await _onChanged();
   }
 
   Future<void> removeFavorite(String id) async {
-    _favoriteFoods.removeWhere((f) => f.id == id);
-    _favoriteFoodIds.remove(id);
-    await _persistence.saveFavoriteFoods(_favoriteFoods);
-    _onChanged();
+    final updatedFoods = _favoriteFoods.where((food) => food.id != id).toList();
+    if (updatedFoods.length == _favoriteFoods.length) return;
+
+    await _persistence.saveFavoriteFoods(updatedFoods);
+    _favoriteFoods = updatedFoods;
+    _favoriteFoodIds = updatedFoods.map((value) => value.id).toSet();
+    await _onChanged();
   }
 
   Future<void> toggleFavorite(FoodItem food) async {
@@ -113,15 +125,20 @@ class FoodLibraryController {
   }
 
   Future<void> addCustomPortion(CustomPortion portion) async {
-    _customPortions.add(portion);
-    await _persistence.saveCustomPortions(_customPortions);
-    _onChanged();
+    final updatedPortions = [..._customPortions, portion];
+    await _persistence.saveCustomPortions(updatedPortions);
+    _customPortions = updatedPortions;
+    await _onChanged();
   }
 
   Future<void> removeCustomPortion(String id) async {
-    _customPortions.removeWhere((p) => p.id == id);
-    await _persistence.saveCustomPortions(_customPortions);
-    _onChanged();
+    final updatedPortions =
+        _customPortions.where((portion) => portion.id != id).toList();
+    if (updatedPortions.length == _customPortions.length) return;
+
+    await _persistence.saveCustomPortions(updatedPortions);
+    _customPortions = updatedPortions;
+    await _onChanged();
   }
 
   void clearAll() {

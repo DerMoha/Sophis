@@ -9,11 +9,53 @@ import 'package:sophis/models/user_profile.dart';
 import 'package:sophis/models/water_entry.dart';
 import 'package:sophis/models/weight_entry.dart';
 import 'package:sophis/models/workout_entry.dart';
+import 'package:sophis/providers/nutrition_provider.dart';
+import 'package:sophis/services/database_service.dart';
 
 import '../helpers/test_services.dart';
 
 void main() {
   group('NutritionProvider', () {
+    test('retries v1 migration even when v2 completed after a v1 failure',
+        () async {
+      final storage = await createTestStorage();
+      final db = _FailFirstV1MigrationDatabase();
+      addTearDown(db.close);
+      final loggedAt = DateTime.now();
+      final entry = FoodEntry(
+        id: 'retry-food',
+        name: 'Eggs',
+        calories: 150,
+        protein: 12,
+        carbs: 1,
+        fat: 10,
+        timestamp: loggedAt,
+        meal: 'breakfast',
+      );
+      await storage.saveFoodEntries([entry]);
+
+      final provider = NutritionProvider(
+        storage,
+        db,
+        healthService: FakeHealthService(),
+        cleanupProgressPhotosOnLoad: false,
+      );
+      await provider.initialize();
+      await waitForNutritionProvider(provider);
+
+      expect(storage.isMigrationComplete(), isFalse);
+      expect(storage.isMigrationV2Complete(), isTrue);
+      expect(provider.entries, isEmpty);
+      expect(storage.loadFoodEntries().map((value) => value.id), [entry.id]);
+
+      await provider.reloadAll();
+
+      expect(storage.isMigrationComplete(), isTrue);
+      expect(provider.entries.single.id, entry.id);
+      expect(storage.loadFoodEntries(), isEmpty);
+      expect((await db.getAllFoods()).map((value) => value.id), [entry.id]);
+    });
+
     test('migrated legacy storage data into the database on load', () async {
       final storage = await createTestStorage();
       final db = createTestDatabase();
@@ -221,4 +263,19 @@ void main() {
       expect(storage.loadGoals(), isNull);
     });
   });
+}
+
+class _FailFirstV1MigrationDatabase extends DatabaseService {
+  _FailFirstV1MigrationDatabase() : super.inMemory();
+
+  bool _shouldFail = true;
+
+  @override
+  Future<void> insertFoods(List<FoodEntry> entries) async {
+    if (_shouldFail) {
+      _shouldFail = false;
+      throw StateError('temporary migration failure');
+    }
+    await super.insertFoods(entries);
+  }
 }

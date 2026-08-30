@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:sophis/models/food_entry.dart';
 import 'package:sophis/models/food_item.dart';
@@ -8,7 +7,7 @@ import 'package:sophis/services/database_service.dart';
 /// Manages food entries, today's cache, and food history cache.
 class FoodLogController {
   final DatabaseService _db;
-  final VoidCallback _onChanged;
+  final Future<void> Function() _onChanged;
   final bool Function() _isCacheValid;
   final DateTime Function() _currentCacheDate;
 
@@ -98,29 +97,34 @@ class FoodLogController {
   }
 
   Future<void> addFoodEntry(FoodEntry entry) async {
+    await _db.insertFood(entry);
     _entries.add(entry);
     invalidateCache();
     invalidateFoodHistoryCache();
-    await _db.insertFood(entry);
-    _onChanged();
+    await _onChanged();
   }
 
   Future<void> removeFoodEntry(String id) async {
-    _entries.removeWhere((e) => e.id == id);
+    final index = _entries.indexWhere((entry) => entry.id == id);
+    if (index == -1) return;
+
+    await _db.deleteFood(id);
+    _entries.removeAt(index);
     invalidateCache();
     invalidateFoodHistoryCache();
-    await _db.deleteFood(id);
-    _onChanged();
+    await _onChanged();
   }
 
   Future<void> updateFoodEntry(FoodEntry entry) async {
     final index = _entries.indexWhere((e) => e.id == entry.id);
     if (index != -1) {
+      final updated = await _db.updateFood(entry);
+      if (!updated) return;
+
       _entries[index] = entry;
       invalidateCache();
       invalidateFoodHistoryCache();
-      await _db.updateFood(entry);
-      _onChanged();
+      await _onChanged();
     }
   }
 
@@ -224,13 +228,15 @@ class FoodLogController {
       getTotalsForDateTyped(date);
 
   List<FoodItem> getRecentFoodsForMeal(String meal) {
-    final matching = _recentFoods
-        .where((f) => _recentFoodMeals[f.id] == meal)
-        .toList();
+    final matching =
+        _recentFoods.where((f) => _recentFoodMeals[f.id] == meal).toList();
     return matching.isNotEmpty ? matching : _recentFoods;
   }
 
   Future<void> addRecentFood(FoodItem food, {String? meal}) async {
+    final previousFoods = List<FoodItem>.of(_recentFoods);
+    final previousMeals = Map<String, String>.of(_recentFoodMeals);
+
     _recentFoods.removeWhere((f) => f.id == food.id);
     _recentFoods.insert(0, food);
     if (meal != null) {
@@ -239,7 +245,16 @@ class FoodLogController {
     if (_recentFoods.length > 20) {
       _recentFoods = _recentFoods.take(20).toList();
     }
-    _onChanged();
+
+    try {
+      await _onChanged();
+    } catch (_) {
+      _recentFoods = previousFoods;
+      _recentFoodMeals
+        ..clear()
+        ..addAll(previousMeals);
+      rethrow;
+    }
   }
 
   Map<String, String> get recentFoodMeals =>

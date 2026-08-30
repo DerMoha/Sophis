@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:sophis/models/water_entry.dart';
 import 'package:sophis/services/database_service.dart';
@@ -6,7 +5,7 @@ import 'package:sophis/services/database_service.dart';
 /// Manages water entries and today's water cache.
 class HydrationController {
   final DatabaseService _db;
-  final VoidCallback _onChanged;
+  final Future<void> Function() _onChanged;
   final bool Function() _isCacheValid;
   final DateTime Function() _currentCacheDate;
 
@@ -49,17 +48,20 @@ class HydrationController {
   }
 
   Future<void> restoreWaterEntry(WaterEntry entry) async {
+    await _db.insertWater(entry);
     _waterEntries.add(entry);
     invalidateCache();
-    await _db.insertWater(entry);
-    _onChanged();
+    await _onChanged();
   }
 
   Future<void> removeWaterEntry(String id) async {
-    _waterEntries.removeWhere((e) => e.id == id);
-    invalidateCache();
+    final index = _waterEntries.indexWhere((entry) => entry.id == id);
+    if (index == -1) return;
+
     await _db.deleteWater(id);
-    _onChanged();
+    _waterEntries.removeAt(index);
+    invalidateCache();
+    await _onChanged();
   }
 
   double getTodayWaterTotal() {

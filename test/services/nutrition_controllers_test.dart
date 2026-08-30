@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:sophis/models/custom_portion.dart';
@@ -13,6 +15,7 @@ import 'package:sophis/services/nutrition/hydration_controller.dart';
 import 'package:sophis/services/nutrition/meal_plan_controller.dart';
 import 'package:sophis/services/nutrition/nutrition_persistence.dart';
 import 'package:sophis/services/nutrition/workout_controller.dart';
+import 'package:sophis/services/database_service.dart';
 
 import '../helpers/test_services.dart';
 
@@ -20,6 +23,73 @@ void main() {
   int dayKey(DateTime date) => date.year * 10000 + date.month * 100 + date.day;
 
   group('Nutrition controllers', () {
+    test('awaits the change callback before completing a food write', () async {
+      final db = createTestDatabase();
+      addTearDown(db.close);
+      final callbackEntered = Completer<void>();
+      final callbackGate = Completer<void>();
+      final controller = FoodLogController(
+        db,
+        () async {
+          callbackEntered.complete();
+          await callbackGate.future;
+        },
+        () => false,
+        DateTime.now,
+      );
+      final entry = FoodEntry(
+        id: 'awaited-food',
+        name: 'Oats',
+        calories: 300,
+        protein: 12,
+        carbs: 45,
+        fat: 8,
+        timestamp: DateTime.now(),
+        meal: 'breakfast',
+      );
+
+      var operationCompleted = false;
+      final operation = controller.addFoodEntry(entry);
+      unawaited(operation.whenComplete(() => operationCompleted = true));
+      await callbackEntered.future;
+
+      expect(operationCompleted, isFalse);
+      expect(controller.entries, contains(entry));
+
+      callbackGate.complete();
+      await operation;
+      expect(operationCompleted, isTrue);
+    });
+
+    test('keeps controller state unchanged when a food insert fails', () async {
+      final db = _FailingFoodInsertDatabase();
+      addTearDown(db.close);
+      var changes = 0;
+      final controller = FoodLogController(
+        db,
+        () async {
+          changes += 1;
+        },
+        () => false,
+        DateTime.now,
+      );
+      final entry = FoodEntry(
+        id: 'failed-food',
+        name: 'Oats',
+        calories: 300,
+        protein: 12,
+        carbs: 45,
+        fat: 8,
+        timestamp: DateTime.now(),
+        meal: 'breakfast',
+      );
+
+      await expectLater(controller.addFoodEntry(entry), throwsStateError);
+
+      expect(controller.entries, isEmpty);
+      expect(changes, 0);
+    });
+
     test('managed food entries, totals, meals, and recent foods', () async {
       final db = createTestDatabase();
       addTearDown(db.close);
@@ -28,7 +98,9 @@ void main() {
       final yesterday = now.subtract(const Duration(days: 1));
       final controller = FoodLogController(
         db,
-        () => changes += 1,
+        () async {
+          changes += 1;
+        },
         () => false,
         () => now,
       );
@@ -113,13 +185,17 @@ void main() {
       final older = now.subtract(const Duration(hours: 1));
       final hydration = HydrationController(
         db,
-        () => changes += 1,
+        () async {
+          changes += 1;
+        },
         () => false,
         () => now,
       );
       final workouts = WorkoutController(
         db,
-        () => changes += 1,
+        () async {
+          changes += 1;
+        },
         () => false,
         () => now,
       );
@@ -155,8 +231,13 @@ void main() {
       addTearDown(db.close);
       final persistence = NutritionPersistence(db, storage);
       var changes = 0;
-      final controller =
-          MealPlanController(persistence, () => changes += 1, dayKey);
+      final controller = MealPlanController(
+        persistence,
+        () async {
+          changes += 1;
+        },
+        dayKey,
+      );
       final date = DateTime(2026, 1, 2, 19, 30);
       final mealA = PlannedMeal(
         id: 'meal-a',
@@ -231,7 +312,9 @@ void main() {
       var changes = 0;
       final controller = FoodLibraryController(
         persistence,
-        () => changes += 1,
+        () async {
+          changes += 1;
+        },
       );
       final timestamp = DateTime(2026, 1, 2);
       final recipe = Recipe(
@@ -285,4 +368,13 @@ void main() {
       expect(changes, 9);
     });
   });
+}
+
+class _FailingFoodInsertDatabase extends DatabaseService {
+  _FailingFoodInsertDatabase() : super.inMemory();
+
+  @override
+  Future<int> insertFood(FoodEntry entry) async {
+    throw StateError('write failed');
+  }
 }

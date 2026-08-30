@@ -138,7 +138,7 @@ class NutritionProvider extends ChangeNotifier {
   }
 
   /// Called by other controllers for simple change notification.
-  void _onSimpleChanged() {
+  Future<void> _onSimpleChanged() async {
     HomeWidgetService.updateWidgetData(this);
     notifyListeners();
   }
@@ -193,6 +193,7 @@ class NutritionProvider extends ChangeNotifier {
       persistentState.recentFoodMeals,
     );
     _hydration.loadData(water);
+    weights.sort((a, b) => b.timestamp.compareTo(a.timestamp));
     _weightEntries = weights;
     _workouts.loadData(workouts);
 
@@ -229,14 +230,20 @@ class NutritionProvider extends ChangeNotifier {
   }
 
   Future<void> _migrateToDbIfNeeded() async {
-    if (_storage.isMigrationComplete()) {
-      await _storage.clearLegacyMigratedData();
+    if (!_storage.isMigrationComplete()) {
+      await _migrateV1Data();
+    } else {
+      try {
+        await _storage.clearLegacyMigratedData();
+      } catch (e) {
+        debugPrint('Failed to clear legacy v1 data: $e');
+      }
     }
 
-    if (_storage.isMigrationV2Complete()) {
-      return;
-    }
+    await _migrateV2Data();
+  }
 
+  Future<void> _migrateV1Data() async {
     final legacyFoods = _storage.loadFoodEntries();
     final legacyWater = _storage.loadWaterEntries();
     final legacyWeights = _storage.loadWeightEntries();
@@ -255,8 +262,6 @@ class NutritionProvider extends ChangeNotifier {
     } catch (e) {
       debugPrint('Database migration failed, will retry on next app start: $e');
     }
-
-    await _migrateV2Data();
   }
 
   Future<void> _migrateV2Data() async {
@@ -274,19 +279,11 @@ class NutritionProvider extends ChangeNotifier {
       final legacyUserStats = _storage.loadUserStats();
       final legacyShoppingChecked = _storage.loadShoppingListChecked();
 
-      if (legacyRecipes.isNotEmpty) await _db.migrateRecipes(legacyRecipes);
-      if (legacyCustomFoods.isNotEmpty) {
-        await _db.migrateCustomFoods(legacyCustomFoods);
-      }
-      if (legacyFavoriteFoods.isNotEmpty) {
-        await _db.migrateFavoriteFoods(legacyFavoriteFoods);
-      }
-      if (legacyPlannedMeals.isNotEmpty) {
-        await _db.migratePlannedMeals(legacyPlannedMeals);
-      }
-      if (legacyCustomPortions.isNotEmpty) {
-        await _db.migrateCustomPortions(legacyCustomPortions);
-      }
+      await _migrateMissingRecipes(legacyRecipes);
+      await _migrateMissingCustomFoods(legacyCustomFoods);
+      await _migrateMissingFavoriteFoods(legacyFavoriteFoods);
+      await _migrateMissingPlannedMeals(legacyPlannedMeals);
+      await _migrateMissingCustomPortions(legacyCustomPortions);
       if (legacyRecentFoods.isNotEmpty) {
         await _db.migrateRecentFoods(legacyRecentFoods);
       }
@@ -301,18 +298,85 @@ class NutritionProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> _migrateMissingRecipes(List<Recipe> legacyRecipes) async {
+    if (legacyRecipes.isEmpty) return;
+
+    final existingIds = (await _db.getAllRecipes()).map((recipe) => recipe.id);
+    final recipes = _onlyMissingById(
+      legacyRecipes,
+      existingIds,
+      (recipe) => recipe.id,
+    );
+    if (recipes.isNotEmpty) await _db.migrateRecipes(recipes);
+  }
+
+  Future<void> _migrateMissingCustomFoods(List<FoodItem> legacyFoods) async {
+    if (legacyFoods.isEmpty) return;
+
+    final existingIds = (await _db.getAllCustomFoods()).map((food) => food.id);
+    final foods = _onlyMissingById(legacyFoods, existingIds, (food) => food.id);
+    if (foods.isNotEmpty) await _db.migrateCustomFoods(foods);
+  }
+
+  Future<void> _migrateMissingFavoriteFoods(List<FoodItem> legacyFoods) async {
+    if (legacyFoods.isEmpty) return;
+
+    final existingIds =
+        (await _db.getAllFavoriteFoods()).map((food) => food.id);
+    final foods = _onlyMissingById(legacyFoods, existingIds, (food) => food.id);
+    if (foods.isNotEmpty) await _db.migrateFavoriteFoods(foods);
+  }
+
+  Future<void> _migrateMissingPlannedMeals(
+    List<PlannedMeal> legacyMeals,
+  ) async {
+    if (legacyMeals.isEmpty) return;
+
+    final existingIds = (await _db.getAllPlannedMeals()).map((meal) => meal.id);
+    final meals = _onlyMissingById(legacyMeals, existingIds, (meal) => meal.id);
+    if (meals.isNotEmpty) await _db.migratePlannedMeals(meals);
+  }
+
+  Future<void> _migrateMissingCustomPortions(
+    List<CustomPortion> legacyPortions,
+  ) async {
+    if (legacyPortions.isEmpty) return;
+
+    final existingIds =
+        (await _db.getAllCustomPortions()).map((portion) => portion.id);
+    final portions = _onlyMissingById(
+      legacyPortions,
+      existingIds,
+      (portion) => portion.id,
+    );
+    if (portions.isNotEmpty) await _db.migrateCustomPortions(portions);
+  }
+
+  List<T> _onlyMissingById<T>(
+    Iterable<T> values,
+    Iterable<String> existingIds,
+    String Function(T) idOf,
+  ) {
+    final ids = existingIds.toSet();
+    final missing = <T>[];
+    for (final value in values) {
+      if (ids.add(idOf(value))) missing.add(value);
+    }
+    return missing;
+  }
+
   // ── Goals & Profile ────────────────────────────────────────────────────
 
   Future<void> setGoals(NutritionGoals goals) async {
-    _goals = goals;
     await _storage.saveGoals(goals);
+    _goals = goals;
     HomeWidgetService.updateWidgetData(this);
     notifyListeners();
   }
 
   Future<void> setProfile(UserProfile profile) async {
-    _profile = profile;
     await _storage.saveProfile(profile);
+    _profile = profile;
     notifyListeners();
   }
 
@@ -436,15 +500,18 @@ class NutritionProvider extends ChangeNotifier {
   }
 
   Future<void> restoreWeightEntry(WeightEntry entry) async {
+    await _db.insertWeight(entry);
     _weightEntries.add(entry);
     _weightEntries.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-    await _db.insertWeight(entry);
     notifyListeners();
   }
 
   Future<void> removeWeightEntry(String id) async {
-    _weightEntries.removeWhere((e) => e.id == id);
+    final index = _weightEntries.indexWhere((entry) => entry.id == id);
+    if (index == -1) return;
+
     await _db.deleteWeight(id);
+    _weightEntries.removeAt(index);
     notifyListeners();
   }
 
@@ -467,8 +534,8 @@ class NutritionProvider extends ChangeNotifier {
             timestamp: he.timestamp,
             source: 'health',
           );
-          _weightEntries.add(entry);
           await _db.insertWeight(entry);
+          _weightEntries.add(entry);
         }
       }
 
@@ -504,8 +571,8 @@ class NutritionProvider extends ChangeNotifier {
   }
 
   Future<void> deleteProgressPhoto(String id) async {
-    _photos.removeWhere((p) => p.id == id);
     await _progressPhotos.deletePhoto(id);
+    _photos.removeWhere((p) => p.id == id);
     notifyListeners();
   }
 

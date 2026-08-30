@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:sophis/models/meal_plan.dart';
 import 'package:sophis/models/nutrition_totals.dart';
@@ -7,7 +6,7 @@ import 'package:sophis/services/nutrition/nutrition_persistence.dart';
 /// Manages planned meals, shopping list, and planned meal cache.
 class MealPlanController {
   final NutritionPersistence _persistence;
-  final VoidCallback _onChanged;
+  final Future<void> Function() _onChanged;
   final int Function(DateTime) _dayKey;
 
   List<PlannedMeal> _plannedMeals = [];
@@ -79,26 +78,31 @@ class MealPlanController {
   }
 
   Future<void> addPlannedMeal(PlannedMeal meal) async {
-    _plannedMeals.add(meal);
+    final updatedMeals = [..._plannedMeals, meal];
+    await _persistence.savePlannedMeals(updatedMeals);
+    _plannedMeals = updatedMeals;
     invalidatePlannedMealsCache();
-    await _persistence.savePlannedMeals(_plannedMeals);
-    _onChanged();
+    await _onChanged();
   }
 
   Future<void> removePlannedMeal(String id) async {
-    _plannedMeals.removeWhere((m) => m.id == id);
+    final updatedMeals = _plannedMeals.where((meal) => meal.id != id).toList();
+    if (updatedMeals.length == _plannedMeals.length) return;
+
+    await _persistence.savePlannedMeals(updatedMeals);
+    _plannedMeals = updatedMeals;
     invalidatePlannedMealsCache();
-    await _persistence.savePlannedMeals(_plannedMeals);
-    _onChanged();
+    await _onChanged();
   }
 
   Future<void> updatePlannedMeal(PlannedMeal meal) async {
     final i = _plannedMeals.indexWhere((m) => m.id == meal.id);
     if (i != -1) {
-      _plannedMeals[i] = meal;
+      final updatedMeals = List<PlannedMeal>.of(_plannedMeals)..[i] = meal;
+      await _persistence.savePlannedMeals(updatedMeals);
+      _plannedMeals = updatedMeals;
       invalidatePlannedMealsCache();
-      await _persistence.savePlannedMeals(_plannedMeals);
-      _onChanged();
+      await _onChanged();
     }
   }
 
@@ -197,19 +201,23 @@ class MealPlanController {
 
   Future<void> toggleShoppingItem(String name, String unit) async {
     final key = '${name.toLowerCase()}_$unit';
-    if (_shoppingListChecked.contains(key)) {
-      _shoppingListChecked.remove(key);
+    final updatedChecked = Set<String>.of(_shoppingListChecked);
+    if (updatedChecked.contains(key)) {
+      updatedChecked.remove(key);
     } else {
-      _shoppingListChecked.add(key);
+      updatedChecked.add(key);
     }
-    await _persistence.saveShoppingListChecked(_shoppingListChecked);
-    _onChanged();
+    await _persistence.saveShoppingListChecked(updatedChecked);
+    _shoppingListChecked = updatedChecked;
+    await _onChanged();
   }
 
   Future<void> clearCheckedShoppingItems() async {
-    _shoppingListChecked.clear();
-    await _persistence.saveShoppingListChecked(_shoppingListChecked);
-    _onChanged();
+    if (_shoppingListChecked.isEmpty) return;
+
+    await _persistence.saveShoppingListChecked(const <String>{});
+    _shoppingListChecked = {};
+    await _onChanged();
   }
 
   bool isShoppingItemChecked(String name, String unit) {

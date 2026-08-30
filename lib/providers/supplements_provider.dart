@@ -280,10 +280,11 @@ class SupplementsProvider extends ChangeNotifier {
     final supplement = _supplements[index];
 
     try {
+      // DatabaseService owns this operation as one transaction so the
+      // definition and its completion logs cannot diverge on failure.
       await _db.deleteSupplement(id);
       _supplements.removeWhere((s) => s.id == id);
 
-      // Delete associated logs
       _logs.removeWhere((log) => log.supplementId == id);
       _invalidateDerivedCaches();
 
