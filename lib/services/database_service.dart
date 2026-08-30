@@ -1386,7 +1386,13 @@ class DatabaseService extends _$DatabaseService {
         .go();
     await into(syncOutbox).insert(
       SyncOutboxCompanion.insert(
-        id: '${dataSpaceId}_${entityType}_${entityId}_$revision',
+        id: jsonEncode(<Object?>[
+          'nutrition-sync-v1',
+          dataSpaceId,
+          entityType,
+          entityId,
+          revision,
+        ]),
         dataSpaceId: dataSpaceId,
         entityType: entityType,
         entityId: entityId,

@@ -197,6 +197,7 @@ void main() {
       final changes = await store.pendingSyncChanges();
       expect(changes, hasLength(1));
       expect(changes.single, isA<NutritionSyncChange>());
+      expect(changes.single.dataSpaceId, DatabaseService.defaultDataSpaceId);
       expect(changes.single.entityType, 'food_entry');
 
       await store.retrySyncChange(

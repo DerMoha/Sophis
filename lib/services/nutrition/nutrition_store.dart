@@ -729,6 +729,7 @@ final class SyncMutation {
 
 final class NutritionSyncChange {
   final String id;
+  final String dataSpaceId;
   final String entityType;
   final String entityId;
   final String operation;
@@ -739,6 +740,7 @@ final class NutritionSyncChange {
 
   const NutritionSyncChange({
     required this.id,
+    required this.dataSpaceId,
     required this.entityType,
     required this.entityId,
     required this.operation,
@@ -750,6 +752,7 @@ final class NutritionSyncChange {
 
   factory NutritionSyncChange.fromRow(SyncOutboxRow row) => NutritionSyncChange(
         id: row.id,
+        dataSpaceId: row.dataSpaceId,
         entityType: row.entityType,
         entityId: row.entityId,
         operation: row.operation,
