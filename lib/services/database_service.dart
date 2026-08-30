@@ -945,7 +945,10 @@ class DatabaseService extends _$DatabaseService {
 
   Future<List<Supplement>> getAllSupplements() async {
     final rows = await (select(supplementDefinitions)
-          ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
+          ..orderBy([
+            (t) => OrderingTerm.asc(t.sortOrder),
+            (t) => OrderingTerm.asc(t.id),
+          ]))
         .get();
     return rows
         .map(
@@ -1069,7 +1072,11 @@ class DatabaseService extends _$DatabaseService {
             (t) =>
                 t.timestamp.isBiggerOrEqualValue(startOfDay) &
                 t.timestamp.isSmallerOrEqualValue(endOfDay),
-          ))
+          )
+          ..orderBy([
+            (t) => OrderingTerm.asc(t.timestamp),
+            (t) => OrderingTerm.asc(t.id),
+          ]))
         .get();
 
     return rows
@@ -1455,7 +1462,8 @@ class DatabaseService extends _$DatabaseService {
   // ---------------------------------------------------------------------------
 
   Future<List<CustomFoodRow>> getAllCustomFoods() async {
-    return await select(customFoods).get();
+    return (select(customFoods)..orderBy([(t) => OrderingTerm.asc(t.id)]))
+        .get();
   }
 
   Future<int> insertCustomFood(CustomFoodRow food) {
@@ -1755,7 +1763,9 @@ class DatabaseService extends _$DatabaseService {
   // ---------------------------------------------------------------------------
 
   Future<List<String>> getPlannedMealsChecked() async {
-    final rows = await select(plannedMealsChecked).get();
+    final rows = await (select(plannedMealsChecked)
+          ..orderBy([(t) => OrderingTerm.asc(t.key)]))
+        .get();
     return rows.map((row) => row.key).toList();
   }
 
@@ -2126,8 +2136,23 @@ const _dbFileName = 'sophis_db.sqlite';
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     final file = await _resolveDatabaseFile();
-    return NativeDatabase.createInBackground(file);
+    return NativeDatabase.createInBackground(
+      file,
+      setup: _configureSqlite,
+    );
   });
+}
+
+void _configureSqlite(dynamic database) {
+  // The callback is sent to Drift's background isolate; keeping the raw
+  // sqlite type out of this library avoids coupling the domain layer to a
+  // transitive FFI package.
+  // ignore: avoid_dynamic_calls
+  database.execute('PRAGMA journal_mode = WAL');
+  // ignore: avoid_dynamic_calls
+  database.execute('PRAGMA synchronous = FULL');
+  // ignore: avoid_dynamic_calls
+  database.execute('PRAGMA foreign_keys = ON');
 }
 
 Future<File> _resolveDatabaseFile() async {
