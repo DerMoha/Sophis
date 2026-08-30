@@ -62,6 +62,8 @@ class LabelIntakeResult {
 /// Hides all of this behind a single `processImage` call. `processOcrText`
 /// is exposed for unit testing without a camera or a Gemini key.
 class LabelIntakeFlow {
+  static const Duration _ocrTimeout = Duration(seconds: 12);
+
   final TextRecognizer _recognizer;
   final GeminiFoodService? _gemini;
   final NutritionImageQualityService _qualityService;
@@ -296,7 +298,8 @@ class LabelIntakeFlow {
   Future<_RecognizedNutritionDocument?> _recognize(File imageFile) async {
     try {
       final inputImage = InputImage.fromFile(imageFile);
-      final recognizedText = await _recognizer.processImage(inputImage);
+      final recognizedText =
+          await _recognizer.processImage(inputImage).timeout(_ocrTimeout);
       if (recognizedText.text.isEmpty) return null;
       final lines = <NutritionOcrLine>[];
       for (final block in recognizedText.blocks) {

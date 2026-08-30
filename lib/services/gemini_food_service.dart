@@ -15,6 +15,7 @@ class GeminiFoodService {
   static const String modelName = 'gemini-3.5-flash-lite';
   static const String _fallbackModelName = 'gemini-3.6-flash';
   static const Duration _foodAnalysisTimeout = Duration(seconds: 45);
+  static const Duration _nutritionTextTimeout = Duration(seconds: 20);
 
   GenerativeModel? _model;
   String? _apiKey;
@@ -220,14 +221,7 @@ If no food is visible, return: {"foods": []}
         prompt: prompt,
       );
     } on _GeminiHttpException catch (error) {
-      final message = error.message.toLowerCase();
-      final modelUnavailable =
-          (error.statusCode == 400 || error.statusCode == 404) &&
-              (message.contains('model') ||
-                  message.contains('not found') ||
-                  message.contains('not supported') ||
-                  message.contains('unsupported'));
-      if (!modelUnavailable) rethrow;
+      if (!_isModelUnavailable(error)) rethrow;
 
       debugPrint(
         '$modelName is unavailable for this API project; '
@@ -246,6 +240,18 @@ If no food is visible, return: {"foods": []}
     required List<DataPart> imageParts,
     required TextPart prompt,
   }) async {
+    return _generateJsonContentWithModel(
+      model: model,
+      parts: [...imageParts, prompt],
+      timeout: _foodAnalysisTimeout,
+    );
+  }
+
+  Future<String> _generateJsonContentWithModel({
+    required String model,
+    required List<Part> parts,
+    required Duration timeout,
+  }) async {
     final uri = Uri.https(
       'generativelanguage.googleapis.com',
       '/v1beta/models/$model:generateContent',
@@ -259,7 +265,7 @@ If no food is visible, return: {"foods": []}
           },
           body: jsonEncode({
             'contents': [
-              Content.multi([...imageParts, prompt]).toJson(),
+              Content.multi(parts).toJson(),
             ],
             'generationConfig': {
               'responseMimeType': 'application/json',
@@ -268,7 +274,7 @@ If no food is visible, return: {"foods": []}
             },
           }),
         )
-        .timeout(_foodAnalysisTimeout);
+        .timeout(timeout);
 
     if (response.statusCode != 200) {
       throw _GeminiHttpException(
@@ -295,12 +301,13 @@ If no food is visible, return: {"foods": []}
     final candidate = candidates.first;
     final content =
         candidate is Map<String, dynamic> ? candidate['content'] : null;
-    final parts = content is Map<String, dynamic> ? content['parts'] : null;
-    if (parts is! List) {
+    final responseParts =
+        content is Map<String, dynamic> ? content['parts'] : null;
+    if (responseParts is! List) {
       throw const _GeminiResponseException('Gemini returned no text.');
     }
 
-    final text = parts
+    final text = responseParts
         .whereType<Map<String, dynamic>>()
         .where((part) => part['thought'] != true)
         .map((part) => part['text'])
@@ -311,8 +318,17 @@ If no food is visible, return: {"foods": []}
       throw const _GeminiResponseException('Gemini returned no text.');
     }
 
-    debugPrint('Gemini food analysis completed (model: $model)');
+    debugPrint('Gemini JSON request completed (model: $model)');
     return text;
+  }
+
+  bool _isModelUnavailable(_GeminiHttpException error) {
+    final message = error.message.toLowerCase();
+    return (error.statusCode == 400 || error.statusCode == 404) &&
+        (message.contains('model') ||
+            message.contains('not found') ||
+            message.contains('not supported') ||
+            message.contains('unsupported'));
   }
 
   String _extractErrorMessage(String body) {
@@ -697,17 +713,10 @@ If values appear to be per serving, scale them to per-100g.
 If the text is clearly not a nutrition label, return all zeros.
 ''';
 
-    final prompt = TextPart(promptText);
-
     await _incrementRequestCount();
 
     try {
-      final response = await _model!.generateContent([
-        Content.multi([prompt]),
-      ]).timeout(const Duration(seconds: 15));
-
-      final text = response.text;
-      if (text == null || text.isEmpty) return const Success(null);
+      final text = await _generateNutritionText(promptText);
 
       return Success(_parseNutritionLabelResponse(text));
     } on TimeoutException {
@@ -717,6 +726,13 @@ If the text is clearly not a nutrition label, return all zeros.
         ServiceErrorType.network,
         'Request timed out. Please try again.',
       );
+    } on _GeminiHttpException catch (e) {
+      await _decrementRequestCount();
+      debugPrint('Gemini nutrition text parsing failed: $e');
+      return Failure(
+        _serviceErrorTypeForStatus(e.statusCode),
+        'Failed to parse nutrition text: ${e.message}',
+      );
     } catch (e) {
       await _decrementRequestCount();
       debugPrint('Gemini nutrition text parsing failed: $e');
@@ -725,6 +741,41 @@ If the text is clearly not a nutrition label, return all zeros.
         'Failed to parse nutrition text: $e',
       );
     }
+  }
+
+  Future<String> _generateNutritionText(String promptText) async {
+    try {
+      return await _generateJsonContentWithModel(
+        model: modelName,
+        parts: [TextPart(promptText)],
+        timeout: _nutritionTextTimeout,
+      );
+    } on _GeminiHttpException catch (error) {
+      if (!_isModelUnavailable(error)) rethrow;
+
+      debugPrint(
+        '$modelName is unavailable for this API project; '
+        'retrying with $_fallbackModelName',
+      );
+      return _generateJsonContentWithModel(
+        model: _fallbackModelName,
+        parts: [TextPart(promptText)],
+        timeout: _nutritionTextTimeout,
+      );
+    }
+  }
+
+  ServiceErrorType _serviceErrorTypeForStatus(int statusCode) {
+    if (statusCode == 401 || statusCode == 403) {
+      return ServiceErrorType.authFailed;
+    }
+    if (statusCode == 429) {
+      return ServiceErrorType.rateLimited;
+    }
+    if (statusCode == 408 || statusCode >= 500) {
+      return ServiceErrorType.network;
+    }
+    return ServiceErrorType.unknown;
   }
 
   NutritionLabelResult? _parseNutritionLabelResponse(String text) {

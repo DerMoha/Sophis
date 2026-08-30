@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
@@ -30,6 +31,18 @@ void main() {
     expect(result.isAcceptable, isTrue);
     await file.delete();
   });
+
+  test('allows HEIC files that the Dart image decoder cannot inspect',
+      () async {
+    final directory = await Directory.systemTemp.createTemp('label-quality');
+    final file = File('${directory.path}/fixture.heic');
+    await file.writeAsBytes(_heifContainerBytes('heic'));
+
+    final result = await const NutritionImageQualityService().inspect(file);
+
+    expect(result.isAcceptable, isTrue);
+    await directory.delete(recursive: true);
+  });
 }
 
 Future<File> _writeImage(img.Image image) async {
@@ -37,4 +50,22 @@ Future<File> _writeImage(img.Image image) async {
   final file = File('${directory.path}/fixture.png');
   await file.writeAsBytes(img.encodePng(image));
   return file;
+}
+
+Uint8List _heifContainerBytes(String brand) {
+  return Uint8List.fromList([
+    0,
+    0,
+    0,
+    24,
+    0x66,
+    0x74,
+    0x79,
+    0x70,
+    ...brand.codeUnits,
+    0,
+    0,
+    0,
+    0,
+  ]);
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -29,6 +30,8 @@ class NutritionLabelScannerScreen extends StatefulWidget {
 
 class _NutritionLabelScannerScreenState
     extends State<NutritionLabelScannerScreen> {
+  static const Duration _scanTimeout = Duration(seconds: 50);
+
   final _picker = ImagePicker();
   late final LabelIntakeFlow _flow;
 
@@ -90,21 +93,31 @@ class _NutritionLabelScannerScreenState
         _error = null;
       });
 
-      final result = await _flow.processImage(
-        LabelIntakeRequest(
-          imageFile: File(picked.path),
-          idGenerator: () => 'scan-${const Uuid().v4()}',
-          fallbackProductName: l10n.scannedProductName,
-        ),
-      );
+      final result = await _flow
+          .processImage(
+            LabelIntakeRequest(
+              imageFile: File(picked.path),
+              idGenerator: () => 'scan-${const Uuid().v4()}',
+              fallbackProductName: l10n.scannedProductName,
+            ),
+          )
+          .timeout(_scanTimeout);
 
       if (!mounted) return;
 
       switch (result) {
         case Success<LabelIntakeResult>(value: final intake):
           await _onSuccess(intake);
-        case Failure<LabelIntakeResult>():
-          await _onFailure(fallback: l10n.nutritionLabelNotParsed);
+        case Failure<LabelIntakeResult>(errorType: final errorType):
+          await _onFailure(
+            fallback: errorType == ServiceErrorType.network
+                ? l10n.errorNetworkTryAgain
+                : l10n.nutritionLabelNotParsed,
+          );
+      }
+    } on TimeoutException {
+      if (mounted) {
+        await _onFailure(fallback: l10n.errorNetworkTryAgain);
       }
     } catch (_) {
       if (mounted) {
