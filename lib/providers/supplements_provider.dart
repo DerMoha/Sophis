@@ -126,8 +126,14 @@ class SupplementsProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _supplements = await _db.getAllSupplements();
-      _logs = await _db.getAllSupplementLogs();
+      if (_store == null) {
+        _supplements = await _db.getAllSupplements();
+        _logs = await _db.getAllSupplementLogs();
+      } else {
+        final snapshot = (await _store!.snapshot()).value;
+        _supplements = [...snapshot.supplements];
+        _logs = [...snapshot.supplementLogs];
+      }
       _invalidateDerivedCaches();
     } catch (e) {
       _lastError = 'Failed to load supplements: $e';
