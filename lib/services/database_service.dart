@@ -1010,13 +1010,16 @@ class DatabaseService extends _$DatabaseService {
     });
   }
 
-  Future<int> deleteSupplement(String id) {
-    return transaction(() async {
+  Future<int> deleteSupplement(String id, {bool transactional = true}) async {
+    Future<int> deleteAll() async {
       await (delete(supplementLogs)..where((t) => t.supplementId.equals(id)))
           .go();
       return (delete(supplementDefinitions)..where((t) => t.id.equals(id)))
           .go();
-    });
+    }
+
+    if (transactional) return transaction(deleteAll);
+    return deleteAll();
   }
 
   // ---------------------------------------------------------------------------

@@ -5,6 +5,7 @@ import 'package:sophis/models/supplement_log.dart';
 import 'package:sophis/services/database_service.dart';
 import 'package:sophis/services/notification_service.dart';
 import 'package:sophis/services/service_result.dart';
+import 'package:sophis/services/nutrition/nutrition_store.dart';
 
 /// Provider for managing supplement tracking, including completion logging
 /// and daily reminder notifications.
@@ -15,6 +16,7 @@ import 'package:sophis/services/service_result.dart';
 class SupplementsProvider extends ChangeNotifier {
   final DatabaseService _db;
   final NotificationService _notifications;
+  final NutritionStore? _store;
   final _uuid = const Uuid();
 
   // Notification ID range for supplements (100-199, max 100 supplements)
@@ -30,7 +32,11 @@ class SupplementsProvider extends ChangeNotifier {
   Set<String>? _todayCompletedIdsCache;
   DateTime? _todayCompletedCacheDate;
 
-  SupplementsProvider(this._db, this._notifications);
+  SupplementsProvider(
+    this._db,
+    this._notifications, {
+    NutritionStore? store,
+  }) : _store = store;
 
   Future<void> initialize() => _loadData();
 
@@ -170,7 +176,11 @@ class SupplementsProvider extends ChangeNotifier {
               log.timestamp.isBefore(range.end),
         );
 
-        await _db.deleteSupplementLog(todayLog.id);
+        if (_store == null) {
+          await _db.deleteSupplementLog(todayLog.id);
+        } else {
+          await _store!.commitOrThrow(DeleteSupplementLog(todayLog.id));
+        }
         _logs.removeWhere((log) => log.id == todayLog.id);
         _invalidateDerivedCaches();
         isNowCompleted = false;
@@ -184,7 +194,11 @@ class SupplementsProvider extends ChangeNotifier {
         supplementId: supplementId,
         timestamp: DateTime.now(),
       );
-      await _db.insertSupplementLog(log);
+      if (_store == null) {
+        await _db.insertSupplementLog(log);
+      } else {
+        await _store!.commitOrThrow(SaveSupplementLog(log));
+      }
       _logs.add(log);
       _invalidateDerivedCaches();
       isNowCompleted = true;
@@ -213,16 +227,24 @@ class SupplementsProvider extends ChangeNotifier {
     }
 
     try {
-      await _db.insertSupplement(supplement);
+      if (_store == null) {
+        await _db.insertSupplement(supplement);
+      } else {
+        await _store!.commitOrThrow(SaveSupplement(supplement));
+      }
       _supplements.add(supplement);
       _supplements.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
       _invalidateDerivedCaches();
 
       if (supplement.enabled && supplement.reminderTime != null) {
-        await _scheduleNotification(
-          supplement,
-          skipToday: isCompletedToday(supplement.id),
-        );
+        try {
+          await _scheduleNotification(
+            supplement,
+            skipToday: isCompletedToday(supplement.id),
+          );
+        } catch (error) {
+          debugPrint('Failed to schedule supplement notification: $error');
+        }
       }
 
       _lastError = null;
@@ -239,7 +261,11 @@ class SupplementsProvider extends ChangeNotifier {
   /// Update an existing supplement
   Future<ServiceResult<void>> updateSupplement(Supplement supplement) async {
     try {
-      await _db.updateSupplement(supplement);
+      if (_store == null) {
+        await _db.updateSupplement(supplement);
+      } else {
+        await _store!.commitOrThrow(SaveSupplement(supplement));
+      }
 
       final index = _supplements.indexWhere((s) => s.id == supplement.id);
       if (index != -1) {
@@ -248,12 +274,16 @@ class SupplementsProvider extends ChangeNotifier {
       }
 
       // Reschedule notification
-      await _cancelNotification(supplement);
-      if (supplement.enabled && supplement.reminderTime != null) {
-        await _scheduleNotification(
-          supplement,
-          skipToday: isCompletedToday(supplement.id),
-        );
+      try {
+        await _cancelNotification(supplement);
+        if (supplement.enabled && supplement.reminderTime != null) {
+          await _scheduleNotification(
+            supplement,
+            skipToday: isCompletedToday(supplement.id),
+          );
+        }
+      } catch (error) {
+        debugPrint('Failed to reschedule supplement notification: $error');
       }
 
       _lastError = null;
@@ -282,14 +312,23 @@ class SupplementsProvider extends ChangeNotifier {
     try {
       // DatabaseService owns this operation as one transaction so the
       // definition and its completion logs cannot diverge on failure.
-      await _db.deleteSupplement(id);
+      if (_store == null) {
+        await _db.deleteSupplement(id);
+      } else {
+        await _store!.commitOrThrow(DeleteSupplement(id));
+      }
       _supplements.removeWhere((s) => s.id == id);
 
       _logs.removeWhere((log) => log.supplementId == id);
       _invalidateDerivedCaches();
 
-      // Cancel notification
-      await _cancelNotification(supplement);
+      // Cancel notification after the durable delete. A notification failure
+      // must not turn a successful database delete into a false failure.
+      try {
+        await _cancelNotification(supplement);
+      } catch (error) {
+        debugPrint('Failed to cancel supplement notification: $error');
+      }
 
       _lastError = null;
       notifyListeners();
@@ -311,24 +350,49 @@ class SupplementsProvider extends ChangeNotifier {
     int newIndex,
   ) async {
     try {
+      if (oldIndex < 0 || oldIndex >= _supplements.length) {
+        return const Failure(
+          ServiceErrorType.notFound,
+          'Supplement index is out of range',
+        );
+      }
       if (oldIndex < newIndex) {
         newIndex -= 1;
       }
+      if (newIndex < 0 || newIndex >= _supplements.length) {
+        return const Failure(
+          ServiceErrorType.notFound,
+          'Supplement index is out of range',
+        );
+      }
 
-      final supplement = _supplements.removeAt(oldIndex);
-      _supplements.insert(newIndex, supplement);
+      final reordered = List<Supplement>.of(_supplements);
+      final moved = reordered.removeAt(oldIndex);
+      reordered.insert(newIndex, moved);
 
       // Update sortOrder for all supplements in batch
-      for (var i = 0; i < _supplements.length; i++) {
-        _supplements[i] = _supplements[i].copyWith(sortOrder: i);
-      }
-      _invalidateDerivedCaches();
+      final updated = [
+        for (var i = 0; i < reordered.length; i++)
+          reordered[i].copyWith(sortOrder: i),
+      ];
 
       // Batch update to database for better performance
-      await _db.batchUpdateSupplements(_supplements);
+      if (_store == null) {
+        await _db.batchUpdateSupplements(updated);
+      } else {
+        await _store!.commitOrThrow(
+          SaveSupplementOrder(updated.map((supplement) => supplement.id)),
+        );
+      }
+      _supplements = updated;
+      _invalidateDerivedCaches();
 
       // Update all notifications to reflect new indices after reordering
-      await updateAllNotifications();
+      try {
+        await updateAllNotifications();
+      } catch (error) {
+        debugPrint('Failed to reschedule supplement notifications: $error');
+      }
 
       _lastError = null;
       notifyListeners();

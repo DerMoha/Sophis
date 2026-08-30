@@ -639,7 +639,7 @@ final class DeleteSupplement extends NutritionCommand {
 
   @override
   Future<void> apply(NutritionStore store) async {
-    await store._database.deleteSupplement(id);
+    await store._database.deleteSupplement(id, transactional: false);
   }
 }
 

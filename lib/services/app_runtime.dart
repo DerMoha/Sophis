@@ -46,7 +46,11 @@ class AppRuntime {
       nutrition.attachSettingsProvider(settings);
       await nutrition.initialize();
 
-      final supplements = SupplementsProvider(database, notifications);
+      final supplements = SupplementsProvider(
+        database,
+        notifications,
+        store: nutrition.store,
+      );
       await supplements.initialize();
 
       final barcodeLookup = BarcodeLookupService(
