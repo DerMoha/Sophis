@@ -141,5 +141,19 @@ void main() {
       expect(storage.loadGoals(), isNotNull);
       expect(storage.loadProfile(), isNotNull);
     });
+
+    test('keeps an explicit account deletion during first-run migration',
+        () async {
+      final storage = await createTestStorage();
+      final database = createTestDatabase();
+      addTearDown(database.close);
+      await storage.saveGoals(NutritionGoals(calories: 2100));
+      final persistence = NutritionPersistence(database, storage);
+
+      await persistence.saveGoals(null);
+      await persistence.initialize();
+
+      expect(await persistence.loadGoals(), isNull);
+    });
   });
 }

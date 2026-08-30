@@ -338,9 +338,9 @@ class NutritionPersistence {
   Future<NutritionGoals?> loadGoals() async {
     final document = await _database.readNutritionDocument(_goalsDocumentKey);
     if (document != null) {
-      return NutritionGoals.fromJson(
-        jsonDecode(document) as Map<String, dynamic>,
-      );
+      final decoded = jsonDecode(document);
+      if (decoded == null) return null;
+      return NutritionGoals.fromJson(decoded as Map<String, dynamic>);
     }
 
     final marker = await _database.getMigrationState(
@@ -356,7 +356,7 @@ class NutritionPersistence {
   }) async {
     Future<void> write() async {
       if (goals == null) {
-        await _database.deleteNutritionDocument(_goalsDocumentKey);
+        await _database.writeNutritionDocument(_goalsDocumentKey, 'null');
       } else {
         await _database.writeNutritionDocument(
           _goalsDocumentKey,
@@ -375,9 +375,9 @@ class NutritionPersistence {
   Future<UserProfile?> loadProfile() async {
     final document = await _database.readNutritionDocument(_profileDocumentKey);
     if (document != null) {
-      return UserProfile.fromJson(
-        jsonDecode(document) as Map<String, dynamic>,
-      );
+      final decoded = jsonDecode(document);
+      if (decoded == null) return null;
+      return UserProfile.fromJson(decoded as Map<String, dynamic>);
     }
 
     final marker = await _database.getMigrationState(
@@ -393,7 +393,7 @@ class NutritionPersistence {
   }) async {
     Future<void> write() async {
       if (profile == null) {
-        await _database.deleteNutritionDocument(_profileDocumentKey);
+        await _database.writeNutritionDocument(_profileDocumentKey, 'null');
       } else {
         await _database.writeNutritionDocument(
           _profileDocumentKey,
