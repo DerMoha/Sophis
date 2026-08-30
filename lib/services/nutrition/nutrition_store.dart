@@ -234,119 +234,38 @@ final class NutritionStore {
   }
 
   Future<void> _saveRecipe(Recipe value) async {
-    final state = await _persistence.load();
-    final values = [...state.recipes];
-    final index = values.indexWhere((item) => item.id == value.id);
-    if (index == -1) {
-      values.add(value);
-    } else {
-      values[index] = value;
-    }
-    await _persistence.saveRecipes(values, transactional: false);
+    await _persistence.upsertRecipe(value, transactional: false);
   }
 
-  Future<void> _deleteRecipe(String id) async {
-    final state = await _persistence.load();
-    await _persistence.saveRecipes(
-      state.recipes.where((item) => item.id != id).toList(),
-      transactional: false,
-    );
-  }
+  Future<void> _deleteRecipe(String id) =>
+      _persistence.deleteRecipe(id, transactional: false);
 
-  Future<void> _saveCustomFood(FoodItem value) async {
-    final state = await _persistence.load();
-    final values = [...state.customFoods];
-    final index = values.indexWhere((item) => item.id == value.id);
-    if (index == -1) {
-      values.insert(0, value);
-    } else {
-      values[index] = value;
-    }
-    await _persistence.saveCustomFoods(values, transactional: false);
-  }
+  Future<void> _saveCustomFood(FoodItem value) =>
+      _persistence.upsertCustomFood(value, transactional: false);
 
-  Future<void> _deleteCustomFood(String id) async {
-    final state = await _persistence.load();
-    await _persistence.saveCustomFoods(
-      state.customFoods.where((item) => item.id != id).toList(),
-      transactional: false,
-    );
-  }
+  Future<void> _deleteCustomFood(String id) =>
+      _persistence.deleteCustomFood(id, transactional: false);
 
-  Future<void> _saveFavoriteFood(FoodItem value) async {
-    final state = await _persistence.load();
-    final values = [...state.favoriteFoods];
-    final index = values.indexWhere((item) => item.id == value.id);
-    final favorite = value.copyWith(isFavorite: true);
-    if (index == -1) {
-      values.insert(0, favorite);
-    } else {
-      values[index] = favorite;
-    }
-    await _persistence.saveFavoriteFoods(values, transactional: false);
-  }
+  Future<void> _saveFavoriteFood(FoodItem value) =>
+      _persistence.upsertFavoriteFood(value, transactional: false);
 
-  Future<void> _deleteFavoriteFood(String id) async {
-    final state = await _persistence.load();
-    await _persistence.saveFavoriteFoods(
-      state.favoriteFoods.where((item) => item.id != id).toList(),
-      transactional: false,
-    );
-  }
+  Future<void> _deleteFavoriteFood(String id) =>
+      _persistence.deleteFavoriteFood(id, transactional: false);
 
-  Future<void> _savePlannedMeal(PlannedMeal value) async {
-    final state = await _persistence.load();
-    final values = [...state.plannedMeals];
-    final index = values.indexWhere((item) => item.id == value.id);
-    if (index == -1) {
-      values.add(value);
-    } else {
-      values[index] = value;
-    }
-    await _persistence.savePlannedMeals(values, transactional: false);
-  }
+  Future<void> _savePlannedMeal(PlannedMeal value) =>
+      _persistence.upsertPlannedMeal(value, transactional: false);
 
-  Future<void> _savePlannedMeals(Iterable<PlannedMeal> values) async {
-    final state = await _persistence.load();
-    final meals = [...state.plannedMeals];
-    for (final value in values) {
-      final index = meals.indexWhere((item) => item.id == value.id);
-      if (index == -1) {
-        meals.add(value);
-      } else {
-        meals[index] = value;
-      }
-    }
-    await _persistence.savePlannedMeals(meals, transactional: false);
-  }
+  Future<void> _savePlannedMeals(Iterable<PlannedMeal> values) =>
+      _persistence.upsertPlannedMeals(values, transactional: false);
 
-  Future<void> _deletePlannedMeal(String id) async {
-    final state = await _persistence.load();
-    await _persistence.savePlannedMeals(
-      state.plannedMeals.where((item) => item.id != id).toList(),
-      transactional: false,
-    );
-  }
+  Future<void> _deletePlannedMeal(String id) =>
+      _persistence.deletePlannedMeal(id, transactional: false);
 
-  Future<void> _saveCustomPortion(CustomPortion value) async {
-    final state = await _persistence.load();
-    final values = [...state.customPortions];
-    final index = values.indexWhere((item) => item.id == value.id);
-    if (index == -1) {
-      values.add(value);
-    } else {
-      values[index] = value;
-    }
-    await _persistence.saveCustomPortions(values, transactional: false);
-  }
+  Future<void> _saveCustomPortion(CustomPortion value) =>
+      _persistence.upsertCustomPortion(value, transactional: false);
 
-  Future<void> _deleteCustomPortion(String id) async {
-    final state = await _persistence.load();
-    await _persistence.saveCustomPortions(
-      state.customPortions.where((item) => item.id != id).toList(),
-      transactional: false,
-    );
-  }
+  Future<void> _deleteCustomPortion(String id) =>
+      _persistence.deleteCustomPortion(id, transactional: false);
 
   Future<void> _setShoppingItemChecked(
     String key, {
@@ -448,15 +367,7 @@ final class SaveFoodEntry extends NutritionCommand {
   const SaveFoodEntry(this.value);
 
   @override
-  Future<void> apply(NutritionStore store) async {
-    final db = store._database;
-    final existing = await db.getAllFoods();
-    if (existing.any((entry) => entry.id == value.id)) {
-      await db.updateFood(value);
-    } else {
-      await db.insertFood(value);
-    }
-  }
+  Future<void> apply(NutritionStore store) => store._database.upsertFood(value);
 }
 
 final class DeleteFoodEntry extends NutritionCommand {
@@ -473,14 +384,8 @@ final class SaveWaterEntry extends NutritionCommand {
   const SaveWaterEntry(this.value);
 
   @override
-  Future<void> apply(NutritionStore store) async {
-    final db = store._database;
-    final existing = await db.getAllWater();
-    if (existing.any((entry) => entry.id == value.id)) {
-      await db.deleteWater(value.id);
-    }
-    await db.insertWater(value);
-  }
+  Future<void> apply(NutritionStore store) =>
+      store._database.upsertWater(value);
 }
 
 final class DeleteWaterEntry extends NutritionCommand {
@@ -497,14 +402,8 @@ final class SaveWeightEntry extends NutritionCommand {
   const SaveWeightEntry(this.value);
 
   @override
-  Future<void> apply(NutritionStore store) async {
-    final db = store._database;
-    final existing = await db.getAllWeights();
-    if (existing.any((entry) => entry.id == value.id)) {
-      await db.deleteWeight(value.id);
-    }
-    await db.insertWeight(value);
-  }
+  Future<void> apply(NutritionStore store) =>
+      store._database.upsertWeight(value);
 }
 
 final class DeleteWeightEntry extends NutritionCommand {
@@ -521,15 +420,8 @@ final class SaveWorkoutEntry extends NutritionCommand {
   const SaveWorkoutEntry(this.value);
 
   @override
-  Future<void> apply(NutritionStore store) async {
-    final db = store._database;
-    final existing = await db.getAllWorkouts();
-    if (existing.any((entry) => entry.id == value.id)) {
-      await db.updateWorkout(value);
-    } else {
-      await db.insertWorkout(value);
-    }
-  }
+  Future<void> apply(NutritionStore store) =>
+      store._database.upsertWorkout(value);
 }
 
 final class DeleteWorkoutEntry extends NutritionCommand {
@@ -652,15 +544,8 @@ final class SaveSupplement extends NutritionCommand {
   const SaveSupplement(this.value);
 
   @override
-  Future<void> apply(NutritionStore store) async {
-    final db = store._database;
-    final existing = await db.getAllSupplements();
-    if (existing.any((entry) => entry.id == value.id)) {
-      await db.updateSupplement(value);
-    } else {
-      await db.insertSupplement(value);
-    }
-  }
+  Future<void> apply(NutritionStore store) =>
+      store._database.upsertSupplement(value);
 }
 
 final class DeleteSupplement extends NutritionCommand {

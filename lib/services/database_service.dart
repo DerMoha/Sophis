@@ -710,6 +710,22 @@ class DatabaseService extends _$DatabaseService {
     );
   }
 
+  Future<void> upsertFood(FoodEntry entry) async {
+    await into(foods).insertOnConflictUpdate(
+      FoodsCompanion(
+        id: Value(entry.id),
+        name: Value(entry.name),
+        calories: Value(entry.calories),
+        protein: Value(entry.protein),
+        carbs: Value(entry.carbs),
+        fat: Value(entry.fat),
+        fiber: Value(entry.fiber),
+        timestamp: Value(entry.timestamp),
+        meal: Value(entry.meal),
+      ),
+    );
+  }
+
   /// Batch insert multiple food entries
   ///
   /// Uses insertOrReplace mode to handle data migration and imports gracefully.
@@ -792,6 +808,16 @@ class DatabaseService extends _$DatabaseService {
     );
   }
 
+  Future<void> upsertWater(WaterEntry entry) async {
+    await into(waterLogs).insertOnConflictUpdate(
+      WaterLogsCompanion(
+        id: Value(entry.id),
+        amountMl: Value(entry.amountMl),
+        timestamp: Value(entry.timestamp),
+      ),
+    );
+  }
+
   /// Batch insert multiple water entries
   ///
   /// Uses insertOrReplace mode for data migration compatibility.
@@ -851,6 +877,18 @@ class DatabaseService extends _$DatabaseService {
     );
   }
 
+  Future<void> upsertWeight(WeightEntry entry) async {
+    await into(weightLogs).insertOnConflictUpdate(
+      WeightLogsCompanion(
+        id: Value(entry.id),
+        weightKg: Value(entry.weightKg),
+        timestamp: Value(entry.timestamp),
+        note: Value(entry.note),
+        source: Value(entry.source),
+      ),
+    );
+  }
+
   Future<void> insertWeightList(List<WeightEntry> entries) async {
     await batch((batch) {
       batch.insertAll(
@@ -898,6 +936,17 @@ class DatabaseService extends _$DatabaseService {
 
   Future<int> insertWorkout(WorkoutEntry entry) {
     return into(workoutLogs).insert(
+      WorkoutLogsCompanion(
+        id: Value(entry.id),
+        caloriesBurned: Value(entry.caloriesBurned),
+        timestamp: Value(entry.timestamp),
+        note: Value(entry.note),
+      ),
+    );
+  }
+
+  Future<void> upsertWorkout(WorkoutEntry entry) async {
+    await into(workoutLogs).insertOnConflictUpdate(
       WorkoutLogsCompanion(
         id: Value(entry.id),
         caloriesBurned: Value(entry.caloriesBurned),
@@ -966,6 +1015,19 @@ class DatabaseService extends _$DatabaseService {
 
   Future<int> insertSupplement(Supplement supplement) {
     return into(supplementDefinitions).insert(
+      SupplementDefinitionsCompanion(
+        id: Value(supplement.id),
+        name: Value(supplement.name),
+        reminderTime: Value(supplement.reminderTime),
+        enabled: Value(supplement.enabled),
+        sortOrder: Value(supplement.sortOrder),
+        createdAt: Value(supplement.createdAt),
+      ),
+    );
+  }
+
+  Future<void> upsertSupplement(Supplement supplement) async {
+    await into(supplementDefinitions).insertOnConflictUpdate(
       SupplementDefinitionsCompanion(
         id: Value(supplement.id),
         name: Value(supplement.name),
@@ -1415,6 +1477,19 @@ class DatabaseService extends _$DatabaseService {
     );
   }
 
+  Future<void> upsertRecipe(RecipeRow recipe) async {
+    await into(recipes).insertOnConflictUpdate(
+      RecipesCompanion(
+        id: Value(recipe.id),
+        name: Value(recipe.name),
+        ingredientsJson: Value(recipe.ingredientsJson),
+        servings: Value(recipe.servings),
+        notes: Value(recipe.notes),
+        createdAt: Value(recipe.createdAt),
+      ),
+    );
+  }
+
   Future<void> insertRecipes(List<RecipeRow> recipesList) async {
     await batch((batch) {
       batch.insertAll(
@@ -1468,6 +1543,25 @@ class DatabaseService extends _$DatabaseService {
 
   Future<int> insertCustomFood(CustomFoodRow food) {
     return into(customFoods).insert(
+      CustomFoodsCompanion(
+        id: Value(food.id),
+        name: Value(food.name),
+        category: Value(food.category),
+        caloriesPer100g: Value(food.caloriesPer100g),
+        proteinPer100g: Value(food.proteinPer100g),
+        carbsPer100g: Value(food.carbsPer100g),
+        fatPer100g: Value(food.fatPer100g),
+        fiberPer100g: Value(food.fiberPer100g),
+        barcode: Value(food.barcode),
+        brand: Value(food.brand),
+        imageUrl: Value(food.imageUrl),
+        servingsJson: Value(food.servingsJson),
+      ),
+    );
+  }
+
+  Future<void> upsertCustomFood(CustomFoodRow food) async {
+    await into(customFoods).insertOnConflictUpdate(
       CustomFoodsCompanion(
         id: Value(food.id),
         name: Value(food.name),
@@ -1551,6 +1645,15 @@ class DatabaseService extends _$DatabaseService {
     );
   }
 
+  Future<void> upsertFavoriteFood(FavoriteFoodRow food) async {
+    await into(favoriteFoods).insertOnConflictUpdate(
+      FavoriteFoodsCompanion(
+        id: Value(food.id),
+        foodJson: Value(food.foodJson),
+      ),
+    );
+  }
+
   Future<int> deleteFavoriteFood(String id) {
     return (delete(favoriteFoods)..where((t) => t.id.equals(id))).go();
   }
@@ -1604,6 +1707,53 @@ class DatabaseService extends _$DatabaseService {
         ingredientsJson: Value(meal.ingredientsJson),
       ),
     );
+  }
+
+  Future<void> upsertPlannedMeal(PlannedMealRow meal) async {
+    await into(plannedMeals).insertOnConflictUpdate(
+      PlannedMealsCompanion(
+        id: Value(meal.id),
+        date: Value(meal.date),
+        meal: Value(meal.meal),
+        name: Value(meal.name),
+        calories: Value(meal.calories),
+        protein: Value(meal.protein),
+        carbs: Value(meal.carbs),
+        fat: Value(meal.fat),
+        fiber: Value(meal.fiber),
+        recipeId: Value(meal.recipeId),
+        servings: Value(meal.servings),
+        ingredientsJson: Value(meal.ingredientsJson),
+      ),
+    );
+  }
+
+  Future<void> upsertPlannedMeals(List<PlannedMealRow> rows) async {
+    if (rows.isEmpty) return;
+    await batch((batch) {
+      batch.insertAll(
+        plannedMeals,
+        rows
+            .map(
+              (meal) => PlannedMealsCompanion(
+                id: Value(meal.id),
+                date: Value(meal.date),
+                meal: Value(meal.meal),
+                name: Value(meal.name),
+                calories: Value(meal.calories),
+                protein: Value(meal.protein),
+                carbs: Value(meal.carbs),
+                fat: Value(meal.fat),
+                fiber: Value(meal.fiber),
+                recipeId: Value(meal.recipeId),
+                servings: Value(meal.servings),
+                ingredientsJson: Value(meal.ingredientsJson),
+              ),
+            )
+            .toList(),
+        mode: InsertMode.insertOrReplace,
+      );
+    });
   }
 
   Future<void> insertPlannedMeals(List<PlannedMealRow> mealsList) async {
@@ -1667,6 +1817,18 @@ class DatabaseService extends _$DatabaseService {
 
   Future<int> insertCustomPortion(CustomPortionRow portion) {
     return into(customPortions).insert(
+      CustomPortionsCompanion(
+        id: Value(portion.id),
+        productKey: Value(portion.productKey),
+        name: Value(portion.name),
+        grams: Value(portion.grams),
+        createdAt: Value(portion.createdAt),
+      ),
+    );
+  }
+
+  Future<void> upsertCustomPortion(CustomPortionRow portion) async {
+    await into(customPortions).insertOnConflictUpdate(
       CustomPortionsCompanion(
         id: Value(portion.id),
         productKey: Value(portion.productKey),

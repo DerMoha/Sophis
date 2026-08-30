@@ -121,6 +121,33 @@ class NutritionPersistence {
     await _database.replaceRecipes(rows, transactional: transactional);
   }
 
+  Future<void> upsertRecipe(
+    Recipe recipe, {
+    bool transactional = true,
+  }) async {
+    Future<void> write() => _database.upsertRecipe(_recipeToRow(recipe));
+    if (transactional) {
+      await _database.transaction(write);
+    } else {
+      await write();
+    }
+  }
+
+  Future<void> deleteRecipe(
+    String id, {
+    bool transactional = true,
+  }) async {
+    Future<void> write() async {
+      await _database.deleteRecipe(id);
+    }
+
+    if (transactional) {
+      await _database.transaction(write);
+    } else {
+      await write();
+    }
+  }
+
   Future<void> saveCustomFoods(
     List<FoodItem> foods, {
     bool transactional = true,
@@ -129,19 +156,67 @@ class NutritionPersistence {
     await _database.replaceCustomFoods(rows, transactional: transactional);
   }
 
+  Future<void> upsertCustomFood(
+    FoodItem food, {
+    bool transactional = true,
+  }) async {
+    Future<void> write() => _database.upsertCustomFood(_customFoodToRow(food));
+    if (transactional) {
+      await _database.transaction(write);
+    } else {
+      await write();
+    }
+  }
+
+  Future<void> deleteCustomFood(
+    String id, {
+    bool transactional = true,
+  }) async {
+    Future<void> write() async {
+      await _database.deleteCustomFood(id);
+    }
+
+    if (transactional) {
+      await _database.transaction(write);
+    } else {
+      await write();
+    }
+  }
+
   Future<void> saveFavoriteFoods(
     List<FoodItem> foods, {
     bool transactional = true,
   }) async {
-    final rows = foods
-        .map(
-          (food) => FavoriteFoodRow(
-            id: food.id,
-            foodJson: jsonEncode(food.copyWith(isFavorite: true).toJson()),
-          ),
-        )
-        .toList();
+    final rows = foods.map(_favoriteFoodToRow).toList();
     await _database.replaceFavoriteFoods(rows, transactional: transactional);
+  }
+
+  Future<void> upsertFavoriteFood(
+    FoodItem food, {
+    bool transactional = true,
+  }) async {
+    Future<void> write() =>
+        _database.upsertFavoriteFood(_favoriteFoodToRow(food));
+    if (transactional) {
+      await _database.transaction(write);
+    } else {
+      await write();
+    }
+  }
+
+  Future<void> deleteFavoriteFood(
+    String id, {
+    bool transactional = true,
+  }) async {
+    Future<void> write() async {
+      await _database.deleteFavoriteFood(id);
+    }
+
+    if (transactional) {
+      await _database.transaction(write);
+    } else {
+      await write();
+    }
   }
 
   Future<void> savePlannedMeals(
@@ -152,12 +227,83 @@ class NutritionPersistence {
     await _database.replacePlannedMeals(rows, transactional: transactional);
   }
 
+  Future<void> upsertPlannedMeal(
+    PlannedMeal meal, {
+    bool transactional = true,
+  }) async {
+    Future<void> write() =>
+        _database.upsertPlannedMeal(_plannedMealToRow(meal));
+    if (transactional) {
+      await _database.transaction(write);
+    } else {
+      await write();
+    }
+  }
+
+  Future<void> upsertPlannedMeals(
+    Iterable<PlannedMeal> meals, {
+    bool transactional = true,
+  }) async {
+    final rows = meals.map(_plannedMealToRow).toList();
+    if (rows.isEmpty) return;
+
+    Future<void> write() => _database.upsertPlannedMeals(rows);
+    if (transactional) {
+      await _database.transaction(write);
+    } else {
+      await write();
+    }
+  }
+
+  Future<void> deletePlannedMeal(
+    String id, {
+    bool transactional = true,
+  }) async {
+    Future<void> write() async {
+      await _database.deletePlannedMeal(id);
+    }
+
+    if (transactional) {
+      await _database.transaction(write);
+    } else {
+      await write();
+    }
+  }
+
   Future<void> saveCustomPortions(
     List<CustomPortion> portions, {
     bool transactional = true,
   }) async {
     final rows = portions.map(_customPortionToRow).toList();
     await _database.replaceCustomPortions(rows, transactional: transactional);
+  }
+
+  Future<void> upsertCustomPortion(
+    CustomPortion portion, {
+    bool transactional = true,
+  }) async {
+    Future<void> write() =>
+        _database.upsertCustomPortion(_customPortionToRow(portion));
+    if (transactional) {
+      await _database.transaction(write);
+    } else {
+      await write();
+    }
+  }
+
+  Future<void> deleteCustomPortion(
+    String id, {
+    bool transactional = true,
+  }) async {
+    Future<void> write() async {
+      await _database.deleteCustomPortion(id);
+    }
+
+    if (transactional) {
+      await _database.transaction(write);
+    } else {
+      await write();
+    }
   }
 
   Future<void> saveRecentFoods(
@@ -249,14 +395,7 @@ class NutritionPersistence {
       transactional: transactional,
     );
     await _database.replaceFavoriteFoods(
-      state.favoriteFoods
-          .map(
-            (food) => FavoriteFoodRow(
-              id: food.id,
-              foodJson: jsonEncode(food.copyWith(isFavorite: true).toJson()),
-            ),
-          )
-          .toList(),
+      state.favoriteFoods.map(_favoriteFoodToRow).toList(),
       transactional: transactional,
     );
     await _database.replacePlannedMeals(
@@ -432,6 +571,11 @@ class NutritionPersistence {
         servingsJson: jsonEncode(
           food.servings.map((serving) => serving.toJson()).toList(),
         ),
+      );
+
+  FavoriteFoodRow _favoriteFoodToRow(FoodItem food) => FavoriteFoodRow(
+        id: food.id,
+        foodJson: jsonEncode(food.copyWith(isFavorite: true).toJson()),
       );
 
   PlannedMealRow _plannedMealToRow(PlannedMeal meal) => PlannedMealRow(
