@@ -121,6 +121,36 @@ void main() {
       expect(pending.single.operation, 'delete');
     });
 
+    test('exposes durable sync changes without leaking database rows',
+        () async {
+      final food = FoodEntry(
+        id: 'sync-api-food',
+        name: 'Oats',
+        calories: 300,
+        protein: 12,
+        carbs: 45,
+        fat: 8,
+        timestamp: DateTime.utc(2026, 1, 2, 8),
+        meal: 'breakfast',
+      );
+      await store.commit(SaveFoodEntry(food));
+
+      final changes = await store.pendingSyncChanges();
+      expect(changes, hasLength(1));
+      expect(changes.single, isA<NutritionSyncChange>());
+      expect(changes.single.entityType, 'food_entry');
+
+      await store.retrySyncChange(
+        changes.single,
+        error: StateError('offline'),
+        delay: Duration.zero,
+      );
+      expect((await store.pendingSyncChanges()).single.attempts, 1);
+
+      await store.acknowledgeSyncChange(changes.single.id);
+      expect(await store.pendingSyncChanges(), isEmpty);
+    });
+
     test('removes a supplement and its logs in one command', () async {
       // The command remains safe on an empty store and exercises the same
       // transaction path used when a definition has completion logs.

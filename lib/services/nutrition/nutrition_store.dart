@@ -96,6 +96,36 @@ final class NutritionStore {
     return result.value;
   }
 
+  /// Returns durable changes for a future cloud adapter without exposing Drift
+  /// rows. The caller may retry this operation after process restarts.
+  Future<List<NutritionSyncChange>> pendingSyncChanges({
+    int limit = 100,
+  }) async {
+    await _ensureInitialized();
+    final rows = await _database.getPendingSyncOutbox(limit: limit);
+    return rows.map(NutritionSyncChange.fromRow).toList(growable: false);
+  }
+
+  Future<void> acknowledgeSyncChange(String id) async {
+    await _database.markSyncOutboxProcessed(id);
+  }
+
+  Future<void> retrySyncChange(
+    NutritionSyncChange change, {
+    Object? error,
+    Duration? delay,
+  }) async {
+    final attempts = change.attempts + 1;
+    final backoff =
+        delay ?? Duration(seconds: attempts < 6 ? 1 << (attempts - 1) : 32);
+    await _database.markSyncOutboxAttempt(
+      change.id,
+      attempts: attempts,
+      nextAttemptAt: DateTime.now().toUtc().add(backoff),
+      error: error?.toString(),
+    );
+  }
+
   Future<void> _enqueueCommit(
     Future<void> previous,
     NutritionCommand command,
@@ -785,6 +815,39 @@ final class SyncMutation {
     required this.operation,
     this.payloadJson,
   });
+}
+
+final class NutritionSyncChange {
+  final String id;
+  final String entityType;
+  final String entityId;
+  final String operation;
+  final String? payloadJson;
+  final int? baseRevision;
+  final DateTime createdAt;
+  final int attempts;
+
+  const NutritionSyncChange({
+    required this.id,
+    required this.entityType,
+    required this.entityId,
+    required this.operation,
+    required this.payloadJson,
+    required this.baseRevision,
+    required this.createdAt,
+    required this.attempts,
+  });
+
+  factory NutritionSyncChange.fromRow(SyncOutboxRow row) => NutritionSyncChange(
+        id: row.id,
+        entityType: row.entityType,
+        entityId: row.entityId,
+        operation: row.operation,
+        payloadJson: row.payloadJson,
+        baseRevision: row.baseRevision,
+        createdAt: row.createdAt,
+        attempts: row.attempts,
+      );
 }
 
 SyncMutation? _syncMutationFor(NutritionCommand command) => switch (command) {
