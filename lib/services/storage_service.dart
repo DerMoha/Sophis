@@ -68,6 +68,10 @@ class StorageService {
     return NutritionGoals.fromJson(jsonDecode(json));
   }
 
+  Future<void> clearGoals() async {
+    await _prefs.remove(_goalsKey);
+  }
+
   // Profile
   Future<void> saveProfile(UserProfile profile) async {
     await _prefs.setString(_profileKey, jsonEncode(profile.toJson()));
@@ -77,6 +81,10 @@ class StorageService {
     final json = _prefs.getString(_profileKey);
     if (json == null) return null;
     return UserProfile.fromJson(jsonDecode(json));
+  }
+
+  Future<void> clearProfile() async {
+    await _prefs.remove(_profileKey);
   }
 
   // Food Entries
