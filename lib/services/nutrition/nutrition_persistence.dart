@@ -10,8 +10,10 @@ import 'package:sophis/services/database_service.dart';
 import 'package:sophis/services/storage_service.dart';
 
 /// SQLite-backed authority for nutrition collections that are loaded as a
-/// coherent state. Its interface deliberately hides migration flags, Drift
-/// rows, JSON documents, and legacy preference keys from callers.
+/// coherent state. Library, planning, stats, and shopping rows are canonical;
+/// the recent-food document remains a deliberately local-only cache because
+/// it also stores meal-specific presentation metadata. Migration flags, Drift
+/// rows, and legacy preference keys stay behind this interface.
 class NutritionPersistence {
   static const _canonicalLibraryMigrationKey = 'canonical_library_rows_v1';
   static const _canonicalLibraryMigrationVersion = 1;

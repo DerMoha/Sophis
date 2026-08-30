@@ -317,6 +317,28 @@ class StorageService {
     }
   }
 
+  /// Removes legacy nutrition collections after a successful SQLite restore.
+  /// Goals and profile are intentionally left intact because the restored
+  /// values are written to those keys as part of the same store operation.
+  Future<void> clearLegacyNutritionCollections() async {
+    for (final key in [
+      _entriesKey,
+      _waterEntriesKey,
+      _weightEntriesKey,
+      _workoutEntriesKey,
+      _recipesKey,
+      _plannedMealsKey,
+      _shoppingListKey,
+      _customPortionsKey,
+      _recentFoodsKey,
+      _customFoodsKey,
+      _favoriteFoodsKey,
+      _userStatsKey,
+    ]) {
+      await _prefs.remove(key);
+    }
+  }
+
   // Secure API Key Storage
   Future<void> saveApiKey(String? key) async {
     if (key == null || key.isEmpty) {

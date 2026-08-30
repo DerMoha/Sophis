@@ -635,6 +635,7 @@ class NutritionProvider extends ChangeNotifier {
 
   Future<void> replaceFromBackup(NutritionBackup backup) async {
     await _store.commitOrThrow(RestoreBackupV2(backup));
+    await _storage.clearLegacyNutritionCollections();
     await _progressPhotos.cleanupOrphanedFiles();
     await _loadData();
   }
