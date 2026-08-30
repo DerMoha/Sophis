@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sophis/models/food_entry.dart';
 import 'package:sophis/models/water_entry.dart';
+import 'package:sophis/services/database_service.dart';
 import 'package:sophis/services/nutrition/nutrition_store.dart';
 import 'package:sophis/services/service_result.dart';
 
@@ -9,10 +10,12 @@ import '../helpers/test_services.dart';
 void main() {
   group('NutritionStore', () {
     late NutritionStore store;
+    late DatabaseService database;
 
     setUp(() async {
       final storage = await createTestStorage();
-      store = NutritionStore(createTestDatabase(), storage);
+      database = createTestDatabase();
+      store = NutritionStore(database, storage);
       addTearDown(store.close);
     });
 
@@ -70,6 +73,52 @@ void main() {
       expect(state.valueOrNull?.foodEntries, hasLength(1));
       expect(state.valueOrNull?.waterEntries, hasLength(1));
       expect(state.valueOrNull?.commitSequence, 2);
+    });
+
+    test('records a compacted outbox mutation and a tombstone on delete',
+        () async {
+      final food = FoodEntry(
+        id: 'sync-food',
+        name: 'Oats',
+        calories: 300,
+        protein: 12,
+        carbs: 45,
+        fat: 8,
+        timestamp: DateTime.utc(2026, 1, 2, 8),
+        meal: 'breakfast',
+      );
+
+      await store.commit(SaveFoodEntry(food));
+      final firstMetadata = await database.getSyncMetadata(
+        'food_entry',
+        food.id,
+      );
+      expect(firstMetadata?.localRevision, 1);
+      expect(firstMetadata?.deletedAt, isNull);
+      expect(await database.getPendingSyncOutbox(), hasLength(1));
+
+      await store.commit(SaveFoodEntry(food.copyWith(name: 'Rolled oats')));
+      final secondMetadata = await database.getSyncMetadata(
+        'food_entry',
+        food.id,
+      );
+      expect(secondMetadata?.localRevision, 2);
+      expect(await database.getPendingSyncOutbox(), hasLength(1));
+      expect(
+        (await database.getPendingSyncOutbox()).single.payloadJson,
+        contains('Rolled oats'),
+      );
+
+      await store.commit(const DeleteFoodEntry('sync-food'));
+      final deletedMetadata = await database.getSyncMetadata(
+        'food_entry',
+        food.id,
+      );
+      expect(deletedMetadata?.localRevision, 3);
+      expect(deletedMetadata?.deletedAt, isNotNull);
+      final pending = await database.getPendingSyncOutbox();
+      expect(pending, hasLength(1));
+      expect(pending.single.operation, 'delete');
     });
 
     test('removes a supplement and its logs in one command', () async {

@@ -2,11 +2,13 @@ import 'package:sophis/models/food_item.dart';
 import 'package:sophis/models/recipe.dart';
 import 'package:sophis/models/custom_portion.dart';
 import 'package:sophis/services/nutrition/nutrition_persistence.dart';
+import 'package:sophis/services/nutrition/nutrition_store.dart';
 
 /// Manages recipes, custom foods, favorites, and custom portions.
 class FoodLibraryController {
   final NutritionPersistence _persistence;
   final Future<void> Function() _onChanged;
+  final NutritionStore? _store;
 
   List<Recipe> _recipes = [];
   List<FoodItem> _customFoods = [];
@@ -14,7 +16,11 @@ class FoodLibraryController {
   Set<String> _favoriteFoodIds = {};
   List<CustomPortion> _customPortions = [];
 
-  FoodLibraryController(this._persistence, this._onChanged);
+  FoodLibraryController(
+    this._persistence,
+    this._onChanged, {
+    NutritionStore? store,
+  }) : _store = store;
 
   List<Recipe> get recipes => _recipes;
   List<FoodItem> get customFoods => _customFoods;
@@ -37,7 +43,11 @@ class FoodLibraryController {
   // Recipes
   Future<void> addRecipe(Recipe recipe) async {
     final updatedRecipes = [..._recipes, recipe];
-    await _persistence.saveRecipes(updatedRecipes);
+    if (_store == null) {
+      await _persistence.saveRecipes(updatedRecipes);
+    } else {
+      await _store!.commitOrThrow(SaveRecipe(recipe));
+    }
     _recipes = updatedRecipes;
     await _onChanged();
   }
@@ -46,7 +56,11 @@ class FoodLibraryController {
     final i = _recipes.indexWhere((r) => r.id == recipe.id);
     if (i != -1) {
       final updatedRecipes = List<Recipe>.of(_recipes)..[i] = recipe;
-      await _persistence.saveRecipes(updatedRecipes);
+      if (_store == null) {
+        await _persistence.saveRecipes(updatedRecipes);
+      } else {
+        await _store!.commitOrThrow(SaveRecipe(recipe));
+      }
       _recipes = updatedRecipes;
       await _onChanged();
     }
@@ -56,7 +70,11 @@ class FoodLibraryController {
     final updatedRecipes = _recipes.where((recipe) => recipe.id != id).toList();
     if (updatedRecipes.length == _recipes.length) return;
 
-    await _persistence.saveRecipes(updatedRecipes);
+    if (_store == null) {
+      await _persistence.saveRecipes(updatedRecipes);
+    } else {
+      await _store!.commitOrThrow(DeleteRecipe(id));
+    }
     _recipes = updatedRecipes;
     await _onChanged();
   }
@@ -65,7 +83,11 @@ class FoodLibraryController {
   Future<void> addCustomFood(FoodItem food) async {
     if (_customFoods.any((f) => f.id == food.id)) return;
     final updatedFoods = [food, ..._customFoods];
-    await _persistence.saveCustomFoods(updatedFoods);
+    if (_store == null) {
+      await _persistence.saveCustomFoods(updatedFoods);
+    } else {
+      await _store!.commitOrThrow(SaveCustomFood(food));
+    }
     _customFoods = updatedFoods;
     await _onChanged();
   }
@@ -74,7 +96,11 @@ class FoodLibraryController {
     final updatedFoods = _customFoods.where((food) => food.id != id).toList();
     if (updatedFoods.length == _customFoods.length) return;
 
-    await _persistence.saveCustomFoods(updatedFoods);
+    if (_store == null) {
+      await _persistence.saveCustomFoods(updatedFoods);
+    } else {
+      await _store!.commitOrThrow(DeleteCustomFood(id));
+    }
     _customFoods = updatedFoods;
     await _onChanged();
   }
@@ -95,7 +121,11 @@ class FoodLibraryController {
   Future<void> addFavorite(FoodItem food) async {
     if (isFavorite(food.id)) return;
     final updatedFoods = [food.copyWith(isFavorite: true), ..._favoriteFoods];
-    await _persistence.saveFavoriteFoods(updatedFoods);
+    if (_store == null) {
+      await _persistence.saveFavoriteFoods(updatedFoods);
+    } else {
+      await _store!.commitOrThrow(SaveFavoriteFood(food));
+    }
     _favoriteFoods = updatedFoods;
     _favoriteFoodIds = updatedFoods.map((value) => value.id).toSet();
     await _onChanged();
@@ -105,7 +135,11 @@ class FoodLibraryController {
     final updatedFoods = _favoriteFoods.where((food) => food.id != id).toList();
     if (updatedFoods.length == _favoriteFoods.length) return;
 
-    await _persistence.saveFavoriteFoods(updatedFoods);
+    if (_store == null) {
+      await _persistence.saveFavoriteFoods(updatedFoods);
+    } else {
+      await _store!.commitOrThrow(DeleteFavoriteFood(id));
+    }
     _favoriteFoods = updatedFoods;
     _favoriteFoodIds = updatedFoods.map((value) => value.id).toSet();
     await _onChanged();
@@ -126,7 +160,11 @@ class FoodLibraryController {
 
   Future<void> addCustomPortion(CustomPortion portion) async {
     final updatedPortions = [..._customPortions, portion];
-    await _persistence.saveCustomPortions(updatedPortions);
+    if (_store == null) {
+      await _persistence.saveCustomPortions(updatedPortions);
+    } else {
+      await _store!.commitOrThrow(SaveCustomPortion(portion));
+    }
     _customPortions = updatedPortions;
     await _onChanged();
   }
@@ -136,7 +174,11 @@ class FoodLibraryController {
         _customPortions.where((portion) => portion.id != id).toList();
     if (updatedPortions.length == _customPortions.length) return;
 
-    await _persistence.saveCustomPortions(updatedPortions);
+    if (_store == null) {
+      await _persistence.saveCustomPortions(updatedPortions);
+    } else {
+      await _store!.commitOrThrow(DeleteCustomPortion(id));
+    }
     _customPortions = updatedPortions;
     await _onChanged();
   }

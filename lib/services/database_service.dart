@@ -1119,8 +1119,12 @@ class DatabaseService extends _$DatabaseService {
     });
   }
 
-  Future<void> deleteNutritionData() async {
-    await transaction(_deleteNutritionData);
+  Future<void> deleteNutritionData({bool transactional = true}) async {
+    if (transactional) {
+      await transaction(_deleteNutritionData);
+    } else {
+      await _deleteNutritionData();
+    }
   }
 
   Future<void> _deleteNutritionData() async {
@@ -1175,6 +1179,184 @@ class DatabaseService extends _$DatabaseService {
   }
 
   // ---------------------------------------------------------------------------
+  // MIGRATION AND SYNC METADATA
+  // ---------------------------------------------------------------------------
+
+  static const defaultDataSpaceId = 'local';
+
+  Future<MigrationStateRow?> getMigrationState(String key) {
+    return (select(migrationState)..where((row) => row.key.equals(key)))
+        .getSingleOrNull();
+  }
+
+  Future<void> setMigrationState(
+    String key, {
+    required int version,
+    String? checksum,
+    DateTime? updatedAt,
+  }) async {
+    await into(migrationState).insertOnConflictUpdate(
+      MigrationStateCompanion(
+        key: Value(key),
+        version: Value(version),
+        updatedAt: Value((updatedAt ?? DateTime.now()).toUtc()),
+        checksum: Value(checksum),
+      ),
+    );
+  }
+
+  Future<DataSpaceRow> ensureDefaultDataSpace({DateTime? now}) async {
+    final existing = await (select(dataSpaces)
+          ..where((space) => space.id.equals(defaultDataSpaceId)))
+        .getSingleOrNull();
+    if (existing != null) return existing;
+
+    final timestamp = (now ?? DateTime.now()).toUtc();
+    final row = DataSpaceRow(
+      id: defaultDataSpaceId,
+      name: 'Local device',
+      isDefault: true,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    );
+    await into(dataSpaces).insert(row);
+    return row;
+  }
+
+  Future<SyncMetadataRow?> getSyncMetadata(
+    String entityType,
+    String entityId, {
+    String dataSpaceId = defaultDataSpaceId,
+  }) {
+    return (select(syncMetadata)
+          ..where(
+            (row) =>
+                row.dataSpaceId.equals(dataSpaceId) &
+                row.entityType.equals(entityType) &
+                row.entityId.equals(entityId),
+          ))
+        .getSingleOrNull();
+  }
+
+  /// Records one local mutation and compacts any older pending mutation for
+  /// the same entity. Callers invoke this inside their enclosing transaction.
+  Future<SyncMetadataRow> recordLocalMutation({
+    required String entityType,
+    required String entityId,
+    required String operation,
+    String? payloadJson,
+    String dataSpaceId = defaultDataSpaceId,
+    DateTime? now,
+  }) async {
+    await ensureDefaultDataSpace(now: now);
+    final timestamp = (now ?? DateTime.now()).toUtc();
+    final previous = await getSyncMetadata(
+      entityType,
+      entityId,
+      dataSpaceId: dataSpaceId,
+    );
+    final revision = (previous?.localRevision ?? 0) + 1;
+    final deletedAt = operation == 'delete' ? timestamp : null;
+    final metadata = SyncMetadataRow(
+      dataSpaceId: dataSpaceId,
+      entityType: entityType,
+      entityId: entityId,
+      localRevision: revision,
+      updatedAt: timestamp,
+      deletedAt: deletedAt,
+      remoteVersion: null,
+    );
+
+    await into(syncMetadata).insertOnConflictUpdate(metadata);
+    await (delete(syncOutbox)
+          ..where(
+            (row) =>
+                row.dataSpaceId.equals(dataSpaceId) &
+                row.entityType.equals(entityType) &
+                row.entityId.equals(entityId) &
+                row.processedAt.isNull(),
+          ))
+        .go();
+    await into(syncOutbox).insert(
+      SyncOutboxCompanion.insert(
+        id: '${dataSpaceId}_${entityType}_${entityId}_$revision',
+        dataSpaceId: dataSpaceId,
+        entityType: entityType,
+        entityId: entityId,
+        operation: operation,
+        payloadJson: Value(payloadJson),
+        baseRevision: Value(previous?.localRevision),
+        createdAt: timestamp,
+      ),
+    );
+    return metadata;
+  }
+
+  Future<List<SyncOutboxRow>> getPendingSyncOutbox({
+    String dataSpaceId = defaultDataSpaceId,
+    int limit = 100,
+    DateTime? now,
+  }) {
+    final current = (now ?? DateTime.now()).toUtc();
+    return (select(syncOutbox)
+          ..where(
+            (row) =>
+                row.dataSpaceId.equals(dataSpaceId) &
+                row.processedAt.isNull() &
+                (row.nextAttemptAt.isNull() |
+                    row.nextAttemptAt.isSmallerOrEqualValue(current)),
+          )
+          ..orderBy([
+            (row) => OrderingTerm.asc(row.createdAt),
+            (row) => OrderingTerm.asc(row.id),
+          ])
+          ..limit(limit))
+        .get();
+  }
+
+  Future<void> markSyncOutboxAttempt(
+    String id, {
+    required int attempts,
+    DateTime? nextAttemptAt,
+    String? error,
+  }) async {
+    await (update(syncOutbox)..where((row) => row.id.equals(id))).write(
+      SyncOutboxCompanion(
+        attempts: Value(attempts),
+        nextAttemptAt: Value(nextAttemptAt?.toUtc()),
+        lastError: Value(error),
+      ),
+    );
+  }
+
+  Future<void> markSyncOutboxProcessed(
+    String id, {
+    DateTime? processedAt,
+  }) async {
+    await (update(syncOutbox)..where((row) => row.id.equals(id))).write(
+      SyncOutboxCompanion(
+        processedAt: Value((processedAt ?? DateTime.now()).toUtc()),
+        nextAttemptAt: const Value(null),
+        lastError: const Value(null),
+      ),
+    );
+  }
+
+  Future<void> pruneProcessedSyncOutbox({
+    Duration olderThan = const Duration(days: 30),
+    DateTime? now,
+  }) async {
+    final cutoff = (now ?? DateTime.now()).toUtc().subtract(olderThan);
+    await (delete(syncOutbox)
+          ..where(
+            (row) =>
+                row.processedAt.isNotNull() &
+                row.processedAt.isSmallerThanValue(cutoff),
+          ))
+        .go();
+  }
+
+  // ---------------------------------------------------------------------------
   // RECIPES
   // ---------------------------------------------------------------------------
 
@@ -1222,6 +1404,24 @@ class DatabaseService extends _$DatabaseService {
 
   Future<int> deleteRecipe(String id) {
     return (delete(recipes)..where((t) => t.id.equals(id))).go();
+  }
+
+  Future<void> replaceRecipes(
+    List<RecipeRow> rows, {
+    bool transactional = true,
+  }) async {
+    Future<void> write() async {
+      await delete(recipes).go();
+      await batch((batch) {
+        batch.insertAll(recipes, rows, mode: InsertMode.insertOrReplace);
+      });
+    }
+
+    if (transactional) {
+      await transaction(write);
+    } else {
+      await write();
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -1281,24 +1481,62 @@ class DatabaseService extends _$DatabaseService {
     return (delete(customFoods)..where((t) => t.id.equals(id))).go();
   }
 
+  Future<void> replaceCustomFoods(
+    List<CustomFoodRow> rows, {
+    bool transactional = true,
+  }) async {
+    Future<void> write() async {
+      await delete(customFoods).go();
+      await batch((batch) {
+        batch.insertAll(customFoods, rows, mode: InsertMode.insertOrReplace);
+      });
+    }
+
+    if (transactional) {
+      await transaction(write);
+    } else {
+      await write();
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // FAVORITE FOODS
   // ---------------------------------------------------------------------------
 
   Future<List<FavoriteFoodRow>> getAllFavoriteFoods() async {
-    return await select(favoriteFoods).get();
+    return (select(favoriteFoods)..orderBy([(t) => OrderingTerm.asc(t.id)]))
+        .get();
   }
 
   Future<int> insertFavoriteFood(FavoriteFoodRow food) {
     return into(favoriteFoods).insert(
       FavoriteFoodsCompanion(
         id: Value(food.id),
+        foodJson: Value(food.foodJson),
       ),
     );
   }
 
   Future<int> deleteFavoriteFood(String id) {
     return (delete(favoriteFoods)..where((t) => t.id.equals(id))).go();
+  }
+
+  Future<void> replaceFavoriteFoods(
+    List<FavoriteFoodRow> rows, {
+    bool transactional = true,
+  }) async {
+    Future<void> write() async {
+      await delete(favoriteFoods).go();
+      await batch((batch) {
+        batch.insertAll(favoriteFoods, rows, mode: InsertMode.insertOrReplace);
+      });
+    }
+
+    if (transactional) {
+      await transaction(write);
+    } else {
+      await write();
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -1364,6 +1602,24 @@ class DatabaseService extends _$DatabaseService {
     return (delete(plannedMeals)..where((t) => t.id.equals(id))).go();
   }
 
+  Future<void> replacePlannedMeals(
+    List<PlannedMealRow> rows, {
+    bool transactional = true,
+  }) async {
+    Future<void> write() async {
+      await delete(plannedMeals).go();
+      await batch((batch) {
+        batch.insertAll(plannedMeals, rows, mode: InsertMode.insertOrReplace);
+      });
+    }
+
+    if (transactional) {
+      await transaction(write);
+    } else {
+      await write();
+    }
+  }
+
   // ---------------------------------------------------------------------------
 
   Future<List<CustomPortionRow>> getAllCustomPortions() async {
@@ -1389,6 +1645,24 @@ class DatabaseService extends _$DatabaseService {
 
   Future<int> deleteCustomPortion(String id) {
     return (delete(customPortions)..where((t) => t.id.equals(id))).go();
+  }
+
+  Future<void> replaceCustomPortions(
+    List<CustomPortionRow> rows, {
+    bool transactional = true,
+  }) async {
+    Future<void> write() async {
+      await delete(customPortions).go();
+      await batch((batch) {
+        batch.insertAll(customPortions, rows, mode: InsertMode.insertOrReplace);
+      });
+    }
+
+    if (transactional) {
+      await transaction(write);
+    } else {
+      await write();
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -1459,20 +1733,31 @@ class DatabaseService extends _$DatabaseService {
     return rows.map((row) => row.key).toList();
   }
 
-  Future<void> replacePlannedMealsChecked(List<String> keys) async {
-    await delete(plannedMealsChecked).go();
-    await batch((batch) {
-      batch.insertAll(
-        plannedMealsChecked,
-        keys
-            .map(
-              (k) => PlannedMealsCheckedCompanion(
-                key: Value(k),
-              ),
-            )
-            .toList(),
-      );
-    });
+  Future<void> replacePlannedMealsChecked(
+    List<String> keys, {
+    bool transactional = true,
+  }) async {
+    Future<void> write() async {
+      await delete(plannedMealsChecked).go();
+      await batch((batch) {
+        batch.insertAll(
+          plannedMealsChecked,
+          keys
+              .map(
+                (k) => PlannedMealsCheckedCompanion(
+                  key: Value(k),
+                ),
+              )
+              .toList(),
+        );
+      });
+    }
+
+    if (transactional) {
+      await transaction(write);
+    } else {
+      await write();
+    }
   }
 
   // ---------------------------------------------------------------------------

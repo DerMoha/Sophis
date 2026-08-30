@@ -24,6 +24,7 @@ import 'package:sophis/services/nutrition/workout_controller.dart';
 import 'package:sophis/services/nutrition/meal_plan_controller.dart';
 import 'package:sophis/services/nutrition/food_library_controller.dart';
 import 'package:sophis/services/nutrition/nutrition_persistence.dart';
+import 'package:sophis/services/nutrition/nutrition_store.dart';
 import 'package:sophis/services/progress_photo_controller.dart';
 import 'package:sophis/models/progress_photo.dart';
 import 'package:sophis/models/nutrition_backup.dart';
@@ -45,6 +46,7 @@ class NutritionProvider extends ChangeNotifier {
   late final FoodLibraryController _foodLibrary;
   late final ProgressPhotoController _progressPhotos;
   late final NutritionPersistence _persistence;
+  late final NutritionStore _store;
 
   NutritionGoals? _goals;
   UserProfile? _profile;
@@ -60,6 +62,7 @@ class NutritionProvider extends ChangeNotifier {
   bool _isLoading = true;
   bool get isLoading => _isLoading;
   DatabaseService get databaseService => _db;
+  NutritionStore get store => _store;
 
   // Shared cache date tracking (used by food log, hydration, workout controllers)
   DateTime? _cacheDate;
@@ -71,31 +74,44 @@ class NutritionProvider extends ChangeNotifier {
     bool cleanupProgressPhotosOnLoad = true,
   })  : _healthService = healthService ?? HealthService(),
         _cleanupProgressPhotosOnLoad = cleanupProgressPhotosOnLoad {
+    _persistence = NutritionPersistence(_db, _storage);
+    _store = NutritionStore(
+      _db,
+      _storage,
+      persistence: _persistence,
+    );
     _foodLog = FoodLogController(
       _db,
       _onFoodChanged,
       _isCacheValid,
       _currentCacheDate,
+      store: _store,
     );
     _hydration = HydrationController(
       _db,
       _onSimpleChanged,
       _isCacheValid,
       _currentCacheDate,
+      store: _store,
     );
     _workouts = WorkoutController(
       _db,
       _onSimpleChanged,
       _isCacheValid,
       _currentCacheDate,
+      store: _store,
     );
-    _persistence = NutritionPersistence(_db, _storage);
     _mealPlan = MealPlanController(
       _persistence,
       _onSimpleChanged,
       _dayKey,
+      store: _store,
     );
-    _foodLibrary = FoodLibraryController(_persistence, _onSimpleChanged);
+    _foodLibrary = FoodLibraryController(
+      _persistence,
+      _onSimpleChanged,
+      store: _store,
+    );
     _progressPhotos = ProgressPhotoController(_db);
   }
 
@@ -368,14 +384,14 @@ class NutritionProvider extends ChangeNotifier {
   // ── Goals & Profile ────────────────────────────────────────────────────
 
   Future<void> setGoals(NutritionGoals goals) async {
-    await _storage.saveGoals(goals);
+    await _store.commitOrThrow(SaveGoals(goals));
     _goals = goals;
     HomeWidgetService.updateWidgetData(this);
     notifyListeners();
   }
 
   Future<void> setProfile(UserProfile profile) async {
-    await _storage.saveProfile(profile);
+    await _store.commitOrThrow(SaveProfile(profile));
     _profile = profile;
     notifyListeners();
   }
@@ -500,7 +516,7 @@ class NutritionProvider extends ChangeNotifier {
   }
 
   Future<void> restoreWeightEntry(WeightEntry entry) async {
-    await _db.insertWeight(entry);
+    await _store.commitOrThrow(SaveWeightEntry(entry));
     _weightEntries.add(entry);
     _weightEntries.sort((a, b) => b.timestamp.compareTo(a.timestamp));
     notifyListeners();
@@ -510,7 +526,7 @@ class NutritionProvider extends ChangeNotifier {
     final index = _weightEntries.indexWhere((entry) => entry.id == id);
     if (index == -1) return;
 
-    await _db.deleteWeight(id);
+    await _store.commitOrThrow(DeleteWeightEntry(id));
     _weightEntries.removeAt(index);
     notifyListeners();
   }
@@ -534,7 +550,7 @@ class NutritionProvider extends ChangeNotifier {
             timestamp: he.timestamp,
             source: 'health',
           );
-          await _db.insertWeight(entry);
+          await _store.commitOrThrow(SaveWeightEntry(entry));
           _weightEntries.add(entry);
         }
       }
@@ -781,78 +797,89 @@ class NutritionProvider extends ChangeNotifier {
 
       if (daysDifference == 0) {
         return;
-      } else if (daysDifference == 1) {
-        _userStats = _userStats.copyWith(
-          currentStreak: _userStats.currentStreak + 1,
-          longestStreak: _userStats.currentStreak + 1 > _userStats.longestStreak
-              ? _userStats.currentStreak + 1
-              : _userStats.longestStreak,
-          lastLogDate: today,
-          totalDaysLogged: _userStats.totalDaysLogged + 1,
-        );
-      } else {
-        _userStats = _userStats.copyWith(
-          currentStreak: 1,
-          lastLogDate: today,
-          totalDaysLogged: _userStats.totalDaysLogged + 1,
-        );
       }
-    } else {
-      _userStats = _userStats.copyWith(
+    }
+
+    final nextStats = _nextStatsAfterLog(today, todayDate);
+    final withAchievements = _withAchievements(nextStats);
+    await _store.commitOrThrow(SaveUserStats(withAchievements));
+    _userStats = withAchievements;
+  }
+
+  UserStats _nextStatsAfterLog(DateTime now, DateTime today) {
+    final lastLog = _userStats.lastLogDate;
+    if (lastLog == null) {
+      return _userStats.copyWith(
         currentStreak: 1,
         longestStreak: 1,
-        lastLogDate: today,
+        lastLogDate: now,
         totalDaysLogged: 1,
       );
     }
 
-    await _checkAchievements();
-    await _persistence.saveUserStats(_userStats);
+    final lastDate = DateTime(lastLog.year, lastLog.month, lastLog.day);
+    final daysDifference = today.difference(lastDate).inDays;
+    if (daysDifference == 1) {
+      final nextStreak = _userStats.currentStreak + 1;
+      return _userStats.copyWith(
+        currentStreak: nextStreak,
+        longestStreak: nextStreak > _userStats.longestStreak
+            ? nextStreak
+            : _userStats.longestStreak,
+        lastLogDate: now,
+        totalDaysLogged: _userStats.totalDaysLogged + 1,
+      );
+    }
+    return _userStats.copyWith(
+      currentStreak: 1,
+      lastLogDate: now,
+      totalDaysLogged: _userStats.totalDaysLogged + 1,
+    );
   }
 
-  Future<void> _checkAchievements() async {
-    final currentAchievements = List<String>.from(_userStats.achievements);
+  UserStats _withAchievements(UserStats stats) {
+    final currentAchievements = List<String>.from(stats.achievements);
     var newAchievements = false;
 
     if (!currentAchievements.contains(Achievements.firstLog) &&
-        _userStats.totalDaysLogged >= 1) {
+        stats.totalDaysLogged >= 1) {
       currentAchievements.add(Achievements.firstLog);
       newAchievements = true;
     }
 
     if (!currentAchievements.contains(Achievements.threeDayStreak) &&
-        _userStats.currentStreak >= 3) {
+        stats.currentStreak >= 3) {
       currentAchievements.add(Achievements.threeDayStreak);
       newAchievements = true;
     }
 
     if (!currentAchievements.contains(Achievements.weekWarrior) &&
-        _userStats.currentStreak >= 7) {
+        stats.currentStreak >= 7) {
       currentAchievements.add(Achievements.weekWarrior);
       newAchievements = true;
     }
 
     if (!currentAchievements.contains(Achievements.twoWeekStreak) &&
-        _userStats.currentStreak >= 14) {
+        stats.currentStreak >= 14) {
       currentAchievements.add(Achievements.twoWeekStreak);
       newAchievements = true;
     }
 
     if (!currentAchievements.contains(Achievements.monthlyMaster) &&
-        _userStats.currentStreak >= 30) {
+        stats.currentStreak >= 30) {
       currentAchievements.add(Achievements.monthlyMaster);
       newAchievements = true;
     }
 
     if (!currentAchievements.contains(Achievements.centurion) &&
-        _userStats.totalDaysLogged >= 100) {
+        stats.totalDaysLogged >= 100) {
       currentAchievements.add(Achievements.centurion);
       newAchievements = true;
     }
 
-    if (newAchievements) {
-      _userStats = _userStats.copyWith(achievements: currentAchievements);
-    }
+    return newAchievements
+        ? stats.copyWith(achievements: currentAchievements)
+        : stats;
   }
 
   // ── Clear All ───────────────────────────────────────────────────────────

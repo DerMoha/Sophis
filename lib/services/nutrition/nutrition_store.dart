@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:sophis/models/custom_portion.dart';
@@ -42,7 +43,8 @@ final class NutritionStore {
     this._database,
     this._storage, {
     Uuid uuid = const Uuid(),
-  })  : _persistence = NutritionPersistence(_database, _storage),
+    NutritionPersistence? persistence,
+  })  : _persistence = persistence ?? NutritionPersistence(_database, _storage),
         _uuid = uuid;
 
   /// Returns one coherent state after legacy reconciliation and database open.
@@ -86,6 +88,14 @@ final class NutritionStore {
     return completer.future;
   }
 
+  /// Convenience for application controllers that use exceptions for failed
+  /// persistence operations. The database commit still remains the only point
+  /// at which in-memory state may be published.
+  Future<CommitReceipt> commitOrThrow(NutritionCommand command) async {
+    final result = await commit(command);
+    return result.value;
+  }
+
   Future<void> _enqueueCommit(
     Future<void> previous,
     NutritionCommand command,
@@ -120,7 +130,18 @@ final class NutritionStore {
     await _ensureInitialized();
 
     final transactionId = _uuid.v4();
-    await _database.transaction(() => command.apply(this));
+    await _database.transaction(() async {
+      await command.apply(this);
+      final mutation = _syncMutationFor(command);
+      if (mutation != null) {
+        await _database.recordLocalMutation(
+          entityType: mutation.entityType,
+          entityId: mutation.entityId,
+          operation: mutation.operation,
+          payloadJson: mutation.payloadJson,
+        );
+      }
+    });
 
     _commitSequence++;
     final receipt = CommitReceipt(
@@ -191,13 +212,14 @@ final class NutritionStore {
     } else {
       values[index] = value;
     }
-    await _persistence.saveRecipes(values);
+    await _persistence.saveRecipes(values, transactional: false);
   }
 
   Future<void> _deleteRecipe(String id) async {
     final state = await _persistence.load();
     await _persistence.saveRecipes(
       state.recipes.where((item) => item.id != id).toList(),
+      transactional: false,
     );
   }
 
@@ -210,13 +232,14 @@ final class NutritionStore {
     } else {
       values[index] = value;
     }
-    await _persistence.saveCustomFoods(values);
+    await _persistence.saveCustomFoods(values, transactional: false);
   }
 
   Future<void> _deleteCustomFood(String id) async {
     final state = await _persistence.load();
     await _persistence.saveCustomFoods(
       state.customFoods.where((item) => item.id != id).toList(),
+      transactional: false,
     );
   }
 
@@ -230,13 +253,14 @@ final class NutritionStore {
     } else {
       values[index] = favorite;
     }
-    await _persistence.saveFavoriteFoods(values);
+    await _persistence.saveFavoriteFoods(values, transactional: false);
   }
 
   Future<void> _deleteFavoriteFood(String id) async {
     final state = await _persistence.load();
     await _persistence.saveFavoriteFoods(
       state.favoriteFoods.where((item) => item.id != id).toList(),
+      transactional: false,
     );
   }
 
@@ -249,7 +273,7 @@ final class NutritionStore {
     } else {
       values[index] = value;
     }
-    await _persistence.savePlannedMeals(values);
+    await _persistence.savePlannedMeals(values, transactional: false);
   }
 
   Future<void> _savePlannedMeals(Iterable<PlannedMeal> values) async {
@@ -263,13 +287,14 @@ final class NutritionStore {
         meals[index] = value;
       }
     }
-    await _persistence.savePlannedMeals(meals);
+    await _persistence.savePlannedMeals(meals, transactional: false);
   }
 
   Future<void> _deletePlannedMeal(String id) async {
     final state = await _persistence.load();
     await _persistence.savePlannedMeals(
       state.plannedMeals.where((item) => item.id != id).toList(),
+      transactional: false,
     );
   }
 
@@ -282,13 +307,14 @@ final class NutritionStore {
     } else {
       values[index] = value;
     }
-    await _persistence.saveCustomPortions(values);
+    await _persistence.saveCustomPortions(values, transactional: false);
   }
 
   Future<void> _deleteCustomPortion(String id) async {
     final state = await _persistence.load();
     await _persistence.saveCustomPortions(
       state.customPortions.where((item) => item.id != id).toList(),
+      transactional: false,
     );
   }
 
@@ -303,8 +329,16 @@ final class NutritionStore {
     } else {
       values.remove(key);
     }
-    await _persistence.saveShoppingListChecked(values);
+    await _persistence.saveShoppingListChecked(
+      values,
+      transactional: false,
+    );
   }
+
+  Future<void> _clearShoppingItems() => _persistence.saveShoppingListChecked(
+        const <String>{},
+        transactional: false,
+      );
 
   Future<void> _saveSupplementOrder(List<String> orderedIds) async {
     final supplements = await _database.getAllSupplements();
@@ -570,6 +604,13 @@ final class SetShoppingItemChecked extends NutritionCommand {
       store._setShoppingItemChecked(key, checked: checked);
 }
 
+final class ClearShoppingItems extends NutritionCommand {
+  const ClearShoppingItems();
+
+  @override
+  Future<void> apply(NutritionStore store) => store._clearShoppingItems();
+}
+
 final class SaveSupplement extends NutritionCommand {
   final Supplement value;
   const SaveSupplement(this.value);
@@ -674,26 +715,225 @@ final class RestoreBackupV2 extends NutritionCommand {
 
   @override
   Future<void> apply(NutritionStore store) async {
-    await store._database.deleteNutritionData();
+    await store._database.deleteNutritionData(transactional: false);
     await store._database.insertFoods(backup.foodEntries);
     await store._database.insertWaterList(backup.waterEntries);
     await store._database.insertWeightList(backup.weightEntries);
     await store._database.insertWorkoutList(backup.workoutEntries);
     await store._database.insertPhotos(backup.progressPhotos);
-    await store._persistence.saveRecipes(backup.recipes);
-    await store._persistence.saveCustomFoods(backup.customFoods);
-    await store._persistence.saveFavoriteFoods(backup.favoriteFoods);
-    await store._persistence.savePlannedMeals(backup.plannedMeals);
-    await store._persistence.saveCustomPortions(backup.customPortions);
+    await store._persistence.saveRecipes(
+      backup.recipes,
+      transactional: false,
+    );
+    await store._persistence.saveCustomFoods(
+      backup.customFoods,
+      transactional: false,
+    );
+    await store._persistence.saveFavoriteFoods(
+      backup.favoriteFoods,
+      transactional: false,
+    );
+    await store._persistence.savePlannedMeals(
+      backup.plannedMeals,
+      transactional: false,
+    );
+    await store._persistence.saveCustomPortions(
+      backup.customPortions,
+      transactional: false,
+    );
     await store._persistence.saveRecentFoods(
       backup.recentFoods,
       backup.recentFoodMeals,
     );
     await store._persistence.saveUserStats(backup.userStats);
-    await store._persistence
-        .saveShoppingListChecked(backup.shoppingListChecked);
+    await store._persistence.saveShoppingListChecked(
+      backup.shoppingListChecked,
+      transactional: false,
+    );
   }
 }
+
+final class SyncMutation {
+  final String entityType;
+  final String entityId;
+  final String operation;
+  final String? payloadJson;
+
+  const SyncMutation({
+    required this.entityType,
+    required this.entityId,
+    required this.operation,
+    this.payloadJson,
+  });
+}
+
+SyncMutation? _syncMutationFor(NutritionCommand command) => switch (command) {
+      SaveFoodEntry(:final value) => SyncMutation(
+          entityType: 'food_entry',
+          entityId: value.id,
+          operation: 'upsert',
+          payloadJson: jsonEncode(value.toJson()),
+        ),
+      DeleteFoodEntry(:final id) => SyncMutation(
+          entityType: 'food_entry',
+          entityId: id,
+          operation: 'delete',
+        ),
+      SaveWaterEntry(:final value) => SyncMutation(
+          entityType: 'water_entry',
+          entityId: value.id,
+          operation: 'upsert',
+          payloadJson: jsonEncode(value.toJson()),
+        ),
+      DeleteWaterEntry(:final id) => SyncMutation(
+          entityType: 'water_entry',
+          entityId: id,
+          operation: 'delete',
+        ),
+      SaveWeightEntry(:final value) => SyncMutation(
+          entityType: 'weight_entry',
+          entityId: value.id,
+          operation: 'upsert',
+          payloadJson: jsonEncode(value.toJson()),
+        ),
+      DeleteWeightEntry(:final id) => SyncMutation(
+          entityType: 'weight_entry',
+          entityId: id,
+          operation: 'delete',
+        ),
+      SaveWorkoutEntry(:final value) => SyncMutation(
+          entityType: 'workout_entry',
+          entityId: value.id,
+          operation: 'upsert',
+          payloadJson: jsonEncode(value.toJson()),
+        ),
+      DeleteWorkoutEntry(:final id) => SyncMutation(
+          entityType: 'workout_entry',
+          entityId: id,
+          operation: 'delete',
+        ),
+      SaveRecipe(:final value) => SyncMutation(
+          entityType: 'recipe',
+          entityId: value.id,
+          operation: 'upsert',
+          payloadJson: jsonEncode(value.toJson()),
+        ),
+      DeleteRecipe(:final id) => SyncMutation(
+          entityType: 'recipe',
+          entityId: id,
+          operation: 'delete',
+        ),
+      SaveCustomFood(:final value) => SyncMutation(
+          entityType: 'custom_food',
+          entityId: value.id,
+          operation: 'upsert',
+          payloadJson: jsonEncode(value.toJson()),
+        ),
+      DeleteCustomFood(:final id) => SyncMutation(
+          entityType: 'custom_food',
+          entityId: id,
+          operation: 'delete',
+        ),
+      SaveFavoriteFood(:final value) => SyncMutation(
+          entityType: 'favorite_food',
+          entityId: value.id,
+          operation: 'upsert',
+          payloadJson: jsonEncode(value.copyWith(isFavorite: true).toJson()),
+        ),
+      DeleteFavoriteFood(:final id) => SyncMutation(
+          entityType: 'favorite_food',
+          entityId: id,
+          operation: 'delete',
+        ),
+      SavePlannedMeal(:final value) => SyncMutation(
+          entityType: 'planned_meal',
+          entityId: value.id,
+          operation: 'upsert',
+          payloadJson: jsonEncode(value.toJson()),
+        ),
+      SavePlannedMeals(:final values) => SyncMutation(
+          entityType: 'planned_meals',
+          entityId: 'collection',
+          operation: 'upsert',
+          payloadJson:
+              jsonEncode(values.map((value) => value.toJson()).toList()),
+        ),
+      DeletePlannedMeal(:final id) => SyncMutation(
+          entityType: 'planned_meal',
+          entityId: id,
+          operation: 'delete',
+        ),
+      SaveCustomPortion(:final value) => SyncMutation(
+          entityType: 'custom_portion',
+          entityId: value.id,
+          operation: 'upsert',
+          payloadJson: jsonEncode(value.toJson()),
+        ),
+      DeleteCustomPortion(:final id) => SyncMutation(
+          entityType: 'custom_portion',
+          entityId: id,
+          operation: 'delete',
+        ),
+      SetShoppingItemChecked(:final key, :final checked) => SyncMutation(
+          entityType: 'shopping_item',
+          entityId: key,
+          operation: checked ? 'upsert' : 'delete',
+          payloadJson:
+              checked ? jsonEncode({'key': key, 'checked': true}) : null,
+        ),
+      ClearShoppingItems() => const SyncMutation(
+          entityType: 'shopping_items',
+          entityId: 'collection',
+          operation: 'delete',
+        ),
+      SaveSupplement(:final value) => SyncMutation(
+          entityType: 'supplement',
+          entityId: value.id,
+          operation: 'upsert',
+          payloadJson: jsonEncode(value.toJson()),
+        ),
+      DeleteSupplement(:final id) => SyncMutation(
+          entityType: 'supplement',
+          entityId: id,
+          operation: 'delete',
+        ),
+      SaveSupplementOrder(:final orderedIds) => SyncMutation(
+          entityType: 'supplement_order',
+          entityId: 'collection',
+          operation: 'upsert',
+          payloadJson: jsonEncode(orderedIds),
+        ),
+      SaveSupplementLog(:final value) => SyncMutation(
+          entityType: 'supplement_log',
+          entityId: value.id,
+          operation: 'upsert',
+          payloadJson: jsonEncode(value.toJson()),
+        ),
+      DeleteSupplementLog(:final id) => SyncMutation(
+          entityType: 'supplement_log',
+          entityId: id,
+          operation: 'delete',
+        ),
+      SaveUserStats(:final value) => SyncMutation(
+          entityType: 'user_stats',
+          entityId: 'default',
+          operation: 'upsert',
+          payloadJson: jsonEncode(value.toJson()),
+        ),
+      SaveGoals(:final value) => SyncMutation(
+          entityType: 'goals',
+          entityId: 'default',
+          operation: value == null ? 'delete' : 'upsert',
+          payloadJson: value == null ? null : jsonEncode(value.toJson()),
+        ),
+      SaveProfile(:final value) => SyncMutation(
+          entityType: 'profile',
+          entityId: 'default',
+          operation: value == null ? 'delete' : 'upsert',
+          payloadJson: value == null ? null : jsonEncode(value.toJson()),
+        ),
+      _ => null,
+    };
 
 final class NutritionSnapshot {
   final int commitSequence;

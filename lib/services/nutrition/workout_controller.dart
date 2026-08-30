@@ -1,6 +1,7 @@
 import 'package:uuid/uuid.dart';
 import 'package:sophis/models/workout_entry.dart';
 import 'package:sophis/services/database_service.dart';
+import 'package:sophis/services/nutrition/nutrition_store.dart';
 
 /// Manages workout entries and today's workout cache.
 class WorkoutController {
@@ -8,6 +9,7 @@ class WorkoutController {
   final Future<void> Function() _onChanged;
   final bool Function() _isCacheValid;
   final DateTime Function() _currentCacheDate;
+  final NutritionStore? _store;
 
   List<WorkoutEntry> _workoutEntries = [];
 
@@ -18,8 +20,9 @@ class WorkoutController {
     this._db,
     this._onChanged,
     this._isCacheValid,
-    this._currentCacheDate,
-  );
+    this._currentCacheDate, {
+    NutritionStore? store,
+  }) : _store = store;
 
   List<WorkoutEntry> get workoutEntries => _workoutEntries;
 
@@ -49,7 +52,11 @@ class WorkoutController {
   }
 
   Future<void> restoreWorkoutEntry(WorkoutEntry entry) async {
-    await _db.insertWorkout(entry);
+    if (_store == null) {
+      await _db.insertWorkout(entry);
+    } else {
+      await _store!.commitOrThrow(SaveWorkoutEntry(entry));
+    }
     _workoutEntries.add(entry);
     invalidateCache();
     await _onChanged();
@@ -58,7 +65,11 @@ class WorkoutController {
   Future<void> updateWorkoutEntry(WorkoutEntry entry) async {
     final index = _workoutEntries.indexWhere((e) => e.id == entry.id);
     if (index != -1) {
-      await _db.updateWorkout(entry);
+      if (_store == null) {
+        await _db.updateWorkout(entry);
+      } else {
+        await _store!.commitOrThrow(SaveWorkoutEntry(entry));
+      }
       _workoutEntries[index] = entry;
       invalidateCache();
       await _onChanged();
@@ -69,7 +80,11 @@ class WorkoutController {
     final index = _workoutEntries.indexWhere((entry) => entry.id == id);
     if (index == -1) return;
 
-    await _db.deleteWorkout(id);
+    if (_store == null) {
+      await _db.deleteWorkout(id);
+    } else {
+      await _store!.commitOrThrow(DeleteWorkoutEntry(id));
+    }
     _workoutEntries.removeAt(index);
     invalidateCache();
     await _onChanged();

@@ -3,6 +3,7 @@ import 'package:sophis/models/food_entry.dart';
 import 'package:sophis/models/food_item.dart';
 import 'package:sophis/models/nutrition_totals.dart';
 import 'package:sophis/services/database_service.dart';
+import 'package:sophis/services/nutrition/nutrition_store.dart';
 
 /// Manages food entries, today's cache, and food history cache.
 class FoodLogController {
@@ -10,6 +11,7 @@ class FoodLogController {
   final Future<void> Function() _onChanged;
   final bool Function() _isCacheValid;
   final DateTime Function() _currentCacheDate;
+  final NutritionStore? _store;
 
   List<FoodEntry> _entries = [];
   List<FoodItem> _recentFoods = [];
@@ -28,8 +30,9 @@ class FoodLogController {
     this._db,
     this._onChanged,
     this._isCacheValid,
-    this._currentCacheDate,
-  );
+    this._currentCacheDate, {
+    NutritionStore? store,
+  }) : _store = store;
 
   List<FoodEntry> get entries => _entries;
   List<FoodItem> get recentFoods => _recentFoods;
@@ -97,7 +100,11 @@ class FoodLogController {
   }
 
   Future<void> addFoodEntry(FoodEntry entry) async {
-    await _db.insertFood(entry);
+    if (_store == null) {
+      await _db.insertFood(entry);
+    } else {
+      await _store!.commitOrThrow(SaveFoodEntry(entry));
+    }
     _entries.add(entry);
     invalidateCache();
     invalidateFoodHistoryCache();
@@ -108,7 +115,11 @@ class FoodLogController {
     final index = _entries.indexWhere((entry) => entry.id == id);
     if (index == -1) return;
 
-    await _db.deleteFood(id);
+    if (_store == null) {
+      await _db.deleteFood(id);
+    } else {
+      await _store!.commitOrThrow(DeleteFoodEntry(id));
+    }
     _entries.removeAt(index);
     invalidateCache();
     invalidateFoodHistoryCache();
@@ -118,8 +129,12 @@ class FoodLogController {
   Future<void> updateFoodEntry(FoodEntry entry) async {
     final index = _entries.indexWhere((e) => e.id == entry.id);
     if (index != -1) {
-      final updated = await _db.updateFood(entry);
-      if (!updated) return;
+      if (_store == null) {
+        final updated = await _db.updateFood(entry);
+        if (!updated) return;
+      } else {
+        await _store!.commitOrThrow(SaveFoodEntry(entry));
+      }
 
       _entries[index] = entry;
       invalidateCache();

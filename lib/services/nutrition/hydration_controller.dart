@@ -1,6 +1,7 @@
 import 'package:uuid/uuid.dart';
 import 'package:sophis/models/water_entry.dart';
 import 'package:sophis/services/database_service.dart';
+import 'package:sophis/services/nutrition/nutrition_store.dart';
 
 /// Manages water entries and today's water cache.
 class HydrationController {
@@ -8,6 +9,7 @@ class HydrationController {
   final Future<void> Function() _onChanged;
   final bool Function() _isCacheValid;
   final DateTime Function() _currentCacheDate;
+  final NutritionStore? _store;
 
   List<WaterEntry> _waterEntries = [];
 
@@ -18,8 +20,9 @@ class HydrationController {
     this._db,
     this._onChanged,
     this._isCacheValid,
-    this._currentCacheDate,
-  );
+    this._currentCacheDate, {
+    NutritionStore? store,
+  }) : _store = store;
 
   List<WaterEntry> get waterEntries => _waterEntries;
 
@@ -48,7 +51,11 @@ class HydrationController {
   }
 
   Future<void> restoreWaterEntry(WaterEntry entry) async {
-    await _db.insertWater(entry);
+    if (_store == null) {
+      await _db.insertWater(entry);
+    } else {
+      await _store!.commitOrThrow(SaveWaterEntry(entry));
+    }
     _waterEntries.add(entry);
     invalidateCache();
     await _onChanged();
@@ -58,7 +65,11 @@ class HydrationController {
     final index = _waterEntries.indexWhere((entry) => entry.id == id);
     if (index == -1) return;
 
-    await _db.deleteWater(id);
+    if (_store == null) {
+      await _db.deleteWater(id);
+    } else {
+      await _store!.commitOrThrow(DeleteWaterEntry(id));
+    }
     _waterEntries.removeAt(index);
     invalidateCache();
     await _onChanged();

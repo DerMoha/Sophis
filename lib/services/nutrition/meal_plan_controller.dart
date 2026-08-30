@@ -2,12 +2,14 @@ import 'package:uuid/uuid.dart';
 import 'package:sophis/models/meal_plan.dart';
 import 'package:sophis/models/nutrition_totals.dart';
 import 'package:sophis/services/nutrition/nutrition_persistence.dart';
+import 'package:sophis/services/nutrition/nutrition_store.dart';
 
 /// Manages planned meals, shopping list, and planned meal cache.
 class MealPlanController {
   final NutritionPersistence _persistence;
   final Future<void> Function() _onChanged;
   final int Function(DateTime) _dayKey;
+  final NutritionStore? _store;
 
   List<PlannedMeal> _plannedMeals = [];
   Set<String> _shoppingListChecked = {};
@@ -20,8 +22,9 @@ class MealPlanController {
   MealPlanController(
     this._persistence,
     this._onChanged,
-    this._dayKey,
-  );
+    this._dayKey, {
+    NutritionStore? store,
+  }) : _store = store;
 
   static const _zeroMacroTotals = NutritionTotals.zero;
 
@@ -79,7 +82,11 @@ class MealPlanController {
 
   Future<void> addPlannedMeal(PlannedMeal meal) async {
     final updatedMeals = [..._plannedMeals, meal];
-    await _persistence.savePlannedMeals(updatedMeals);
+    if (_store == null) {
+      await _persistence.savePlannedMeals(updatedMeals);
+    } else {
+      await _store!.commitOrThrow(SavePlannedMeal(meal));
+    }
     _plannedMeals = updatedMeals;
     invalidatePlannedMealsCache();
     await _onChanged();
@@ -89,7 +96,11 @@ class MealPlanController {
     final updatedMeals = _plannedMeals.where((meal) => meal.id != id).toList();
     if (updatedMeals.length == _plannedMeals.length) return;
 
-    await _persistence.savePlannedMeals(updatedMeals);
+    if (_store == null) {
+      await _persistence.savePlannedMeals(updatedMeals);
+    } else {
+      await _store!.commitOrThrow(DeletePlannedMeal(id));
+    }
     _plannedMeals = updatedMeals;
     invalidatePlannedMealsCache();
     await _onChanged();
@@ -99,7 +110,11 @@ class MealPlanController {
     final i = _plannedMeals.indexWhere((m) => m.id == meal.id);
     if (i != -1) {
       final updatedMeals = List<PlannedMeal>.of(_plannedMeals)..[i] = meal;
-      await _persistence.savePlannedMeals(updatedMeals);
+      if (_store == null) {
+        await _persistence.savePlannedMeals(updatedMeals);
+      } else {
+        await _store!.commitOrThrow(SavePlannedMeal(meal));
+      }
       _plannedMeals = updatedMeals;
       invalidatePlannedMealsCache();
       await _onChanged();
@@ -207,7 +222,16 @@ class MealPlanController {
     } else {
       updatedChecked.add(key);
     }
-    await _persistence.saveShoppingListChecked(updatedChecked);
+    if (_store == null) {
+      await _persistence.saveShoppingListChecked(updatedChecked);
+    } else {
+      await _store!.commitOrThrow(
+        SetShoppingItemChecked(
+          key,
+          checked: !_shoppingListChecked.contains(key),
+        ),
+      );
+    }
     _shoppingListChecked = updatedChecked;
     await _onChanged();
   }
@@ -215,7 +239,11 @@ class MealPlanController {
   Future<void> clearCheckedShoppingItems() async {
     if (_shoppingListChecked.isEmpty) return;
 
-    await _persistence.saveShoppingListChecked(const <String>{});
+    if (_store == null) {
+      await _persistence.saveShoppingListChecked(const <String>{});
+    } else {
+      await _store!.commitOrThrow(const ClearShoppingItems());
+    }
     _shoppingListChecked = {};
     await _onChanged();
   }
