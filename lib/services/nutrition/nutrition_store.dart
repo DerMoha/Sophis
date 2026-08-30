@@ -210,11 +210,13 @@ final class NutritionStore {
       final supplements = await _database.getAllSupplements();
       final supplementLogs = await _database.getAllSupplementLogs();
       final photos = await _database.getAllPhotos();
+      final goals = await _persistence.loadGoals();
+      final profile = await _persistence.loadProfile();
 
       return NutritionSnapshot(
         commitSequence: _commitSequence,
-        goals: _storage.loadGoals(),
-        profile: _storage.loadProfile(),
+        goals: goals,
+        profile: profile,
         foodEntries: List.unmodifiable(foods),
         waterEntries: List.unmodifiable(water),
         weightEntries: List.unmodifiable(weights),
@@ -314,19 +316,11 @@ final class NutritionStore {
   }
 
   Future<void> _saveGoals(NutritionGoals? goals) async {
-    if (goals == null) {
-      await _storage.clearGoals();
-      return;
-    }
-    await _storage.saveGoals(goals);
+    await _persistence.saveGoals(goals, transactional: false);
   }
 
   Future<void> _saveProfile(UserProfile? profile) async {
-    if (profile == null) {
-      await _storage.clearProfile();
-      return;
-    }
-    await _storage.saveProfile(profile);
+    await _persistence.saveProfile(profile, transactional: false);
   }
 
   Future<void> _saveUserStats(UserStats value) =>

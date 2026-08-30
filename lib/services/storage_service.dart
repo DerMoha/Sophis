@@ -317,11 +317,12 @@ class StorageService {
     }
   }
 
-  /// Removes legacy nutrition collections after a successful SQLite restore.
-  /// Goals and profile are intentionally left intact because the restored
-  /// values are written to those keys as part of the same store operation.
+  /// Removes legacy nutrition state after a successful SQLite restore.
+  /// Device settings and secure credentials are intentionally preserved.
   Future<void> clearLegacyNutritionCollections() async {
     for (final key in [
+      _goalsKey,
+      _profileKey,
       _entriesKey,
       _waterEntriesKey,
       _weightEntriesKey,

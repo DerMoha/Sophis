@@ -1,7 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:sophis/models/food_item.dart';
+import 'package:sophis/models/nutrition_goals.dart';
 import 'package:sophis/models/recipe.dart';
+import 'package:sophis/models/user_profile.dart';
 import 'package:sophis/services/nutrition/nutrition_persistence.dart';
 
 import '../helpers/test_services.dart';
@@ -81,6 +83,40 @@ void main() {
       expect(reloaded.favoriteFoods.single.name, 'Yogurt');
       expect(reloaded.favoriteFoods.single.isFavorite, isTrue);
       expect(reloaded.recentFoodMeals['food-1'], 'breakfast');
+    });
+
+    test('migrates goals and profile to canonical SQLite documents', () async {
+      final storage = await createTestStorage();
+      final database = createTestDatabase();
+      addTearDown(database.close);
+      await storage.saveGoals(NutritionGoals(calories: 2100));
+      await storage.saveProfile(
+        const UserProfile(weight: 72, height: 180, age: 35),
+      );
+
+      final persistence = NutritionPersistence(database, storage);
+      await persistence.initialize();
+
+      expect((await persistence.loadGoals())?.calories, 2100);
+      expect((await persistence.loadProfile())?.weight, 72);
+      expect(
+        await database.readNutritionDocument('account_goals'),
+        isNotNull,
+      );
+      expect(
+        await database.readNutritionDocument('account_profile'),
+        isNotNull,
+      );
+
+      await persistence.saveGoals(null);
+      await persistence.saveProfile(null);
+
+      expect(await persistence.loadGoals(), isNull);
+      expect(await persistence.loadProfile(), isNull);
+      // Legacy values may still exist for one-release rollback compatibility,
+      // but they must not become authoritative after the marker is committed.
+      expect(storage.loadGoals(), isNotNull);
+      expect(storage.loadProfile(), isNotNull);
     });
   });
 }

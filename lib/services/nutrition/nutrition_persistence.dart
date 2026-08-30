@@ -3,20 +3,25 @@ import 'dart:convert';
 import 'package:sophis/models/custom_portion.dart';
 import 'package:sophis/models/food_item.dart';
 import 'package:sophis/models/meal_plan.dart';
+import 'package:sophis/models/nutrition_goals.dart';
 import 'package:sophis/models/recipe.dart';
 import 'package:sophis/models/serving_size.dart';
+import 'package:sophis/models/user_profile.dart';
 import 'package:sophis/models/user_stats.dart';
 import 'package:sophis/services/database_service.dart';
 import 'package:sophis/services/storage_service.dart';
 
-/// SQLite-backed authority for nutrition collections that are loaded as a
-/// coherent state. Library, planning, stats, and shopping rows are canonical;
-/// the recent-food document remains a deliberately local-only cache because
-/// it also stores meal-specific presentation metadata. Migration flags, Drift
-/// rows, and legacy preference keys stay behind this interface.
+/// SQLite-backed authority for nutrition state that is loaded as a coherent
+/// snapshot. Library, planning, stats, shopping, goals, and profile data are
+/// canonical; the recent-food document remains a deliberately local-only
+/// cache because it also stores meal-specific presentation metadata.
+/// Migration flags, Drift rows, and legacy preference keys stay behind this
+/// interface.
 class NutritionPersistence {
   static const _canonicalLibraryMigrationKey = 'canonical_library_rows_v1';
   static const _canonicalLibraryMigrationVersion = 1;
+  static const _canonicalAccountMigrationKey = 'canonical_account_state_v1';
+  static const _canonicalAccountMigrationVersion = 1;
   static const _recipesKey = 'recipes';
   static const _customFoodsKey = 'custom_foods';
   static const _favoriteFoodsKey = 'favorite_foods';
@@ -25,6 +30,8 @@ class NutritionPersistence {
   static const _recentFoodsKey = 'recent_foods';
   static const _userStatsKey = 'user_stats';
   static const _shoppingListKey = 'shopping_list_checked';
+  static const _goalsDocumentKey = 'account_goals';
+  static const _profileDocumentKey = 'account_profile';
 
   final DatabaseService _database;
   final StorageService _legacyStorage;
@@ -53,6 +60,7 @@ class NutritionPersistence {
         );
       });
     }
+    await _migrateAccountState();
     return load();
   }
 
@@ -327,6 +335,80 @@ class NutritionPersistence {
         _userStatsToRow(stats),
       );
 
+  Future<NutritionGoals?> loadGoals() async {
+    final document = await _database.readNutritionDocument(_goalsDocumentKey);
+    if (document != null) {
+      return NutritionGoals.fromJson(
+        jsonDecode(document) as Map<String, dynamic>,
+      );
+    }
+
+    final marker = await _database.getMigrationState(
+      _canonicalAccountMigrationKey,
+    );
+    if (marker?.version == _canonicalAccountMigrationVersion) return null;
+    return _legacyStorage.loadGoals();
+  }
+
+  Future<void> saveGoals(
+    NutritionGoals? goals, {
+    bool transactional = true,
+  }) async {
+    Future<void> write() async {
+      if (goals == null) {
+        await _database.deleteNutritionDocument(_goalsDocumentKey);
+      } else {
+        await _database.writeNutritionDocument(
+          _goalsDocumentKey,
+          jsonEncode(goals.toJson()),
+        );
+      }
+    }
+
+    if (transactional) {
+      await _database.transaction(write);
+    } else {
+      await write();
+    }
+  }
+
+  Future<UserProfile?> loadProfile() async {
+    final document = await _database.readNutritionDocument(_profileDocumentKey);
+    if (document != null) {
+      return UserProfile.fromJson(
+        jsonDecode(document) as Map<String, dynamic>,
+      );
+    }
+
+    final marker = await _database.getMigrationState(
+      _canonicalAccountMigrationKey,
+    );
+    if (marker?.version == _canonicalAccountMigrationVersion) return null;
+    return _legacyStorage.loadProfile();
+  }
+
+  Future<void> saveProfile(
+    UserProfile? profile, {
+    bool transactional = true,
+  }) async {
+    Future<void> write() async {
+      if (profile == null) {
+        await _database.deleteNutritionDocument(_profileDocumentKey);
+      } else {
+        await _database.writeNutritionDocument(
+          _profileDocumentKey,
+          jsonEncode(profile.toJson()),
+        );
+      }
+    }
+
+    if (transactional) {
+      await _database.transaction(write);
+    } else {
+      await write();
+    }
+  }
+
   Future<void> saveShoppingListChecked(
     Set<String> checked, {
     bool transactional = true,
@@ -477,6 +559,41 @@ class NutritionPersistence {
 
     await _legacyStorage.setMigrationV3Complete();
     await _legacyStorage.clearLegacyMigratedV2Data();
+  }
+
+  Future<void> _migrateAccountState() async {
+    final marker = await _database.getMigrationState(
+      _canonicalAccountMigrationKey,
+    );
+    if (marker?.version == _canonicalAccountMigrationVersion) return;
+
+    final existingGoals = await _database.readNutritionDocument(
+      _goalsDocumentKey,
+    );
+    final existingProfile = await _database.readNutritionDocument(
+      _profileDocumentKey,
+    );
+    final legacyGoals = _legacyStorage.loadGoals();
+    final legacyProfile = _legacyStorage.loadProfile();
+
+    await _database.transaction(() async {
+      if (existingGoals == null && legacyGoals != null) {
+        await _database.writeNutritionDocument(
+          _goalsDocumentKey,
+          jsonEncode(legacyGoals.toJson()),
+        );
+      }
+      if (existingProfile == null && legacyProfile != null) {
+        await _database.writeNutritionDocument(
+          _profileDocumentKey,
+          jsonEncode(legacyProfile.toJson()),
+        );
+      }
+      await _database.setMigrationState(
+        _canonicalAccountMigrationKey,
+        version: _canonicalAccountMigrationVersion,
+      );
+    });
   }
 
   List<T> _choose<T>(
