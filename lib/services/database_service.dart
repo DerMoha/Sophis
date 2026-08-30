@@ -1464,7 +1464,7 @@ class DatabaseService extends _$DatabaseService {
           ..where(
             (row) =>
                 row.processedAt.isNotNull() &
-                row.processedAt.isSmallerThanValue(cutoff),
+                row.processedAt.isSmallerOrEqualValue(cutoff),
           ))
         .go();
   }

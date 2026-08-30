@@ -107,6 +107,7 @@ final class NutritionStore {
   }
 
   Future<void> acknowledgeSyncChange(String id) async {
+    await _ensureInitialized();
     await _database.markSyncOutboxProcessed(id);
   }
 
@@ -115,6 +116,7 @@ final class NutritionStore {
     Object? error,
     Duration? delay,
   }) async {
+    await _ensureInitialized();
     final attempts = change.attempts + 1;
     final backoff =
         delay ?? Duration(seconds: attempts < 6 ? 1 << (attempts - 1) : 32);
@@ -124,6 +126,13 @@ final class NutritionStore {
       nextAttemptAt: DateTime.now().toUtc().add(backoff),
       error: error?.toString(),
     );
+  }
+
+  Future<void> pruneProcessedSyncChanges({
+    Duration olderThan = const Duration(days: 30),
+  }) async {
+    await _ensureInitialized();
+    await _database.pruneProcessedSyncOutbox(olderThan: olderThan);
   }
 
   Future<void> _enqueueCommit(

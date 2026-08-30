@@ -210,6 +210,8 @@ void main() {
 
       await store.acknowledgeSyncChange(changes.single.id);
       expect(await store.pendingSyncChanges(), isEmpty);
+      await store.pruneProcessedSyncChanges(olderThan: Duration.zero);
+      expect(await database.select(database.syncOutbox).get(), isEmpty);
     });
 
     test('emits a clear mutation after deleting all local data', () async {
