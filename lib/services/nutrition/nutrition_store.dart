@@ -740,7 +740,7 @@ final class NutritionSyncChange {
 
   const NutritionSyncChange({
     required this.id,
-    required this.dataSpaceId,
+    this.dataSpaceId = DatabaseService.defaultDataSpaceId,
     required this.entityType,
     required this.entityId,
     required this.operation,
