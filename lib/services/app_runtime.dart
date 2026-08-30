@@ -79,6 +79,6 @@ class AppRuntime {
     settings.dispose();
     nutrition.dispose();
     supplements.dispose();
-    await database.close();
+    await nutrition.store.close();
   }
 }
