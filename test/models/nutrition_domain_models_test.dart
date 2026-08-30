@@ -239,7 +239,7 @@ void main() {
         ProgressPhoto.fromJson(photo.toJson()).category,
         PhotoCategory.side,
       );
-      expect(photo.toJson()['category'], 'side');
+      expect(photo.toJson()['category'], 1);
       expect(
         ProgressPhoto.fromJson({...photo.toJson(), 'category': 1}).category,
         PhotoCategory.side,

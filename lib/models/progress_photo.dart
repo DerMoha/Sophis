@@ -44,7 +44,9 @@ class ProgressPhoto {
         'timestamp': timestamp.toIso8601String(),
         'weightKg': weightKg,
         'note': note,
-        'category': _photoCategoryKey(category),
+        // Keep archive-v2 JSON backwards-compatible. Sync payloads use the
+        // stable category key separately and do not depend on enum ordinals.
+        'category': category.index,
         'createdAt': createdAt.toIso8601String(),
       };
 
@@ -58,13 +60,6 @@ class ProgressPhoto {
         createdAt: DateTime.parse(json['createdAt'] as String),
       );
 }
-
-String _photoCategoryKey(PhotoCategory category) => switch (category) {
-      PhotoCategory.front => 'front',
-      PhotoCategory.side => 'side',
-      PhotoCategory.back => 'back',
-      PhotoCategory.other => 'other',
-    };
 
 PhotoCategory _photoCategoryFromJson(Object? value) {
   if (value is String) {

@@ -246,6 +246,7 @@ void main() {
       final pending = await store.pendingSyncChanges();
       expect(pending, hasLength(1));
       expect(pending.single.payloadJson, contains('"blobId":"sync-photo"'));
+      expect(pending.single.payloadJson, contains('"category":"front"'));
       expect(pending.single.payloadJson, isNot(contains(photo.imagePath)));
     });
 

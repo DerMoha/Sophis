@@ -953,10 +953,19 @@ SyncMutation? _syncMutationFor(NutritionCommand command) => switch (command) {
     };
 
 Map<String, dynamic> _progressPhotoSyncPayload(ProgressPhoto photo) {
-  final payload = photo.toJson()..remove('imagePath');
+  final payload = photo.toJson()
+    ..remove('imagePath')
+    ..['category'] = _photoCategorySyncKey(photo.category);
   payload['blobId'] = photo.id;
   return payload;
 }
+
+String _photoCategorySyncKey(PhotoCategory category) => switch (category) {
+      PhotoCategory.front => 'front',
+      PhotoCategory.side => 'side',
+      PhotoCategory.back => 'back',
+      PhotoCategory.other => 'other',
+    };
 
 final class NutritionSnapshot {
   final int commitSequence;
