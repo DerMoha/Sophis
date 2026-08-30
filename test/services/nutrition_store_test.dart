@@ -3,6 +3,7 @@ import 'package:sophis/models/food_entry.dart';
 import 'package:sophis/models/meal_plan.dart';
 import 'package:sophis/models/progress_photo.dart';
 import 'package:sophis/models/recipe.dart';
+import 'package:sophis/models/user_profile.dart';
 import 'package:sophis/models/water_entry.dart';
 import 'package:sophis/services/database_service.dart';
 import 'package:sophis/services/nutrition/nutrition_persistence.dart';
@@ -248,6 +249,26 @@ void main() {
       expect(pending.single.payloadJson, contains('"blobId":"sync-photo"'));
       expect(pending.single.payloadJson, contains('"category":"front"'));
       expect(pending.single.payloadJson, isNot(contains(photo.imagePath)));
+    });
+
+    test('uses stable profile enum names in sync payloads', () async {
+      await store.commit(
+        const SaveProfile(
+          UserProfile(
+            gender: Gender.male,
+            activityLevel: ActivityLevel.moderate,
+            goal: Goal.maintain,
+          ),
+        ),
+      );
+
+      final pending = await store.pendingSyncChanges();
+      expect(pending.single.payloadJson, contains('"gender":"male"'));
+      expect(
+        pending.single.payloadJson,
+        contains('"activityLevel":"moderate"'),
+      );
+      expect(pending.single.payloadJson, contains('"goal":"maintain"'));
     });
 
     test('can retry store initialization after a transient failure', () async {

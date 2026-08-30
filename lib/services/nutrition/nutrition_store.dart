@@ -937,7 +937,8 @@ SyncMutation? _syncMutationFor(NutritionCommand command) => switch (command) {
           entityType: 'profile',
           entityId: 'default',
           operation: value == null ? 'delete' : 'upsert',
-          payloadJson: value == null ? null : jsonEncode(value.toJson()),
+          payloadJson:
+              value == null ? null : jsonEncode(_profileSyncPayload(value)),
         ),
       ClearAllNutritionData() => const SyncMutation(
           entityType: 'nutrition_snapshot',
@@ -966,6 +967,14 @@ String _photoCategorySyncKey(PhotoCategory category) => switch (category) {
       PhotoCategory.back => 'back',
       PhotoCategory.other => 'other',
     };
+
+Map<String, dynamic> _profileSyncPayload(UserProfile profile) {
+  final payload = profile.toJson();
+  payload['gender'] = profile.gender?.name;
+  payload['activityLevel'] = profile.activityLevel?.name;
+  payload['goal'] = profile.goal?.name;
+  return payload;
+}
 
 final class NutritionSnapshot {
   final int commitSequence;

@@ -78,6 +78,15 @@ void main() {
       expect(restored.activityLevel, ActivityLevel.moderate);
       expect(restored.goal, Goal.lose);
       expect(restored.targetWeight, 75);
+      final stable = UserProfile.fromJson({
+        ...profile.toJson(),
+        'gender': 'male',
+        'activityLevel': 'moderate',
+        'goal': 'lose',
+      });
+      expect(stable.gender, Gender.male);
+      expect(stable.activityLevel, ActivityLevel.moderate);
+      expect(stable.goal, Goal.lose);
     });
 
     test('summed recipes and divided them per serving', () {
