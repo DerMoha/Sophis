@@ -381,9 +381,15 @@ final class NutritionStore {
   Future<void> _saveUserStats(UserStats value) =>
       _persistence.saveUserStats(value);
 
+  Future<void> _saveProgressPhoto(ProgressPhoto value) =>
+      _database.upsertPhoto(value);
+
+  Future<void> _deleteProgressPhoto(String id) =>
+      _database.deletePhoto(id).then((_) {});
+
   Future<void> _clearAll() async {
-    await _database.deleteAllData();
-    await _storage.clearNutritionData();
+    await _database.deleteAllData(transactional: false);
+    await _storage.clear();
   }
 
   Future<void> close() async {
@@ -633,10 +639,6 @@ final class DeleteSupplement extends NutritionCommand {
 
   @override
   Future<void> apply(NutritionStore store) async {
-    final logs = await store._database.getAllSupplementLogs();
-    for (final log in logs.where((log) => log.supplementId == id)) {
-      await store._database.deleteSupplementLog(log.id);
-    }
     await store._database.deleteSupplement(id);
   }
 }
@@ -667,6 +669,22 @@ final class DeleteSupplementLog extends NutritionCommand {
   @override
   Future<void> apply(NutritionStore store) =>
       store._database.deleteSupplementLog(id).then((_) {});
+}
+
+final class SaveProgressPhoto extends NutritionCommand {
+  final ProgressPhoto value;
+  const SaveProgressPhoto(this.value);
+
+  @override
+  Future<void> apply(NutritionStore store) => store._saveProgressPhoto(value);
+}
+
+final class DeleteProgressPhoto extends NutritionCommand {
+  final String id;
+  const DeleteProgressPhoto(this.id);
+
+  @override
+  Future<void> apply(NutritionStore store) => store._deleteProgressPhoto(id);
 }
 
 final class SaveUserStats extends NutritionCommand {
@@ -750,6 +768,8 @@ final class RestoreBackupV2 extends NutritionCommand {
       backup.shoppingListChecked,
       transactional: false,
     );
+    await store._saveGoals(backup.goals);
+    await store._saveProfile(backup.profile);
   }
 }
 
@@ -914,6 +934,17 @@ SyncMutation? _syncMutationFor(NutritionCommand command) => switch (command) {
           entityId: id,
           operation: 'delete',
         ),
+      SaveProgressPhoto(:final value) => SyncMutation(
+          entityType: 'progress_photo',
+          entityId: value.id,
+          operation: 'upsert',
+          payloadJson: jsonEncode(value.toJson()),
+        ),
+      DeleteProgressPhoto(:final id) => SyncMutation(
+          entityType: 'progress_photo',
+          entityId: id,
+          operation: 'delete',
+        ),
       SaveUserStats(:final value) => SyncMutation(
           entityType: 'user_stats',
           entityId: 'default',
@@ -931,6 +962,11 @@ SyncMutation? _syncMutationFor(NutritionCommand command) => switch (command) {
           entityId: 'default',
           operation: value == null ? 'delete' : 'upsert',
           payloadJson: value == null ? null : jsonEncode(value.toJson()),
+        ),
+      RestoreBackupV2() => const SyncMutation(
+          entityType: 'nutrition_snapshot',
+          entityId: 'default',
+          operation: 'restore',
         ),
       _ => null,
     };

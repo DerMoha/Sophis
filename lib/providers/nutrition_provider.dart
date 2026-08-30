@@ -112,7 +112,7 @@ class NutritionProvider extends ChangeNotifier {
       _onSimpleChanged,
       store: _store,
     );
-    _progressPhotos = ProgressPhotoController(_db);
+    _progressPhotos = ProgressPhotoController(_db, store: _store);
   }
 
   Future<void> initialize() => _loadData();
@@ -593,7 +593,7 @@ class NutritionProvider extends ChangeNotifier {
   }
 
   Future<void> restoreProgressPhoto(ProgressPhoto photo) async {
-    await _db.insertPhoto(photo);
+    await _store.commitOrThrow(SaveProgressPhoto(photo));
     _photos.add(photo);
     _photos.sort((a, b) => b.timestamp.compareTo(a.timestamp));
     notifyListeners();
@@ -634,30 +634,8 @@ class NutritionProvider extends ChangeNotifier {
       _progressPhotos.deleteAllPhotoFiles();
 
   Future<void> replaceFromBackup(NutritionBackup backup) async {
-    await _storage.clearNutritionData();
-
-    await _db.transaction(() async {
-      await _db.deleteNutritionData();
-      await _db.insertFoods(backup.foodEntries);
-      await _db.insertWaterList(backup.waterEntries);
-      await _db.insertWeightList(backup.weightEntries);
-      await _db.insertWorkoutList(backup.workoutEntries);
-      await _db.insertPhotos(backup.progressPhotos);
-      await _persistence.saveRecipes(backup.recipes);
-      await _persistence.saveCustomFoods(backup.customFoods);
-      await _persistence.saveFavoriteFoods(backup.favoriteFoods);
-      await _persistence.savePlannedMeals(backup.plannedMeals);
-      await _persistence.saveCustomPortions(backup.customPortions);
-      await _persistence.saveRecentFoods(
-        backup.recentFoods,
-        backup.recentFoodMeals,
-      );
-      await _persistence.saveUserStats(backup.userStats);
-      await _persistence.saveShoppingListChecked(backup.shoppingListChecked);
-    });
-
-    if (backup.goals != null) await _storage.saveGoals(backup.goals!);
-    if (backup.profile != null) await _storage.saveProfile(backup.profile!);
+    await _store.commitOrThrow(RestoreBackupV2(backup));
+    await _progressPhotos.cleanupOrphanedFiles();
     await _loadData();
   }
 
@@ -885,26 +863,24 @@ class NutritionProvider extends ChangeNotifier {
   // ── Clear All ───────────────────────────────────────────────────────────
 
   Future<void> clearAllData() async {
+    await _store.commitOrThrow(const ClearAllNutritionData());
+    if (_cleanupProgressPhotosOnLoad) {
+      await _progressPhotos.deleteAllPhotoFiles();
+    }
+
     _goals = null;
     _profile = null;
     _weightEntries = [];
     _photos = [];
     _userStats = const UserStats();
-
     _foodLog.clearAll();
     _hydration.clearAll();
     _workouts.clearAll();
     _mealPlan.clearAll();
     _foodLibrary.clearAll();
-
     _cacheDate = null;
     _healthSyncBurnedCalories = 0.0;
 
-    if (_cleanupProgressPhotosOnLoad) {
-      await _progressPhotos.deleteAllPhotoFiles();
-    }
-    await _db.deleteAllData();
-    await _storage.clear();
     HomeWidgetService.updateWidgetData(this);
     notifyListeners();
   }

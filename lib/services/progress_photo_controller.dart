@@ -7,11 +7,16 @@ import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 import 'package:sophis/models/progress_photo.dart';
 import 'package:sophis/services/database_service.dart';
+import 'package:sophis/services/nutrition/nutrition_store.dart';
 
 class ProgressPhotoController {
   final DatabaseService _db;
+  final NutritionStore? _store;
 
-  ProgressPhotoController(this._db);
+  ProgressPhotoController(
+    this._db, {
+    NutritionStore? store,
+  }) : _store = store;
 
   Future<Directory> _getPhotosDir() async {
     final appDir = await getApplicationDocumentsDirectory();
@@ -51,7 +56,6 @@ class ProgressPhotoController {
     }
 
     final jpgBytes = img.encodeJpg(image, quality: 90);
-    await File(imagePath).writeAsBytes(jpgBytes);
 
     // Generate thumbnail (300px max)
     const thumbMax = 300;
@@ -61,36 +65,45 @@ class ProgressPhotoController {
       height: image.height >= image.width ? thumbMax : null,
     );
     final thumbBytes = img.encodeJpg(thumb, quality: 85);
-    await File(thumbPath).writeAsBytes(thumbBytes);
+    try {
+      await _writeAtomically(File(imagePath), jpgBytes);
+      await _writeAtomically(File(thumbPath), thumbBytes);
 
-    final photo = ProgressPhoto(
-      id: id,
-      imagePath: imagePath,
-      timestamp: timestamp ?? DateTime.now(),
-      weightKg: weightKg,
-      note: note,
-      category: category,
-      createdAt: DateTime.now(),
-    );
+      final now = DateTime.now().toUtc();
+      final photo = ProgressPhoto(
+        id: id,
+        imagePath: imagePath,
+        timestamp: (timestamp ?? now).toUtc(),
+        weightKg: weightKg,
+        note: note,
+        category: category,
+        createdAt: now,
+      );
 
-    await _db.insertPhoto(photo);
-    return photo;
+      if (_store == null) {
+        await _db.insertPhoto(photo);
+      } else {
+        await _store!.commitOrThrow(SaveProgressPhoto(photo));
+      }
+      return photo;
+    } catch (_) {
+      await _deleteIfExists(File(imagePath));
+      await _deleteIfExists(File(thumbPath));
+      rethrow;
+    }
   }
 
   Future<void> deletePhoto(String id) async {
     final photo = await _db.getPhotoById(id);
-    if (photo != null) {
-      final imageFile = File(photo.imagePath);
-      if (imageFile.existsSync()) {
-        imageFile.deleteSync();
-      }
-      final thumbFile =
-          File('${photo.imagePath.replaceAll('.jpg', '')}_thumb.jpg');
-      if (thumbFile.existsSync()) {
-        thumbFile.deleteSync();
-      }
+    if (_store == null) {
+      await _db.deletePhoto(id);
+    } else {
+      await _store!.commitOrThrow(DeleteProgressPhoto(id));
     }
-    await _db.deletePhoto(id);
+    if (photo != null) {
+      await _deleteIfExists(File(photo.imagePath));
+      await _deleteIfExists(_thumbnailFile(photo.imagePath));
+    }
   }
 
   Future<List<ProgressPhoto>> getAllPhotos() => _db.getAllPhotos();
@@ -133,14 +146,16 @@ class ProgressPhotoController {
   Future<void> cleanupOrphanedFiles() async {
     final photosDir = await _getPhotosDir();
     final photos = await _db.getAllPhotos();
-    final validIds = photos.map((p) => p.id).toSet();
+    final validPaths = <String>{};
+    for (final photo in photos) {
+      validPaths.add(photo.imagePath);
+      validPaths.add(_thumbnailFile(photo.imagePath).path);
+    }
 
-    for (final entity in photosDir.listSync()) {
+    await for (final entity in photosDir.list()) {
       if (entity is! File) continue;
-      final basename = p.basename(entity.path);
-      final id = basename.replaceAll('_thumb.jpg', '').replaceAll('.jpg', '');
-      if (!validIds.contains(id)) {
-        entity.deleteSync();
+      if (!validPaths.contains(entity.path)) {
+        await _deleteIfExists(entity);
       }
     }
   }
@@ -148,8 +163,8 @@ class ProgressPhotoController {
   Future<void> deleteAllPhotoFiles() async {
     final photosDir = await _getPhotosDir();
     if (!photosDir.existsSync()) return;
-    for (final entity in photosDir.listSync()) {
-      if (entity is File) entity.deleteSync();
+    await for (final entity in photosDir.list()) {
+      if (entity is File) await _deleteIfExists(entity);
     }
   }
 
@@ -159,25 +174,33 @@ class ProgressPhotoController {
     List<int>? thumbnailBytes,
   }) async {
     final photosDir = await _getPhotosDir();
-    final imagePath = p.join(photosDir.path, '${metadata.id}.jpg');
-    final thumbnailPath = p.join(photosDir.path, '${metadata.id}_thumb.jpg');
-    await File(imagePath).writeAsBytes(imageBytes, flush: true);
+    final suffix = const Uuid().v4();
+    final imagePath = p.join(photosDir.path, '${metadata.id}_$suffix.jpg');
+    final thumbnailPath =
+        p.join(photosDir.path, '${metadata.id}_${suffix}_thumb.jpg');
+    try {
+      await _writeAtomically(File(imagePath), imageBytes);
 
-    if (thumbnailBytes != null) {
-      await File(thumbnailPath).writeAsBytes(thumbnailBytes, flush: true);
-    } else {
-      final decoded = img.decodeImage(Uint8List.fromList(imageBytes));
-      if (decoded == null) throw const FormatException('Invalid photo data');
-      const thumbMax = 300;
-      final thumbnail = img.copyResize(
-        decoded,
-        width: decoded.width > decoded.height ? thumbMax : null,
-        height: decoded.height >= decoded.width ? thumbMax : null,
-      );
-      await File(thumbnailPath).writeAsBytes(
-        img.encodeJpg(thumbnail, quality: 85),
-        flush: true,
-      );
+      if (thumbnailBytes != null) {
+        await _writeAtomically(File(thumbnailPath), thumbnailBytes);
+      } else {
+        final decoded = img.decodeImage(Uint8List.fromList(imageBytes));
+        if (decoded == null) throw const FormatException('Invalid photo data');
+        const thumbMax = 300;
+        final thumbnail = img.copyResize(
+          decoded,
+          width: decoded.width > decoded.height ? thumbMax : null,
+          height: decoded.height >= decoded.width ? thumbMax : null,
+        );
+        await _writeAtomically(
+          File(thumbnailPath),
+          img.encodeJpg(thumbnail, quality: 85),
+        );
+      }
+    } catch (_) {
+      await _deleteIfExists(File(imagePath));
+      await _deleteIfExists(File(thumbnailPath));
+      rethrow;
     }
 
     return metadata.copyWith(imagePath: imagePath);
@@ -187,5 +210,26 @@ class ProgressPhotoController {
     final file = File(path);
     if (!file.existsSync()) return null;
     return file.readAsBytes();
+  }
+
+  File _thumbnailFile(String imagePath) =>
+      File('${imagePath.replaceFirst(RegExp(r'\.jpg$'), '')}_thumb.jpg');
+
+  Future<void> _writeAtomically(File target, List<int> bytes) async {
+    final temporary = File('${target.path}.${const Uuid().v4()}.tmp');
+    try {
+      await temporary.writeAsBytes(bytes, flush: true);
+      await temporary.rename(target.path);
+    } finally {
+      await _deleteIfExists(temporary);
+    }
+  }
+
+  Future<void> _deleteIfExists(File file) async {
+    try {
+      if (file.existsSync()) await file.delete();
+    } on FileSystemException catch (_) {
+      // File cleanup is best effort. The next orphan sweep can retry it.
+    }
   }
 }

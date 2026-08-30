@@ -1110,13 +1110,24 @@ class DatabaseService extends _$DatabaseService {
   // UTILS
   // ---------------------------------------------------------------------------
 
-  Future<void> deleteAllData() async {
-    await transaction(() async {
+  Future<void> deleteAllData({bool transactional = true}) async {
+    Future<void> deleteAll() async {
       await _deleteNutritionData();
       await delete(supplementLogs).go();
       await delete(supplementDefinitions).go();
       await delete(barcodeProducts).go();
-    });
+      await delete(syncMetadata).go();
+      await delete(syncOutbox).go();
+      await delete(syncCheckpoints).go();
+      await delete(syncAppliedChanges).go();
+      await delete(photoFileIntents).go();
+    }
+
+    if (transactional) {
+      await transaction(deleteAll);
+    } else {
+      await deleteAll();
+    }
   }
 
   Future<void> deleteNutritionData({bool transactional = true}) async {
@@ -1766,7 +1777,10 @@ class DatabaseService extends _$DatabaseService {
 
   Future<List<ProgressPhoto>> getAllPhotos() async {
     final rows = await (select(progressPhotos)
-          ..orderBy([(t) => OrderingTerm.desc(t.timestamp)]))
+          ..orderBy([
+            (t) => OrderingTerm.desc(t.timestamp),
+            (t) => OrderingTerm.asc(t.id),
+          ]))
         .get();
     return rows
         .map(
@@ -1785,6 +1799,20 @@ class DatabaseService extends _$DatabaseService {
 
   Future<int> insertPhoto(ProgressPhoto photo) {
     return into(progressPhotos).insert(
+      ProgressPhotosCompanion(
+        id: Value(photo.id),
+        imagePath: Value(photo.imagePath),
+        timestamp: Value(photo.timestamp),
+        weightKg: Value(photo.weightKg),
+        note: Value(photo.note),
+        category: Value(photo.category.index),
+        createdAt: Value(photo.createdAt),
+      ),
+    );
+  }
+
+  Future<void> upsertPhoto(ProgressPhoto photo) async {
+    await into(progressPhotos).insertOnConflictUpdate(
       ProgressPhotosCompanion(
         id: Value(photo.id),
         imagePath: Value(photo.imagePath),
@@ -1841,7 +1869,10 @@ class DatabaseService extends _$DatabaseService {
   ) async {
     final rows = await (select(progressPhotos)
           ..where((t) => t.category.equals(category.index))
-          ..orderBy([(t) => OrderingTerm.desc(t.timestamp)]))
+          ..orderBy([
+            (t) => OrderingTerm.desc(t.timestamp),
+            (t) => OrderingTerm.asc(t.id),
+          ]))
         .get();
     return rows
         .map(

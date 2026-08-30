@@ -191,7 +191,6 @@ class DataExportService {
     NutritionProvider nutrition,
     DecodedBackup decoded,
   ) async {
-    await nutrition.clearProgressPhotoFilesForRestore();
     final restoredPhotos = <ProgressPhoto>[];
     for (final metadata in decoded.backup.progressPhotos) {
       restoredPhotos.add(
