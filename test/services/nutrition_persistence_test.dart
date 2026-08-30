@@ -57,6 +57,29 @@ void main() {
       expect(storage.loadRecipes(), isEmpty);
     });
 
+    test('does not resurrect stale rows when an empty document is present',
+        () async {
+      final storage = await createTestStorage(
+        initialValues: const {'db_migration_v2_complete': true},
+      );
+      final database = createTestDatabase();
+      addTearDown(database.close);
+      await database.migrateRecipe(
+        Recipe(
+          id: 'stale-recipe',
+          name: 'Stale recipe',
+          ingredients: const [],
+          createdAt: DateTime(2026, 1, 2),
+        ),
+      );
+      await database.writeNutritionDocument('recipes', '[]');
+
+      final state = await NutritionPersistence(database, storage).initialize();
+
+      expect(state.recipes, isEmpty);
+      expect(await database.getAllRecipes(), isEmpty);
+    });
+
     test('persists complete favorite records and recent meal metadata',
         () async {
       final storage = await createTestStorage();

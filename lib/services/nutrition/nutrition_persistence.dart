@@ -499,52 +499,71 @@ class NutritionPersistence {
     final preferences = _legacyStorage.loadLegacyNutritionState();
     final sqlite = await _loadLegacySqliteState();
     final current = await _loadDocumentState();
+    final documentPresence = <String, bool>{};
+    for (final key in [
+      _recipesKey,
+      _customFoodsKey,
+      _favoriteFoodsKey,
+      _plannedMealsKey,
+      _customPortionsKey,
+      _recentFoodsKey,
+      _userStatsKey,
+      _shoppingListKey,
+    ]) {
+      documentPresence[key] = await _hasDocument(key);
+    }
 
     final state = NutritionPersistentState(
       recipes: _choose(
         preferences.recipes,
         current.recipes,
         sqlite.recipes,
+        documentPresent: documentPresence[_recipesKey] ?? false,
       ),
       customFoods: _choose(
         preferences.customFoods,
         current.customFoods,
         sqlite.customFoods,
+        documentPresent: documentPresence[_customFoodsKey] ?? false,
       ),
       favoriteFoods: _choose(
         preferences.favoriteFoods,
         current.favoriteFoods,
         sqlite.favoriteFoods,
+        documentPresent: documentPresence[_favoriteFoodsKey] ?? false,
       ),
       plannedMeals: _choose(
         preferences.plannedMeals,
         current.plannedMeals,
         sqlite.plannedMeals,
+        documentPresent: documentPresence[_plannedMealsKey] ?? false,
       ),
       customPortions: _choose(
         preferences.customPortions,
         current.customPortions,
         sqlite.customPortions,
+        documentPresent: documentPresence[_customPortionsKey] ?? false,
       ),
       recentFoods: preferences.recentFoods.isPresent
           ? preferences.recentFoods.value.foods
-          : current.recentFoods.isNotEmpty
+          : documentPresence[_recentFoodsKey] == true
               ? current.recentFoods
               : sqlite.recentFoods,
       recentFoodMeals: preferences.recentFoods.isPresent
           ? preferences.recentFoods.value.meals
-          : current.recentFoods.isNotEmpty
+          : documentPresence[_recentFoodsKey] == true
               ? current.recentFoodMeals
               : sqlite.recentFoodMeals,
       userStats: preferences.userStats.isPresent
           ? preferences.userStats.value
-          : _hasStats(current.userStats)
+          : documentPresence[_userStatsKey] == true
               ? current.userStats
               : sqlite.userStats,
       shoppingListChecked: _chooseSet(
         preferences.shoppingListChecked,
         current.shoppingListChecked,
         sqlite.shoppingListChecked,
+        documentPresent: documentPresence[_shoppingListKey] ?? false,
       ),
     );
 
@@ -599,29 +618,28 @@ class NutritionPersistence {
   List<T> _choose<T>(
     LegacyValue<List<T>> preference,
     List<T> current,
-    List<T> sqlite,
-  ) {
+    List<T> sqlite, {
+    required bool documentPresent,
+  }) {
     if (preference.isPresent) return preference.value;
-    if (current.isNotEmpty) return current;
+    if (documentPresent) return current;
     return sqlite;
   }
 
   Set<T> _chooseSet<T>(
     LegacyValue<Set<T>> preference,
     Set<T> current,
-    Set<T> sqlite,
-  ) {
+    Set<T> sqlite, {
+    required bool documentPresent,
+  }) {
     if (preference.isPresent) return preference.value;
-    if (current.isNotEmpty) return current;
+    if (documentPresent) return current;
     return sqlite;
   }
 
-  bool _hasStats(UserStats stats) =>
-      stats.currentStreak != 0 ||
-      stats.longestStreak != 0 ||
-      stats.lastLogDate != null ||
-      stats.achievements.isNotEmpty ||
-      stats.totalDaysLogged != 0;
+  Future<bool> _hasDocument(String key) async {
+    return await _database.readNutritionDocument(key) != null;
+  }
 
   Map<String, String> _encodeState(NutritionPersistentState state) => {
         _recipesKey:
