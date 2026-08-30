@@ -4,8 +4,10 @@ import 'package:sophis/models/meal_plan.dart';
 import 'package:sophis/models/recipe.dart';
 import 'package:sophis/models/water_entry.dart';
 import 'package:sophis/services/database_service.dart';
+import 'package:sophis/services/nutrition/nutrition_persistence.dart';
 import 'package:sophis/services/nutrition/nutrition_store.dart';
 import 'package:sophis/services/service_result.dart';
+import 'package:sophis/services/storage_service.dart';
 
 import '../helpers/test_services.dart';
 
@@ -207,6 +209,45 @@ void main() {
       expect(await store.pendingSyncChanges(), isEmpty);
     });
 
+    test('emits a clear mutation after deleting all local data', () async {
+      final food = FoodEntry(
+        id: 'clear-food',
+        name: 'Oats',
+        calories: 300,
+        protein: 12,
+        carbs: 45,
+        fat: 8,
+        timestamp: DateTime.utc(2026, 1, 2, 8),
+        meal: 'breakfast',
+      );
+      await store.commit(SaveFoodEntry(food));
+
+      await store.commit(const ClearAllNutritionData());
+
+      expect(await database.getAllFoods(), isEmpty);
+      final pending = await store.pendingSyncChanges();
+      expect(pending, hasLength(1));
+      expect(pending.single.entityType, 'nutrition_snapshot');
+      expect(pending.single.operation, 'clear');
+    });
+
+    test('can retry store initialization after a transient failure', () async {
+      final storage = await createTestStorage();
+      final retryingPersistence = _FailFirstInitializationPersistence(
+        database,
+        storage,
+      );
+      final retryingStore = NutritionStore(
+        database,
+        storage,
+        persistence: retryingPersistence,
+      );
+      addTearDown(retryingStore.close);
+
+      expect((await retryingStore.snapshot()).isFailure, isTrue);
+      expect((await retryingStore.snapshot()).isSuccess, isTrue);
+    });
+
     test('removes a supplement and its logs in one command', () async {
       // The command remains safe on an empty store and exercises the same
       // transaction path used when a definition has completion logs.
@@ -215,4 +256,25 @@ void main() {
       expect(result, isA<Success<CommitReceipt>>());
     });
   });
+}
+
+class _FailFirstInitializationPersistence extends NutritionPersistence {
+  // The base constructor uses private parameter names, so forwarding by
+  // position keeps the test helper readable without exposing them.
+  // ignore: use_super_parameters
+  _FailFirstInitializationPersistence(
+    DatabaseService database,
+    StorageService storage,
+  ) : super(database, storage);
+
+  bool _shouldFail = true;
+
+  @override
+  Future<NutritionPersistentState> initialize() async {
+    if (_shouldFail) {
+      _shouldFail = false;
+      throw StateError('temporary initialization failure');
+    }
+    return super.initialize();
+  }
 }

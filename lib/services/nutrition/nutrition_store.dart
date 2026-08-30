@@ -197,7 +197,21 @@ final class NutritionStore {
   }
 
   Future<void> _ensureInitialized() {
-    return _initialization ??= _persistence.initialize();
+    final existing = _initialization;
+    if (existing != null) return existing;
+
+    final initialization = _initialize();
+    _initialization = initialization;
+    return initialization;
+  }
+
+  Future<void> _initialize() async {
+    try {
+      await _persistence.initialize();
+    } catch (error, stackTrace) {
+      _initialization = null;
+      Error.throwWithStackTrace(error, stackTrace);
+    }
   }
 
   Future<NutritionSnapshot> _loadSnapshot() async {
@@ -340,6 +354,20 @@ final class NutritionStore {
   Future<void> close() async {
     if (_closed) return;
     _closed = true;
+
+    final pendingCommit = _lastCommit;
+    final pendingInitialization = _initialization;
+    try {
+      await pendingCommit;
+    } catch (_) {
+      // Individual command failures are already represented by ServiceResult.
+    }
+    try {
+      await pendingInitialization;
+    } catch (_) {
+      // A failed initialization must not prevent the database from closing.
+    }
+
     await _changes.close();
     await _database.close();
   }
@@ -644,6 +672,7 @@ final class RestoreBackupV2 extends NutritionCommand {
 
   @override
   Future<void> apply(NutritionStore store) async {
+    await store._database.clearSyncState(transactional: false);
     await store._database.deleteNutritionData(transactional: false);
     await store._database.insertFoods(backup.foodEntries);
     await store._database.insertWaterList(backup.waterEntries);
@@ -906,6 +935,11 @@ SyncMutation? _syncMutationFor(NutritionCommand command) => switch (command) {
           entityId: 'default',
           operation: value == null ? 'delete' : 'upsert',
           payloadJson: value == null ? null : jsonEncode(value.toJson()),
+        ),
+      ClearAllNutritionData() => const SyncMutation(
+          entityType: 'nutrition_snapshot',
+          entityId: 'default',
+          operation: 'clear',
         ),
       RestoreBackupV2() => const SyncMutation(
           entityType: 'nutrition_snapshot',

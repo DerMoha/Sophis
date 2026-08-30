@@ -1200,10 +1200,7 @@ class DatabaseService extends _$DatabaseService {
       await delete(supplementLogs).go();
       await delete(supplementDefinitions).go();
       await delete(barcodeProducts).go();
-      await delete(syncMetadata).go();
-      await delete(syncOutbox).go();
-      await delete(syncCheckpoints).go();
-      await delete(syncAppliedChanges).go();
+      await _deleteSyncState();
       await delete(photoFileIntents).go();
     }
 
@@ -1220,6 +1217,21 @@ class DatabaseService extends _$DatabaseService {
     } else {
       await _deleteNutritionData();
     }
+  }
+
+  Future<void> clearSyncState({bool transactional = true}) async {
+    if (transactional) {
+      await transaction(_deleteSyncState);
+    } else {
+      await _deleteSyncState();
+    }
+  }
+
+  Future<void> _deleteSyncState() async {
+    await delete(syncMetadata).go();
+    await delete(syncOutbox).go();
+    await delete(syncCheckpoints).go();
+    await delete(syncAppliedChanges).go();
   }
 
   Future<void> _deleteNutritionData() async {
