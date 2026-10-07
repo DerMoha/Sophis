@@ -10,7 +10,9 @@ This implements backend/access control and local persistence foundations,
 social imports and a local immutable logging-origin ledger. Existing application
 and iOS edits remain preserved in the working tree.
 No Firebase project, billing account, bucket, production resources or deployment
-was created. The existing guest app does not initialize this code yet.
+was created. The existing guest app does not initialize this code yet. Firebase Core/Auth/
+App Check packages are installed; the optional named social app is initialized
+only through an explicit configuration factory.
 
 - `backend/functions/src/social_service.js`: private profiles, hashed expiring
   one-use invitations, approved directional follows, removal/block, versioned
@@ -43,10 +45,23 @@ was created. The existing guest app does not initialize this code yet.
   transaction on account change. Old session generations cannot insert queued
   work or overwrite caches after switching. Cache is bounded to 100 posts.
 - `SocialQueueRunner` bounds replay, backs off network/rate failures, and parks
-  invalid/unauthorized work for user review. It requires a UID-aware transport;
-  an implementation must recheck UID when obtaining credentials, including after
-  an asynchronous token refresh. Do not use a generic callable adapter that
-  automatically substitutes the newly signed-in user's credentials.
+  invalid/unauthorized work for user review. `SocialCallableClient` sends the
+  documented callable envelope with explicit captured ID and App Check tokens.
+  Account/generation checks occur around asynchronous credential work and after
+  responses. It disables redirects, bounds response size and hides backend error
+  details. Transient credential failures remain retryable.
+- `FirebaseSocialAuth` handles email/password creation/sign-in, recovery and
+  sign-out. It checks the actual JWT subject returned by native token refresh,
+  tracks authentication epochs and clears persisted account content on changes,
+  including rapid logout/login under the same UID. Auth SDK operations and HTTP
+  transport are unit-tested through mocks; real native authentication still needs
+  emulator/device validation.
+- `CallableSocialRepository` converts feed payloads to domain records, caches
+  bounded first-page content, queues explicit publication/reactions/deletion and
+  sends relationship removals. Publication IDs match the server's structured
+  hash. Cancelling a queued publication removes its queued upload-independent
+  publish command and supplies operation proof for a server tombstone, so a late
+  publish cannot resurrect it. The server rejects proof for another author's ID.
 - `PartnerService` requires mutual connection acceptance and per-person outgoing
   consent. Server timestamps define onward-only meal/summary/photo periods.
   Pausing preserves frozen views; disabled categories revoke prior generations.
@@ -183,13 +198,13 @@ Firestore job-created trigger; Auth is deleted only after hosted data cleanup.
 ## Verification on this working tree
 
 - `flutter analyze`: no issues.
-- `flutter test --no-pub`: 355 tests passed (327 existing plus 28 new).
-- Backend emulator suite: 33 tests passed.
+- `flutter test --no-pub`: 377 tests passed (327 existing plus 50 new).
+- Backend emulator suite: 34 tests passed.
 - Signed native builds and physical-device behavior were not tested.
 
 ## Next implementation work
 
-1. Connect Firebase Auth and callable transport, optional lazy initialization,
+1. Wire the implemented optional Firebase/auth/transport services into
    People/account screens and password recovery. Persist one social database per
    device, clear account caches/queue on logout, and expose queue review states.
 2. Connect server partner consent and local logging-origin facts to filtered
@@ -206,3 +221,23 @@ The actual Firebase project configuration is still absent. Native integration
 will need the project ID, Android/iOS app registrations and configuration files,
 actual bucket name/location, and a deliberate production billing/deployment step.
 No credentials or billing authorization should be inferred from this spike.
+
+## Firebase client configuration
+
+`SocialFirebaseConfiguration` accepts platform-specific registered FirebaseOptions.
+It does not infer a project or initialize at application startup. A named
+`sophis-social` app keeps authentication scoped to this feature. Production uses
+Play Integrity and App Attest with DeviceCheck fallback; registrations/enforcement
+must be configured and verified before release. Explicit debug emulator mode
+requires a `demo-` project, uses Auth port 9099 and Functions port 5001, and never
+uses production App Check. Release builds reject emulator mode.
+
+The captured-token transport follows the
+[official callable protocol](https://firebase.google.com/docs/functions/callable-reference).
+This is intentional because native Auth token refresh is scoped to the Firebase
+app; the adapter verifies the returned token subject and rechecks the account
+before sending, rather than allowing a callable adapter to substitute credentials.
+Firebase SDK versions are pinned through the application lockfile. The analyzer
+excludes generated `build/**` package copies and example apps; application source
+and tests remain analyzed. Native dependency resolution/builds remain a separate
+validation step; adding Dart packages alone does not prove either phone works.
