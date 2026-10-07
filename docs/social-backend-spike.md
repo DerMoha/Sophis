@@ -10,9 +10,9 @@ This implements backend/access control and local persistence foundations,
 social imports and a local immutable logging-origin ledger. Existing application
 and iOS edits remain preserved in the working tree.
 No Firebase project, billing account, bucket, production resources or deployment
-was created. The existing guest app does not initialize this code yet. Firebase Core/Auth/
-App Check packages are installed; the optional named social app is initialized
-only through an explicit configuration factory.
+was created. Guest tracking remains account-free. Firebase Core/Auth/App Check packages are
+installed; the optional named social app initializes lazily when People opens
+and registered-app configuration (or explicit demo emulator mode) is available.
 
 - `backend/functions/src/social_service.js`: private profiles, hashed expiring
   one-use invitations, approved directional follows, removal/block, versioned
@@ -54,8 +54,8 @@ only through an explicit configuration factory.
   sign-out. It checks the actual JWT subject returned by native token refresh,
   tracks authentication epochs and clears persisted account content on changes,
   including rapid logout/login under the same UID. Auth SDK operations and HTTP
-  transport are unit-tested through mocks; real native authentication still needs
-  emulator/device validation.
+  transport are unit-tested through mocks and actual native emulator flows.
+  Physical-device authentication still needs validation.
 - `CallableSocialRepository` converts feed payloads to domain records, caches
   bounded first-page content, queues explicit publication/reactions/deletion and
   sends relationship removals. Publication IDs match the server's structured
@@ -95,10 +95,10 @@ The script hardcodes the `demo-sophis` demo project and starts local Auth,
 Firestore and Storage emulators. Tests refuse to run without emulator environment
 variables. They exercise the service against real emulated Firestore, direct
 client rule denials against Firestore/Storage, and photo lifecycle with an
-in-memory object-storage test double. Native clients, the callable HTTP wrapper,
-actual Storage upload/download behavior and deployed cleanup triggers still
+in-memory object-storage test double. Actual Storage upload/download behavior and deployed cleanup triggers still
 need integration/device tests; passing these tests is not a production release
-claim. The functions emulator can be included during the next wiring milestone.
+claim. Native account and sharing screen tests also use the Functions emulator
+and actual callable HTTP transport.
 
 ```sh
 flutter analyze
@@ -197,33 +197,51 @@ Firestore job-created trigger; Auth is deleted only after hosted data cleanup.
 
 ## Verification on this working tree
 
-- `flutter analyze`: no issues.
-- `flutter test --no-pub`: 379 tests passed on the current working tree.
-- Backend emulator suite: 37 tests passed.
-- iPhone 18 Pro / iOS 27 simulator: native integration test passed using actual
-  Firebase Auth/Functions emulators and the SQLite stores. It exercised account
-  creation, profile saving, empty feed, Connections, invitation creation/revocation,
-  and sign-out, asserting that diary entries stayed unchanged. Notification plugin
-  calls were stubbed to isolate an unrelated startup permission prompt.
-- Signed builds, physical devices, Android, two-person screens, native OCR and
-  notification delivery remain unvalidated.
+- `flutter analyze --no-pub`: no issues.
+- `flutter test --no-pub`: 386 tests passed on the current working tree.
+- Backend emulator suite: 37 tests passed; backend code unchanged in this phase.
+- iPhone 18 Pro / iOS 27 simulator: native account and sharing flows passed with
+  actual Firebase Auth/Functions emulators and SQLite stores. The sharing flow
+  used two accounts sequentially on one simulator: invitation preview/request,
+  approval, earlier-post visibility, reaction delivery, half-serving diary import,
+  recipe copy, owner edit and deletion. Imported copies remained unchanged.
+  Share actions from Recipes and the diary opened previews and cancelled without
+  publishing. Synthetic test entries/recipes were removed and existing data
+  compared before/after. Notification plugin calls were stubbed to isolate an
+  unrelated startup permission prompt.
+- The repeated screen runs reached the emulator's enforced project daily request
+  limit. Only disposable `demo-sophis` account/day request counters were reset
+  for the final validation; production limits were not changed.
+- Signed builds, physical devices, Android, two simultaneous devices, native OCR
+  and notification delivery remain unvalidated.
+
+## Sharing and reuse phase
+
+Initial deliberate text/nutrition publication and reuse UI is implemented:
+People source chooser, meal/recipe Share previews, nutrition visibility, caption,
+chronological post cards, reactions, owner edit/delete, portion/date/category
+selection and independent recipe copies. Hidden nutrition requires explicit
+recipient input; recipe volume conversion requires an explicit ingredient weight.
+Custom local meal categories are supported without entering the social payload.
+Publication, edits, deletion and reactions use durable account-scoped queues;
+pending deletions are hidden from both cached and refreshed feeds. Session intent
+is captured before asynchronous store reads, including same-account resets.
+Signed-out account fields are cleared on shared devices.
+
+This phase completes the initial text sharing/import flow, not all of milestones
+3–4: photo attachment, draft/queue management UI and activity remain below.
 
 ## Next implementation work
 
-1. Complete the initial People screens: queued-operation review, account deletion,
-   profile editing/avatar and localization. Account creation/sign-in/recovery,
-   profile creation, feed loading, directional connections, invitations/QR,
-   reciprocal requests, remove/block and sign-out now have initial UI. The native
-   simulator test covers only the single-account flow above; separate-user
-   acceptance/removal/block screens still need device tests.
+1. Queued-operation review, account deletion, profile editing/avatar,
+   localization and social-specific accessibility checks. Removal/block screens
+   still need native adversarial tests.
 2. Connect server partner consent and local logging-origin facts to filtered
    events, durable per-connection queues and meal-photo attachment modeling.
    Never feed the entire existing nutrition outbox into this social transport.
-3. Publication preview/photo compressor, feed/photo UI, profile/invite QR routes,
-   owner controls, import/recipe-copy UI and activity.
-4. Reports, avatars, optional generic-text FCM, revoke/cache refresh integration,
-   account deletion UI, automated orphan maintenance and abuse controls.
-5. Updated privacy notice and verified region/backup/deletion retention,
+3. Photo compression/attachment and protected photo display, activity, reports,
+   optional generic-text FCM, automated orphan maintenance and abuse controls.
+4. Updated privacy notice and verified region/backup/deletion retention,
    restore tests, Android/iOS native integration and two-device trial.
 
 The actual Firebase project configuration is still absent. Native integration
@@ -271,6 +289,10 @@ automated validation run. That command removes its test app at completion.
 Optional screenshots are written under the simulator app's Application Support
 `social-test-screenshots` directory while it is installed. Synthetic
 accounts are emulator-only; diary entries are compared before/after, never reset.
+Use `integration_test/social_sharing_screens_test.dart` as the target for the
+publication/approval/reaction/import/edit/delete flow. Both tests capture actual
+native screen pixels when `SOCIAL_SCREENSHOTS=true`. Copy screenshots out before
+uninstalling the app; `flutter run` with a terminal and detach preserves it.
 
 Three native compatibility issues were exposed during real simulator launches:
 
@@ -289,8 +311,8 @@ Three native compatibility issues were exposed during real simulator launches:
   Flutter's podspec-derived ARM64 exclusion. The simulator app launched with this
   setup, but physical-device builds and native OCR still need validation.
 
-The account, profile, empty feed, Connections, invitation/QR and signed-out
-screens were captured and visually reviewed on the simulator. No layout overflow
+The account, profile, feed/post actions, diary import, Connections, invitation/QR
+and signed-out screens were captured and visually reviewed on the simulator. No layout overflow
 was observed at its default text size. Narrow and larger text layouts still need
 a social-specific accessibility pass.
 
