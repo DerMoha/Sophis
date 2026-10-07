@@ -53,6 +53,9 @@ final class SocialSnapshot {
               item.portionUnit == null)) {
         throw const FormatException('Invalid social portion');
       }
+      if (item.portionLabel != null && item.portionLabel!.length > 160) {
+        throw const FormatException('Invalid social portion label');
+      }
       final quantity = item.portionQuantity;
       if (quantity != null &&
           (!quantity.isFinite || quantity <= 0 || quantity > 10000)) {
@@ -98,7 +101,7 @@ final class SocialSnapshot {
             .map(
               (item) => <String, dynamic>{
                 'name': item.name,
-                if (nutritionVisible) ...{
+                if (nutritionVisible && nutritionAvailable) ...{
                   'calories': item.calories,
                   'protein': item.protein,
                   'carbs': item.carbs,

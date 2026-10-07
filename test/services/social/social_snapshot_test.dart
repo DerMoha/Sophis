@@ -47,6 +47,10 @@ void main() {
       expect((json['items'] as List).single, isNot(contains('calories')));
       final hidden = SocialSnapshot.fromJson(json, nutritionVisible: false);
       expect(
+        (hidden.toJson(nutritionVisible: true)['items'] as List).single,
+        isNot(contains('calories')),
+      );
+      expect(
         () => hidden.entriesForImport(
           operationId: 'import1',
           selectedServings: 1,
@@ -119,6 +123,13 @@ void main() {
       expect(
         () => SocialSnapshot.fromEntries(
           [source.copyWith(portionAmount: -1)],
+          title: 'Dinner',
+        ),
+        throwsFormatException,
+      );
+      expect(
+        () => SocialSnapshot.fromEntries(
+          [source.copyWith(portionLabel: 'x' * 161)],
           title: 'Dinner',
         ),
         throwsFormatException,
