@@ -203,7 +203,7 @@ Firestore job-created trigger; Auth is deleted only after hosted data cleanup.
 ## Verification on this working tree
 
 - `flutter analyze --no-pub`: no issues.
-- `flutter test --no-pub`: 392 tests passed on the current working tree.
+- `flutter test --no-pub`: 395 tests passed on the current working tree.
 - Backend emulator suite: 40 tests passed, including independent goal consent,
   stale retries/clears and revocation while ordinary work is disabled.
 - iPhone 18 Pro / iOS 27 simulator: native account and sharing flows passed with
@@ -362,10 +362,25 @@ Three native compatibility issues were exposed during real simulator launches:
 
 The account, profile, feed/post actions, diary import, Connections, invitation/QR
 and signed-out screens were captured and visually reviewed on the simulator. No layout overflow
-was observed at its default text size. Narrow and larger text layouts still need
-a social-specific accessibility pass.
+was observed at its default text size. The social redesign reuses Sophis
+GlassCard surfaces, typography, semantic nutrient colors and animated radial
+progress. Partner goals and eligible progress now lead the screen, followed by
+shared meals; outgoing consent controls live in an expandable settings card.
+People posts, connection cards, publication and import previews use the same
+surfaces. Missing shared progress remains unknown rather than displaying zero.
+Dedicated progress-card tests cover 320px width at 200% text scale in light and
+dark themes, including over-target values. These checks do not constitute a
+complete accessibility audit of every social flow.
 
 Production uses `SOCIAL_PROJECT_ID`, `SOCIAL_API_KEY`, `SOCIAL_SENDER_ID` and the
 platform-specific `SOCIAL_IOS_APP_ID` / `SOCIAL_ANDROID_APP_ID` dart defines. These
 are registered-app configuration, not authorization to deploy or enable billing.
 Production App Check setup and real configuration remain required before release.
+
+The themed screens were revalidated natively after the redesign: the partner
+goals/progress/consent flow passed in 20 seconds, and the publication, diary
+import, recipe-copy and owner-edit/delete flow passed in 26 seconds. Both used
+the real local emulators and preserved existing diary data. Fresh captures in
+`build/social-screen-review` show the partner overview, shared meal card,
+published feed post and diary-import preview. Test fixture names contain unique
+suffixes; these are not production user content.
