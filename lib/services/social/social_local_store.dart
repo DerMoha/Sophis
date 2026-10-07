@@ -97,11 +97,16 @@ final class SocialLocalStore extends GeneratedDatabase {
       transaction(() async {
         if (!await isCurrent(expected)) return;
         final rows = await customSelect(
-          "SELECT operation_id, payload FROM social_commands WHERE action IN ('syncPartnerMeal', 'syncPartnerContribution', 'syncPartnerGoals')",
+          "SELECT operation_id, target_id, action, payload FROM social_commands WHERE action IN ('syncPartnerMeal', 'syncPartnerContribution', 'syncPartnerGoals')",
         ).get();
         for (final row in rows) {
           final payload = jsonDecode(row.read<String>('payload')) as Map;
           if (payload['connectionId'] == connectionId) {
+            final target = row.read<String>('target_id');
+            final key = target.substring(0, target.lastIndexOf(':'));
+            if (row.read<String>('action') != 'syncPartnerGoals') {
+              await customStatement('DELETE FROM social_partner_projection WHERE id = ?', [key]);
+            }
             await customStatement(
               'DELETE FROM social_commands WHERE operation_id = ?',
               [row.read<String>('operation_id')],

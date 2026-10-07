@@ -167,4 +167,15 @@ void main() {
     expect(await social.nextCommand(await social.session(), DateTime.now()),
         isNull,);
   });
+  test('reprojected cancelled undelivered entries under fresh consent', () async {
+    now = start.add(const Duration(minutes: 1));
+    await nutrition.commit(SaveFoodEntry(entry('queued')));
+    await project(connection(meals: true));
+    await social.cancelPartnerUpdates(session, 'connection');
+    await project(connection(meals: true, summaries: true, revision: 2));
+    final commands = await drain();
+    expect(commands.map((command) => command.action), unorderedEquals(['syncPartnerMeal', 'syncPartnerContribution']));
+    expect(commands.every((command) => command.payload['consentRevision'] == 2), isTrue);
+  });
+
 }
