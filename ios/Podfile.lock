@@ -93,6 +93,8 @@ PODS:
   - flutter_secure_storage_darwin (10.0.0):
     - Flutter
     - FlutterMacOS
+  - flutter_timezone (0.0.1):
+    - Flutter
   - gal (1.0.0):
     - Flutter
     - FlutterMacOS
@@ -210,6 +212,7 @@ DEPENDENCIES:
   - Flutter (from `Flutter`)
   - flutter_local_notifications (from `.symlinks/plugins/flutter_local_notifications/ios`)
   - flutter_secure_storage_darwin (from `.symlinks/plugins/flutter_secure_storage_darwin/darwin`)
+  - flutter_timezone (from `.symlinks/plugins/flutter_timezone/ios`)
   - gal (from `.symlinks/plugins/gal/darwin`)
   - google_mlkit_commons (from `.symlinks/plugins/google_mlkit_commons/ios`)
   - google_mlkit_text_recognition (from `.symlinks/plugins/google_mlkit_text_recognition/ios`)
@@ -275,6 +278,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/flutter_local_notifications/ios"
   flutter_secure_storage_darwin:
     :path: ".symlinks/plugins/flutter_secure_storage_darwin/darwin"
+  flutter_timezone:
+    :path: ".symlinks/plugins/flutter_timezone/ios"
   gal:
     :path: ".symlinks/plugins/gal/darwin"
   google_mlkit_commons:
@@ -324,6 +329,7 @@ SPEC CHECKSUMS:
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   flutter_local_notifications: 643a3eda1ce1c0599413ca31672536d423dee214
   flutter_secure_storage_darwin: acdb3f316ed05a3e68f856e0353b133eec373a23
+  flutter_timezone: 7c838e17ffd4645d261e87037e5bebf6d38fe544
   gal: baecd024ebfd13c441269ca7404792a7152fde89
   google_mlkit_commons: b2c0a76e7ef4ff555e70e5d71f21d66ce3d08a97
   google_mlkit_text_recognition: 5a8cb8b73c765938fb7111de6f5f883b90f15d52
