@@ -31,12 +31,80 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "socialPartners",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "participants",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "revokedAt",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "socialPartnerMeals",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "connectionId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "publishedAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "socialPartnerContributions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "connectionId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "authorId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "summaryGeneration",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "localDate",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "timeZone",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": [
     {
       "collectionGroup": "socialPosts",
       "fieldPath": "snapshot",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "socialPartnerMeals",
+      "fieldPath": "snapshot",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "socialPartners",
+      "fieldPath": "settings",
       "indexes": []
     }
   ]

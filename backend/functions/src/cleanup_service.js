@@ -1,3 +1,4 @@
+import { cleanupPartnerContent } from './partner_cleanup.js';
 import { SocialError } from './social_service.js';
 
 /// Retryable cleanup: every phase can restart, and access is already revoked by
@@ -17,6 +18,11 @@ export async function cleanupAccount(service, uid, auth) {
       for (const record of records.docs) batch.delete(record.ref);
       await batch.commit();
     }
+  }
+  for (;;) {
+    const connections = await service.db.collection('socialPartners').where('participants', 'array-contains', uid).limit(20).get();
+    if (connections.empty) break;
+    for (const record of connections.docs) await cleanupPartnerContent(service, { connectionId: record.id });
   }
   for (;;) {
     const photos = await service.db.collection('socialBlobs').where('ownerId', '==', uid).limit(100).get();
