@@ -35,8 +35,9 @@ void main() {
   Future<void> tap(WidgetTester tester, Finder finder) async {
     FocusManager.instance.primaryFocus?.unfocus();
     await tester.pumpAndSettle();
-    await tester.ensureVisible(finder);
+    await Scrollable.ensureVisible(tester.element(finder), alignment: 0.5);
     await tester.pumpAndSettle();
+    await waitFor(tester, () => finder.hitTestable().evaluate().isNotEmpty);
     await tester.tap(finder);
   }
 
