@@ -13,8 +13,12 @@ import 'package:sophis/services/social/social_callable_client.dart';
 import 'package:sophis/services/social/social_firebase_configuration.dart';
 import 'package:sophis/services/social/social_local_store.dart';
 import 'package:sophis/services/social/social_queue_runner.dart';
+import 'package:sophis/services/social/social_partner_repository.dart';
 
 final class SocialRuntime {
+  SocialPartnerRepository get partners =>
+      SocialPartnerRepository(accounts.client);
+
   final FirebaseSocialAuth auth;
   final CallableSocialRepository repository;
   final SocialAccountRepository accounts;

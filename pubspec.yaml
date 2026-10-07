@@ -65,6 +65,7 @@ dependencies:
   firebase_auth: ^6.7.0
   firebase_app_check: ^0.4.8
   crypto: ^3.0.7
+  flutter_timezone: ^5.1.1
 
 dev_dependencies:
   flutter_test:

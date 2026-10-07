@@ -11,7 +11,7 @@ final class SocialLocalStore extends GeneratedDatabase {
   int get transitionVersion => _transitionVersion;
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   Iterable<TableInfo<Table, Object?>> get allTables => const [];
@@ -21,7 +21,11 @@ final class SocialLocalStore extends GeneratedDatabase {
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
+        onUpgrade: (migrator, from, to) async {
+          if (from < 2) await _createPartnerProjection();
+        },
         onCreate: (migrator) async {
+          await _createPartnerProjection();
           await customStatement('''
             CREATE TABLE social_session (
               singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
@@ -50,6 +54,62 @@ final class SocialLocalStore extends GeneratedDatabase {
         },
       );
 
+  Future<void> _createPartnerProjection() => customStatement(
+        'CREATE TABLE social_partner_projection (id TEXT PRIMARY KEY, payload TEXT NOT NULL)',
+      );
+
+  Future<Map<String, dynamic>> partnerProjection(
+    SocialSession expected,
+    String key,
+  ) async {
+    if (!await isCurrent(expected)) return {};
+    final row = await customSelect(
+      'SELECT payload FROM social_partner_projection WHERE id = ?',
+      variables: [Variable(key)],
+    ).getSingleOrNull();
+    return row == null
+        ? {}
+        : jsonDecode(row.read<String>('payload')) as Map<String, dynamic>;
+  }
+
+  /// Queue intent and its projection receipt commit together. No private outbox
+  /// records are read or copied by this account-scoped store.
+  Future<bool> recordPartnerProjection(
+    SocialSession expected,
+    String key,
+    Map<String, dynamic> state, {
+    SocialQueuedCommand? command,
+  }) =>
+      transaction(() async {
+        if (!await isCurrent(expected)) return false;
+        if (command != null) await enqueue(expected, command);
+        await customStatement(
+          'INSERT OR REPLACE INTO social_partner_projection VALUES (?, ?)',
+          [key, jsonEncode(state)],
+        );
+        return true;
+      });
+
+  Future<void> cancelPartnerUpdates(
+    SocialSession expected,
+    String connectionId,
+  ) =>
+      transaction(() async {
+        if (!await isCurrent(expected)) return;
+        final rows = await customSelect(
+          "SELECT operation_id, payload FROM social_commands WHERE action IN ('syncPartnerMeal', 'syncPartnerContribution', 'syncPartnerGoals')",
+        ).get();
+        for (final row in rows) {
+          final payload = jsonDecode(row.read<String>('payload')) as Map;
+          if (payload['connectionId'] == connectionId) {
+            await customStatement(
+              'DELETE FROM social_commands WHERE operation_id = ?',
+              [row.read<String>('operation_id')],
+            );
+          }
+        }
+      });
+
   Future<SocialSession> session() async {
     final row = await customSelect(
       'SELECT account_id, generation FROM social_session WHERE singleton = 1',
@@ -68,6 +128,7 @@ final class SocialLocalStore extends GeneratedDatabase {
     return transaction(() async {
       await customStatement('DELETE FROM social_commands');
       await customStatement('DELETE FROM social_cache');
+      await customStatement('DELETE FROM social_partner_projection');
       await customStatement(
         'UPDATE social_session SET account_id = ?, generation = generation + 1 WHERE singleton = 1',
         [accountId],
@@ -127,7 +188,7 @@ final class SocialLocalStore extends GeneratedDatabase {
           SELECT * FROM social_commands
           WHERE account_id = ? AND generation = ? AND status = 'queued'
             AND next_attempt_at <= ?
-          ORDER BY CASE WHEN action = 'deletePost' THEN 0 ELSE 1 END,
+          ORDER BY CASE WHEN action IN ('deletePost', 'deletePartnerSource') THEN 0 ELSE 1 END,
             created_at, operation_id
           LIMIT 1
         ''',
@@ -277,7 +338,7 @@ final class SocialQueuedCommand {
     required this.createdAt,
     this.attempts = 0,
   }) : payload = Map.unmodifiable(payload) {
-    if (!['publish', 'editPost', 'deletePost', 'react'].contains(action)) {
+    if (!['publish', 'editPost', 'deletePost', 'react', 'syncPartnerGoals', 'syncPartnerMeal', 'syncPartnerContribution', 'deletePartnerSource'].contains(action)) {
       throw ArgumentError('Unsupported queued social action');
     }
     if (payload.containsKey('accountId') ||
