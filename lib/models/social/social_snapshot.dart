@@ -175,7 +175,8 @@ final class SocialSnapshot {
         !selectedServings.isFinite ||
         selectedServings <= 0 ||
         selectedServings > 1000 ||
-        !['breakfast', 'lunch', 'dinner', 'snack'].contains(meal)) {
+        meal.trim().isEmpty ||
+        meal.length > 128) {
       throw const FormatException('Invalid import selection');
     }
     final factor = selectedServings / servings;

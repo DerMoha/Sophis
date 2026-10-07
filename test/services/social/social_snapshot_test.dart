@@ -111,6 +111,34 @@ void main() {
       expect(imported('one').single.calories, 400);
     });
 
+    test('preserved the recipient custom meal category without sharing it', () {
+      final snapshot = SocialSnapshot.fromEntries([source], title: 'Dinner');
+      final entry = snapshot
+          .entriesForImport(
+            operationId: 'custom-meal',
+            selectedServings: 1,
+            timestamp: timestamp,
+            meal: 'custom-meal-uuid',
+            nutritionVisible: true,
+          )
+          .single;
+      expect(entry.meal, 'custom-meal-uuid');
+      expect(
+        snapshot.toJson(nutritionVisible: true).toString(),
+        isNot(contains('custom-meal-uuid')),
+      );
+      expect(
+        () => snapshot.entriesForImport(
+          operationId: 'invalid',
+          selectedServings: 1,
+          timestamp: timestamp,
+          meal: ' ',
+          nutritionVisible: true,
+        ),
+        throwsFormatException,
+      );
+    });
+
     test('rejected invalid portions, unknown versions and non-finite nutrition',
         () {
       expect(
