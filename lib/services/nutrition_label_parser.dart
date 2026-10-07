@@ -1,4 +1,6 @@
 import 'package:sophis/services/gemini/models/nutrition_label_result.dart';
+import 'package:sophis/models/nutrition_label_draft.dart';
+import 'package:sophis/models/nutrition_unit.dart';
 
 class NutritionOcrToken {
   final String text;
@@ -134,6 +136,14 @@ class NutritionLabelParser {
 
     final servingSizeG = _extractServingSize(lines);
     final servingName = _extractServingName(lines);
+    final nutritionUnit = _extractNutritionUnit(flatText);
+    final presentFields = <NutritionLabelField>{
+      if (calories != null) NutritionLabelField.calories,
+      if (protein != null) NutritionLabelField.protein,
+      if (carbs != null) NutritionLabelField.carbs,
+      if (fat != null) NutritionLabelField.fat,
+      if (fiber != null) NutritionLabelField.fiber,
+    };
 
     final double? adjustedCalories;
     final double? adjustedProtein;
@@ -166,8 +176,78 @@ class NutritionLabelParser {
       carbsPer100g: adjustedCarbs ?? 0,
       fatPer100g: adjustedFat ?? 0,
       fiberPer100g: adjustedFiber ?? 0,
+      nutritionUnit: nutritionUnit,
       servingSizeG: servingSizeG,
       servingName: servingName,
+      wasServingConverted: isPerServing && servingSizeG != null,
+      presentFields: presentFields,
+    );
+  }
+
+  /// Parse as much as is safely available without manufacturing missing
+  /// values. This is used by the editable review flow when a label only
+  /// exposes some rows or OCR loses one of the required macros.
+  static NutritionLabelDraft? parseDraft(String ocrText) {
+    ocrText = _normalizeOcrText(ocrText);
+    if (!_isNutritionLabelPattern.hasMatch(ocrText)) return null;
+
+    final lines = ocrText.split('\n');
+    final flatText = lines.join(' ');
+    final isPerServing = _perServingKeywordPattern.hasMatch(ocrText) &&
+        !_per100Pattern.hasMatch(ocrText);
+    final servingAmount = _extractServingSize(lines);
+
+    double? scaleValue(double? value) {
+      if (!isPerServing || servingAmount == null || servingAmount <= 0) {
+        return value;
+      }
+      return value == null ? null : value * 100 / servingAmount;
+    }
+
+    var calories = _extractKcal(flatText);
+    if (calories == null && _kjPattern.hasMatch(flatText)) {
+      final kjMatch = _kjPattern.firstMatch(flatText)!;
+      calories = _parseNumber(kjMatch.group(1)!) * 0.239;
+    }
+    final protein = _extractMacro(lines, _proteinRegexp);
+    final carbs = _extractMacro(lines, _carbsRegexp);
+    final fat = _extractMacro(lines, _fatRegexp);
+    final fiber = _extractMacro(lines, _fiberRegexp);
+    final values = [calories, protein, carbs, fat, fiber];
+    if (values.every((value) => value == null)) return null;
+
+    String? productName;
+    String? secondProductLine;
+    for (final line in lines.take(10)) {
+      final trimmed = line.trim();
+      if (trimmed.isEmpty) continue;
+      if (_isNutritionLabelPattern.hasMatch(trimmed)) break;
+      if (RegExp(r'^\d').hasMatch(trimmed)) continue;
+      if (trimmed.length > 2 && trimmed.length < 60) {
+        if (productName == null) {
+          productName = trimmed;
+        } else if (secondProductLine == null) {
+          secondProductLine = trimmed;
+          break;
+        }
+      }
+    }
+
+    return NutritionLabelDraft(
+      productName: productName == null
+          ? null
+          : secondProductLine == null
+              ? productName
+              : '$productName $secondProductLine',
+      caloriesPer100: scaleValue(calories),
+      proteinPer100: scaleValue(protein),
+      carbsPer100: scaleValue(carbs),
+      fatPer100: scaleValue(fat),
+      fiberPer100: scaleValue(fiber),
+      nutritionUnit: _extractNutritionUnit(flatText),
+      servingAmount: servingAmount,
+      servingName: _extractServingName(lines),
+      wasServingConverted: isPerServing && servingAmount != null,
     );
   }
 
@@ -181,9 +261,9 @@ class NutritionLabelParser {
           .where((token) => RegExp(r'\d').hasMatch(token.text))
           .toList();
       if (numericTokens.isEmpty) {
-        final neighboringValue = _nearestValueLine(line, lines);
+        final neighboringValue = _nearestValueText(line, lines, anchor);
         if (neighboringValue == null) return line.text;
-        return '${_rowKeyword(line.text)} ${neighboringValue.text}';
+        return '${_rowKeyword(line.text)} $neighboringValue';
       }
       if (numericTokens.length < 2 || anchor == null) return line.text;
 
@@ -204,9 +284,10 @@ class NutritionLabelParser {
     return parse(reconstructed);
   }
 
-  static NutritionOcrLine? _nearestValueLine(
+  static String? _nearestValueText(
     NutritionOcrLine nutrientLine,
     List<NutritionOcrLine> lines,
+    double? anchor,
   ) {
     final isEnergy = _energyKeywordPattern.hasMatch(nutrientLine.text);
     final candidates = lines.where((line) {
@@ -215,17 +296,53 @@ class NutritionLabelParser {
         return _kcalPattern.hasMatch(trimmed) || _kjPattern.hasMatch(trimmed);
       }
       return RegExp(
-        r'^<?\s*\d+[\.,]?\d*\s*g?$',
+        r'^(?:\s*<?\d+[\.,]?\d*\s*g?\s*)+$',
         caseSensitive: false,
       ).hasMatch(trimmed);
     }).toList();
     if (candidates.isEmpty) return null;
     candidates.sort(
-      (a, b) => (a.top - nutrientLine.top)
-          .abs()
-          .compareTo((b.top - nutrientLine.top).abs()),
+      (a, b) => _neighborScore(a, nutrientLine, anchor)
+          .compareTo(_neighborScore(b, nutrientLine, anchor)),
     );
-    return candidates.first;
+    final nearest = candidates.first;
+    final tokens = nearest.tokens
+        .where((token) => RegExp(r'\d').hasMatch(token.text))
+        .toList();
+    if (tokens.isEmpty) return nearest.text;
+
+    final unitTokens = isEnergy
+        ? tokens
+            .where(
+              (token) => token.text.toLowerCase().contains('kcal'),
+            )
+            .toList()
+        : tokens;
+    final selectable = unitTokens.isEmpty ? tokens : unitTokens;
+    if (anchor != null) {
+      selectable.sort(
+        (a, b) =>
+            (a.centerX - anchor).abs().compareTo((b.centerX - anchor).abs()),
+      );
+    }
+    return selectable.first.text;
+  }
+
+  static double _neighborScore(
+    NutritionOcrLine candidate,
+    NutritionOcrLine nutrientLine,
+    double? anchor,
+  ) {
+    final verticalDistance = (candidate.top - nutrientLine.top).abs();
+    if (anchor == null || candidate.tokens.isEmpty) return verticalDistance;
+    final horizontalDistance = candidate.tokens
+        .where((token) => RegExp(r'\d').hasMatch(token.text))
+        .map((token) => (token.centerX - anchor).abs())
+        .fold<double>(
+          double.infinity,
+          (best, value) => value < best ? value : best,
+        );
+    return verticalDistance + horizontalDistance * 0.08;
   }
 
   static double? _findPer100Anchor(List<NutritionOcrLine> lines) {
@@ -333,19 +450,62 @@ class NutritionLabelParser {
     return null;
   }
 
+  static NutritionUnit _extractNutritionUnit(String text) {
+    final match = RegExp(
+      r'(?:per|pro|je|pour|por|w)\s*100\s*(g|ml)',
+      caseSensitive: false,
+    ).firstMatch(text);
+    if (match?.group(1)?.toLowerCase() == 'ml') {
+      return NutritionUnit.milliliter;
+    }
+    // Serving-only labels still need an explicit canonical basis. Prefer the
+    // unit printed in the serving declaration when no per-100 heading exists.
+    final servingVolume = RegExp(
+      r'(?:serving|portion|servingsgröße|portionsgröße)[^\n]{0,60}\b\d+[\.,]?\d*\s*(g|ml)\b',
+      caseSensitive: false,
+    ).firstMatch(text);
+    if (servingVolume?.group(1)?.toLowerCase() == 'ml' ||
+        RegExp(r'\(\s*\d+[\.,]?\d*\s*ml\s*\)', caseSensitive: false)
+            .hasMatch(text)) {
+      return NutritionUnit.milliliter;
+    }
+    return NutritionUnit.gram;
+  }
+
   static String? _extractServingName(List<String> lines) {
     for (final rawLine in lines) {
       final line = rawLine.trim();
-      final match = _servingSizeLinePattern.firstMatch(line);
-      if (match != null) {
-        final cleaned = match
-            .group(0)!
-            .replaceAll(RegExp(r'\d+[\.,]?\d*\s*(?:g|ml)'), '')
-            .trim();
-        return cleaned.isNotEmpty ? cleaned : null;
+      if (!_servingSizeLinePattern.hasMatch(line)) continue;
+
+      final cleaned = line
+          .replaceAll(
+            RegExp(r'\(\s*\d+[\.,]?\d*\s*(?:g|ml)\s*\)', caseSensitive: false),
+            '',
+          )
+          .replaceAll(
+            RegExp(r'\b\d+[\.,]?\d*\s*(?:g|ml)\b', caseSensitive: false),
+            '',
+          )
+          .replaceFirst(
+            RegExp(
+              r'^(?:serving\s*size|serving|portion|portionsgröße)\s*',
+              caseSensitive: false,
+            ),
+            '',
+          )
+          .replaceFirst(RegExp(r'^\d+[\.,]?\d*\s*x?\s*'), '')
+          .replaceAll(RegExp(r'\s+'), ' ')
+          .trim();
+      if (cleaned.isNotEmpty && !_isMeasurementUnit(cleaned)) {
+        return cleaned;
       }
     }
     return null;
+  }
+
+  static bool _isMeasurementUnit(String value) {
+    return const <String>{'g', 'ml', 'gram', 'grams', 'gramm', 'kg', 'l'}
+        .contains(value.toLowerCase());
   }
 
   static double _parseNumber(String raw) {

@@ -20,5 +20,99 @@
       "fat": 3.5,
       "fiber": 0.4
     }
+  },
+  {
+    "id": "de_per_100ml_juice",
+    "ocr_text": "Nährwerte pro 100 ml\nEnergie 126 kJ / 30 kcal\nFett 0 g\nKohlenhydrate 7,2 g\nEiweiß 0,3 g\nBallaststoffe 0 g",
+    "expected": {
+      "calories": 30,
+      "protein": 0.3,
+      "carbs": 7.2,
+      "fat": 0,
+      "fiber": 0,
+      "unit": "milliliter"
+    }
+  },
+  {
+    "id": "en_serving_only_milk",
+    "ocr_text": "Nutrition Facts\nServing Size 1 bottle (250 ml)\nAmount Per Serving\nCalories 120\nTotal Fat 4 g\nTotal Carbohydrate 12 g\nProtein 6 g",
+    "expected": {
+      "calories": 48,
+      "protein": 2.4,
+      "carbs": 4.8,
+      "fat": 1.6,
+      "fiber": 0,
+      "unit": "milliliter"
+    }
+  },
+  {
+    "id": "fr_missing_fiber",
+    "ocr_text": "Valeurs nutritionnelles pour 100 g\nEnergie 390 kcal\nMatières grasses 12 g\nGlucides 45 g\nProtéines 8 g",
+    "expected": {
+      "calories": 390,
+      "protein": 8,
+      "carbs": 45,
+      "fat": 12,
+      "fiber": 0,
+      "fiberPresent": false
+    }
+  },
+  {
+    "id": "en_two_column_reading_order",
+    "ocr_text": "Nutrition per 100g per serving\nEnergy 400 kcal 200 kcal\nFat 10 g 5 g\nCarbohydrate 60 g 30 g\nProtein 8 g 4 g",
+    "lines": [
+      {
+        "text": "Nutrition per 100g per serving",
+        "top": 0,
+        "tokens": [
+          {"text": "Nutrition", "centerX": 20},
+          {"text": "100g", "centerX": 200},
+          {"text": "serving", "centerX": 320}
+        ]
+      },
+      {
+        "text": "Energy 400 kcal 200 kcal",
+        "top": 20,
+        "tokens": [
+          {"text": "Energy", "centerX": 20},
+          {"text": "400kcal", "centerX": 200},
+          {"text": "200kcal", "centerX": 320}
+        ]
+      },
+      {
+        "text": "Fat 10 g 5 g",
+        "top": 40,
+        "tokens": [
+          {"text": "Fat", "centerX": 20},
+          {"text": "10g", "centerX": 200},
+          {"text": "5g", "centerX": 320}
+        ]
+      },
+      {
+        "text": "Carbohydrate 60 g 30 g",
+        "top": 60,
+        "tokens": [
+          {"text": "Carbohydrate", "centerX": 20},
+          {"text": "60g", "centerX": 200},
+          {"text": "30g", "centerX": 320}
+        ]
+      },
+      {
+        "text": "Protein 8 g 4 g",
+        "top": 80,
+        "tokens": [
+          {"text": "Protein", "centerX": 20},
+          {"text": "8g", "centerX": 200},
+          {"text": "4g", "centerX": 320}
+        ]
+      }
+    ],
+    "expected": {
+      "calories": 400,
+      "protein": 8,
+      "carbs": 60,
+      "fat": 10,
+      "fiber": 0
+    }
   }
 ]

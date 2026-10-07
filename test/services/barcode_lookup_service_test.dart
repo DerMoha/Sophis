@@ -64,6 +64,7 @@ void main() {
       isUserCorrected: isUserCorrected,
       cachedAt: DateTime.now().subtract(Duration(days: daysAgo)),
       source: 'offDe',
+      nutritionUnit: 'gram',
     );
   }
 
@@ -87,8 +88,9 @@ void main() {
     when(() => mockOff.lookupBarcode(testBarcode))
         .thenAnswer((_) async => const Success(null));
     // Default: no result from Brocade
-    when(() => mockBrocade.lookup(testBarcode))
-        .thenAnswer((_) async => const Failure(ServiceErrorType.notFound, 'Not found'));
+    when(() => mockBrocade.lookup(testBarcode)).thenAnswer(
+      (_) async => const Failure(ServiceErrorType.notFound, 'Not found'),
+    );
     // Default: upsert succeeds
     when(() => mockDb.upsertBarcodeCache(any())).thenAnswer((_) async {});
   });
@@ -115,7 +117,8 @@ void main() {
         verifyNever(() => mockBrocade.lookup(any()));
       });
 
-      test('returns stale found cache hit with isStale=true and triggers background refresh',
+      test(
+          'returns stale found cache hit with isStale=true and triggers background refresh',
           () async {
         final cachedProduct =
             makeCachedProduct(cacheStatus: 'found', daysAgo: 31);
@@ -270,8 +273,12 @@ void main() {
         when(() => mockOff.lookupBarcode(testBarcode))
             .thenAnswer((_) async => const Success(null));
         when(() => mockBrocade.lookup(testBarcode)).thenAnswer(
-          (_) async =>
-              const Success(BrocadeProduct(name: 'Brocade Product', brand: 'TestBrand')),
+          (_) async => const Success(
+            BrocadeProduct(
+              name: 'Brocade Product',
+              brand: 'TestBrand',
+            ),
+          ),
         );
 
         final result = await service.lookup(testBarcode);
@@ -290,8 +297,7 @@ void main() {
         when(() => mockOff.lookupBarcode(testBarcode))
             .thenAnswer((_) async => const Success(null));
         when(() => mockBrocade.lookup(testBarcode)).thenAnswer(
-          (_) async =>
-              const Failure(ServiceErrorType.notFound, 'Not found'),
+          (_) async => const Failure(ServiceErrorType.notFound, 'Not found'),
         );
 
         final result = await service.lookup(testBarcode);
@@ -353,7 +359,11 @@ void main() {
 
     group('caching', () {
       test('cacheResult stores found status', () async {
-        await service.cacheResult(testBarcode, testFoodItem, LookupSource.offDe);
+        await service.cacheResult(
+          testBarcode,
+          testFoodItem,
+          LookupSource.offDe,
+        );
 
         final captured =
             verify(() => mockDb.upsertBarcodeCache(captureAny())).captured;
@@ -404,8 +414,7 @@ void main() {
         when(() => mockOff.lookupBarcode(testBarcode))
             .thenAnswer((_) async => const Success(null));
         when(() => mockBrocade.lookup(testBarcode)).thenAnswer(
-          (_) async =>
-              const Failure(ServiceErrorType.notFound, 'Not found'),
+          (_) async => const Failure(ServiceErrorType.notFound, 'Not found'),
         );
 
         final result1 = await service.lookup(testBarcode);

@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:sophis/models/food_item.dart';
+import 'package:sophis/models/nutrition_unit.dart';
+import 'package:sophis/models/portion_selection.dart';
 import 'package:sophis/services/openfoodfacts_service.dart';
 import 'package:sophis/services/service_result.dart';
 
@@ -69,6 +71,50 @@ void main() {
       expect(result.value.first.brand, equals('Orchard Co'));
       expect(result.value.first.caloriesPer100g, equals(52));
       expect(result.value.first.servings, isNotEmpty);
+    });
+
+    test('uses an explicit per-100 ml basis and serving volume', () async {
+      final service = OpenFoodFactsService(
+        client: MockClient((_) async {
+          return http.Response(
+            jsonEncode(<String, dynamic>{
+              'products': <Map<String, dynamic>>[
+                <String, dynamic>{
+                  'code': '1234567891',
+                  'product_name': 'Sparkling Water',
+                  'nutrition_data_per': '100ml',
+                  'serving_size': '1 glass (250 ml)',
+                  'nutriments': <String, dynamic>{
+                    'energy-kcal_100ml': 4,
+                    'proteins_100ml': 0,
+                    'carbohydrates_100ml': 1,
+                    'fat_100ml': 0,
+                  },
+                },
+              ],
+            }),
+            200,
+          );
+        }),
+      );
+
+      final result = await service.search('water');
+      final item = result.value.single;
+
+      expect(item.nutritionUnit, equals(NutritionUnit.milliliter));
+      expect(
+        item
+            .calculateForSelection(
+              const PortionSelection(
+                amount: 250,
+                unit: NutritionUnit.milliliter,
+              ),
+            )
+            .calories,
+        equals(10),
+      );
+      expect(item.servings, isNotEmpty);
+      expect(item.servings.first.unit, equals(NutritionUnit.milliliter));
     });
 
     test('search falls back to world when DE search returns no results',

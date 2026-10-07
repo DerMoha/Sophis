@@ -102,8 +102,9 @@ void main() {
       await tester.tap(find.text('open'));
       await tester.pumpAndSettle();
 
+      final l10n = await AppLocalizations.delegate.load(const Locale('en'));
       expect(
-        find.text('Gemini fallback used • please verify the values'),
+        find.text(l10n.nutritionLabelAiResult),
         findsOneWidget,
       );
     });
@@ -234,6 +235,27 @@ void main() {
       await tester.tap(find.text(l10n.looksGood));
       await tester.pumpAndSettle();
       expect(result!.productName, 'Corrected Yogurt');
+    });
+
+    testWidgets('does not confirm invalid edited nutrition values',
+        (WidgetTester tester) async {
+      NutritionLabelResult? result;
+      await tester.pumpWidget(
+        _wrap(label: _fullLabel, onResult: (value) => result = value),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField).at(2), '1200');
+      await tester.pump();
+      final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+      await tester.ensureVisible(find.text(l10n.looksGood));
+
+      final button = tester.widget<FilledButton>(
+        find.widgetWithText(FilledButton, l10n.looksGood),
+      );
+      expect(button.onPressed, isNull);
+      expect(result, isNull);
     });
   });
 }

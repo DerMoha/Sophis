@@ -1,6 +1,5 @@
 import 'dart:io';
-import 'dart:typed_data';
-
+import 'package:flutter/foundation.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:image/image.dart' as img;
 import 'package:mime/mime.dart';
@@ -24,14 +23,10 @@ class GeminiImagePartBuilder {
     }
 
     final mimeType = _detectMimeType(file.path, bytes);
-    final decoded = _decodeImage(bytes);
+    final normalized = await compute(_normalizeForGemini, bytes);
 
-    if (decoded != null) {
-      final oriented = img.bakeOrientation(decoded);
-      final jpegBytes = Uint8List.fromList(
-        img.encodeJpg(oriented, quality: 85),
-      );
-      return DataPart('image/jpeg', jpegBytes);
+    if (normalized != null) {
+      return DataPart('image/jpeg', normalized);
     }
 
     if (mimeType != null && _supportedMimeTypes.contains(mimeType)) {
@@ -62,13 +57,22 @@ class GeminiImagePartBuilder {
     final contentMimeType = lookupMimeType('', headerBytes: bytes);
     return contentMimeType ?? lookupMimeType(path);
   }
+}
 
-  img.Image? _decodeImage(Uint8List bytes) {
-    try {
-      return img.decodeImage(bytes);
-    } on Object {
-      return null;
+Uint8List? _normalizeForGemini(Uint8List bytes) {
+  try {
+    final decoded = img.decodeImage(bytes);
+    if (decoded == null) return null;
+    var oriented = img.bakeOrientation(decoded);
+    const maxDimension = 2048;
+    if (oriented.width > maxDimension || oriented.height > maxDimension) {
+      oriented = oriented.width >= oriented.height
+          ? img.copyResize(oriented, width: maxDimension)
+          : img.copyResize(oriented, height: maxDimension);
     }
+    return Uint8List.fromList(img.encodeJpg(oriented, quality: 85));
+  } on Object {
+    return null;
   }
 }
 

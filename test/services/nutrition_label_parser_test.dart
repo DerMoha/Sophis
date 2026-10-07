@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sophis/models/nutrition_unit.dart';
 import 'package:sophis/services/nutrition_label_parser.dart';
 
 void main() {
@@ -125,6 +126,48 @@ Ballaststoffe: 3,1 g
       expect(result.carbsPer100g, 45.8);
       expect(result.proteinPer100g, 8.2);
       expect(result.fiberPer100g, 3.1);
+    });
+
+    test('returns a partial draft when a required macro is missing', () {
+      const text = '''
+Nutrition per 100 ml
+Energy 40 kcal
+Carbohydrate 8 g
+Protein 1 g
+''';
+
+      final result = NutritionLabelParser.parse(text);
+      final draft = NutritionLabelParser.parseDraft(text);
+
+      expect(result, isNotNull);
+      expect(result!.hasRequiredNutrition, isFalse);
+      expect(draft, isNotNull);
+      expect(draft!.caloriesPer100, 40);
+      expect(draft.carbsPer100, 8);
+      expect(draft.proteinPer100, 1);
+      expect(draft.fatPer100, isNull);
+      expect(draft.nutritionUnit, NutritionUnit.milliliter);
+    });
+
+    test('uses the serving volume as the basis for serving-only labels', () {
+      const text = '''
+Nutrition Facts
+Serving Size 1 bottle (250 ml)
+Amount Per Serving
+Calories 120
+Total Fat 4 g
+Total Carbohydrate 12 g
+Protein 6 g
+''';
+
+      final result = NutritionLabelParser.parse(text);
+
+      expect(result, isNotNull);
+      expect(result!.nutritionUnit, NutritionUnit.milliliter);
+      expect(result.servingSizeG, 250);
+      expect(result.wasServingConverted, isTrue);
+      expect(result.caloriesPer100g, closeTo(48, 0.01));
+      expect(result.fatPer100g, closeTo(1.6, 0.01));
     });
 
     test('handles values adjacent to units (no space)', () {
@@ -316,6 +359,63 @@ Protein 8 g
       expect(result.fatPer100g, 0);
       expect(result.carbsPer100g, 87.6);
       expect(result.proteinPer100g, 1.2);
+    });
+
+    test('keeps the per-100g column when values are separate OCR lines', () {
+      const lines = [
+        NutritionOcrLine(
+          text: 'Nutrition per 100g per serving',
+          top: 10,
+          tokens: [
+            NutritionOcrToken(text: '100g', centerX: 200),
+            NutritionOcrToken(text: 'serving', centerX: 330),
+          ],
+        ),
+        NutritionOcrLine(text: 'Energy', top: 30, tokens: []),
+        NutritionOcrLine(
+          text: '400 kcal 200 kcal',
+          top: 31,
+          tokens: [
+            NutritionOcrToken(text: '400 kcal', centerX: 200),
+            NutritionOcrToken(text: '200 kcal', centerX: 330),
+          ],
+        ),
+        NutritionOcrLine(text: 'Fat', top: 50, tokens: []),
+        NutritionOcrLine(
+          text: '10g 5g',
+          top: 51,
+          tokens: [
+            NutritionOcrToken(text: '10g', centerX: 200),
+            NutritionOcrToken(text: '5g', centerX: 330),
+          ],
+        ),
+        NutritionOcrLine(text: 'Carbohydrate', top: 70, tokens: []),
+        NutritionOcrLine(
+          text: '60g 30g',
+          top: 71,
+          tokens: [
+            NutritionOcrToken(text: '60g', centerX: 200),
+            NutritionOcrToken(text: '30g', centerX: 330),
+          ],
+        ),
+        NutritionOcrLine(text: 'Protein', top: 90, tokens: []),
+        NutritionOcrLine(
+          text: '8g 4g',
+          top: 91,
+          tokens: [
+            NutritionOcrToken(text: '8g', centerX: 200),
+            NutritionOcrToken(text: '4g', centerX: 330),
+          ],
+        ),
+      ];
+
+      final result = NutritionLabelParser.parseLayout(lines);
+
+      expect(result, isNotNull);
+      expect(result!.caloriesPer100g, 400);
+      expect(result.fatPer100g, 10);
+      expect(result.carbsPer100g, 60);
+      expect(result.proteinPer100g, 8);
     });
 
     test('parses Spanish nutrition vocabulary', () {

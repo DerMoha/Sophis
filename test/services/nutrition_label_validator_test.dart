@@ -38,5 +38,19 @@ void main() {
         contains(NutritionLabelIssue.nutrientOutOfRange),
       );
     });
+
+    test('accepts valid products with only one positive macro', () {
+      const label = NutritionLabelResult(
+        caloriesPer100g: 40,
+        proteinPer100g: 0,
+        carbsPer100g: 10,
+        fatPer100g: 0,
+      );
+
+      final validation = NutritionLabelValidator.validate(label);
+
+      expect(validation.isUsable, isTrue);
+      expect(validation.isHighConfidence, isTrue);
+    });
   });
 }

@@ -6,15 +6,18 @@ import 'package:provider/provider.dart';
 
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/food_item.dart';
+import 'package:sophis/models/nutrition_label_draft.dart';
 import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/services/barcode_lookup_service.dart';
 import 'package:sophis/services/gemini_food_service.dart';
 import 'package:sophis/services/gemini/models/nutrition_label_result.dart';
 import 'package:sophis/services/label_intake_flow.dart';
-import 'package:sophis/services/service_result.dart';
+import 'package:sophis/services/nutrition_label_validator.dart';
 import 'package:sophis/services/nutrition_scan_feedback_service.dart';
+import 'package:sophis/services/service_result.dart';
 import 'package:sophis/ui/components/edit_product_sheet.dart';
 import 'package:sophis/ui/components/label_preview_sheet.dart';
+import 'package:sophis/ui/components/nutrition_label_draft_sheet.dart';
 import 'package:sophis/ui/components/settings/settings_tiles.dart';
 import 'package:sophis/ui/screens/nutrition_label_camera_screen.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
@@ -65,31 +68,117 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
 
     final flow = _buildFlow();
     try {
-      final result = await flow.processImage(
-        LabelIntakeRequest(
-          imageFile: File(image.path),
-          idGenerator: () => widget.barcode,
-          fallbackProductName: widget.partialName ?? l10n.productNotFoundTitle,
-          fallbackBrand: widget.partialBrand,
-          barcode: widget.barcode,
-        ),
+      final request = LabelIntakeRequest(
+        imageFile: File(image.path),
+        idGenerator: () => widget.barcode,
+        fallbackProductName: widget.partialName ?? l10n.productNotFoundTitle,
+        fallbackBrand: widget.partialBrand,
+        barcode: widget.barcode,
       );
+      var result = await flow.processImage(
+        request,
+        allowCloudAssist: false,
+      );
+      var cloudAssistAllowed = false;
 
       if (!mounted) return;
+      if (flow.hasGeminiFallback && _shouldOfferCloudAssist(result)) {
+        final allowCloud = await _confirmCloudAssist(l10n);
+        if (!mounted) return;
+        if (allowCloud) {
+          cloudAssistAllowed = true;
+          result = await flow.processImage(
+            request,
+            allowCloudAssist: true,
+          );
+        }
+      }
       switch (result) {
         case Success<LabelIntakeResult>(value: final intake):
           await _onSuccess(intake);
         case Failure<LabelIntakeResult>():
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(l10n.nutritionLabelNotParsed)),
+          final draftResult = await flow.processDraftImage(
+            request,
+            allowCloudAssist: cloudAssistAllowed,
+          );
+          if (!mounted) return;
+          final draft = draftResult.valueOrNull ??
+              NutritionLabelDraft(
+                productName: widget.partialName,
+                brand: widget.partialBrand,
+              );
+          final confirmed = await showNutritionLabelDraftSheet(
+            context: context,
+            draft: draft,
+            source: draft.analysisSource,
+          );
+          if (!mounted) return;
+          if (confirmed == null) {
+            await const NutritionScanFeedbackService().recordOutcome(
+              NutritionScanOutcome.rescan,
             );
+            return;
           }
+          final product = flow.productFromLabel(
+            label: confirmed,
+            idGenerator: () => widget.barcode,
+            fallbackProductName:
+                widget.partialName ?? l10n.productNotFoundTitle,
+            fallbackBrand: widget.partialBrand,
+            barcode: widget.barcode,
+          );
+          await _onSuccess(
+            LabelIntakeResult(
+              label: confirmed,
+              product: product,
+              validation: NutritionLabelValidator.validate(confirmed),
+              source: draft.analysisSource,
+            ),
+            confirmedLabel: confirmed,
+            fromPartialDraft: true,
+          );
+      }
+    } on Object {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.nutritionLabelNotParsed)),
+        );
       }
     } finally {
       flow.dispose();
       if (mounted) setState(() => _isAnalyzing = false);
     }
+  }
+
+  bool _shouldOfferCloudAssist(ServiceResult<LabelIntakeResult> result) {
+    return switch (result) {
+      Success<LabelIntakeResult>(value: final intake) =>
+        intake.source == NutritionLabelAnalysisSource.localOcr &&
+            !intake.validation.isHighConfidence,
+      Failure<LabelIntakeResult>() => true,
+    };
+  }
+
+  Future<bool> _confirmCloudAssist(AppLocalizations l10n) async {
+    return await showDialog<bool>(
+          context: context,
+          barrierDismissible: false,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(l10n.nutritionLabelCloudConsentTitle),
+            content: Text(l10n.nutritionLabelCloudConsentBody),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text(l10n.nutritionLabelCloudConsentDecline),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: Text(l10n.nutritionLabelCloudConsentConfirm),
+              ),
+            ],
+          ),
+        ) ??
+        false;
   }
 
   LabelIntakeFlow _buildFlow() {
@@ -101,8 +190,12 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
     return LabelIntakeFlow(gemini: gemini);
   }
 
-  Future<void> _onSuccess(LabelIntakeResult intake) async {
-    final confirmedLabel = await showLabelPreviewSheet(
+  Future<void> _onSuccess(
+    LabelIntakeResult intake, {
+    NutritionLabelResult? confirmedLabel,
+    bool fromPartialDraft = false,
+  }) async {
+    confirmedLabel ??= await showLabelPreviewSheet(
       context: context,
       label: intake.label,
       validation: intake.validation,
@@ -110,11 +203,21 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
     );
 
     if (!mounted) return;
-    if (confirmedLabel == null) return;
+    if (confirmedLabel == null) {
+      await const NutritionScanFeedbackService().recordOutcome(
+        NutritionScanOutcome.rescan,
+      );
+      return;
+    }
 
     await const NutritionScanFeedbackService().record(
       scanned: intake.label,
       confirmed: confirmedLabel,
+      outcome: fromPartialDraft
+          ? NutritionScanOutcome.partialManualCompletion
+          : intake.source == NutritionLabelAnalysisSource.gemini
+              ? NutritionScanOutcome.cloudSuccess
+              : NutritionScanOutcome.localSuccess,
     );
 
     final confirmedProduct = intake.product.copyWith(
@@ -125,14 +228,14 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
       carbsPer100g: confirmedLabel.carbsPer100g,
       fatPer100g: confirmedLabel.fatPer100g,
       fiberPer100g: confirmedLabel.fiberPer100g,
+      nutritionUnit: confirmedLabel.nutritionUnit,
     );
 
-    await widget.lookupService.cacheResult(
+    // A user-confirmed recovery is a durable correction for this barcode, not
+    // a short-lived network cache entry. Future scans should use it first.
+    await widget.lookupService.saveUserCorrection(
       widget.barcode,
       confirmedProduct,
-      intake.source == NutritionLabelAnalysisSource.gemini
-          ? LookupSource.gemini
-          : LookupSource.localOcr,
     );
 
     if (!mounted) return;

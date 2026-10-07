@@ -1,4 +1,23 @@
+import 'package:sophis/models/nutrition_unit.dart';
+
 enum NutritionLabelAnalysisSource { localOcr, gemini }
+
+enum NutritionLabelField { calories, protein, carbs, fat, fiber }
+
+const Set<NutritionLabelField> _allNutritionLabelFields = {
+  NutritionLabelField.calories,
+  NutritionLabelField.protein,
+  NutritionLabelField.carbs,
+  NutritionLabelField.fat,
+  NutritionLabelField.fiber,
+};
+
+const Set<NutritionLabelField> requiredNutritionLabelFields = {
+  NutritionLabelField.calories,
+  NutritionLabelField.protein,
+  NutritionLabelField.carbs,
+  NutritionLabelField.fat,
+};
 
 class NutritionLabelResult {
   final String? productName;
@@ -8,8 +27,11 @@ class NutritionLabelResult {
   final double carbsPer100g;
   final double fatPer100g;
   final double fiberPer100g;
+  final NutritionUnit nutritionUnit;
   final double? servingSizeG;
   final String? servingName;
+  final bool wasServingConverted;
+  final Set<NutritionLabelField> presentFields;
 
   const NutritionLabelResult({
     this.productName,
@@ -19,9 +41,15 @@ class NutritionLabelResult {
     required this.carbsPer100g,
     required this.fatPer100g,
     this.fiberPer100g = 0,
+    this.nutritionUnit = NutritionUnit.gram,
     this.servingSizeG,
     this.servingName,
+    this.wasServingConverted = false,
+    this.presentFields = _allNutritionLabelFields,
   });
+
+  bool get hasRequiredNutrition =>
+      presentFields.containsAll(requiredNutritionLabelFields);
 
   NutritionLabelResult copyWith({
     String? productName,
@@ -33,8 +61,11 @@ class NutritionLabelResult {
     double? carbsPer100g,
     double? fatPer100g,
     double? fiberPer100g,
+    NutritionUnit? nutritionUnit,
     double? servingSizeG,
     String? servingName,
+    bool? wasServingConverted,
+    Set<NutritionLabelField>? presentFields,
   }) =>
       NutritionLabelResult(
         productName: clearProductName ? null : productName ?? this.productName,
@@ -44,7 +75,10 @@ class NutritionLabelResult {
         carbsPer100g: carbsPer100g ?? this.carbsPer100g,
         fatPer100g: fatPer100g ?? this.fatPer100g,
         fiberPer100g: fiberPer100g ?? this.fiberPer100g,
+        nutritionUnit: nutritionUnit ?? this.nutritionUnit,
         servingSizeG: servingSizeG ?? this.servingSizeG,
         servingName: servingName ?? this.servingName,
+        wasServingConverted: wasServingConverted ?? this.wasServingConverted,
+        presentFields: presentFields ?? this.presentFields,
       );
 }

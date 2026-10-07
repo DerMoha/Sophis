@@ -2,19 +2,24 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:gal/gal.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:sophis/l10n/generated/app_localizations.dart';
+import 'package:sophis/models/nutrition_label_draft.dart';
+import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/services/gemini_food_service.dart';
+import 'package:sophis/services/gemini/models/nutrition_label_result.dart';
 import 'package:sophis/services/label_intake_flow.dart';
 import 'package:sophis/services/service_result.dart';
 import 'package:sophis/services/nutrition_scan_feedback_service.dart';
+import 'package:sophis/services/nutrition_label_validator.dart';
 import 'package:sophis/ui/components/label_preview_sheet.dart';
+import 'package:sophis/ui/components/nutrition_label_draft_sheet.dart';
 import 'package:sophis/ui/components/portion_picker_sheet.dart';
+import 'package:sophis/ui/screens/add_food_screen.dart';
 import 'package:sophis/ui/screens/nutrition_label_camera_screen.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 
@@ -30,14 +35,13 @@ class NutritionLabelScannerScreen extends StatefulWidget {
 
 class _NutritionLabelScannerScreenState
     extends State<NutritionLabelScannerScreen> {
-  static const Duration _scanTimeout = Duration(seconds: 50);
-
   final _picker = ImagePicker();
   late final LabelIntakeFlow _flow;
 
   bool _isAnalyzing = false;
   bool _hasAiFallback = false;
   String? _error;
+  LabelIntakeProgress _progress = LabelIntakeProgress.checkingImage;
 
   @override
   void initState() {
@@ -69,9 +73,6 @@ class _NutritionLabelScannerScreenState
       ),
     );
     if (captured == null || !mounted) return;
-    try {
-      await Gal.putImage(captured.path);
-    } catch (_) {}
     await _scanImage(captured);
   }
 
@@ -91,28 +92,83 @@ class _NutritionLabelScannerScreenState
       setState(() {
         _isAnalyzing = true;
         _error = null;
+        _progress = LabelIntakeProgress.checkingImage;
       });
 
-      final result = await _flow
-          .processImage(
-            LabelIntakeRequest(
-              imageFile: File(picked.path),
-              idGenerator: () => 'scan-${const Uuid().v4()}',
-              fallbackProductName: l10n.scannedProductName,
-            ),
-          )
-          .timeout(_scanTimeout);
+      final request = LabelIntakeRequest(
+        imageFile: File(picked.path),
+        idGenerator: () => 'scan-${const Uuid().v4()}',
+        fallbackProductName: l10n.scannedProductName,
+      );
+      var result = await _flow.processImage(
+        request,
+        onProgress: (progress) {
+          if (mounted) setState(() => _progress = progress);
+        },
+        allowCloudAssist: false,
+      );
+      var cloudAssistAllowed = false;
 
       if (!mounted) return;
+
+      if (_hasAiFallback && _shouldOfferCloudAssist(result)) {
+        final allowCloud = await _confirmCloudAssist();
+        if (!mounted) return;
+        if (allowCloud) {
+          cloudAssistAllowed = true;
+          setState(() {
+            _isAnalyzing = true;
+            _progress = LabelIntakeProgress.verifyingValues;
+          });
+          result = await _flow.processImage(
+            request,
+            onProgress: (progress) {
+              if (mounted) setState(() => _progress = progress);
+            },
+            allowCloudAssist: true,
+          );
+        }
+      }
 
       switch (result) {
         case Success<LabelIntakeResult>(value: final intake):
           await _onSuccess(intake);
         case Failure<LabelIntakeResult>(errorType: final errorType):
-          await _onFailure(
-            fallback: errorType == ServiceErrorType.network
-                ? l10n.errorNetworkTryAgain
-                : l10n.nutritionLabelNotParsed,
+          final draftResult = await _flow.processDraftImage(
+            request,
+            allowCloudAssist: cloudAssistAllowed,
+          );
+          if (!mounted) return;
+          final draft = draftResult.valueOrNull ??
+              NutritionLabelDraft(productName: l10n.scannedProductName);
+          final confirmed = await showNutritionLabelDraftSheet(
+            context: context,
+            draft: draft,
+            source: draft.analysisSource,
+          );
+          if (!mounted) return;
+          if (confirmed == null) {
+            await _onFailure(
+              fallback: errorType == ServiceErrorType.network
+                  ? l10n.errorNetworkTryAgain
+                  : l10n.nutritionLabelNotParsed,
+            );
+            return;
+          }
+          final product = _flow.productFromLabel(
+            label: confirmed,
+            idGenerator: () => 'scan-${const Uuid().v4()}',
+            fallbackProductName: l10n.scannedProductName,
+          );
+          await _onSuccess(
+            LabelIntakeResult(
+              label: confirmed,
+              product: product,
+              validation: NutritionLabelValidator.validate(confirmed),
+              source: draft.analysisSource,
+            ),
+            confirmedLabel: confirmed,
+            fromPartialDraft: true,
           );
       }
     } on TimeoutException {
@@ -129,8 +185,51 @@ class _NutritionLabelScannerScreenState
     }
   }
 
-  Future<void> _onSuccess(LabelIntakeResult intake) async {
-    final confirmedLabel = await showLabelPreviewSheet(
+  bool _shouldOfferCloudAssist(ServiceResult<LabelIntakeResult> result) {
+    return switch (result) {
+      Success<LabelIntakeResult>(value: final intake) =>
+        intake.source == NutritionLabelAnalysisSource.localOcr &&
+            !intake.validation.isHighConfidence,
+      Failure<LabelIntakeResult>() => true,
+    };
+  }
+
+  Future<bool> _confirmCloudAssist() async {
+    final l10n = AppLocalizations.of(context)!;
+    return await showDialog<bool>(
+          context: context,
+          barrierDismissible: false,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(l10n.nutritionLabelCloudConsentTitle),
+            content: Text(l10n.nutritionLabelCloudConsentBody),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text(l10n.nutritionLabelCloudConsentDecline),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: Text(l10n.nutritionLabelCloudConsentConfirm),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
+  void _openManualFallback() {
+    Navigator.push(
+      context,
+      AppTheme.slideRoute(AddFoodScreen(meal: widget.meal)),
+    );
+  }
+
+  Future<void> _onSuccess(
+    LabelIntakeResult intake, {
+    NutritionLabelResult? confirmedLabel,
+    bool fromPartialDraft = false,
+  }) async {
+    confirmedLabel ??= await showLabelPreviewSheet(
       context: context,
       label: intake.label,
       validation: intake.validation,
@@ -140,16 +239,43 @@ class _NutritionLabelScannerScreenState
     if (!mounted) return;
 
     if (confirmedLabel == null) {
+      await const NutritionScanFeedbackService().recordOutcome(
+        NutritionScanOutcome.rescan,
+      );
       setState(() {
         _isAnalyzing = false;
       });
       return;
     }
+    final reviewedLabel = confirmedLabel;
+    final reviewedProduct = intake.product.copyWith(
+      name: reviewedLabel.productName,
+      brand: reviewedLabel.brand,
+      caloriesPer100g: reviewedLabel.caloriesPer100g,
+      proteinPer100g: reviewedLabel.proteinPer100g,
+      carbsPer100g: reviewedLabel.carbsPer100g,
+      fatPer100g: reviewedLabel.fatPer100g,
+      fiberPer100g: reviewedLabel.fiberPer100g,
+      nutritionUnit: reviewedLabel.nutritionUnit,
+    );
 
     await const NutritionScanFeedbackService().record(
       scanned: intake.label,
-      confirmed: confirmedLabel,
+      confirmed: reviewedLabel,
+      outcome: fromPartialDraft
+          ? NutritionScanOutcome.partialManualCompletion
+          : intake.source == NutritionLabelAnalysisSource.gemini
+              ? NutritionScanOutcome.cloudSuccess
+              : NutritionScanOutcome.localSuccess,
     );
+
+    if (intake.product.barcode == null) {
+      final shouldSave = await _confirmSaveProduct();
+      if (!mounted) return;
+      if (shouldSave) {
+        await context.read<NutritionProvider>().addCustomFood(reviewedProduct);
+      }
+    }
 
     if (!mounted) return;
     setState(() => _isAnalyzing = false);
@@ -160,15 +286,7 @@ class _NutritionLabelScannerScreenState
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => PortionPickerSheet(
-        item: intake.product.copyWith(
-          name: confirmedLabel.productName,
-          brand: confirmedLabel.brand,
-          caloriesPer100g: confirmedLabel.caloriesPer100g,
-          proteinPer100g: confirmedLabel.proteinPer100g,
-          carbsPer100g: confirmedLabel.carbsPer100g,
-          fatPer100g: confirmedLabel.fatPer100g,
-          fiberPer100g: confirmedLabel.fiberPer100g,
-        ),
+        item: reviewedProduct,
         meal: widget.meal,
         onLogged: (_) async {
           logged = true;
@@ -176,6 +294,28 @@ class _NutritionLabelScannerScreenState
       ),
     );
     if (logged && mounted) Navigator.pop(context);
+  }
+
+  Future<bool> _confirmSaveProduct() async {
+    final l10n = AppLocalizations.of(context)!;
+    return await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(l10n.nutritionLabelSaveProductTitle),
+            content: Text(l10n.nutritionLabelSaveProductBody),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text(l10n.nutritionLabelSaveProductSkip),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: Text(l10n.nutritionLabelSaveProductConfirm),
+              ),
+            ],
+          ),
+        ) ??
+        false;
   }
 
   Future<void> _onFailure({
@@ -187,6 +327,14 @@ class _NutritionLabelScannerScreenState
       _error = fallback;
     });
   }
+
+  String _progressLabel(AppLocalizations l10n) => switch (_progress) {
+        LabelIntakeProgress.checkingImage => l10n.nutritionLabelCheckingImage,
+        LabelIntakeProgress.readingText => l10n.nutritionLabelReadingText,
+        LabelIntakeProgress.enhancingImage => l10n.nutritionLabelEnhancingImage,
+        LabelIntakeProgress.verifyingValues =>
+          l10n.nutritionLabelVerifyingValues,
+      };
 
   @override
   Widget build(BuildContext context) {
@@ -286,13 +434,19 @@ class _NutritionLabelScannerScreenState
                               ],
                             ),
                           ),
+                          const SizedBox(height: 8),
+                          TextButton.icon(
+                            onPressed: _openManualFallback,
+                            icon: const Icon(Icons.edit_outlined, size: 18),
+                            label: Text(l10n.nutritionLabelManualFallback),
+                          ),
                         ],
                         if (_isAnalyzing) ...[
                           const SizedBox(height: 24),
                           const CircularProgressIndicator(),
                           const SizedBox(height: 12),
                           Text(
-                            l10n.nutritionLabelAnalyzing,
+                            _progressLabel(l10n),
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
                             ),

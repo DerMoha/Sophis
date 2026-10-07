@@ -36,6 +36,18 @@ void main() {
       expect(decoded.height, equals(2));
     });
 
+    test('bounds large image payloads before upload', () async {
+      final image = img.Image(width: 3000, height: 2400);
+      final source = File('${tempDirectory.path}/large.png');
+      await source.writeAsBytes(img.encodePng(image));
+
+      final part = await builder.buildPart(source);
+      final decoded = img.decodeImage(part.bytes)!;
+
+      expect(decoded.width, 2048);
+      expect(decoded.height, lessThan(2048));
+    });
+
     test('preserves HEIC bytes with the detected HEIC MIME type', () async {
       final bytes = _heifContainerBytes('heic');
       final source = File('${tempDirectory.path}/photo.jpg');

@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 
 import 'package:sophis/models/food_item.dart';
+import 'package:sophis/models/nutrition_unit.dart';
 import 'package:sophis/models/serving_size.dart';
 import 'package:sophis/services/service_result.dart';
 
@@ -15,7 +16,7 @@ class OpenFoodFactsService {
   static const _worldHost = 'world.openfoodfacts.org';
   static const _deHost = 'de.openfoodfacts.org';
   static const _productFields =
-      'code,product_name,product_name_de,product_name_en,nutriments,brands,image_front_small_url,image_front_url,serving_size,serving_quantity,categories_tags';
+      'code,product_name,product_name_de,product_name_en,nutrition_data_per,nutriments,brands,image_front_small_url,image_front_url,serving_size,serving_quantity,categories_tags';
   static const _cacheDuration = Duration(minutes: 10);
   static const _defaultHeaders = <String, String>{
     'Accept': 'application/json',
@@ -318,15 +319,24 @@ class OpenFoodFactsService {
 
     final nutrients = product['nutriments'] as Map<String, dynamic>? ?? {};
 
-    // Get values per 100g
-    final calories = _parseNutrient(nutrients, 'energy-kcal_100g') ??
-        _parseNutrient(nutrients, 'energy-kcal') ??
-        (_parseNutrient(nutrients, 'energy_100g') ?? 0) / 4.184;
+    final nutritionDataPer =
+        product['nutrition_data_per']?.toString().toLowerCase() ?? '';
+    final hasMilliliterBasis = nutritionDataPer.isNotEmpty
+        ? nutritionDataPer.contains('ml')
+        : nutrients.keys.any((key) => key.endsWith('_100ml'));
+    final nutritionUnit =
+        hasMilliliterBasis ? NutritionUnit.milliliter : NutritionUnit.gram;
+    final suffix = nutritionUnit == NutritionUnit.milliliter ? '100ml' : '100g';
 
-    final protein = _parseNutrient(nutrients, 'proteins_100g') ?? 0;
-    final carbs = _parseNutrient(nutrients, 'carbohydrates_100g') ?? 0;
-    final fat = _parseNutrient(nutrients, 'fat_100g') ?? 0;
-    final fiber = _parseNutrient(nutrients, 'fiber_100g') ?? 0;
+    // Get values in the product's explicit Open Food Facts basis.
+    final calories = _parseNutrient(nutrients, 'energy-kcal_$suffix') ??
+        _parseNutrient(nutrients, 'energy-kcal') ??
+        (_parseNutrient(nutrients, 'energy_$suffix') ?? 0) / 4.184;
+
+    final protein = _parseNutrient(nutrients, 'proteins_$suffix') ?? 0;
+    final carbs = _parseNutrient(nutrients, 'carbohydrates_$suffix') ?? 0;
+    final fat = _parseNutrient(nutrients, 'fat_$suffix') ?? 0;
+    final fiber = _parseNutrient(nutrients, 'fiber_$suffix') ?? 0;
 
     // Extract brand
     final brand = product['brands']?.toString();
@@ -338,15 +348,20 @@ class OpenFoodFactsService {
     // Extract serving size info
     final servingSize = product['serving_size']?.toString();
     final servingQuantity = _parseNutrient(
-      {'q': product['serving_quantity']},
-      'q',
-    );
+          {'q': product['serving_quantity']},
+          'q',
+        ) ??
+        _extractServingQuantity(servingSize, nutritionUnit);
 
     // Generate serving options
     List<ServingSize> servings = [];
     if (servingQuantity != null && servingQuantity > 0) {
       final servingName = _extractServingName(servingSize) ?? 'Portion';
-      servings = ServingSize.generateFractions(servingName, servingQuantity);
+      servings = ServingSize.generateFractions(
+        servingName,
+        servingQuantity,
+        unit: nutritionUnit,
+      );
     }
 
     return FoodItem(
@@ -358,6 +373,7 @@ class OpenFoodFactsService {
       carbsPer100g: carbs,
       fatPer100g: fat,
       fiberPer100g: fiber,
+      nutritionUnit: nutritionUnit,
       barcode: product['code'],
       brand: brand,
       imageUrl: imageUrl,
@@ -396,6 +412,22 @@ class OpenFoodFactsService {
     }.contains(normalized);
   }
 
+  double? _extractServingQuantity(
+    String? servingSize,
+    NutritionUnit nutritionUnit,
+  ) {
+    if (servingSize == null || servingSize.isEmpty) return null;
+    final unitPattern = nutritionUnit == NutritionUnit.milliliter
+        ? r'ml'
+        : r'g|gram|grams|gramm';
+    final match = RegExp(
+      r'(\d+[\.,]?\d*)\s*(?:' + unitPattern + r')\b',
+      caseSensitive: false,
+    ).firstMatch(servingSize);
+    if (match == null) return null;
+    return double.tryParse(match.group(1)!.replaceAll(',', '.'));
+  }
+
   String? _firstListValue(Object? value) {
     if (value is! List) return null;
 
@@ -413,7 +445,9 @@ class OpenFoodFactsService {
     final value = nutrients[key];
     if (value == null) return null;
     if (value is num) return value.toDouble();
-    if (value is String) return double.tryParse(value);
+    if (value is String) {
+      return double.tryParse(value.trim().replaceAll(',', '.'));
+    }
     return null;
   }
 }

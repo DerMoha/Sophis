@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/food_item.dart';
+import 'package:sophis/models/nutrition_unit.dart';
 import 'package:sophis/services/openfoodfacts_write_service.dart';
 import 'package:sophis/services/service_result.dart';
 import 'package:sophis/providers/settings_provider.dart';
@@ -47,11 +48,13 @@ class _EditProductSheetState extends State<EditProductSheet> {
   late final TextEditingController _fiberController;
   bool _isSaving = false;
   bool _submitToOff = false;
+  late NutritionUnit _nutritionUnit;
 
   @override
   void initState() {
     super.initState();
     final p = widget.existingProduct;
+    _nutritionUnit = p?.nutritionUnit ?? NutritionUnit.gram;
     _nameController = TextEditingController(
       text: p?.name ?? widget.initialName ?? '',
     );
@@ -96,9 +99,12 @@ class _EditProductSheetState extends State<EditProductSheet> {
 
   String? _validateNumber(String? value) {
     if (value == null || value.trim().isEmpty) return '';
-    if (double.tryParse(value) == null) return '';
+    if (double.tryParse(_normalizeNumber(value)) == null) return '';
     return null;
   }
+
+  String _normalizeNumber(String value) =>
+      value.trim().replaceAll(RegExp(r'[\s\u00a0]'), '').replaceAll(',', '.');
 
   Widget _buildOffSubmitRow(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -121,11 +127,13 @@ class _EditProductSheetState extends State<EditProductSheet> {
       id: widget.barcode,
       name: _nameController.text.trim(),
       category: widget.existingProduct?.category ?? 'food',
-      caloriesPer100g: double.parse(_caloriesController.text),
-      proteinPer100g: double.parse(_proteinController.text),
-      carbsPer100g: double.parse(_carbsController.text),
-      fatPer100g: double.parse(_fatController.text),
-      fiberPer100g: double.tryParse(_fiberController.text) ?? 0,
+      caloriesPer100g: double.parse(_normalizeNumber(_caloriesController.text)),
+      proteinPer100g: double.parse(_normalizeNumber(_proteinController.text)),
+      carbsPer100g: double.parse(_normalizeNumber(_carbsController.text)),
+      fatPer100g: double.parse(_normalizeNumber(_fatController.text)),
+      fiberPer100g:
+          double.tryParse(_normalizeNumber(_fiberController.text)) ?? 0,
+      nutritionUnit: _nutritionUnit,
       barcode: widget.barcode,
       brand: _brandController.text.trim().isEmpty
           ? null
@@ -276,13 +284,34 @@ class _EditProductSheetState extends State<EditProductSheet> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Per 100g header
+                    DropdownButtonFormField<NutritionUnit>(
+                      initialValue: _nutritionUnit,
+                      decoration: InputDecoration(
+                        labelText: l10n.nutritionBasis,
+                        prefixIcon: const Icon(
+                          Icons.straighten_outlined,
+                          size: 20,
+                        ),
+                      ),
+                      items: NutritionUnit.values
+                          .map(
+                            (unit) => DropdownMenuItem<NutritionUnit>(
+                              value: unit,
+                              child: Text(unit.symbol),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() => _nutritionUnit = value);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Per 100 unit header
                     Text(
-                      l10n
-                          .per100g('')
-                          .replaceAll(': ', '')
-                          .replaceAll(' kcal', '')
-                          .trim(),
+                      l10n.per100Unit(_nutritionUnit.symbol),
                       style: theme.textTheme.labelMedium?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                         letterSpacing: 0.5,
@@ -296,7 +325,7 @@ class _EditProductSheetState extends State<EditProductSheet> {
                       keyboardType: TextInputType.number,
                       inputFormatters: [
                         FilteringTextInputFormatter.allow(
-                          RegExp(r'^\d+\.?\d{0,1}'),
+                          RegExp(r'[\d.,]'),
                         ),
                       ],
                       decoration: InputDecoration(
@@ -324,7 +353,7 @@ class _EditProductSheetState extends State<EditProductSheet> {
                             keyboardType: TextInputType.number,
                             inputFormatters: [
                               FilteringTextInputFormatter.allow(
-                                RegExp(r'^\d+\.?\d{0,1}'),
+                                RegExp(r'[\d.,]'),
                               ),
                             ],
                             decoration: InputDecoration(
@@ -345,7 +374,7 @@ class _EditProductSheetState extends State<EditProductSheet> {
                             keyboardType: TextInputType.number,
                             inputFormatters: [
                               FilteringTextInputFormatter.allow(
-                                RegExp(r'^\d+\.?\d{0,1}'),
+                                RegExp(r'[\d.,]'),
                               ),
                             ],
                             decoration: InputDecoration(
@@ -366,7 +395,7 @@ class _EditProductSheetState extends State<EditProductSheet> {
                             keyboardType: TextInputType.number,
                             inputFormatters: [
                               FilteringTextInputFormatter.allow(
-                                RegExp(r'^\d+\.?\d{0,1}'),
+                                RegExp(r'[\d.,]'),
                               ),
                             ],
                             decoration: InputDecoration(
@@ -390,7 +419,7 @@ class _EditProductSheetState extends State<EditProductSheet> {
                       keyboardType: TextInputType.number,
                       inputFormatters: [
                         FilteringTextInputFormatter.allow(
-                          RegExp(r'^\d+\.?\d{0,1}'),
+                          RegExp(r'[\d.,]'),
                         ),
                       ],
                       decoration: InputDecoration(

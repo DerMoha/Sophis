@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:sophis/services/gemini_image_part_builder.dart';
 import 'package:sophis/services/gemini/models/models.dart';
+import 'package:sophis/models/nutrition_unit.dart';
 import 'package:sophis/services/service_result.dart';
 
 /// Gemini AI service for accurate food recognition and nutrition estimation
@@ -16,6 +17,7 @@ class GeminiFoodService {
   static const String _fallbackModelName = 'gemini-3.6-flash';
   static const Duration _foodAnalysisTimeout = Duration(seconds: 45);
   static const Duration _nutritionTextTimeout = Duration(seconds: 20);
+  static const Duration _nutritionImageTimeout = Duration(seconds: 20);
 
   GenerativeModel? _model;
   String? _apiKey;
@@ -669,6 +671,110 @@ If no recipe is visible or readable, return:
     return _imagePartBuilder.buildParts(files);
   }
 
+  /// Reads a nutrition label directly from the source image. OCR text is only
+  /// supporting evidence: the visible table layout remains authoritative so a
+  /// per-serving column is not accidentally treated as the per-100g column.
+  Future<ServiceResult<NutritionLabelResult?>> parseNutritionImage(
+    File imageFile, {
+    String? ocrText,
+  }) async {
+    if (!_isInitialized || _model == null) {
+      return const Failure(
+        ServiceErrorType.unknown,
+        'Gemini service not initialized',
+      );
+    }
+
+    if (!await canMakeRequest()) {
+      return const Failure(
+        ServiceErrorType.rateLimited,
+        'Daily limit reached (20 requests/day). Try again tomorrow.',
+      );
+    }
+
+    final supportingText = ocrText == null || ocrText.trim().isEmpty
+        ? 'No usable local OCR text was available.'
+        : '''
+Local OCR (may contain mistakes and must not override the image):
+${ocrText.trim()}
+''';
+    final prompt = TextPart('''
+Read the nutrition table in this product image. Return the values printed for
+exactly 100 g or 100 ml. Inspect the visual column headings and row alignment;
+never pick a value merely because it appears first in OCR reading order.
+
+Rules:
+- Prefer an explicitly labelled "per/pro/pour/por 100 g" or "100 ml" column.
+- If both per-100 and per-serving columns exist, use only the per-100 column.
+- Only when no per-100 column exists, scale a serving column using the printed
+  serving weight or volume.
+- Use kcal for calories. Do not return kJ as kcal; convert kJ only if kcal is
+  absent (1 kcal = 4.184 kJ).
+- Transcribe printed values. Do not estimate missing nutrients; return null
+  when a value is unreadable.
+- Treat decimal commas as decimal points.
+- Set nutrition_unit to "g" or "ml" based on the selected per-100 column.
+  serving_size_g is the canonical serving amount in that same unit.
+- Set serving_to_100_converted to true only when serving values were scaled
+  because no reliable per-100 column was available.
+- Check the chosen column a second time before answering.
+
+$supportingText
+Respond ONLY with valid JSON in this exact format:
+{
+  "product_name": "Product Name or null",
+  "brand": "Brand or null",
+  "nutrition_unit": "g",
+  "calories_per_100g": 200,
+  "protein_per_100g": 10.0,
+  "carbs_per_100g": 25.0,
+  "fat_per_100g": 8.0,
+  "fiber_per_100g": 3.0,
+  "serving_size_g": 30,
+  "serving_name": "1 Portion",
+  "serving_to_100_converted": false
+}
+
+If a required value is not readable, return null for that value. If the image is
+not a readable nutrition label, return null for calories and all other values.
+''');
+
+    var requestCounted = false;
+    try {
+      final imagePart = await _imagePartBuilder
+          .buildPart(imageFile)
+          .timeout(const Duration(seconds: 8));
+      await _incrementRequestCount();
+      requestCounted = true;
+      final text = await _generateNutritionParts([imagePart, prompt]);
+      return Success(_parseNutritionLabelResponse(text));
+    } on TimeoutException {
+      if (requestCounted) await _decrementRequestCount();
+      debugPrint('Gemini nutrition image parsing timed out');
+      return const Failure(
+        ServiceErrorType.network,
+        'Request timed out. Please try again.',
+      );
+    } on GeminiImageException catch (e) {
+      debugPrint('Gemini nutrition image preparation failed: $e');
+      return Failure(ServiceErrorType.parseError, e.message);
+    } on _GeminiHttpException catch (e) {
+      if (requestCounted) await _decrementRequestCount();
+      debugPrint('Gemini nutrition image parsing failed: $e');
+      return Failure(
+        _serviceErrorTypeForStatus(e.statusCode),
+        'Failed to parse nutrition image: ${e.message}',
+      );
+    } catch (e) {
+      if (requestCounted) await _decrementRequestCount();
+      debugPrint('Gemini nutrition image parsing failed: $e');
+      return Failure(
+        ServiceErrorType.unknown,
+        'Failed to parse nutrition image: $e',
+      );
+    }
+  }
+
   /// Parse raw OCR text into nutrition values using Gemini (text-only, no image).
   /// This is used as a fallback when local ML Kit OCR succeeds but local
   /// parsing fails on complex or unusual label formats.
@@ -690,8 +796,11 @@ If no recipe is visible or readable, return:
     }
 
     final promptText = '''
-Parse this raw OCR text from a nutrition label and extract per-100g values.
-The text may have OCR errors. Extract what you can.
+Parse this raw OCR text from a nutrition label and extract values per 100 g or
+100 ml. The text may have OCR errors. Prefer an explicitly labelled per-100
+column over a serving column. If there are several columns and their headings
+cannot be associated reliably, return null for affected values instead of
+guessing.
 
 Raw OCR text:
 $ocrText
@@ -700,17 +809,23 @@ Respond ONLY with valid JSON in this exact format, no other text:
 {
   "product_name": "Product Name or null",
   "brand": "Brand or null",
+  "nutrition_unit": "g",
   "calories_per_100g": 200,
   "protein_per_100g": 10.0,
   "carbs_per_100g": 25.0,
   "fat_per_100g": 8.0,
   "fiber_per_100g": 3.0,
   "serving_size_g": 30,
-  "serving_name": "1 Portion"
+  "serving_name": "1 Portion",
+  "serving_to_100_converted": false
 }
 
-If values appear to be per serving, scale them to per-100g.
-If the text is clearly not a nutrition label, return all zeros.
+If only per-serving values exist, scale them using the printed serving size.
+Set serving_to_100_converted to true when you perform that scaling.
+Use kcal, not kJ. Convert kJ only when kcal is absent (1 kcal = 4.184 kJ).
+Do not estimate missing values; return null when a value is unreadable.
+If a required value is not readable, return null for that value. If the text is
+clearly not a nutrition label, return null for calories and all other values.
 ''';
 
     await _incrementRequestCount();
@@ -744,23 +859,32 @@ If the text is clearly not a nutrition label, return all zeros.
   }
 
   Future<String> _generateNutritionText(String promptText) async {
+    return _generateNutritionParts([TextPart(promptText)]);
+  }
+
+  Future<String> _generateNutritionParts(List<Part> parts) async {
+    final containsImage = parts.any((part) => part is DataPart);
+    final primaryModel = containsImage ? _fallbackModelName : modelName;
+    final secondaryModel = containsImage ? modelName : _fallbackModelName;
+    final timeout =
+        containsImage ? _nutritionImageTimeout : _nutritionTextTimeout;
     try {
       return await _generateJsonContentWithModel(
-        model: modelName,
-        parts: [TextPart(promptText)],
-        timeout: _nutritionTextTimeout,
+        model: primaryModel,
+        parts: parts,
+        timeout: timeout,
       );
     } on _GeminiHttpException catch (error) {
       if (!_isModelUnavailable(error)) rethrow;
 
       debugPrint(
-        '$modelName is unavailable for this API project; '
-        'retrying with $_fallbackModelName',
+        '$primaryModel is unavailable for this API project; '
+        'retrying with $secondaryModel',
       );
       return _generateJsonContentWithModel(
-        model: _fallbackModelName,
-        parts: [TextPart(promptText)],
-        timeout: _nutritionTextTimeout,
+        model: secondaryModel,
+        parts: parts,
+        timeout: timeout,
       );
     }
   }
@@ -793,19 +917,34 @@ If the text is clearly not a nutrition label, return all zeros.
 
       final json = jsonDecode(cleaned) as Map<String, dynamic>;
 
-      final calories = (json['calories_per_100g'] as num?)?.toDouble() ?? 0;
-      if (calories == 0) return null;
+      final caloriesValue = _jsonDouble(json['calories_per_100g']);
+      final proteinValue = _jsonDouble(json['protein_per_100g']);
+      final carbsValue = _jsonDouble(json['carbs_per_100g']);
+      final fatValue = _jsonDouble(json['fat_per_100g']);
+      final fiberValue = _jsonDouble(json['fiber_per_100g']);
+      final presentFields = <NutritionLabelField>{
+        if (caloriesValue != null) NutritionLabelField.calories,
+        if (proteinValue != null) NutritionLabelField.protein,
+        if (carbsValue != null) NutritionLabelField.carbs,
+        if (fatValue != null) NutritionLabelField.fat,
+        if (fiberValue != null) NutritionLabelField.fiber,
+      };
 
       return NutritionLabelResult(
-        productName: json['product_name']?.toString(),
-        brand: json['brand']?.toString(),
-        caloriesPer100g: calories,
-        proteinPer100g: (json['protein_per_100g'] as num?)?.toDouble() ?? 0,
-        carbsPer100g: (json['carbs_per_100g'] as num?)?.toDouble() ?? 0,
-        fatPer100g: (json['fat_per_100g'] as num?)?.toDouble() ?? 0,
-        fiberPer100g: (json['fiber_per_100g'] as num?)?.toDouble() ?? 0,
-        servingSizeG: (json['serving_size_g'] as num?)?.toDouble(),
-        servingName: json['serving_name']?.toString(),
+        productName: _nullableJsonString(json['product_name']),
+        brand: _nullableJsonString(json['brand']),
+        caloriesPer100g: caloriesValue ?? 0,
+        proteinPer100g: proteinValue ?? 0,
+        carbsPer100g: carbsValue ?? 0,
+        fatPer100g: fatValue ?? 0,
+        fiberPer100g: fiberValue ?? 0,
+        nutritionUnit: NutritionUnitX.fromStorage(
+          json['nutrition_unit']?.toString(),
+        ),
+        servingSizeG: _jsonDouble(json['serving_size_g']),
+        servingName: _nullableJsonString(json['serving_name']),
+        wasServingConverted: json['serving_to_100_converted'] == true,
+        presentFields: presentFields,
       );
     } catch (e) {
       debugPrint(
@@ -813,6 +952,22 @@ If the text is clearly not a nutrition label, return all zeros.
       );
       return null;
     }
+  }
+
+  double? _jsonDouble(Object? value) {
+    if (value is num) return value.toDouble();
+    if (value is String) {
+      return double.tryParse(value.trim().replaceAll(',', '.'));
+    }
+    return null;
+  }
+
+  String? _nullableJsonString(Object? value) {
+    final text = value?.toString().trim();
+    if (text == null || text.isEmpty || text.toLowerCase() == 'null') {
+      return null;
+    }
+    return text;
   }
 
   void dispose() {

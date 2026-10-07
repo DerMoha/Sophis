@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/http.dart' show Response;
 import 'package:sophis/models/food_item.dart';
+import 'package:sophis/models/nutrition_unit.dart';
 import 'package:sophis/services/service_result.dart';
 
 class OpenFoodFactsWriteService {
@@ -18,15 +19,19 @@ class OpenFoodFactsWriteService {
     String? password,
   }) async {
     try {
+      final suffix =
+          item.nutritionUnit == NutritionUnit.milliliter ? '100ml' : '100g';
       final body = <String, String>{
         'code': item.barcode ?? item.id,
         'product_name': item.name,
         'brands': item.brand ?? '',
-        'nutriment_energy-kcal_100g': item.caloriesPer100g.toStringAsFixed(0),
-        'nutriment_proteins_100g': item.proteinPer100g.toStringAsFixed(1),
-        'nutriment_carbohydrates_100g': item.carbsPer100g.toStringAsFixed(1),
-        'nutriment_fat_100g': item.fatPer100g.toStringAsFixed(1),
-        'nutriment_fiber_100g': item.fiberPer100g.toStringAsFixed(1),
+        'nutrition_data_per': suffix,
+        'nutriment_energy-kcal_$suffix':
+            item.caloriesPer100g.toStringAsFixed(0),
+        'nutriment_proteins_$suffix': item.proteinPer100g.toStringAsFixed(1),
+        'nutriment_carbohydrates_$suffix': item.carbsPer100g.toStringAsFixed(1),
+        'nutriment_fat_$suffix': item.fatPer100g.toStringAsFixed(1),
+        'nutriment_fiber_$suffix': item.fiberPer100g.toStringAsFixed(1),
         'comment': 'Submitted via Sophis App',
       };
 

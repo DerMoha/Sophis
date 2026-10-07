@@ -32,6 +32,28 @@ void main() {
     await file.delete();
   });
 
+  test('rejects a strongly blurred high-contrast capture', () async {
+    final image = img.Image(width: 800, height: 600);
+    img.fill(image, color: img.ColorRgb8(245, 245, 245));
+    for (var y = 80; y < 520; y += 36) {
+      img.fillRect(
+        image,
+        x1: 80,
+        y1: y,
+        x2: 720,
+        y2: y + 10,
+        color: img.ColorRgb8(20, 20, 20),
+      );
+    }
+    final blurred = img.gaussianBlur(image, radius: 14);
+    final file = await _writeImage(blurred);
+
+    final result = await const NutritionImageQualityService().inspect(file);
+
+    expect(result.issue, NutritionImageQualityIssue.tooBlurry);
+    await file.delete();
+  });
+
   test('allows HEIC files that the Dart image decoder cannot inspect',
       () async {
     final directory = await Directory.systemTemp.createTemp('label-quality');

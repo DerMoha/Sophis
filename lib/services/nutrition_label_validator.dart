@@ -4,9 +4,11 @@ import 'package:sophis/services/gemini/models/nutrition_label_result.dart';
 
 enum NutritionLabelIssue {
   caloriesOutOfRange,
+  missingRequiredValue,
   nutrientOutOfRange,
   nutrientTotalTooHigh,
   calorieMacroMismatch,
+  candidateDisagreement,
 }
 
 class NutritionLabelValidation {
@@ -24,6 +26,9 @@ class NutritionLabelValidation {
 class NutritionLabelValidator {
   static NutritionLabelValidation validate(NutritionLabelResult label) {
     final issues = <NutritionLabelIssue>[];
+    if (!label.hasRequiredNutrition) {
+      issues.add(NutritionLabelIssue.missingRequiredValue);
+    }
     final macros = <double>[
       label.proteinPer100g,
       label.carbsPer100g,
@@ -63,11 +68,11 @@ class NutritionLabelValidator {
         label.caloriesPer100g <= 950 &&
         macros.every((value) => value.isFinite && value >= 0 && value <= 100) &&
         macroTotal <= 105 &&
-        presentMacros >= 2;
+        presentMacros >= 1;
 
     return NutritionLabelValidation(
       isUsable: usable,
-      isHighConfidence: usable && issues.isEmpty && presentMacros >= 3,
+      isHighConfidence: usable && issues.isEmpty,
       issues: issues,
     );
   }

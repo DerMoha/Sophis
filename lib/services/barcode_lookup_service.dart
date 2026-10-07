@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:sophis/models/food_item.dart';
+import 'package:sophis/models/nutrition_unit.dart';
 import 'package:sophis/models/serving_size.dart';
 import 'package:sophis/services/database_service.dart';
 import 'package:sophis/services/openfoodfacts_service.dart';
@@ -76,44 +77,52 @@ class BarcodeLookupService {
     if (memoryHit != null) {
       final status = CacheStatus.fromString(memoryHit.cacheStatus);
       if (memoryHit.isUserCorrected) {
-        return Success(BarcodeLookupData(
-          item: status == CacheStatus.notFound
-              ? null
-              : _barcodeProductToFoodItem(memoryHit),
-          barcode: barcode,
-          source: LookupSource.cache,
-          isUserCorrected: true,
-        ),);
+        return Success(
+          BarcodeLookupData(
+            item: status == CacheStatus.notFound
+                ? null
+                : _barcodeProductToFoodItem(memoryHit),
+            barcode: barcode,
+            source: LookupSource.cache,
+            isUserCorrected: true,
+          ),
+        );
       }
       final age = DateTime.now().difference(memoryHit.cachedAt);
       if (status == CacheStatus.found) {
         final isStale = age > _foundTtl;
-        return Success(BarcodeLookupData(
-          item: _barcodeProductToFoodItem(memoryHit),
-          barcode: barcode,
-          source: LookupSource.cache,
-          isStale: isStale,
-        ),);
+        return Success(
+          BarcodeLookupData(
+            item: _barcodeProductToFoodItem(memoryHit),
+            barcode: barcode,
+            source: LookupSource.cache,
+            isStale: isStale,
+          ),
+        );
       }
       if (status == CacheStatus.partial) {
         final isStale = age > _partialTtl;
-        return Success(BarcodeLookupData(
-          item: null,
-          barcode: barcode,
-          source: LookupSource.cache,
-          partialName: memoryHit.name.isNotEmpty ? memoryHit.name : null,
-          partialBrand: memoryHit.brand,
-          isStale: isStale,
-        ),);
+        return Success(
+          BarcodeLookupData(
+            item: null,
+            barcode: barcode,
+            source: LookupSource.cache,
+            partialName: memoryHit.name.isNotEmpty ? memoryHit.name : null,
+            partialBrand: memoryHit.brand,
+            isStale: isStale,
+          ),
+        );
       }
       if (status == CacheStatus.notFound) {
         final isStale = age > _notFoundTtl;
         if (!isStale) {
-          return Success(BarcodeLookupData(
-            item: null,
-            barcode: barcode,
-            source: LookupSource.cache,
-          ),);
+          return Success(
+            BarcodeLookupData(
+              item: null,
+              barcode: barcode,
+              source: LookupSource.cache,
+            ),
+          );
         }
       }
     }
@@ -126,14 +135,16 @@ class BarcodeLookupService {
       final status = CacheStatus.fromString(cached.cacheStatus);
 
       if (cached.isUserCorrected) {
-        return Success(BarcodeLookupData(
-          item: status == CacheStatus.notFound
-              ? null
-              : _barcodeProductToFoodItem(cached),
-          barcode: barcode,
-          source: LookupSource.cache,
-          isUserCorrected: true,
-        ),);
+        return Success(
+          BarcodeLookupData(
+            item: status == CacheStatus.notFound
+                ? null
+                : _barcodeProductToFoodItem(cached),
+            barcode: barcode,
+            source: LookupSource.cache,
+            isUserCorrected: true,
+          ),
+        );
       }
 
       final age = DateTime.now().difference(cached.cachedAt);
@@ -141,43 +152,51 @@ class BarcodeLookupService {
       if (status == CacheStatus.found) {
         final isStale = age > _foundTtl;
         if (!isStale) {
-          return Success(BarcodeLookupData(
-            item: _barcodeProductToFoodItem(cached),
-            barcode: barcode,
-            source: LookupSource.cache,
-          ),);
+          return Success(
+            BarcodeLookupData(
+              item: _barcodeProductToFoodItem(cached),
+              barcode: barcode,
+              source: LookupSource.cache,
+            ),
+          );
         }
         // Stale-but-valid: return immediately, refresh in background
         _refreshInBackground(barcode);
-        return Success(BarcodeLookupData(
-          item: _barcodeProductToFoodItem(cached),
-          barcode: barcode,
-          source: LookupSource.cache,
-          isStale: true,
-        ),);
+        return Success(
+          BarcodeLookupData(
+            item: _barcodeProductToFoodItem(cached),
+            barcode: barcode,
+            source: LookupSource.cache,
+            isStale: true,
+          ),
+        );
       }
 
       if (status == CacheStatus.partial) {
         final isStale = age > _partialTtl;
         if (!isStale) {
-          return Success(BarcodeLookupData(
-            item: null,
-            barcode: barcode,
-            source: LookupSource.cache,
-            partialName: cached.name.isNotEmpty ? cached.name : null,
-            partialBrand: cached.brand,
-          ),);
+          return Success(
+            BarcodeLookupData(
+              item: null,
+              barcode: barcode,
+              source: LookupSource.cache,
+              partialName: cached.name.isNotEmpty ? cached.name : null,
+              partialBrand: cached.brand,
+            ),
+          );
         }
       }
 
       if (status == CacheStatus.notFound) {
         final isStale = age > _notFoundTtl;
         if (!isStale) {
-          return Success(BarcodeLookupData(
-            item: null,
-            barcode: barcode,
-            source: LookupSource.cache,
-          ),);
+          return Success(
+            BarcodeLookupData(
+              item: null,
+              barcode: barcode,
+              source: LookupSource.cache,
+            ),
+          );
         }
       }
     }
@@ -197,11 +216,13 @@ class BarcodeLookupService {
       case Success<FoodItem?>(value: final item):
         if (item != null) {
           await cacheResult(barcode, item, LookupSource.offDe);
-          return Success(BarcodeLookupData(
-            item: item,
-            barcode: barcode,
-            source: LookupSource.offDe,
-          ),);
+          return Success(
+            BarcodeLookupData(
+              item: item,
+              barcode: barcode,
+              source: LookupSource.offDe,
+            ),
+          );
         }
       case Failure<FoodItem?>(errorType: final errorType):
         if (errorType == ServiceErrorType.network) {
@@ -220,11 +241,13 @@ class BarcodeLookupService {
       case Success<FoodItem?>(value: final item):
         if (item != null) {
           await cacheResult(barcode, item, LookupSource.offWorld);
-          return Success(BarcodeLookupData(
-            item: item,
-            barcode: barcode,
-            source: LookupSource.offWorld,
-          ),);
+          return Success(
+            BarcodeLookupData(
+              item: item,
+              barcode: barcode,
+              source: LookupSource.offWorld,
+            ),
+          );
         }
       case Failure<FoodItem?>(errorType: final errorType):
         if (errorType == ServiceErrorType.network) {
@@ -241,13 +264,15 @@ class BarcodeLookupService {
     if (brocadeResult.isSuccess) {
       final brocadeProduct = brocadeResult.value;
       await _cachePartial(barcode, brocadeProduct);
-      return Success(BarcodeLookupData(
-        item: null,
-        barcode: barcode,
-        source: LookupSource.brocade,
-        partialName: brocadeProduct.name,
-        partialBrand: brocadeProduct.brand,
-      ),);
+      return Success(
+        BarcodeLookupData(
+          item: null,
+          barcode: barcode,
+          source: LookupSource.brocade,
+          partialName: brocadeProduct.name,
+          partialBrand: brocadeProduct.brand,
+        ),
+      );
     }
     if (brocadeResult
         case Failure<BrocadeProduct>(errorType: final errorType)) {
@@ -262,20 +287,24 @@ class BarcodeLookupService {
     }
 
     await _cacheNotFound(barcode);
-    return Success(BarcodeLookupData(
-      item: null,
-      barcode: barcode,
-      source: LookupSource.manual,
-    ),);
+    return Success(
+      BarcodeLookupData(
+        item: null,
+        barcode: barcode,
+        source: LookupSource.manual,
+      ),
+    );
   }
 
   ServiceResult<BarcodeLookupData> _handleNetworkError(String barcode) {
-    return Success(BarcodeLookupData(
-      item: null,
-      barcode: barcode,
-      source: LookupSource.manual,
-      error: ServiceErrorType.network,
-    ),);
+    return Success(
+      BarcodeLookupData(
+        item: null,
+        barcode: barcode,
+        source: LookupSource.manual,
+        error: ServiceErrorType.network,
+      ),
+    );
   }
 
   void _refreshInBackground(String barcode) {
@@ -302,6 +331,7 @@ class BarcodeLookupService {
       carbsPer100g: Value(item.carbsPer100g),
       fatPer100g: Value(item.fatPer100g),
       fiberPer100g: Value(item.fiberPer100g),
+      nutritionUnit: Value(item.nutritionUnit.storageValue),
       imageUrl: Value(item.imageUrl),
       servingsJson: Value(
         item.servings.isNotEmpty
@@ -329,6 +359,7 @@ class BarcodeLookupService {
       carbsPer100g: const Value(0),
       fatPer100g: const Value(0),
       fiberPer100g: const Value(0),
+      nutritionUnit: const Value('gram'),
       cacheStatus: const Value('partial'),
       isUserCorrected: const Value(false),
       cachedAt: Value(DateTime.now()),
@@ -349,6 +380,7 @@ class BarcodeLookupService {
       carbsPer100g: const Value(0),
       fatPer100g: const Value(0),
       fiberPer100g: const Value(0),
+      nutritionUnit: const Value('gram'),
       cacheStatus: const Value('notFound'),
       isUserCorrected: const Value(false),
       cachedAt: Value(DateTime.now()),
@@ -370,6 +402,7 @@ class BarcodeLookupService {
       carbsPer100g: Value(item.carbsPer100g),
       fatPer100g: Value(item.fatPer100g),
       fiberPer100g: Value(item.fiberPer100g),
+      nutritionUnit: Value(item.nutritionUnit.storageValue),
       imageUrl: Value(item.imageUrl),
       servingsJson: Value(
         item.servings.isNotEmpty
@@ -438,6 +471,7 @@ class BarcodeLookupService {
       carbsPer100g: cached.carbsPer100g,
       fatPer100g: cached.fatPer100g,
       fiberPer100g: cached.fiberPer100g,
+      nutritionUnit: NutritionUnitX.fromStorage(cached.nutritionUnit),
       barcode: cached.barcode,
       brand: cached.brand,
       imageUrl: cached.imageUrl,

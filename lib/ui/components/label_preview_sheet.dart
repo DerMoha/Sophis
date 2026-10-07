@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:sophis/l10n/generated/app_localizations.dart';
+import 'package:sophis/models/nutrition_unit.dart';
 import 'package:sophis/services/gemini/models/nutrition_label_result.dart';
 import 'package:sophis/services/nutrition_label_validator.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
@@ -12,12 +13,16 @@ String _validationIssueMessage(
   return switch (issue) {
     NutritionLabelIssue.caloriesOutOfRange =>
       l10n.nutritionLabelCaloriesRangeWarning,
+    NutritionLabelIssue.missingRequiredValue =>
+      l10n.nutritionLabelMissingRequiredWarning,
     NutritionLabelIssue.nutrientOutOfRange =>
       l10n.nutritionLabelNutrientRangeWarning,
     NutritionLabelIssue.nutrientTotalTooHigh =>
       l10n.nutritionLabelNutrientTotalWarning,
     NutritionLabelIssue.calorieMacroMismatch =>
       l10n.nutritionLabelCaloriesMismatchWarning,
+    NutritionLabelIssue.candidateDisagreement =>
+      l10n.nutritionLabelCandidateDisagreementWarning,
   };
 }
 
@@ -81,6 +86,7 @@ class _LabelPreviewSheetState extends State<LabelPreviewSheet> {
   late final TextEditingController _carbs;
   late final TextEditingController _fat;
   late final TextEditingController _fiber;
+  bool _hasNutritionEdited = false;
 
   @override
   void initState() {
@@ -95,13 +101,13 @@ class _LabelPreviewSheetState extends State<LabelPreviewSheet> {
   }
 
   TextEditingController _controller(double value) => TextEditingController(
-    text: value.toStringAsFixed(value % 1 == 0 ? 0 : 1),
-  );
+        text: value.toStringAsFixed(value % 1 == 0 ? 0 : 1),
+      );
 
   double? _value(TextEditingController controller) =>
       double.tryParse(controller.text.trim().replaceAll(',', '.'));
 
-  void _confirm() {
+  NutritionLabelResult? _draftLabel() {
     final values = [
       _calories,
       _protein,
@@ -109,22 +115,38 @@ class _LabelPreviewSheetState extends State<LabelPreviewSheet> {
       _fat,
       _fiber,
     ].map(_value).toList();
-    if (values.any((value) => value == null || value < 0)) return;
-    widget.onLooksGood(
-      widget.label.copyWith(
-        productName: _productName.text.trim().isEmpty
-            ? null
-            : _productName.text.trim(),
-        brand: _brand.text.trim().isEmpty ? null : _brand.text.trim(),
-        clearProductName: _productName.text.trim().isEmpty,
-        clearBrand: _brand.text.trim().isEmpty,
-        caloriesPer100g: values[0],
-        proteinPer100g: values[1],
-        carbsPer100g: values[2],
-        fatPer100g: values[3],
-        fiberPer100g: values[4],
+    if (values.any((value) => value == null || value < 0)) return null;
+    return widget.label.copyWith(
+      productName:
+          _productName.text.trim().isEmpty ? null : _productName.text.trim(),
+      brand: _brand.text.trim().isEmpty ? null : _brand.text.trim(),
+      clearProductName: _productName.text.trim().isEmpty,
+      clearBrand: _brand.text.trim().isEmpty,
+      caloriesPer100g: values[0],
+      proteinPer100g: values[1],
+      carbsPer100g: values[2],
+      fatPer100g: values[3],
+      fiberPer100g: values[4],
+      presentFields: requiredNutritionLabelFields.union(
+        {NutritionLabelField.fiber},
       ),
     );
+  }
+
+  void _onNutritionChanged() {
+    setState(() => _hasNutritionEdited = true);
+  }
+
+  void _onIdentityChanged() {
+    setState(() {});
+  }
+
+  void _confirm() {
+    final draft = _draftLabel();
+    if (draft == null || !NutritionLabelValidator.validate(draft).isUsable) {
+      return;
+    }
+    widget.onLooksGood(draft);
   }
 
   @override
@@ -147,6 +169,21 @@ class _LabelPreviewSheetState extends State<LabelPreviewSheet> {
   Widget build(BuildContext context) {
     final theme = widget.theme;
     final l10n = widget.l10n;
+    final draft = _draftLabel();
+    final validation = !_hasNutritionEdited && widget.validation != null
+        ? widget.validation!
+        : draft == null
+            ? null
+            : NutritionLabelValidator.validate(draft);
+    final canConfirm = draft != null &&
+        (validation?.isUsable ?? false) &&
+        NutritionLabelValidator.validate(draft).isUsable;
+    final sourceText = widget.source == NutritionLabelAnalysisSource.gemini
+        ? l10n.nutritionLabelAiResult
+        : l10n.nutritionLabelLocalResult;
+    final analysisText = widget.label.wasServingConverted
+        ? '$sourceText • ${l10n.nutritionLabelServingConversion}'
+        : sourceText;
     return SingleChildScrollView(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: Container(
@@ -161,18 +198,16 @@ class _LabelPreviewSheetState extends State<LabelPreviewSheet> {
             _Header(theme: theme, l10n: l10n),
             _AnalysisSourceNote(
               theme: theme,
-              text: widget.source == NutritionLabelAnalysisSource.gemini
-                  ? l10n.nutritionLabelAiResult
-                  : l10n.nutritionLabelLocalResult,
+              text: analysisText,
               isAi: widget.source == NutritionLabelAnalysisSource.gemini,
             ),
-            if (widget.validation case final validation?
-                when !validation.isHighConfidence)
+            if (validation == null || !validation.isHighConfidence)
               _ConfidenceWarning(
                 theme: theme,
-                issues: validation.issues
-                    .map((issue) => _validationIssueMessage(issue, l10n))
-                    .toList(),
+                issues: validation?.issues
+                        .map((issue) => _validationIssueMessage(issue, l10n))
+                        .toList() ??
+                    const [],
                 title: l10n.nutritionLabelCheckTitle,
                 fallbackMessage: l10n.nutritionLabelUncertain,
               ),
@@ -197,6 +232,8 @@ class _LabelPreviewSheetState extends State<LabelPreviewSheet> {
                   productNameController: _productName,
                   brandController: _brand,
                   controllers: [_calories, _protein, _carbs, _fat, _fiber],
+                  onIdentityChanged: _onIdentityChanged,
+                  onNutritionChanged: _onNutritionChanged,
                 ),
               ),
             ),
@@ -204,7 +241,7 @@ class _LabelPreviewSheetState extends State<LabelPreviewSheet> {
             _Actions(
               theme: theme,
               l10n: l10n,
-              onLooksGood: _confirm,
+              onLooksGood: canConfirm ? _confirm : null,
               onRescan: widget.onRescan,
             ),
             SizedBox(height: MediaQuery.of(context).padding.bottom + 24),
@@ -379,6 +416,8 @@ class _ValueList extends StatelessWidget {
   final TextEditingController productNameController;
   final TextEditingController brandController;
   final List<TextEditingController> controllers;
+  final VoidCallback onIdentityChanged;
+  final VoidCallback onNutritionChanged;
 
   const _ValueList({
     required this.theme,
@@ -387,6 +426,8 @@ class _ValueList extends StatelessWidget {
     required this.productNameController,
     required this.brandController,
     required this.controllers,
+    required this.onIdentityChanged,
+    required this.onNutritionChanged,
   });
 
   @override
@@ -396,12 +437,14 @@ class _ValueList extends StatelessWidget {
       children: [
         TextField(
           controller: productNameController,
+          onChanged: (_) => onIdentityChanged(),
           textCapitalization: TextCapitalization.words,
           decoration: InputDecoration(labelText: l10n.foodName, isDense: true),
         ),
         const SizedBox(height: 10),
         TextField(
           controller: brandController,
+          onChanged: (_) => onIdentityChanged(),
           textCapitalization: TextCapitalization.words,
           decoration: InputDecoration(
             labelText: l10n.productBrand,
@@ -413,7 +456,7 @@ class _ValueList extends StatelessWidget {
         const SizedBox(height: 12),
         Center(
           child: Text(
-            l10n.per100gLabel,
+            l10n.per100Unit(label.nutritionUnit.symbol),
             style: theme.textTheme.labelLarge?.copyWith(
               fontWeight: FontWeight.w700,
               color: theme.colorScheme.onSurfaceVariant,
@@ -427,6 +470,7 @@ class _ValueList extends StatelessWidget {
           unit: 'kcal',
           color: theme.colorScheme.primary,
           theme: theme,
+          onChanged: onNutritionChanged,
         ),
         const SizedBox(height: 6),
         _LabelRow(
@@ -435,6 +479,7 @@ class _ValueList extends StatelessWidget {
           unit: 'g',
           color: AppTheme.protein,
           theme: theme,
+          onChanged: onNutritionChanged,
         ),
         const SizedBox(height: 6),
         _LabelRow(
@@ -443,6 +488,7 @@ class _ValueList extends StatelessWidget {
           unit: 'g',
           color: AppTheme.carbs,
           theme: theme,
+          onChanged: onNutritionChanged,
         ),
         const SizedBox(height: 6),
         _LabelRow(
@@ -451,6 +497,7 @@ class _ValueList extends StatelessWidget {
           unit: 'g',
           color: AppTheme.fat,
           theme: theme,
+          onChanged: onNutritionChanged,
         ),
         const SizedBox(height: 6),
         _LabelRow(
@@ -459,6 +506,7 @@ class _ValueList extends StatelessWidget {
           unit: 'g',
           color: AppTheme.fiber,
           theme: theme,
+          onChanged: onNutritionChanged,
         ),
         if (label.servingSizeG != null && label.servingSizeG! > 0) ...[
           const SizedBox(height: 16),
@@ -473,7 +521,7 @@ class _ValueList extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               Text(
-                '${l10n.servingInfo}: ${label.servingName ?? l10n.portion} = ${label.servingSizeG!.toStringAsFixed(0)}g',
+                '${l10n.servingInfo}: ${label.servingName ?? l10n.portion} = ${label.servingSizeG!.toStringAsFixed(0)}${label.nutritionUnit.symbol}',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -489,7 +537,7 @@ class _ValueList extends StatelessWidget {
 class _Actions extends StatelessWidget {
   final ThemeData theme;
   final AppLocalizations l10n;
-  final VoidCallback onLooksGood;
+  final VoidCallback? onLooksGood;
   final VoidCallback onRescan;
 
   const _Actions({
@@ -531,6 +579,7 @@ class _LabelRow extends StatelessWidget {
   final String unit;
   final Color color;
   final ThemeData theme;
+  final VoidCallback onChanged;
 
   const _LabelRow({
     required this.label,
@@ -538,6 +587,7 @@ class _LabelRow extends StatelessWidget {
     required this.unit,
     required this.color,
     required this.theme,
+    required this.onChanged,
   });
 
   @override
@@ -567,6 +617,7 @@ class _LabelRow extends StatelessWidget {
           width: 76,
           child: TextField(
             controller: controller,
+            onChanged: (_) => onChanged(),
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             textAlign: TextAlign.end,
             decoration: const InputDecoration(

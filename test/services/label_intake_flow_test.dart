@@ -92,6 +92,7 @@ Eiweiß 10 g
         ocrText: 'unreadable',
         idGenerator: () => 'id',
         fallbackBrand: 'Fallback Brand',
+        allowCloudAssist: true,
       );
 
       final intake = result.valueOrNull!;
@@ -134,6 +135,7 @@ Eiweiß 10 g
       final result = await flow.processOcrText(
         ocrText: 'totally unreadable',
         idGenerator: () => 'id',
+        allowCloudAssist: true,
       );
 
       expect(result.isSuccess, isTrue);
@@ -159,11 +161,12 @@ Eiweiß 10 g
       final result = await flow.processOcrText(
         ocrText: 'still not a label',
         idGenerator: () => 'id',
+        allowCloudAssist: true,
       );
 
       expect(result.isFailure, isTrue);
       final failure = result as Failure<LabelIntakeResult>;
-      expect(failure.errorType, ServiceErrorType.parseError);
+      expect(failure.errorType, ServiceErrorType.network);
     });
 
     test('skips Gemini when local parse already succeeded', () async {
@@ -177,6 +180,20 @@ Eiweiß 10 g
         idGenerator: () => 'id',
       );
 
+      verifyNever(() => gemini.parseNutritionText(any()));
+    });
+
+    test('does not call Gemini without explicit cloud consent', () async {
+      final gemini = _MockGemini();
+      when(() => gemini.hasApiKey).thenReturn(true);
+      final flow = LabelIntakeFlow(gemini: gemini);
+
+      final result = await flow.processOcrText(
+        ocrText: 'unreadable',
+        idGenerator: () => 'id',
+      );
+
+      expect(result.isFailure, isTrue);
       verifyNever(() => gemini.parseNutritionText(any()));
     });
 
@@ -236,6 +253,7 @@ Eiweiß 0 g
       final result = await flow.processOcrText(
         ocrText: 'unreadable',
         idGenerator: () => 'id',
+        allowCloudAssist: true,
       );
 
       expect(result.isFailure, isTrue);
