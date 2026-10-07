@@ -223,3 +223,15 @@ test('kept a photo intact on concurrent idempotent retries and rejected reused u
   await assert.rejects(uploadPhoto(service, 'alice', { ...input, base64: different.toString('base64') }), { code: 'failed-precondition' });
   assert.equal(objects.size, 1);
 });
+
+test('cancelled an unpublished operation before a delayed publish without reserving another author ID', async () => {
+  const cancelled = pairId('alice', 'queuedOperation');
+  await service.deletePost('alice', cancelled, 'queuedOperation');
+  const result = await service.publish('alice', post('queuedOperation'));
+  assert.equal(result.deleted, true);
+  assert.equal((await service.feed('alice')).posts.length, 0);
+  await denied(service.deletePost('bob', pairId('alice', 'otherOperation'), 'otherOperation'));
+  assert.equal((await service.ref('socialPosts', pairId('alice', 'otherOperation')).get()).exists, false);
+  await service.beginDeletion('alice');
+  await denied(service.deletePost('alice', pairId('alice', 'afterDeletion'), 'afterDeletion'));
+});

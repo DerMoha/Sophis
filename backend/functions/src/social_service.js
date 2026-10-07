@@ -275,11 +275,20 @@ export class SocialService {
       return { id: ref.id, revision };
     });
   }
-  async deletePost(uid, postId) {
+  async deletePost(uid, postId, operationId = null) {
     const ref = this.ref('socialPosts', id(postId));
     await this.db.runTransaction(async (tx) => {
       const post = (await tx.get(ref)).data();
-      if (!post || post.authorId !== uid) fail('permission-denied', 'Post is unavailable.');
+      if (!post) {
+        // Cancellation may beat an in-flight publish. Only an operation whose
+        // deterministic ID belongs to this UID can reserve a missing tombstone.
+        if (operationId == null || pairId(uid, id(operationId)) !== postId) fail('permission-denied', 'Post is unavailable.');
+        const account = (await tx.get(this.profile(uid))).data();
+        if (!account || account.deletingAt != null) fail('permission-denied', 'Account is unavailable.');
+        tx.create(ref, { authorId: uid, revision: 1, deletedAt: this.clock(), publishedAt: this.clock(), photoBlobId: null });
+        return;
+      }
+      if (post.authorId !== uid) fail('permission-denied', 'Post is unavailable.');
       tx.set(ref, { authorId: uid, revision: post.revision + (post.deletedAt == null ? 1 : 0),
         deletedAt: post.deletedAt ?? this.clock(), publishedAt: post.publishedAt, photoBlobId: null });
       if (post.photoBlobId) tx.update(this.ref('socialBlobs', post.photoBlobId), { state: 'deleting', postId: null, cleanupAfter: 0 });

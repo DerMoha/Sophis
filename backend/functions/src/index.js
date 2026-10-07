@@ -43,7 +43,7 @@ export const social = onCall({
       case 'block': return await service.blockAccount(uid, data.otherId);
       case 'publish': return await service.publish(uid, data);
       case 'editPost': return await service.editPost(uid, data);
-      case 'deletePost': return await service.deletePost(uid, data.postId);
+      case 'deletePost': return await service.deletePost(uid, data.postId, data.operationId);
       case 'feed': return await service.feed(uid, data);
       case 'react': return await service.react(uid, data);
       case 'uploadPhoto': return await uploadPhoto(service, uid, data);
