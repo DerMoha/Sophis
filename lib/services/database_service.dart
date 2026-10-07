@@ -45,6 +45,22 @@ class Foods extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// Local-only immutable logging facts used to filter partner sharing. No diary
+/// content or account identity is stored here, and this is not a cloud outbox.
+@DataClassName('FoodSharingOriginRow')
+@TableIndex(name: 'food_sharing_origins_sequence_idx', columns: {#sequence})
+class FoodSharingOrigins extends Table {
+  TextColumn get foodId => text()();
+  IntColumn get originallyLoggedAt => integer().nullable()();
+  IntColumn get changedAt => integer()();
+  IntColumn get revision => integer()();
+  IntColumn get sequence => integer()();
+  IntColumn get deletedAt => integer().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {foodId};
+}
+
 @TableIndex(
   name: 'water_logs_timestamp_idx',
   columns: {
@@ -492,6 +508,7 @@ class PhotoFileIntents extends Table {
 @DriftDatabase(
   tables: [
     Foods,
+    FoodSharingOrigins,
     WaterLogs,
     WeightLogs,
     WorkoutLogs,
@@ -525,7 +542,7 @@ class DatabaseService extends _$DatabaseService {
   DatabaseService._(super.executor);
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -618,6 +635,14 @@ class DatabaseService extends _$DatabaseService {
               '(SELECT id FROM supplement_definitions)',
             );
             await migrator.alterTable(TableMigration(supplementLogs));
+          }
+          if (from < 13 && to >= 13) {
+            await migrator.createTable(foodSharingOrigins);
+            await customStatement(
+              'CREATE INDEX IF NOT EXISTS food_sharing_origins_sequence_idx ON food_sharing_origins (sequence)',
+            );
+            // Existing rows intentionally have no eligible logging origin.
+            // Editing or backdating them later must not upload diary history.
           }
         },
         beforeOpen: (_) async {
@@ -724,6 +749,67 @@ class DatabaseService extends _$DatabaseService {
         meal: Value(entry.meal),
       ),
     );
+  }
+
+  Future<FoodSharingOriginRow> recordFoodSharingOrigin(
+    String foodId, {
+    required bool deleted,
+    required DateTime now,
+  }) async {
+    final prior = await (select(foodSharingOrigins)
+          ..where((row) => row.foodId.equals(foodId)))
+        .getSingleOrNull();
+    final existing = await (select(foods)
+          ..where((row) => row.id.equals(foodId)))
+        .getSingleOrNull();
+    final sequenceRows = await customSelect(
+      'SELECT COALESCE(MAX(sequence), 0) + 1 AS next_sequence FROM food_sharing_origins',
+    ).getSingle();
+    final milliseconds = now.toUtc().millisecondsSinceEpoch;
+    final original = prior == null
+        ? (existing == null && !deleted ? milliseconds : null)
+        : (prior.deletedAt != null && existing != null
+            ? null
+            : prior.originallyLoggedAt);
+    final row = FoodSharingOriginRow(
+      foodId: foodId,
+      originallyLoggedAt: original,
+      changedAt: milliseconds,
+      revision: (prior?.revision ?? 0) + 1,
+      sequence: sequenceRows.read<int>('next_sequence'),
+      deletedAt: deleted ? milliseconds : null,
+    );
+    await into(foodSharingOrigins).insertOnConflictUpdate(
+      FoodSharingOriginsCompanion(
+        foodId: Value(row.foodId),
+        originallyLoggedAt: Value(row.originallyLoggedAt),
+        changedAt: Value(row.changedAt),
+        revision: Value(row.revision),
+        sequence: Value(row.sequence),
+        deletedAt: Value(row.deletedAt),
+      ),
+    );
+    return row;
+  }
+
+  Future<List<FoodSharingOriginRow>> foodSharingChanges({
+    required int afterSequence,
+    int limit = 100,
+  }) =>
+      (select(foodSharingOrigins)
+            ..where((row) => row.sequence.isBiggerThanValue(afterSequence))
+            ..orderBy([(row) => OrderingTerm.asc(row.sequence)])
+            ..limit(limit))
+          .get();
+
+  Future<void> _markFoodSharingOriginsDeleted() async {
+    final rows = await (select(foodSharingOrigins)
+          ..where((row) => row.deletedAt.isNull()))
+        .get();
+    final now = DateTime.now().toUtc();
+    for (final row in rows) {
+      await recordFoodSharingOrigin(row.foodId, deleted: true, now: now);
+    }
   }
 
   /// Batch insert multiple food entries
@@ -1235,6 +1321,7 @@ class DatabaseService extends _$DatabaseService {
   }
 
   Future<void> _deleteNutritionData() async {
+    await _markFoodSharingOriginsDeleted();
     await delete(foods).go();
     await delete(waterLogs).go();
     await delete(weightLogs).go();

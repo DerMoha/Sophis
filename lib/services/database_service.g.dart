@@ -454,6 +454,366 @@ class FoodsCompanion extends UpdateCompanion<Food> {
   }
 }
 
+class $FoodSharingOriginsTable extends FoodSharingOrigins
+    with TableInfo<$FoodSharingOriginsTable, FoodSharingOriginRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $FoodSharingOriginsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _foodIdMeta = const VerificationMeta('foodId');
+  @override
+  late final GeneratedColumn<String> foodId = GeneratedColumn<String>(
+      'food_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _originallyLoggedAtMeta =
+      const VerificationMeta('originallyLoggedAt');
+  @override
+  late final GeneratedColumn<int> originallyLoggedAt = GeneratedColumn<int>(
+      'originally_logged_at', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _changedAtMeta =
+      const VerificationMeta('changedAt');
+  @override
+  late final GeneratedColumn<int> changedAt = GeneratedColumn<int>(
+      'changed_at', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _revisionMeta =
+      const VerificationMeta('revision');
+  @override
+  late final GeneratedColumn<int> revision = GeneratedColumn<int>(
+      'revision', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _sequenceMeta =
+      const VerificationMeta('sequence');
+  @override
+  late final GeneratedColumn<int> sequence = GeneratedColumn<int>(
+      'sequence', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _deletedAtMeta =
+      const VerificationMeta('deletedAt');
+  @override
+  late final GeneratedColumn<int> deletedAt = GeneratedColumn<int>(
+      'deleted_at', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [foodId, originallyLoggedAt, changedAt, revision, sequence, deletedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'food_sharing_origins';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<FoodSharingOriginRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('food_id')) {
+      context.handle(_foodIdMeta,
+          foodId.isAcceptableOrUnknown(data['food_id']!, _foodIdMeta));
+    } else if (isInserting) {
+      context.missing(_foodIdMeta);
+    }
+    if (data.containsKey('originally_logged_at')) {
+      context.handle(
+          _originallyLoggedAtMeta,
+          originallyLoggedAt.isAcceptableOrUnknown(
+              data['originally_logged_at']!, _originallyLoggedAtMeta));
+    }
+    if (data.containsKey('changed_at')) {
+      context.handle(_changedAtMeta,
+          changedAt.isAcceptableOrUnknown(data['changed_at']!, _changedAtMeta));
+    } else if (isInserting) {
+      context.missing(_changedAtMeta);
+    }
+    if (data.containsKey('revision')) {
+      context.handle(_revisionMeta,
+          revision.isAcceptableOrUnknown(data['revision']!, _revisionMeta));
+    } else if (isInserting) {
+      context.missing(_revisionMeta);
+    }
+    if (data.containsKey('sequence')) {
+      context.handle(_sequenceMeta,
+          sequence.isAcceptableOrUnknown(data['sequence']!, _sequenceMeta));
+    } else if (isInserting) {
+      context.missing(_sequenceMeta);
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(_deletedAtMeta,
+          deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {foodId};
+  @override
+  FoodSharingOriginRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return FoodSharingOriginRow(
+      foodId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}food_id'])!,
+      originallyLoggedAt: attachedDatabase.typeMapping.read(
+          DriftSqlType.int, data['${effectivePrefix}originally_logged_at']),
+      changedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}changed_at'])!,
+      revision: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}revision'])!,
+      sequence: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}sequence'])!,
+      deletedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}deleted_at']),
+    );
+  }
+
+  @override
+  $FoodSharingOriginsTable createAlias(String alias) {
+    return $FoodSharingOriginsTable(attachedDatabase, alias);
+  }
+}
+
+class FoodSharingOriginRow extends DataClass
+    implements Insertable<FoodSharingOriginRow> {
+  final String foodId;
+  final int? originallyLoggedAt;
+  final int changedAt;
+  final int revision;
+  final int sequence;
+  final int? deletedAt;
+  const FoodSharingOriginRow(
+      {required this.foodId,
+      this.originallyLoggedAt,
+      required this.changedAt,
+      required this.revision,
+      required this.sequence,
+      this.deletedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['food_id'] = Variable<String>(foodId);
+    if (!nullToAbsent || originallyLoggedAt != null) {
+      map['originally_logged_at'] = Variable<int>(originallyLoggedAt);
+    }
+    map['changed_at'] = Variable<int>(changedAt);
+    map['revision'] = Variable<int>(revision);
+    map['sequence'] = Variable<int>(sequence);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<int>(deletedAt);
+    }
+    return map;
+  }
+
+  FoodSharingOriginsCompanion toCompanion(bool nullToAbsent) {
+    return FoodSharingOriginsCompanion(
+      foodId: Value(foodId),
+      originallyLoggedAt: originallyLoggedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(originallyLoggedAt),
+      changedAt: Value(changedAt),
+      revision: Value(revision),
+      sequence: Value(sequence),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory FoodSharingOriginRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return FoodSharingOriginRow(
+      foodId: serializer.fromJson<String>(json['foodId']),
+      originallyLoggedAt: serializer.fromJson<int?>(json['originallyLoggedAt']),
+      changedAt: serializer.fromJson<int>(json['changedAt']),
+      revision: serializer.fromJson<int>(json['revision']),
+      sequence: serializer.fromJson<int>(json['sequence']),
+      deletedAt: serializer.fromJson<int?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'foodId': serializer.toJson<String>(foodId),
+      'originallyLoggedAt': serializer.toJson<int?>(originallyLoggedAt),
+      'changedAt': serializer.toJson<int>(changedAt),
+      'revision': serializer.toJson<int>(revision),
+      'sequence': serializer.toJson<int>(sequence),
+      'deletedAt': serializer.toJson<int?>(deletedAt),
+    };
+  }
+
+  FoodSharingOriginRow copyWith(
+          {String? foodId,
+          Value<int?> originallyLoggedAt = const Value.absent(),
+          int? changedAt,
+          int? revision,
+          int? sequence,
+          Value<int?> deletedAt = const Value.absent()}) =>
+      FoodSharingOriginRow(
+        foodId: foodId ?? this.foodId,
+        originallyLoggedAt: originallyLoggedAt.present
+            ? originallyLoggedAt.value
+            : this.originallyLoggedAt,
+        changedAt: changedAt ?? this.changedAt,
+        revision: revision ?? this.revision,
+        sequence: sequence ?? this.sequence,
+        deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+      );
+  FoodSharingOriginRow copyWithCompanion(FoodSharingOriginsCompanion data) {
+    return FoodSharingOriginRow(
+      foodId: data.foodId.present ? data.foodId.value : this.foodId,
+      originallyLoggedAt: data.originallyLoggedAt.present
+          ? data.originallyLoggedAt.value
+          : this.originallyLoggedAt,
+      changedAt: data.changedAt.present ? data.changedAt.value : this.changedAt,
+      revision: data.revision.present ? data.revision.value : this.revision,
+      sequence: data.sequence.present ? data.sequence.value : this.sequence,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FoodSharingOriginRow(')
+          ..write('foodId: $foodId, ')
+          ..write('originallyLoggedAt: $originallyLoggedAt, ')
+          ..write('changedAt: $changedAt, ')
+          ..write('revision: $revision, ')
+          ..write('sequence: $sequence, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      foodId, originallyLoggedAt, changedAt, revision, sequence, deletedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is FoodSharingOriginRow &&
+          other.foodId == this.foodId &&
+          other.originallyLoggedAt == this.originallyLoggedAt &&
+          other.changedAt == this.changedAt &&
+          other.revision == this.revision &&
+          other.sequence == this.sequence &&
+          other.deletedAt == this.deletedAt);
+}
+
+class FoodSharingOriginsCompanion
+    extends UpdateCompanion<FoodSharingOriginRow> {
+  final Value<String> foodId;
+  final Value<int?> originallyLoggedAt;
+  final Value<int> changedAt;
+  final Value<int> revision;
+  final Value<int> sequence;
+  final Value<int?> deletedAt;
+  final Value<int> rowid;
+  const FoodSharingOriginsCompanion({
+    this.foodId = const Value.absent(),
+    this.originallyLoggedAt = const Value.absent(),
+    this.changedAt = const Value.absent(),
+    this.revision = const Value.absent(),
+    this.sequence = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  FoodSharingOriginsCompanion.insert({
+    required String foodId,
+    this.originallyLoggedAt = const Value.absent(),
+    required int changedAt,
+    required int revision,
+    required int sequence,
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : foodId = Value(foodId),
+        changedAt = Value(changedAt),
+        revision = Value(revision),
+        sequence = Value(sequence);
+  static Insertable<FoodSharingOriginRow> custom({
+    Expression<String>? foodId,
+    Expression<int>? originallyLoggedAt,
+    Expression<int>? changedAt,
+    Expression<int>? revision,
+    Expression<int>? sequence,
+    Expression<int>? deletedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (foodId != null) 'food_id': foodId,
+      if (originallyLoggedAt != null)
+        'originally_logged_at': originallyLoggedAt,
+      if (changedAt != null) 'changed_at': changedAt,
+      if (revision != null) 'revision': revision,
+      if (sequence != null) 'sequence': sequence,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  FoodSharingOriginsCompanion copyWith(
+      {Value<String>? foodId,
+      Value<int?>? originallyLoggedAt,
+      Value<int>? changedAt,
+      Value<int>? revision,
+      Value<int>? sequence,
+      Value<int?>? deletedAt,
+      Value<int>? rowid}) {
+    return FoodSharingOriginsCompanion(
+      foodId: foodId ?? this.foodId,
+      originallyLoggedAt: originallyLoggedAt ?? this.originallyLoggedAt,
+      changedAt: changedAt ?? this.changedAt,
+      revision: revision ?? this.revision,
+      sequence: sequence ?? this.sequence,
+      deletedAt: deletedAt ?? this.deletedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (foodId.present) {
+      map['food_id'] = Variable<String>(foodId.value);
+    }
+    if (originallyLoggedAt.present) {
+      map['originally_logged_at'] = Variable<int>(originallyLoggedAt.value);
+    }
+    if (changedAt.present) {
+      map['changed_at'] = Variable<int>(changedAt.value);
+    }
+    if (revision.present) {
+      map['revision'] = Variable<int>(revision.value);
+    }
+    if (sequence.present) {
+      map['sequence'] = Variable<int>(sequence.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<int>(deletedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FoodSharingOriginsCompanion(')
+          ..write('foodId: $foodId, ')
+          ..write('originallyLoggedAt: $originallyLoggedAt, ')
+          ..write('changedAt: $changedAt, ')
+          ..write('revision: $revision, ')
+          ..write('sequence: $sequence, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $WaterLogsTable extends WaterLogs
     with TableInfo<$WaterLogsTable, WaterLog> {
   @override
@@ -9048,6 +9408,8 @@ abstract class _$DatabaseService extends GeneratedDatabase {
   _$DatabaseService(QueryExecutor e) : super(e);
   $DatabaseServiceManager get managers => $DatabaseServiceManager(this);
   late final $FoodsTable foods = $FoodsTable(this);
+  late final $FoodSharingOriginsTable foodSharingOrigins =
+      $FoodSharingOriginsTable(this);
   late final $WaterLogsTable waterLogs = $WaterLogsTable(this);
   late final $WeightLogsTable weightLogs = $WeightLogsTable(this);
   late final $WorkoutLogsTable workoutLogs = $WorkoutLogsTable(this);
@@ -9080,6 +9442,9 @@ abstract class _$DatabaseService extends GeneratedDatabase {
       $PhotoFileIntentsTable(this);
   late final Index foodsTimestampIdx = Index('foods_timestamp_idx',
       'CREATE INDEX foods_timestamp_idx ON foods (timestamp DESC, id)');
+  late final Index foodSharingOriginsSequenceIdx = Index(
+      'food_sharing_origins_sequence_idx',
+      'CREATE INDEX food_sharing_origins_sequence_idx ON food_sharing_origins (sequence)');
   late final Index waterLogsTimestampIdx = Index('water_logs_timestamp_idx',
       'CREATE INDEX water_logs_timestamp_idx ON water_logs (timestamp DESC, id)');
   late final Index weightLogsTimestampIdx = Index('weight_logs_timestamp_idx',
@@ -9126,6 +9491,7 @@ abstract class _$DatabaseService extends GeneratedDatabase {
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
         foods,
+        foodSharingOrigins,
         waterLogs,
         weightLogs,
         workoutLogs,
@@ -9150,6 +9516,7 @@ abstract class _$DatabaseService extends GeneratedDatabase {
         syncAppliedChanges,
         photoFileIntents,
         foodsTimestampIdx,
+        foodSharingOriginsSequenceIdx,
         waterLogsTimestampIdx,
         weightLogsTimestampIdx,
         workoutLogsTimestampIdx,
@@ -9393,6 +9760,200 @@ typedef $$FoodsTableProcessedTableManager = ProcessedTableManager<
     $$FoodsTableUpdateCompanionBuilder,
     (Food, BaseReferences<_$DatabaseService, $FoodsTable, Food>),
     Food,
+    PrefetchHooks Function()>;
+typedef $$FoodSharingOriginsTableCreateCompanionBuilder
+    = FoodSharingOriginsCompanion Function({
+  required String foodId,
+  Value<int?> originallyLoggedAt,
+  required int changedAt,
+  required int revision,
+  required int sequence,
+  Value<int?> deletedAt,
+  Value<int> rowid,
+});
+typedef $$FoodSharingOriginsTableUpdateCompanionBuilder
+    = FoodSharingOriginsCompanion Function({
+  Value<String> foodId,
+  Value<int?> originallyLoggedAt,
+  Value<int> changedAt,
+  Value<int> revision,
+  Value<int> sequence,
+  Value<int?> deletedAt,
+  Value<int> rowid,
+});
+
+class $$FoodSharingOriginsTableFilterComposer
+    extends Composer<_$DatabaseService, $FoodSharingOriginsTable> {
+  $$FoodSharingOriginsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get foodId => $composableBuilder(
+      column: $table.foodId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get originallyLoggedAt => $composableBuilder(
+      column: $table.originallyLoggedAt,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get changedAt => $composableBuilder(
+      column: $table.changedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get revision => $composableBuilder(
+      column: $table.revision, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get sequence => $composableBuilder(
+      column: $table.sequence, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$FoodSharingOriginsTableOrderingComposer
+    extends Composer<_$DatabaseService, $FoodSharingOriginsTable> {
+  $$FoodSharingOriginsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get foodId => $composableBuilder(
+      column: $table.foodId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get originallyLoggedAt => $composableBuilder(
+      column: $table.originallyLoggedAt,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get changedAt => $composableBuilder(
+      column: $table.changedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get revision => $composableBuilder(
+      column: $table.revision, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get sequence => $composableBuilder(
+      column: $table.sequence, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$FoodSharingOriginsTableAnnotationComposer
+    extends Composer<_$DatabaseService, $FoodSharingOriginsTable> {
+  $$FoodSharingOriginsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get foodId =>
+      $composableBuilder(column: $table.foodId, builder: (column) => column);
+
+  GeneratedColumn<int> get originallyLoggedAt => $composableBuilder(
+      column: $table.originallyLoggedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get changedAt =>
+      $composableBuilder(column: $table.changedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get revision =>
+      $composableBuilder(column: $table.revision, builder: (column) => column);
+
+  GeneratedColumn<int> get sequence =>
+      $composableBuilder(column: $table.sequence, builder: (column) => column);
+
+  GeneratedColumn<int> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+}
+
+class $$FoodSharingOriginsTableTableManager extends RootTableManager<
+    _$DatabaseService,
+    $FoodSharingOriginsTable,
+    FoodSharingOriginRow,
+    $$FoodSharingOriginsTableFilterComposer,
+    $$FoodSharingOriginsTableOrderingComposer,
+    $$FoodSharingOriginsTableAnnotationComposer,
+    $$FoodSharingOriginsTableCreateCompanionBuilder,
+    $$FoodSharingOriginsTableUpdateCompanionBuilder,
+    (
+      FoodSharingOriginRow,
+      BaseReferences<_$DatabaseService, $FoodSharingOriginsTable,
+          FoodSharingOriginRow>
+    ),
+    FoodSharingOriginRow,
+    PrefetchHooks Function()> {
+  $$FoodSharingOriginsTableTableManager(
+      _$DatabaseService db, $FoodSharingOriginsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$FoodSharingOriginsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$FoodSharingOriginsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$FoodSharingOriginsTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> foodId = const Value.absent(),
+            Value<int?> originallyLoggedAt = const Value.absent(),
+            Value<int> changedAt = const Value.absent(),
+            Value<int> revision = const Value.absent(),
+            Value<int> sequence = const Value.absent(),
+            Value<int?> deletedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              FoodSharingOriginsCompanion(
+            foodId: foodId,
+            originallyLoggedAt: originallyLoggedAt,
+            changedAt: changedAt,
+            revision: revision,
+            sequence: sequence,
+            deletedAt: deletedAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String foodId,
+            Value<int?> originallyLoggedAt = const Value.absent(),
+            required int changedAt,
+            required int revision,
+            required int sequence,
+            Value<int?> deletedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              FoodSharingOriginsCompanion.insert(
+            foodId: foodId,
+            originallyLoggedAt: originallyLoggedAt,
+            changedAt: changedAt,
+            revision: revision,
+            sequence: sequence,
+            deletedAt: deletedAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$FoodSharingOriginsTableProcessedTableManager = ProcessedTableManager<
+    _$DatabaseService,
+    $FoodSharingOriginsTable,
+    FoodSharingOriginRow,
+    $$FoodSharingOriginsTableFilterComposer,
+    $$FoodSharingOriginsTableOrderingComposer,
+    $$FoodSharingOriginsTableAnnotationComposer,
+    $$FoodSharingOriginsTableCreateCompanionBuilder,
+    $$FoodSharingOriginsTableUpdateCompanionBuilder,
+    (
+      FoodSharingOriginRow,
+      BaseReferences<_$DatabaseService, $FoodSharingOriginsTable,
+          FoodSharingOriginRow>
+    ),
+    FoodSharingOriginRow,
     PrefetchHooks Function()>;
 typedef $$WaterLogsTableCreateCompanionBuilder = WaterLogsCompanion Function({
   required String id,
@@ -14101,6 +14662,8 @@ class $DatabaseServiceManager {
   $DatabaseServiceManager(this._db);
   $$FoodsTableTableManager get foods =>
       $$FoodsTableTableManager(_db, _db.foods);
+  $$FoodSharingOriginsTableTableManager get foodSharingOrigins =>
+      $$FoodSharingOriginsTableTableManager(_db, _db.foodSharingOrigins);
   $$WaterLogsTableTableManager get waterLogs =>
       $$WaterLogsTableTableManager(_db, _db.waterLogs);
   $$WeightLogsTableTableManager get weightLogs =>

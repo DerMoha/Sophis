@@ -34,6 +34,7 @@ final class NutritionStore {
   final StreamController<ServiceResult<NutritionSnapshot>> _changes =
       StreamController<ServiceResult<NutritionSnapshot>>.broadcast(sync: true);
   final Uuid _uuid;
+  final DateTime Function() _clock;
 
   Future<void>? _initialization;
   Future<void> _lastCommit = Future<void>.value();
@@ -44,9 +45,11 @@ final class NutritionStore {
     this._database,
     this._storage, {
     Uuid uuid = const Uuid(),
+    DateTime Function()? clock,
     NutritionPersistence? persistence,
   })  : _persistence = persistence ?? NutritionPersistence(_database, _storage),
-        _uuid = uuid;
+        _uuid = uuid,
+        _clock = clock ?? DateTime.now;
 
   /// Returns one coherent state after legacy reconciliation and database open.
   Future<ServiceResult<NutritionSnapshot>> snapshot() async {
@@ -60,6 +63,57 @@ final class NutritionStore {
         'Could not load nutrition data: $error',
       );
     }
+  }
+
+  /// A local projection seam, not a cloud adapter. The caller filters these
+  /// facts through current account/connection consent before creating any social
+  /// payload. Legacy/restore rows have no eligible immutable logging timestamp.
+  Future<List<FoodSharingChange>> foodSharingChanges({
+    int afterSequence = 0,
+    int limit = 100,
+  }) async {
+    await _ensureInitialized();
+    return _database.transaction(() async {
+      final rows = await _database.foodSharingChanges(
+        afterSequence: afterSequence,
+        limit: limit,
+      );
+      final foods = {
+        for (final entry in await _database.getAllFoods()) entry.id: entry,
+      };
+      return [
+        for (final row in rows)
+          FoodSharingChange(
+            foodId: row.foodId,
+            originallyLoggedAt: row.originallyLoggedAt == null
+                ? null
+                : DateTime.fromMillisecondsSinceEpoch(
+                    row.originallyLoggedAt!,
+                    isUtc: true,
+                  ),
+            changedAt:
+                DateTime.fromMillisecondsSinceEpoch(row.changedAt, isUtc: true),
+            revision: row.revision,
+            sequence: row.sequence,
+            deleted: row.deletedAt != null,
+            entry: row.deletedAt != null ? null : foods[row.foodId],
+          ),
+      ];
+    });
+  }
+
+  Future<void> _saveFoodEntry(FoodEntry entry) async {
+    await _database.recordFoodSharingOrigin(
+      entry.id,
+      deleted: false,
+      now: _clock(),
+    );
+    await _database.upsertFood(entry);
+  }
+
+  Future<void> _deleteFoodEntry(String id) async {
+    await _database.recordFoodSharingOrigin(id, deleted: true, now: _clock());
+    await _database.deleteFood(id);
   }
 
   /// Emits only committed snapshots. The first event is the current snapshot.
@@ -390,6 +444,26 @@ final class NutritionStore {
   }
 }
 
+final class FoodSharingChange {
+  final String foodId;
+  final DateTime? originallyLoggedAt;
+  final DateTime changedAt;
+  final int revision;
+  final int sequence;
+  final bool deleted;
+  final FoodEntry? entry;
+
+  const FoodSharingChange({
+    required this.foodId,
+    required this.originallyLoggedAt,
+    required this.changedAt,
+    required this.revision,
+    required this.sequence,
+    required this.deleted,
+    required this.entry,
+  });
+}
+
 sealed class NutritionCommand {
   const NutritionCommand();
 
@@ -401,7 +475,7 @@ final class SaveFoodEntry extends NutritionCommand {
   const SaveFoodEntry(this.value);
 
   @override
-  Future<void> apply(NutritionStore store) => store._database.upsertFood(value);
+  Future<void> apply(NutritionStore store) => store._saveFoodEntry(value);
 }
 
 /// Commits recipient-owned copies and a durable operation receipt in the same
@@ -432,7 +506,7 @@ final class ImportSocialMeal extends NutritionCommand {
     final receiptKey = 'social_import:diary:$operationId';
     if (await store._database.readNutritionDocument(receiptKey) != null) return;
     for (final entry in entries) {
-      await store._database.upsertFood(entry);
+      await store._saveFoodEntry(entry);
       await store._database.recordLocalMutation(
         entityType: 'food_entry',
         entityId: entry.id,
@@ -505,7 +579,7 @@ final class DeleteFoodEntry extends NutritionCommand {
 
   @override
   Future<void> apply(NutritionStore store) =>
-      store._database.deleteFood(id).then((_) {});
+      store._deleteFoodEntry(id).then((_) {});
 }
 
 final class SaveWaterEntry extends NutritionCommand {
