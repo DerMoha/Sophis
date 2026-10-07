@@ -1,0 +1,8 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // No bearer download URLs or direct SDK uploads. The server reserves quota,
+    // validates bytes and authorizes each download against current relationships.
+    match /{path=**} { allow read, write: if false; }
+  }
+}

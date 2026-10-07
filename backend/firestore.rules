@@ -1,0 +1,8 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // All social access goes through the authenticated, bounded server API.
+    // Admin SDK bypasses these rules; social_service.js authorizes every request.
+    match /{document=**} { allow read, write: if false; }
+  }
+}
