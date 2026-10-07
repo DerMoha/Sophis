@@ -131,8 +131,8 @@ export class PartnerService {
         const profile = (await this.social.profile(other).get()).data();
         connections.push({ id: record.id, ...connection, displayName: profile.displayName,
           settings: Object.fromEntries(Object.entries(connection.settings).map(([account, settings]) => {
-            const { goalsSnapshot, ...publicSettings } = settings;
-            return [account, publicSettings];
+            const { goalsSnapshot, goalSourceRevision, ...publicSettings } = settings;
+            return [account, account === uid ? { ...publicSettings, goalSourceRevision: goalSourceRevision ?? 0 } : publicSettings];
           })) });
       } catch (error) { if (!(error instanceof SocialError) || error.code !== 'permission-denied') throw error; }
     }
@@ -158,6 +158,7 @@ export class PartnerService {
       if (current.revision !== input.baseRevision) fail('failed-precondition', 'Sharing settings changed. Refresh before retrying.');
       const next = { ...current, ...desired, revision: current.revision + 1 };
       if (!desired.goals) next.goalsSnapshot = null;
+      if (!desired.summaries) delete next.summaryTimeZone;
       const now = this.social.clock();
       for (const field of fields) {
         const key = periodKey[field], generation = generationKey[field];

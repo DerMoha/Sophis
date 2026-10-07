@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:crypto/crypto.dart';
 import 'package:intl/intl.dart';
@@ -132,9 +133,10 @@ final class PartnerProjection {
     final key = '${connection.id}:goals';
     final receipt = await store.partnerProjection(session, key);
     if (receipt['signature'] == signature) return changes.length == 100;
-    final sourceRevision = (receipt['sourceRevision'] as int? ??
-            DateTime.now().millisecondsSinceEpoch) +
-        1;
+    final sourceRevision = math.max(
+      receipt['sourceRevision'] as int? ?? DateTime.now().millisecondsSinceEpoch,
+      settings['goalSourceRevision'] as int? ?? 0,
+    ) + 1;
     await _queue(
       session,
       connection,

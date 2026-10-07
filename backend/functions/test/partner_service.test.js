@@ -276,6 +276,9 @@ test('shared whitelisted goals only under current independent partner consent', 
   await partners.syncGoals('alice', { connectionId: id, consentRevision: consent.revision, goals });
   const shared = (await partners.goals('bob', { connectionId: id })).goals[0];
   assert.equal(shared.calories, 2000); assert.equal(shared.weight, undefined);
+  const visibleConnection = (await partners.list('bob')).connections[0];
+  assert.equal(visibleConnection.settings.alice.goalsSnapshot, undefined);
+  assert.equal(visibleConnection.settings.alice.goalSourceRevision, undefined);
   await denied(partners.goals('eve', { connectionId: id }));
   assert.equal((await partners.summaries('bob', { connectionId: id, localDate: day, timeZone: 'Europe/Berlin' })).summaries.length, 0);
   consent = await settings('alice', id, { goals: true, paused: true });
