@@ -15,6 +15,7 @@
   "carbs": "Kohlenh.",
   "fat": "Fett",
   "fiber": "Ballaststoffe",
+  "nutritionBasis": "Nährwertbasis",
   "remaining": "übrig",
   "over": "drüber",
   "goalExceeded": "Ziel übertroffen",
@@ -249,6 +250,17 @@
   "avgCarbs": "Ø Kohlenh.",
   "avgFat": "Ø Fett",
   "avgFiber": "Ø Ballaststoffe",
+  "weeklyReview": "7-Tage-Rückblick",
+  "weeklyReviewIncomplete": "Nur an {days} von 7 Tagen wurden Lebensmittel erfasst; dieser Rückblick ist daher eine Orientierung.",
+  "@weeklyReviewIncomplete": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "weightTrend": "Gewichtstrend",
+  "weeklyReviewNoWeight": "Erfasse mindestens zwei Gewichte, um einen Trend zu sehen.",
   "daysOnTrack": "{count}/{total} Tage im Ziel",
   "goalLabel": "Ziel",
   "per100g": "Pro 100g: {kcal} kcal",
@@ -279,6 +291,48 @@
   "editPortions": "Portionen bearbeiten",
   "addWithAmount": "+ {grams}g hinzufügen ({kcal} kcal)",
   "recentlyUsed": "Zuletzt verwendet",
+  "reuseMeal": "Mahlzeit wiederverwenden",
+  "quickAddAdded": "Hinzugefügt: {name}",
+  "@quickAddAdded": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "quickAddAdding": "Wird hinzugefügt…",
+  "quickAddTapToAddHoldToEdit": "Antippen zum Hinzufügen · halten zum Bearbeiten",
+  "portionPickerKeyboardHint": "Drücke Done, um die Tastatur auszublenden. Mit Hinzufügen wird das Lebensmittel erfasst.",
+  "nutritionLabelDraftRequired": "Kalorien, Eiweiß, Kohlenhydrate und Fett müssen vor dem Hinzufügen vorhanden sein.",
+  "dailyGuidance": "Dein nächster Schritt",
+  "dailyGuidanceNoGoal": "Lege ein Ziel fest, um ein einfaches Tagesbudget für Kalorien und Eiweiß zu erhalten.",
+  "dailyGuidanceNoGoalAction": "Ziele festlegen",
+  "dailyGuidanceOverGoal": "Du liegst heute {calories} kcal über dem Ziel. Wähle die nächste Mahlzeit einfach; ein einzelner Tag bestimmt nicht den Trend.",
+  "@dailyGuidanceOverGoal": {
+    "placeholders": {"calories": {"type": "String"}}
+  },
+  "dailyGuidanceRemaining": "Noch {calories} kcal und {protein} g Eiweiß",
+  "@dailyGuidanceRemaining": {
+    "placeholders": {"calories": {"type": "String"}, "protein": {"type": "String"}}
+  },
+  "dailyGuidanceBudget": "Etwa {calories} kcal · {protein} g Eiweiß pro verbleibender Mahlzeit",
+  "@dailyGuidanceBudget": {
+    "placeholders": {"calories": {"type": "String"}, "protein": {"type": "String"}}
+  },
+  "dailyGuidancePlanned": "Passende geplante Mahlzeiten",
+  "dailyGuidanceRecent": "Passende zuletzt verwendete Lebensmittel",
+  "savedTemplates": "Gespeicherte Vorlagen",
+  "repeatLastMeal": "Letzte Mahlzeit wiederholen",
+  "copyYesterdayMeals": "Gestern kopieren",
+  "saveMealTemplate": "Als Mahlzeitenvorlage speichern",
+  "mealTemplateName": "Name der Vorlage",
+  "mealTemplateNameHint": "z. B. Frühstück am Arbeitstag",
+  "mealTemplateSaved": "Mahlzeitenvorlage gespeichert",
+  "mealTemplateLogged": "Mahlzeitenvorlage protokolliert",
+  "mealsCopied": "Mahlzeiten von gestern kopiert",
+  "lastMealRepeated": "Letzte Mahlzeit wiederholt",
+  "noMealsToRepeat": "Es gibt keine vorherige Mahlzeit zum Wiederholen",
+  "noMealsYesterday": "Gestern wurden keine Mahlzeiten protokolliert",
 
   "shareMeal": "Mahlzeit teilen",
   "importMeal": "Mahlzeit importieren",
@@ -501,11 +555,25 @@
   "nutritionLabelScannerDescription": "Fotografiere eine Nährwerttabelle, um Kalorien, Eiweiß, Kohlenhydrate, Fett und Ballaststoffe zu erfassen.",
   "nutritionLabelCaptureGuide": "Rahmen ausfüllen • Spiegelungen vermeiden • ruhig halten",
   "nutritionLabelAnalyzing": "Nährwerttabelle wird analysiert …",
+  "nutritionLabelCheckingImage": "Fotoqualität wird geprüft …",
+  "nutritionLabelReadingText": "Nährwerttabelle wird gelesen …",
+  "nutritionLabelEnhancingImage": "Schwer lesbarer Text wird verbessert …",
+  "nutritionLabelVerifyingValues": "Pro-100-g-Werte werden überprüft …",
   "nutritionLabelNotParsed": "Nährwerte konnten nicht gelesen werden. Bitte versuche ein klareres Foto.",
-  "nutritionLabelLocalOnly": "OCR auf dem Gerät • funktioniert offline",
-  "nutritionLabelAiFallbackEnabled": "OCR auf dem Gerät • Gemini-Textfallback bei Unsicherheit",
+  "nutritionLabelLocalOnly": "OCR auf dem Gerät • kein Foto wird hochgeladen",
+  "nutritionLabelAiFallbackEnabled": "OCR auf dem Gerät • optionale Cloud-Hilfe bei Unsicherheit",
   "nutritionLabelLocalResult": "Lokal auf diesem Gerät gelesen",
-  "nutritionLabelAiResult": "Gemini-Fallback verwendet • Werte bitte prüfen",
+  "nutritionLabelAiResult": "Cloud-Hilfe verwendet • Werte bitte prüfen",
+  "nutritionLabelServingConversion": "Portionswerte auf 100 umgerechnet",
+  "nutritionLabelCloudConsentTitle": "Cloud-Hilfe verwenden?",
+  "nutritionLabelCloudConsentBody": "Das Foto des Etiketts wird an deinen konfigurierten KI-Anbieter gesendet, um unklare Werte aufzulösen. Du prüfst das Ergebnis, bevor etwas gespeichert wird.",
+  "nutritionLabelCloudConsentConfirm": "Cloud-Hilfe verwenden",
+  "nutritionLabelCloudConsentDecline": "Lokal bleiben",
+  "nutritionLabelManualFallback": "Werte manuell vervollständigen",
+  "nutritionLabelSaveProductTitle": "Produkt speichern?",
+  "nutritionLabelSaveProductBody": "Speichere dieses Etikett als wiederverwendbares Lebensmittel, damit du es nicht erneut scannen musst.",
+  "nutritionLabelSaveProductConfirm": "Produkt speichern",
+  "nutritionLabelSaveProductSkip": "Nur heute protokollieren",
   "scannedProductName": "Gescanntes Produkt",
   "takePhoto": "Foto aufnehmen",
   "chooseFromGallery": "Aus Galerie wählen",
@@ -516,12 +584,22 @@
   "nutritionLabelCheckTitle": "Werte prüfen",
   "nutritionLabelCaloriesRangeWarning": "Kalorien liegen außerhalb des erwarteten Bereichs pro 100 g.",
   "nutritionLabelNutrientRangeWarning": "Ein Nährstoff liegt außerhalb des erwarteten Bereichs pro 100 g.",
+  "nutritionLabelMissingRequiredWarning": "Kalorien, Eiweiß, Kohlenhydrate und Fett müssen vor dem Speichern vorhanden sein.",
   "nutritionLabelNutrientTotalWarning": "Die Nährstoffwerte ergeben zusammen mehr als 100 g.",
   "nutritionLabelCaloriesMismatchWarning": "Kalorien passen nicht zu den erkannten Makronährstoffen.",
+  "nutritionLabelCandidateDisagreementWarning": "Die Bildauswertungen widersprechen sich. Vergleiche diese Werte mit der gedruckten Pro-100-g-Spalte.",
   "nutritionLabelCameraUnavailable": "Kamera konnte nicht gestartet werden.",
   "nutritionLabelCameraCaptureFailed": "Foto konnte nicht aufgenommen werden.",
   "productBrand": "Marke",
   "per100gLabel": "Pro 100g",
+  "per100Unit": "Pro 100 {unit}",
+  "@per100Unit": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
   "servingInfo": "Portion",
   "looksGood": "Werte übernehmen",
   "rescanLabel": "Erneut scannen",
@@ -607,5 +685,12 @@
   "onboardingTryFirst": "Sophis erst ausprobieren",
   "onboardingTryFirstHint": "Ziele überspringen und direkt zur App",
   "onboardingGoalPrivacy": "Deine Profilangaben werden lokal auf diesem Gerät gespeichert.",
-  "onboardingFinishError": "Die Einrichtung konnte nicht abgeschlossen werden. Bitte versuche es erneut."
+  "onboardingFinishError": "Die Einrichtung konnte nicht abgeschlossen werden. Bitte versuche es erneut.",
+  "addPortionWithAmount": "+ {portion} hinzufügen · {calories} kcal",
+  "@addPortionWithAmount": {
+    "placeholders": {
+      "portion": {"type": "String"},
+      "calories": {"type": "String"}
+    }
+  }
 }

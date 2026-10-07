@@ -15,6 +15,7 @@
   "carbs": "Carbs",
   "fat": "Fat",
   "fiber": "Fiber",
+  "nutritionBasis": "Nutrition basis",
   "remaining": "remaining",
   "over": "over",
   "goalExceeded": "Goal exceeded",
@@ -333,6 +334,17 @@
   "avgCarbs": "Avg Carbs",
   "avgFat": "Avg Fat",
   "avgFiber": "Avg Fiber",
+  "weeklyReview": "7-day review",
+  "weeklyReviewIncomplete": "Only {days} of 7 days have logged food, so this review is directional.",
+  "@weeklyReviewIncomplete": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "weightTrend": "Weight trend",
+  "weeklyReviewNoWeight": "Log at least two weights to see a trend.",
   "daysOnTrack": "{count}/{total} days on track",
   "@daysOnTrack": {
     "placeholders": {
@@ -380,6 +392,48 @@
     }
   },
   "recentlyUsed": "Recently Used",
+  "reuseMeal": "Reuse a meal",
+  "quickAddAdded": "Added {name}",
+  "@quickAddAdded": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "quickAddAdding": "Adding…",
+  "quickAddTapToAddHoldToEdit": "Tap to add · hold to edit",
+  "portionPickerKeyboardHint": "Press Done to dismiss the keyboard. Use Add to log this food.",
+  "nutritionLabelDraftRequired": "Calories, protein, carbs, and fat are required before adding.",
+  "dailyGuidance": "Your next step",
+  "dailyGuidanceNoGoal": "Set a goal to get a simple daily calorie and protein budget.",
+  "dailyGuidanceNoGoalAction": "Set up goals",
+  "dailyGuidanceOverGoal": "You are {calories} kcal over today. Keep the next choice simple; one day does not define your trend.",
+  "@dailyGuidanceOverGoal": {
+    "placeholders": {"calories": {"type": "String"}}
+  },
+  "dailyGuidanceRemaining": "{calories} kcal and {protein} g protein remain",
+  "@dailyGuidanceRemaining": {
+    "placeholders": {"calories": {"type": "String"}, "protein": {"type": "String"}}
+  },
+  "dailyGuidanceBudget": "About {calories} kcal · {protein} g protein per remaining meal",
+  "@dailyGuidanceBudget": {
+    "placeholders": {"calories": {"type": "String"}, "protein": {"type": "String"}}
+  },
+  "dailyGuidancePlanned": "Planned meals that fit",
+  "dailyGuidanceRecent": "Recent foods that fit",
+  "savedTemplates": "Saved templates",
+  "repeatLastMeal": "Repeat last meal",
+  "copyYesterdayMeals": "Copy yesterday",
+  "saveMealTemplate": "Save as meal template",
+  "mealTemplateName": "Template name",
+  "mealTemplateNameHint": "e.g., Workday breakfast",
+  "mealTemplateSaved": "Meal template saved",
+  "mealTemplateLogged": "Meal template logged",
+  "mealsCopied": "Yesterday's meals copied",
+  "lastMealRepeated": "Last meal repeated",
+  "noMealsToRepeat": "There is no previous meal to repeat",
+  "noMealsYesterday": "No meals were logged yesterday",
 
   "shareMeal": "Share Meal",
   "importMeal": "Import Meal",
@@ -627,11 +681,25 @@
   "nutritionLabelScannerDescription": "Take a photo of a nutrition label to extract calories, protein, carbs, fat, and fiber values.",
   "nutritionLabelCaptureGuide": "Fill the frame • avoid glare • hold steady",
   "nutritionLabelAnalyzing": "Analyzing nutrition label…",
+  "nutritionLabelCheckingImage": "Checking photo quality…",
+  "nutritionLabelReadingText": "Reading the nutrition table…",
+  "nutritionLabelEnhancingImage": "Improving hard-to-read text…",
+  "nutritionLabelVerifyingValues": "Verifying the per-100 g values…",
   "nutritionLabelNotParsed": "Could not read nutrition values from the label. Try taking a clearer photo.",
-  "nutritionLabelLocalOnly": "On-device OCR • works offline",
-  "nutritionLabelAiFallbackEnabled": "On-device OCR • Gemini text fallback when uncertain",
+  "nutritionLabelLocalOnly": "On-device OCR • no photo uploaded",
+  "nutritionLabelAiFallbackEnabled": "On-device OCR • optional cloud assist when uncertain",
   "nutritionLabelLocalResult": "Read locally on this device",
-  "nutritionLabelAiResult": "Gemini fallback used • please verify the values",
+  "nutritionLabelAiResult": "Cloud assist used • please verify the values",
+  "nutritionLabelServingConversion": "Serving values converted to per-100",
+  "nutritionLabelCloudConsentTitle": "Use cloud assist?",
+  "nutritionLabelCloudConsentBody": "The label photo will be sent to your configured AI provider to resolve the unclear values. You will review the result before anything is logged.",
+  "nutritionLabelCloudConsentConfirm": "Use cloud assist",
+  "nutritionLabelCloudConsentDecline": "Keep it local",
+  "nutritionLabelManualFallback": "Complete the values manually",
+  "nutritionLabelSaveProductTitle": "Save this product?",
+  "nutritionLabelSaveProductBody": "Keep this label as a reusable food so you do not need to scan it again.",
+  "nutritionLabelSaveProductConfirm": "Save product",
+  "nutritionLabelSaveProductSkip": "Only log today",
   "scannedProductName": "Scanned Product",
   "takePhoto": "Take Photo",
   "chooseFromGallery": "Choose from Gallery",
@@ -642,12 +710,22 @@
   "nutritionLabelCheckTitle": "Check these values",
   "nutritionLabelCaloriesRangeWarning": "Calories are outside the expected per-100 g range.",
   "nutritionLabelNutrientRangeWarning": "A nutrient is outside the expected per-100 g range.",
+  "nutritionLabelMissingRequiredWarning": "Calories, protein, carbs, and fat are required before saving.",
   "nutritionLabelNutrientTotalWarning": "The nutrient values add up to more than 100 g.",
   "nutritionLabelCaloriesMismatchWarning": "Calories do not match the detected macronutrients.",
+  "nutritionLabelCandidateDisagreementWarning": "The image readings disagree. Compare these values with the printed per-100 g column.",
   "nutritionLabelCameraUnavailable": "The camera could not be started.",
   "nutritionLabelCameraCaptureFailed": "The photo could not be captured.",
   "productBrand": "Brand",
   "per100gLabel": "Per 100g",
+  "per100Unit": "Per 100 {unit}",
+  "@per100Unit": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
   "servingInfo": "Serving",
   "looksGood": "Use these values",
   "rescanLabel": "Rescan",
@@ -734,5 +812,12 @@
   "onboardingTryFirst": "Try Sophis first",
   "onboardingTryFirstHint": "Skip goals and go straight to the app",
   "onboardingGoalPrivacy": "Your profile details are stored locally on this device.",
-  "onboardingFinishError": "Sophis could not finish setup. Please try again."
+  "onboardingFinishError": "Sophis could not finish setup. Please try again.",
+  "addPortionWithAmount": "+ Add {portion} · {calories} kcal",
+  "@addPortionWithAmount": {
+    "placeholders": {
+      "portion": {"type": "String"},
+      "calories": {"type": "String"}
+    }
+  }
 }
