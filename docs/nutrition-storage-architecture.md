@@ -32,7 +32,10 @@ base revision, retry state, and operation. Processed rows can be pruned through
 
 ## Migration rules
 
-Drift upgrades are gated by explicit schema versions through v11. The
+Drift upgrades are gated by explicit schema versions through v13. The v12
+portion metadata migration is followed by a v13 local food-sharing origin ledger.
+The ledger contains logging times, revisions and deletion facts, excludes diary
+content, and does not classify legacy rows as newly logged meals. The
 `migration_state` table records the canonical library and account cutovers.
 Legacy collection keys are selected by key presence, so an intentional empty
 collection cannot resurrect stale rows. Failed initialization leaves its marker
