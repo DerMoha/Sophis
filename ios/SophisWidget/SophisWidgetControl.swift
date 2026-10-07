@@ -9,6 +9,7 @@ import AppIntents
 import SwiftUI
 import WidgetKit
 
+@available(iOS 18.0, *)
 struct SophisWidgetControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(
@@ -28,6 +29,7 @@ struct SophisWidgetControl: ControlWidget {
     }
 }
 
+@available(iOS 18.0, *)
 extension SophisWidgetControl {
     struct Provider: ControlValueProvider {
         var previewValue: Bool {
@@ -41,6 +43,7 @@ extension SophisWidgetControl {
     }
 }
 
+@available(iOS 18.0, *)
 struct StartTimerIntent: SetValueIntent {
     static let title: LocalizedStringResource = "Start a timer"
 
