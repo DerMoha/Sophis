@@ -8,6 +8,7 @@ import 'package:sophis/ui/screens/social/social_connections_screen.dart';
 import 'package:sophis/ui/screens/social/social_source_screen.dart';
 import 'package:sophis/ui/screens/social/social_post_card.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
+import 'package:sophis/ui/screens/social/social_partners_screen.dart';
 
 class PeopleScreen extends StatefulWidget {
   final String? invitationToken;
@@ -132,6 +133,16 @@ class _PeopleScreenState extends State<PeopleScreen>
                       child: const Text('Retry account'),
                     )
             else ...[
+              TextButton.icon(
+                onPressed: social.busy
+                    ? null
+                    : () => Navigator.push(
+                          context,
+                          AppTheme.slideRoute(const SocialPartnersScreen()),
+                        ),
+                icon: const Icon(Icons.favorite_outline),
+                label: const Text('Partners · goals and meals'),
+              ),
               Text(
                 'Hello, ${social.profile!.displayName}',
                 style: Theme.of(context).textTheme.headlineSmall,

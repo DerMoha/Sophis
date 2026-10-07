@@ -76,7 +76,9 @@ class _SophisBootstrapAppState extends State<SophisBootstrapApp> {
         if (runtime != null) {
           return MultiProvider(
             providers: [
-              ChangeNotifierProvider(create: (_) => SocialProvider()),
+              ChangeNotifierProvider(
+                create: (_) => SocialProvider(nutrition: runtime.nutrition),
+              ),
               ChangeNotifierProvider<SettingsProvider>.value(
                 value: runtime.settings,
               ),

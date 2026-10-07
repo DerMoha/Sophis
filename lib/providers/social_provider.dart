@@ -1,15 +1,24 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:sophis/providers/nutrition_provider.dart';
+import 'package:sophis/services/social/partner_projection.dart';
+import 'package:sophis/services/social/social_partner_repository.dart';
 import 'package:sophis/services/service_result.dart';
 import 'package:sophis/services/social/social_account_repository.dart';
 import 'package:sophis/services/social/social_repository.dart';
 import 'package:sophis/services/social/social_runtime.dart';
 
 /// Owns only optional social state; guest nutrition startup never opens Firebase.
-final class SocialProvider extends ChangeNotifier {
+final class SocialProvider extends ChangeNotifier with WidgetsBindingObserver {
   final Future<SocialRuntime> Function() _factory;
   final bool configured;
+  final NutritionProvider? nutrition;
+  List<PartnerConnection> partners = [];
+  Timer? _partnerTimer;
+  Future<void>? _projectionTask;
+  bool _projectionPending = false;
   SocialRuntime? _runtime;
   StreamSubscription<Object?>? _authChanges;
   Future<void>? _opening;
@@ -25,9 +34,95 @@ final class SocialProvider extends ChangeNotifier {
   SocialFeedCursor? cursor;
   bool showingCache = false;
 
-  SocialProvider({Future<SocialRuntime> Function()? factory, bool? configured})
-      : _factory = factory ?? SocialRuntime.open,
-        configured = configured ?? (SocialRuntime.configuration() != null);
+  SocialProvider({
+    Future<SocialRuntime> Function()? factory,
+    bool? configured,
+    this.nutrition,
+  })  : _factory = factory ?? SocialRuntime.open,
+        configured = configured ?? (SocialRuntime.configuration() != null) {
+    nutrition?.addListener(_schedulePartnerSync);
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && ready && profile != null) {
+      unawaited(refreshPartners());
+    }
+  }
+
+  void _schedulePartnerSync() {
+    if (_closed || profile == null || _runtime == null) return;
+    _partnerTimer?.cancel();
+    _partnerTimer = Timer(
+      const Duration(milliseconds: 500),
+      () => unawaited(syncPartnerChanges()),
+    );
+  }
+
+  Future<void> refreshPartners() async {
+    final runtime = _runtime;
+    final epoch = _epoch;
+    if (runtime == null || profile == null) return;
+    final result = await runtime.partners.connections();
+    if (_closed || epoch != _epoch) return;
+    if (result is Success<List<PartnerConnection>>) {
+      partners = result.value;
+      await syncPartnerChanges();
+    } else if (result is Failure<List<PartnerConnection>>) {
+      partners = [];
+      message = result.message;
+    }
+    _notify();
+  }
+
+  Future<void> syncPartnerChanges() {
+    _projectionPending = true;
+    return _projectionTask ??= _drainPartnerChanges();
+  }
+
+  Future<void> _drainPartnerChanges() async {
+    try {
+      do {
+        _projectionPending = false;
+        await _projectPartnerChanges();
+      } while (_projectionPending && !_closed && profile != null);
+    } finally {
+      _projectionTask = null;
+    }
+  }
+
+  Future<void> _projectPartnerChanges() async {
+    final runtime = _runtime;
+    final local = nutrition;
+    if (_closed || runtime == null || profile == null || local == null) return;
+    try {
+      final session = await runtime.accounts.client.captureSession();
+      if (session == null) return;
+      final timeZone = (await FlutterTimezone.getLocalTimezone()).identifier;
+      final projection = PartnerProjection(runtime.store);
+      for (final connection in List<PartnerConnection>.of(partners)) {
+        if (!await runtime.store.isCurrent(session)) return;
+        final more = await projection.project(
+          session: session,
+          connection: connection,
+          nutrition: local.store,
+          goals: local.goals,
+          timeZone: timeZone,
+        );
+        _projectionPending = _projectionPending || more;
+      }
+      await runtime.queue.flush();
+      if (await runtime.store.nextCommand(session, DateTime.now()) != null) {
+        _projectionPending = true;
+      }
+    } catch (_) {
+      if (!_closed) {
+        message =
+            'Partner updates could not be sent. Refresh Partners to retry.';
+      }
+    }
+  }
 
   int get sessionVersion => _epoch;
 
@@ -58,6 +153,7 @@ final class SocialProvider extends ChangeNotifier {
         _epoch++;
         needsProfile = false;
         profile = null;
+        partners = [];
         posts = [];
         cursor = null;
         showingCache = false;
@@ -95,6 +191,7 @@ final class SocialProvider extends ChangeNotifier {
       showingCache = posts.isNotEmpty;
       _notify();
       await _refresh();
+      await refreshPartners();
     }
   }
 
@@ -109,6 +206,7 @@ final class SocialProvider extends ChangeNotifier {
         _epoch++;
         profile = null;
         needsProfile = false;
+        partners = [];
         posts = [];
         cursor = null;
         showingCache = false;
@@ -121,6 +219,7 @@ final class SocialProvider extends ChangeNotifier {
         }
         _shownAccount = result.value;
         profile = null;
+        partners = [];
         posts = [];
         await _loadAccount();
       });
@@ -140,6 +239,7 @@ final class SocialProvider extends ChangeNotifier {
           profile = result.value;
           needsProfile = false;
           await _refresh();
+          await refreshPartners();
         }
         if (result is Failure<SocialProfile>) message = result.message;
       });
@@ -161,6 +261,7 @@ final class SocialProvider extends ChangeNotifier {
     } else if (result is Failure<SocialFeedPage>) {
       message = result.message;
       if (result.errorType == ServiceErrorType.authFailed) {
+        partners = [];
         posts = [];
         showingCache = false;
       }
@@ -202,6 +303,7 @@ final class SocialProvider extends ChangeNotifier {
   Future<void> signOut() => _action(() async {
         _epoch++;
         profile = null;
+        partners = [];
         posts = [];
         cursor = null;
         showingCache = false;
@@ -232,6 +334,9 @@ final class SocialProvider extends ChangeNotifier {
   @override
   void dispose() {
     _closed = true;
+    _partnerTimer?.cancel();
+    nutrition?.removeListener(_schedulePartnerSync);
+    WidgetsBinding.instance.removeObserver(this);
     unawaited(_authChanges?.cancel());
     final runtime = _runtime;
     if (runtime != null) unawaited(runtime.close());

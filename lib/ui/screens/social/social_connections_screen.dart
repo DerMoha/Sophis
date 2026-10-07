@@ -10,6 +10,7 @@ import 'package:sophis/services/service_result.dart';
 import 'package:sophis/services/social/social_account_repository.dart';
 import 'package:sophis/ui/components/common/app_surface.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
+import 'package:sophis/ui/screens/social/social_partners_screen.dart';
 
 class SocialConnectionsScreen extends StatefulWidget {
   final String? invitationToken;
@@ -154,6 +155,16 @@ class _SocialConnectionsScreenState extends State<SocialConnectionsScreen> {
             if (!current)
               const Text('Sign in and refresh to view your connections.')
             else ...[
+              TextButton.icon(
+                onPressed: _busy
+                    ? null
+                    : () => Navigator.push(
+                          context,
+                          AppTheme.slideRoute(const SocialPartnersScreen()),
+                        ),
+                icon: const Icon(Icons.favorite_outline),
+                label: const Text('Partners · goals and meals'),
+              ),
               const Text(
                 'Follows show deliberate posts, including earlier posts after approval. Partner connections require mutual acceptance and separate outgoing sharing consent.',
               ),
