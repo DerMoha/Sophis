@@ -71,7 +71,14 @@ final class SocialAccountRepository {
     T Function(Map<String, dynamic>) decode,
   ) async {
     try {
-      final result = await client.call(await store.session(), action, payload);
+      final session = await client.captureSession();
+      if (session == null) {
+        return const Failure(
+          ServiceErrorType.authFailed,
+          'Your account changed.',
+        );
+      }
+      final result = await client.call(session, action, payload);
       return switch (result) {
         Success<Object?>(:final value) =>
           Success(decode(value as Map<String, dynamic>)),

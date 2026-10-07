@@ -7,6 +7,8 @@ import 'package:drift/drift.dart';
 /// in tests. Opening this store requires no Firebase initialization.
 final class SocialLocalStore extends GeneratedDatabase {
   SocialLocalStore(super.executor);
+  int _transitionVersion = 0;
+  int get transitionVersion => _transitionVersion;
 
   @override
   int get schemaVersion => 1;
@@ -60,16 +62,19 @@ final class SocialLocalStore extends GeneratedDatabase {
 
   /// Called for every sign-out/account switch, even when switching back to the
   /// same account. One transaction invalidates pending work and removes caches.
-  Future<SocialSession> switchAccount(String? accountId) =>
-      transaction(() async {
-        await customStatement('DELETE FROM social_commands');
-        await customStatement('DELETE FROM social_cache');
-        await customStatement(
-          'UPDATE social_session SET account_id = ?, generation = generation + 1 WHERE singleton = 1',
-          [accountId],
-        );
-        return session();
-      });
+  Future<SocialSession> switchAccount(String? accountId) {
+    // Invalidate captures synchronously, before asynchronous SQLite work starts.
+    _transitionVersion++;
+    return transaction(() async {
+      await customStatement('DELETE FROM social_commands');
+      await customStatement('DELETE FROM social_cache');
+      await customStatement(
+        'UPDATE social_session SET account_id = ?, generation = generation + 1 WHERE singleton = 1',
+        [accountId],
+      );
+      return session();
+    });
+  }
 
   Future<bool> isCurrent(SocialSession expected) async {
     final current = await session();

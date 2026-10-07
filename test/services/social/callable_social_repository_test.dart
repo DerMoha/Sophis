@@ -163,32 +163,38 @@ void main() {
             publishedAt: DateTime(2026),
           );
       expect(
-          (await repository.editPost(
-            post: post('bob'),
-            operationId: 'other',
-            snapshot: snapshot,
-            nutritionVisible: true,
-          ))
-              .isFailure,
-          isTrue,);
+        (await repository.editPost(
+          post: post('bob'),
+          operationId: 'other',
+          snapshot: snapshot,
+          nutritionVisible: true,
+        ))
+            .isFailure,
+        isTrue,
+      );
       expect(
-          (await repository.editPost(
-            post: post('alice'),
-            operationId: 'edit',
-            snapshot: snapshot,
-            nutritionVisible: false,
-            caption: 'Updated dinner',
-          ))
-              .isSuccess,
-          isTrue,);
+        (await repository.editPost(
+          post: post('alice'),
+          operationId: 'edit',
+          snapshot: snapshot,
+          nutritionVisible: false,
+          caption: 'Updated dinner',
+        ))
+            .isSuccess,
+        isTrue,
+      );
       final command =
           await store.nextCommand(await store.session(), DateTime.now());
       expect(command!.action, 'editPost');
       expect(command.payload['baseRevision'], 3);
       expect(
-          command.payload['snapshot'].toString(), isNot(contains('calories')),);
+        command.payload['snapshot'].toString(),
+        isNot(contains('calories')),
+      );
       expect(
-          command.payload['snapshot'].toString(), isNot(contains('private')),);
+        command.payload['snapshot'].toString(),
+        isNot(contains('private')),
+      );
     });
 
     test('hid queued deletions from both server responses and old cached posts',
@@ -217,6 +223,22 @@ void main() {
       expect(await store.cachedFeed(session), isEmpty);
       await store.switchAccount('bob');
       expect(await store.pendingDeletionTargets(session), isEmpty);
+    });
+
+    test('rejected publication started before a same-account reset', () async {
+      final pending = repository.publish(
+        operationId: 'old-action',
+        snapshot: snapshot,
+        nutritionVisible: true,
+        isRecipe: false,
+      );
+      await store.switchAccount('alice');
+      expect((await pending).isFailure, isTrue);
+      expect(
+        await store.nextCommand(await store.session(), DateTime.now()),
+        isNull,
+      );
+      expect(sent, isEmpty);
     });
 
     test('rejected attempts to publish unavailable nutrition', () async {

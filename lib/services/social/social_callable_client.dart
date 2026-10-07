@@ -13,6 +13,10 @@ abstract interface class SocialCredentials {
   Future<SocialTokens> tokensFor(String accountId);
 }
 
+abstract interface class SocialCredentialSession {
+  int get authenticationVersion;
+}
+
 final class SocialCredentialFailure implements Exception {
   final ServiceErrorType errorType;
   const SocialCredentialFailure(this.errorType);
@@ -55,6 +59,24 @@ final class SocialCallableClient implements SocialCommandTransport {
 
   @override
   String? get accountId => credentials.accountId;
+
+  Future<SocialSession?> captureSession() async {
+    final uid = accountId;
+    final transition = store.transitionVersion;
+    final epochSource = credentials is SocialCredentialSession
+        ? credentials as SocialCredentialSession
+        : null;
+    final epoch = epochSource?.authenticationVersion;
+    final session = await store.session();
+    if (uid == null ||
+        uid != accountId ||
+        session.accountId != uid ||
+        transition != store.transitionVersion ||
+        epochSource?.authenticationVersion != epoch) {
+      return null;
+    }
+    return session;
+  }
 
   Future<ServiceResult<Object?>> call(
     SocialSession expected,

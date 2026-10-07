@@ -9,7 +9,8 @@ import 'package:sophis/services/social/social_local_store.dart';
 
 /// Firebase auth is scoped to the optional social app. The private local diary
 /// is never touched by login, logout, recovery or an authentication event.
-final class FirebaseSocialAuth implements SocialCredentials {
+final class FirebaseSocialAuth
+    implements SocialCredentials, SocialCredentialSession {
   final FirebaseAuth auth;
   final FirebaseAppCheck? appCheck;
   final SocialLocalStore store;
@@ -18,13 +19,18 @@ final class FirebaseSocialAuth implements SocialCredentials {
   final Completer<void> _ready = Completer<void>();
   Object? _syncError;
   int _epoch = 0;
+  String? _observedUid;
   bool _busy = false;
   bool _closed = false;
 
   FirebaseSocialAuth({required this.auth, required this.store, this.appCheck}) {
+    _observedUid = auth.currentUser?.uid;
     _subscription = auth.authStateChanges().listen(
       (user) {
-        _epoch++;
+        if (_observedUid != user?.uid) {
+          _epoch++;
+          _observedUid = user?.uid;
+        }
         _accountSync = _accountSync.then((_) async {
           final current = await store.session();
           final uid = user?.uid;
@@ -52,6 +58,9 @@ final class FirebaseSocialAuth implements SocialCredentials {
 
   @override
   String? get accountId => _closed ? null : auth.currentUser?.uid;
+
+  @override
+  int get authenticationVersion => _epoch;
 
   @override
   Future<SocialTokens> tokensFor(String accountId) async {
@@ -135,8 +144,22 @@ final class FirebaseSocialAuth implements SocialCredentials {
       if (_closed || uid == null || auth.currentUser?.uid != uid) {
         throw StateError('Account changed');
       }
-      final session = await store.session();
-      if (session.accountId != uid) await store.switchAccount(uid);
+      // The explicit authentication already invalidated the old epoch. A
+      // delayed native replay of this same UID is not another account switch.
+      _observedUid = uid;
+      // Serialize fallback reconciliation with native auth events so two
+      // concurrent repairs cannot invalidate a newly initiated profile request.
+      _accountSync = _accountSync.then((_) async {
+        final session = await store.session();
+        if (session.accountId != uid) await store.switchAccount(uid);
+        _syncError = null;
+      }).catchError((Object error, StackTrace trace) {
+        _syncError = error;
+      });
+      await _accountSync;
+      if (_syncError != null || _closed || auth.currentUser?.uid != uid) {
+        throw StateError('Account changed');
+      }
       return Success(uid);
     } on FirebaseAuthException catch (error) {
       return _authFailure(error);
@@ -179,6 +202,7 @@ final class FirebaseSocialAuth implements SocialCredentials {
       _epoch++;
       await store.switchAccount(null);
       await auth.signOut();
+      _observedUid = null;
       await _accountSync;
       return const Success(null);
     } catch (_) {

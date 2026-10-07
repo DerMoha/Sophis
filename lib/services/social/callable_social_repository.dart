@@ -31,7 +31,13 @@ final class CallableSocialRepository implements SocialRepository {
   Future<ServiceResult<SocialFeedPage>> fetchFeed({
     SocialFeedCursor? cursor,
   }) async {
-    final session = await store.session();
+    final session = await client.captureSession();
+    if (session == null) {
+      return const Failure(
+        ServiceErrorType.authFailed,
+        'Your account changed.',
+      );
+    }
     final result = await client.call(session, 'feed', {
       if (cursor != null)
         'cursor': {
@@ -80,7 +86,10 @@ final class CallableSocialRepository implements SocialRepository {
   }
 
   Future<List<SocialPost>> cachedFeed() async {
-    final session = await store.session();
+    final session = await client.captureSession();
+    if (session == null) {
+      return [];
+    }
     if (session.accountId != accountId) return [];
     final raw = await store.cachedFeed(session);
     try {
@@ -133,7 +142,13 @@ final class CallableSocialRepository implements SocialRepository {
     String? caption,
     String? photoBlobId,
   }) async {
-    final session = await store.session();
+    final session = await client.captureSession();
+    if (session == null) {
+      return const Failure(
+        ServiceErrorType.authFailed,
+        'Your account changed.',
+      );
+    }
     final uid = session.accountId;
     if (uid == null || accountId != uid) {
       return const Failure(ServiceErrorType.authFailed, 'Sign in to publish.');
@@ -178,7 +193,13 @@ final class CallableSocialRepository implements SocialRepository {
 
   @override
   Future<ServiceResult<void>> deletePost(String postId) async {
-    final session = await store.session();
+    final session = await client.captureSession();
+    if (session == null) {
+      return const Failure(
+        ServiceErrorType.authFailed,
+        'Your account changed.',
+      );
+    }
     final publication =
         await store.pendingPublicationOperation(session, postId);
     await store.clearCache(expected: session);
@@ -204,16 +225,21 @@ final class CallableSocialRepository implements SocialRepository {
     required bool nutritionVisible,
     String? caption,
   }) async {
-    if (post.authorId != accountId) {
+    final session = await client.captureSession();
+    if (session == null || post.authorId != session.accountId) {
       return const Failure(
-          ServiceErrorType.authFailed, 'Only the author can edit.',);
+        ServiceErrorType.authFailed,
+        'Only the author can edit.',
+      );
     }
     if (nutritionVisible && !snapshot.nutritionAvailable) {
       return const Failure(
-          ServiceErrorType.parseError, 'Nutrition is unavailable.',);
+        ServiceErrorType.parseError,
+        'Nutrition is unavailable.',
+      );
     }
     return _enqueue(
-      await store.session(),
+      session,
       SocialQueuedCommand(
         operationId: operationId,
         action: 'editPost',
@@ -231,17 +257,25 @@ final class CallableSocialRepository implements SocialRepository {
   }
 
   @override
-  Future<ServiceResult<void>> react(String postId, String? kind) async =>
-      _enqueue(
-        await store.session(),
-        SocialQueuedCommand(
-          operationId: _uuid.v4(),
-          action: 'react',
-          targetId: postId,
-          payload: {'postId': postId, 'kind': kind},
-          createdAt: DateTime.now(),
-        ),
+  Future<ServiceResult<void>> react(String postId, String? kind) async {
+    final session = await client.captureSession();
+    if (session == null) {
+      return const Failure(
+        ServiceErrorType.authFailed,
+        'Your account changed.',
       );
+    }
+    return _enqueue(
+      session,
+      SocialQueuedCommand(
+        operationId: _uuid.v4(),
+        action: 'react',
+        targetId: postId,
+        payload: {'postId': postId, 'kind': kind},
+        createdAt: DateTime.now(),
+      ),
+    );
+  }
 
   Future<ServiceResult<void>> _enqueue(
     SocialSession session,
@@ -274,7 +308,13 @@ final class CallableSocialRepository implements SocialRepository {
     String action,
     String otherId,
   ) async {
-    final session = await store.session();
+    final session = await client.captureSession();
+    if (session == null) {
+      return const Failure(
+        ServiceErrorType.authFailed,
+        'Your account changed.',
+      );
+    }
     await store.clearCache(expected: session);
     final result = await client.call(session, action, {'otherId': otherId});
     return switch (result) {

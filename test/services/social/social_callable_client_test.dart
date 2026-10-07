@@ -10,7 +10,9 @@ import 'package:sophis/services/social/social_callable_client.dart';
 import 'package:sophis/services/social/social_local_store.dart';
 import 'package:sophis/services/social/social_queue_runner.dart';
 
-class _Credentials implements SocialCredentials {
+class _Credentials implements SocialCredentials, SocialCredentialSession {
+  @override
+  int authenticationVersion = 0;
   @override
   String? accountId = 'alice';
   Future<SocialTokens> Function(String)? resolve;
@@ -57,6 +59,15 @@ void main() {
   tearDown(() async => store.close());
 
   group('SocialCallableClient', () {
+    test('rejected a same-UID authentication transition during session capture',
+        () async {
+      expect((await client.captureSession())!.generation, session.generation);
+      final pending = client.captureSession();
+      credentials.authenticationVersion++;
+      expect(await pending, isNull);
+      expect(requests, 0);
+    });
+
     test('sent captured credentials and the callable envelope', () async {
       expect((await client.call(session, 'feed', {})).isSuccess, isTrue);
       expect(requests, 1);
