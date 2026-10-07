@@ -12,7 +12,7 @@ import 'package:sophis/providers/social_provider.dart';
 import 'package:sophis/services/nutrition/nutrition_store.dart';
 import 'package:sophis/services/service_result.dart';
 import 'package:sophis/services/social/social_repository.dart';
-import 'package:sophis/ui/components/common/app_surface.dart';
+import 'package:sophis/ui/components/organic_components.dart';
 
 /// Review creates a recipient-owned copy; no source IDs or revisions enter it.
 class SocialImportScreen extends StatefulWidget {
@@ -243,7 +243,7 @@ class _SocialImportScreenState extends State<SocialImportScreen> {
             ),
             const SizedBox(height: 16),
             if (!widget.post.snapshot.nutritionAvailable) ...[
-              const AppSurface(
+              const GlassCard(
                 child: Text(
                   'Nutrition was hidden. Enter nutrition for each item in the shared batch before saving. Unknown nutrition will not be logged as zero.',
                 ),
@@ -251,7 +251,7 @@ class _SocialImportScreenState extends State<SocialImportScreen> {
               const SizedBox(height: 16),
             ],
             for (final review in _items) ...[
-              AppSurface(
+              GlassCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

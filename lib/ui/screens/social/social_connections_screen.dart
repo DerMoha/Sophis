@@ -8,7 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:sophis/providers/social_provider.dart';
 import 'package:sophis/services/service_result.dart';
 import 'package:sophis/services/social/social_account_repository.dart';
-import 'package:sophis/ui/components/common/app_surface.dart';
+import 'package:sophis/ui/components/organic_components.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/screens/social/social_partners_screen.dart';
 
@@ -188,7 +188,7 @@ class _SocialConnectionsScreenState extends State<SocialConnectionsScreen> {
               ),
               if (_invitation != null) ...[
                 const SizedBox(height: 16),
-                AppSurface(
+                GlassCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -285,7 +285,7 @@ class _SocialConnectionsScreenState extends State<SocialConnectionsScreen> {
                 child: const Text('Preview invitation'),
               ),
               if (_preview != null)
-                AppSurface(
+                GlassCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -347,7 +347,7 @@ class _SocialConnectionsScreenState extends State<SocialConnectionsScreen> {
               for (final relationship in _relationships)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
-                  child: AppSurface(
+                  child: GlassCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [

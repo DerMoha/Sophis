@@ -3,11 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sophis/providers/social_provider.dart';
-import 'package:sophis/ui/components/common/app_surface.dart';
+import 'package:sophis/ui/components/organic_components.dart';
 import 'package:sophis/ui/screens/social/social_connections_screen.dart';
 import 'package:sophis/ui/screens/social/social_source_screen.dart';
 import 'package:sophis/ui/screens/social/social_post_card.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
+import 'package:sophis/ui/screens/social/social_visuals.dart';
 import 'package:sophis/ui/screens/social/social_partners_screen.dart';
 
 class PeopleScreen extends StatefulWidget {
@@ -133,24 +134,25 @@ class _PeopleScreenState extends State<PeopleScreen>
                       child: const Text('Retry account'),
                     )
             else ...[
-              TextButton.icon(
-                onPressed: social.busy
-                    ? null
-                    : () => Navigator.push(
-                          context,
-                          AppTheme.slideRoute(const SocialPartnersScreen()),
-                        ),
-                icon: const Icon(Icons.favorite_outline),
-                label: const Text('Partners · goals and meals'),
-              ),
-              Text(
-                'Hello, ${social.profile!.displayName}',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Meals and recipes deliberately shared with you appear here. Partner sharing has separate consent settings.',
-              ),
+              SocialIdentity(
+                  name: 'Hello, ${social.profile!.displayName}',
+                  subtitle: 'A little inspiration, shared privately',
+                  icon: Icons.waving_hand_outlined,),
+              const SizedBox(height: 24),
+              GlassCard(
+                  child: SocialIdentity(
+                      name: 'Your partner space',
+                      subtitle: 'Shared meals, goals and daily progress',
+                      icon: Icons.favorite_outline,
+                      trailing: IconButton(
+                          tooltip: 'Partners · goals and meals',
+                          onPressed: social.busy
+                              ? null
+                              : () => Navigator.push(
+                                  context,
+                                  AppTheme.slideRoute(
+                                      const SocialPartnersScreen(),),),
+                          icon: const Icon(Icons.arrow_forward_rounded),),),),
               const SizedBox(height: 12),
               if (social.showingCache)
                 const Text(
@@ -165,11 +167,14 @@ class _PeopleScreenState extends State<PeopleScreen>
                 ),
               ),
               if (social.posts.isEmpty)
-                const AppSurface(
-                  child: Text(
-                    'No shared meals yet. Invite a friend or partner from Connections.',
-                  ),
-                ),
+                const Padding(
+                    padding: EdgeInsets.only(bottom: 20),
+                    child: GlassCard(
+                        child: SocialIdentity(
+                            name: 'Good food is better together',
+                            subtitle:
+                                'No shared meals yet. Invite a friend or partner from Connections.',
+                            icon: Icons.restaurant_outlined,),),),
               FilledButton.icon(
                 onPressed: social.busy
                     ? null
@@ -198,7 +203,7 @@ class _PeopleScreenState extends State<PeopleScreen>
     );
   }
 
-  Widget _buildIntroduction() => AppSurface(
+  Widget _buildIntroduction() => GlassCard(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

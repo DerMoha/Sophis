@@ -4,10 +4,11 @@ import 'package:provider/provider.dart';
 import 'package:sophis/providers/social_provider.dart';
 import 'package:sophis/services/service_result.dart';
 import 'package:sophis/services/social/social_repository.dart';
-import 'package:sophis/ui/components/common/app_surface.dart';
+import 'package:sophis/ui/components/organic_components.dart';
 import 'package:sophis/ui/screens/social/social_import_screen.dart';
 import 'package:sophis/ui/screens/social/social_publish_screen.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
+import 'package:sophis/ui/screens/social/social_visuals.dart';
 
 class SocialPostCard extends StatelessWidget {
   final SocialPost post;
@@ -58,27 +59,47 @@ class SocialPostCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final social = context.watch<SocialProvider>();
-    return AppSurface(
+    return GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            post.snapshot.title,
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          Text(post.isRecipe ? 'Recipe' : 'Meal'),
-          if (post.caption != null) Text(post.caption!),
-          const SizedBox(height: 8),
-          for (final item in post.snapshot.items) Text(item.name),
+          SocialIdentity(
+              name: post.snapshot.title,
+              subtitle:
+                  '${post.isRecipe ? 'Recipe' : 'Meal'} · ${post.snapshot.servings} servings',
+              icon: post.isRecipe
+                  ? Icons.menu_book_outlined
+                  : Icons.restaurant_outlined,),
+          if (post.caption != null)
+            Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Text(post.caption!,
+                    style: Theme.of(context).textTheme.bodyLarge,),),
+          const SizedBox(height: 12),
+          for (final item in post.snapshot.items)
+            Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Text(item.name,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color:
+                            Theme.of(context).colorScheme.onSurfaceVariant,),),),
+          const SizedBox(height: 10),
           if (post.nutritionVisible)
             Text(
               '${post.snapshot.items.fold(0.0, (sum, item) => sum + item.calories).round()} kcal · ${post.snapshot.servings} servings',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(color: AppTheme.fire),
             )
           else
             const Text(
               'Nutrition is hidden. You can enter it when making your copy.',
             ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
+          Divider(
+              color:
+                  Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),),
           Wrap(
             spacing: 8,
             runSpacing: 8,

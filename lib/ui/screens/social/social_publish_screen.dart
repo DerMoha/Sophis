@@ -7,7 +7,7 @@ import 'package:sophis/models/social/social_snapshot.dart';
 import 'package:sophis/providers/social_provider.dart';
 import 'package:sophis/services/service_result.dart';
 import 'package:sophis/services/social/social_repository.dart';
-import 'package:sophis/ui/components/common/app_surface.dart';
+import 'package:sophis/ui/components/organic_components.dart';
 import 'package:sophis/ui/components/settings/settings_tiles.dart';
 
 class SocialPublishScreen extends StatefulWidget {
@@ -140,7 +140,7 @@ class _SocialPublishScreenState extends State<SocialPublishScreen> {
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
-            const AppSurface(
+            const GlassCard(
               child: Text(
                 'Audience: your approved followers. Newly approved followers can see this post too. Partner sharing has separate settings.',
               ),
