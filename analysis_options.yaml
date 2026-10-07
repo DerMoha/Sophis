@@ -11,6 +11,7 @@ include: package:flutter_lints/flutter.yaml
 
 analyzer:
   exclude:
+    - "build/**" # Generated native package sources and their example apps
     - "**/*.g.dart"
     - "**/*.freezed.dart"
   errors:
