@@ -2,6 +2,7 @@ import 'package:sophis/models/custom_portion.dart';
 import 'package:sophis/models/food_entry.dart';
 import 'package:sophis/models/food_item.dart';
 import 'package:sophis/models/meal_plan.dart';
+import 'package:sophis/models/meal_template.dart';
 import 'package:sophis/models/nutrition_goals.dart';
 import 'package:sophis/models/progress_photo.dart';
 import 'package:sophis/models/recipe.dart';
@@ -29,6 +30,7 @@ class NutritionBackup {
   final UserStats userStats;
   final Set<String> shoppingListChecked;
   final List<ProgressPhoto> progressPhotos;
+  final List<MealTemplate> mealTemplates;
 
   const NutritionBackup({
     required this.goals,
@@ -47,6 +49,7 @@ class NutritionBackup {
     required this.userStats,
     required this.shoppingListChecked,
     required this.progressPhotos,
+    this.mealTemplates = const [],
   });
 
   NutritionBackup copyWith({List<ProgressPhoto>? progressPhotos}) =>
@@ -67,5 +70,6 @@ class NutritionBackup {
         userStats: userStats,
         shoppingListChecked: shoppingListChecked,
         progressPhotos: progressPhotos ?? this.progressPhotos,
+        mealTemplates: mealTemplates,
       );
 }

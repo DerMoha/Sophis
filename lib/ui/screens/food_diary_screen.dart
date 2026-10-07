@@ -309,6 +309,16 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
       children: [
+        if (_isToday(date)) ...[
+          _buildReuseCard(
+            context,
+            theme,
+            l10n,
+            nutrition,
+            vm.entries,
+          ),
+          const SizedBox(height: AppTheme.spaceLG),
+        ],
         // Nutrition summary (only if there are entries)
         if (!vm.isEmpty)
           NutritionSummaryCard(
@@ -394,6 +404,182 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
             ),
           )
           .toList(),
+    );
+  }
+
+  bool _isToday(DateTime date) {
+    final now = DateTime.now();
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
+  }
+
+  Widget _buildReuseCard(
+    BuildContext context,
+    ThemeData theme,
+    AppLocalizations l10n,
+    NutritionProvider nutrition,
+    List<FoodEntry> todayEntries,
+  ) {
+    final currentMealEntries = todayEntries.isEmpty
+        ? const <FoodEntry>[]
+        : nutrition.getLastLoggedMealEntries();
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color:
+            theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.14),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.bolt_outlined, color: theme.colorScheme.primary),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  l10n.reuseMeal,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              OutlinedButton.icon(
+                onPressed: () async {
+                  final entries = await nutrition.repeatLastMeal(
+                    timestamp: DateTime.now(),
+                  );
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        entries.isEmpty
+                            ? l10n.noMealsToRepeat
+                            : l10n.lastMealRepeated,
+                      ),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.replay_outlined, size: 18),
+                label: Text(l10n.repeatLastMeal),
+              ),
+              OutlinedButton.icon(
+                onPressed: () async {
+                  final entries = await nutrition.copyYesterdayLoggedMeals(
+                    targetDate: DateTime.now(),
+                  );
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        entries.isEmpty
+                            ? l10n.noMealsYesterday
+                            : l10n.mealsCopied,
+                      ),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.history_outlined, size: 18),
+                label: Text(l10n.copyYesterdayMeals),
+              ),
+              if (currentMealEntries.isNotEmpty)
+                FilledButton.tonalIcon(
+                  onPressed: () => _showSaveTemplateDialog(
+                    context,
+                    l10n,
+                    nutrition,
+                    currentMealEntries,
+                  ),
+                  icon: const Icon(Icons.bookmark_add_outlined, size: 18),
+                  label: Text(l10n.saveMealTemplate),
+                ),
+            ],
+          ),
+          if (nutrition.mealTemplates.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              l10n.savedTemplates,
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: nutrition.mealTemplates
+                  .map(
+                    (template) => ActionChip(
+                      avatar: const Icon(Icons.bookmark_outline, size: 16),
+                      label: Text(template.name),
+                      onPressed: () async {
+                        await nutrition.logMealTemplate(template);
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(l10n.mealTemplateLogged)),
+                        );
+                      },
+                    ),
+                  )
+                  .toList(),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showSaveTemplateDialog(
+    BuildContext context,
+    AppLocalizations l10n,
+    NutritionProvider nutrition,
+    List<FoodEntry> entries,
+  ) async {
+    final controller = TextEditingController();
+    final name = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.saveMealTemplate),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          textInputAction: TextInputAction.done,
+          decoration: InputDecoration(
+            labelText: l10n.mealTemplateName,
+            hintText: l10n.mealTemplateNameHint,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () =>
+                Navigator.pop(dialogContext, controller.text.trim()),
+            child: Text(l10n.save),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (name == null || name.isEmpty || !context.mounted) return;
+    await nutrition.saveMealTemplateFromEntries(name: name, entries: entries);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.mealTemplateSaved)),
     );
   }
 

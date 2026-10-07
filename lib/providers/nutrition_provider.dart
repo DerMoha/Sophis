@@ -9,6 +9,8 @@ import 'package:sophis/models/water_entry.dart';
 import 'package:sophis/models/weight_entry.dart';
 import 'package:sophis/models/recipe.dart';
 import 'package:sophis/models/meal_plan.dart';
+import 'package:sophis/models/meal_template.dart';
+import 'package:sophis/models/portion_selection.dart';
 import 'package:sophis/models/custom_portion.dart';
 import 'package:sophis/models/food_item.dart';
 import 'package:sophis/models/workout_entry.dart';
@@ -53,6 +55,7 @@ class NutritionProvider extends ChangeNotifier {
   List<WeightEntry> _weightEntries = [];
   List<ProgressPhoto> _photos = [];
   UserStats _userStats = const UserStats();
+  List<MealTemplate> _mealTemplates = [];
 
   double _healthSyncBurnedCalories = 0.0;
   final HealthServiceProtocol _healthService;
@@ -175,6 +178,7 @@ class NutritionProvider extends ChangeNotifier {
   List<FoodItem> get customFoods => _foodLibrary.customFoods;
   List<FoodItem> get favoriteFoods => _foodLibrary.favoriteFoods;
   UserStats get userStats => _userStats;
+  List<MealTemplate> get mealTemplates => List.unmodifiable(_mealTemplates);
   List<ProgressPhoto> get photos => _photos;
 
   double get burnedCalories =>
@@ -221,6 +225,8 @@ class NutritionProvider extends ChangeNotifier {
       [...snapshot.plannedMeals],
       {...snapshot.shoppingListChecked},
     );
+
+    _mealTemplates = [...snapshot.mealTemplates];
 
     _userStats = snapshot.userStats;
 
@@ -423,6 +429,40 @@ class NutritionProvider extends ChangeNotifier {
   Future<void> duplicateFoodEntry(FoodEntry entry, {String? toMeal}) =>
       _foodLog.duplicateFoodEntry(entry, toMeal: toMeal);
 
+  Future<List<FoodEntry>> repeatLastMeal({DateTime? timestamp}) async {
+    final entries = await _foodLog.repeatLastMeal(timestamp: timestamp);
+    if (entries.isNotEmpty) {
+      await _syncNutritionForDate(entries.first.timestamp);
+    }
+    return entries;
+  }
+
+  Future<List<FoodEntry>> copyYesterdayLoggedMeals({
+    DateTime? targetDate,
+  }) async {
+    final entries = await _foodLog.copyYesterdayLoggedMeals(
+      targetDate: targetDate,
+    );
+    if (entries.isNotEmpty) {
+      await _syncNutritionForDate(entries.first.timestamp);
+    }
+    return entries;
+  }
+
+  Future<List<FoodEntry>> logMealTemplate(
+    MealTemplate template, {
+    DateTime? timestamp,
+  }) async {
+    final entries = await _foodLog.logMealTemplate(
+      template,
+      timestamp: timestamp,
+    );
+    if (entries.isNotEmpty) {
+      await _syncNutritionForDate(entries.first.timestamp);
+    }
+    return entries;
+  }
+
   List<FoodEntry> getTodayEntries() => _foodLog.getTodayEntries();
 
   List<FoodEntry> getEntriesForDate(DateTime date) =>
@@ -430,6 +470,9 @@ class NutritionProvider extends ChangeNotifier {
 
   List<FoodEntry> getEntriesByMeal(String meal) =>
       _foodLog.getEntriesByMeal(meal);
+
+  List<FoodEntry> getLastLoggedMealEntries() =>
+      _foodLog.getLastLoggedMealEntries();
 
   NutritionTotals getTodayTotals() => _foodLog.getTodayTotals();
 
@@ -609,6 +652,7 @@ class NutritionProvider extends ChangeNotifier {
         userStats: _userStats,
         shoppingListChecked: Set.unmodifiable(shoppingListChecked),
         progressPhotos: List.unmodifiable(_photos),
+        mealTemplates: List.unmodifiable(_mealTemplates),
       );
 
   Future<ProgressPhoto> stageBackupPhoto(
@@ -733,8 +777,64 @@ class NutritionProvider extends ChangeNotifier {
   List<FoodItem> getRecentFoodsForMeal(String meal) =>
       _foodLog.getRecentFoodsForMeal(meal);
 
+  FoodItem? getRecentFoodById(String id) => _foodLog.getRecentFoodById(id);
+
+  Future<void> rememberRecentPortion(
+    FoodItem food,
+    PortionSelection selection, {
+    String? meal,
+  }) async {
+    await _foodLog.rememberRecentPortion(food, selection, meal: meal);
+    notifyListeners();
+  }
+
   Future<void> addRecentFood(FoodItem food, {String? meal}) =>
       _foodLog.addRecentFood(food, meal: meal);
+
+  Future<void> saveMealTemplate(MealTemplate template) async {
+    await _store.commitOrThrow(SaveMealTemplate(template));
+    final index = _mealTemplates.indexWhere((value) => value.id == template.id);
+    if (index == -1) {
+      _mealTemplates = [..._mealTemplates, template];
+    } else {
+      _mealTemplates = List<MealTemplate>.of(_mealTemplates)
+        ..[index] = template;
+    }
+    notifyListeners();
+  }
+
+  Future<MealTemplate> saveMealTemplateFromEntries({
+    required String name,
+    required List<FoodEntry> entries,
+  }) async {
+    final trimmedName = name.trim();
+    if (trimmedName.isEmpty) {
+      throw ArgumentError.value(name, 'name', 'A meal template needs a name');
+    }
+    if (entries.isEmpty) {
+      throw ArgumentError.value(
+        entries,
+        'entries',
+        'A meal template needs at least one food entry',
+      );
+    }
+    final template = MealTemplate.fromEntries(
+      id: const Uuid().v4(),
+      name: trimmedName,
+      createdAt: DateTime.now(),
+      entries: entries,
+    );
+    await saveMealTemplate(template);
+    return template;
+  }
+
+  Future<void> removeMealTemplate(String id) async {
+    if (!_mealTemplates.any((template) => template.id == id)) return;
+    await _store.commitOrThrow(DeleteMealTemplate(id));
+    _mealTemplates =
+        _mealTemplates.where((template) => template.id != id).toList();
+    notifyListeners();
+  }
 
   // ── Custom Foods ────────────────────────────────────────────────────────
 
@@ -867,6 +967,7 @@ class NutritionProvider extends ChangeNotifier {
     _weightEntries = [];
     _photos = [];
     _userStats = const UserStats();
+    _mealTemplates = [];
     _foodLog.clearAll();
     _hydration.clearAll();
     _workouts.clearAll();

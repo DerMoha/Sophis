@@ -3,6 +3,7 @@ import 'package:mocktail/mocktail.dart';
 
 import 'package:sophis/models/food_entry.dart';
 import 'package:sophis/models/food_item.dart';
+import 'package:sophis/models/nutrition_unit.dart';
 import 'package:sophis/models/shareable_meal.dart';
 import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/services/food_intake_controller.dart';
@@ -222,6 +223,36 @@ void main() {
       expect(customFood.carbsPer100g, 45);
       expect(customFood.fatPer100g, 14);
       expect(customFood.fiberPer100g, 7);
+    });
+
+    test('saves a portioned entry as a correctly scaled custom food', () async {
+      final entry = FoodEntry(
+        id: 'portion-entry',
+        name: 'Oats (1 package (80g))',
+        calories: 304,
+        protein: 10.4,
+        carbs: 54.4,
+        fat: 5.6,
+        fiber: 2,
+        timestamp: timestamp,
+        meal: 'breakfast',
+        sourceFoodId: 'oats',
+        portionAmount: 80,
+        portionUnit: NutritionUnit.gram,
+        portionLabel: 'package',
+        portionQuantity: 1,
+      );
+
+      await controller.saveEntryAsCustomFood(entry);
+
+      final customFood = verify(
+        () => nutrition.addCustomFood(captureAny()),
+      ).captured.single as FoodItem;
+      expect(customFood.name, 'Oats');
+      expect(customFood.caloriesPer100g, 380);
+      expect(customFood.nutritionUnit, NutritionUnit.gram);
+      expect(customFood.servings.single.selection.amount, 80);
+      expect(customFood.servings.single.selection.humanLabel, 'package');
     });
 
     test('rejects invalid intake requests before writing', () async {

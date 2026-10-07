@@ -11,6 +11,7 @@ import 'package:sophis/models/custom_portion.dart';
 import 'package:sophis/models/food_entry.dart';
 import 'package:sophis/models/food_item.dart';
 import 'package:sophis/models/meal_plan.dart';
+import 'package:sophis/models/meal_template.dart';
 import 'package:sophis/models/nutrition_backup.dart';
 import 'package:sophis/models/nutrition_goals.dart';
 import 'package:sophis/models/progress_photo.dart';
@@ -25,7 +26,8 @@ import 'package:sophis/services/service_result.dart';
 
 /// Versioned, self-contained backup archive with validate-before-write restore.
 class DataExportService {
-  static const int archiveVersion = 2;
+  static const int archiveVersion = 3;
+  static const int _legacyArchiveVersion = 2;
   static const int _maxArchiveBytes = 500 * 1024 * 1024;
   static const String _manifestName = 'manifest.json';
 
@@ -130,7 +132,8 @@ class DataExportService {
     }
     final manifest = jsonDecode(utf8.decode(manifestBytes));
     if (manifest is! Map<String, dynamic> ||
-        manifest['version'] != archiveVersion) {
+        (manifest['version'] != archiveVersion &&
+            manifest['version'] != _legacyArchiveVersion)) {
       throw const FormatException('Unsupported Sophis backup version');
     }
 
@@ -228,6 +231,8 @@ class DataExportService {
         'recentFoodMeals': backup.recentFoodMeals,
         'userStats': backup.userStats.toJson(),
         'shoppingListChecked': backup.shoppingListChecked.toList()..sort(),
+        'mealTemplates':
+            backup.mealTemplates.map((template) => template.toJson()).toList(),
         'progressPhotos': photos,
       };
 
@@ -261,6 +266,11 @@ class DataExportService {
             (json['shoppingListChecked'] as List<dynamic>? ?? const [])
                 .cast<String>()
                 .toSet(),
+        mealTemplates: (json['mealTemplates'] as List<dynamic>? ?? const [])
+            .map(
+              (value) => MealTemplate.fromJson(value as Map<String, dynamic>),
+            )
+            .toList(),
         progressPhotos:
             _decodeList(json, 'progressPhotos', ProgressPhoto.fromJson),
       );

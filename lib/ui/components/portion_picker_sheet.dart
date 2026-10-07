@@ -8,16 +8,20 @@ import 'package:sophis/models/custom_portion.dart';
 import 'package:sophis/models/food_entry.dart';
 import 'package:sophis/models/food_item.dart';
 import 'package:sophis/models/nutrition_totals.dart';
+import 'package:sophis/models/nutrition_unit.dart';
+import 'package:sophis/models/portion_selection.dart';
 import 'package:sophis/models/serving_size.dart';
+import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/services/barcode_lookup_service.dart';
 import 'package:sophis/services/food_intake_controller.dart';
 import 'package:sophis/services/service_result.dart';
-import 'package:sophis/providers/nutrition_provider.dart';
-
-import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/components/edit_product_sheet.dart';
+import 'package:sophis/ui/theme/app_theme.dart';
 
-/// A modal bottom sheet for selecting portion sizes
+/// A fast, unit-aware bottom sheet for choosing the amount of a food.
+///
+/// The sheet deliberately has one logging affordance: the sticky Add button.
+/// Selecting a chip or pressing keyboard Done only changes the draft.
 class PortionPickerSheet extends StatefulWidget {
   final FoodItem item;
   final String meal;
@@ -41,91 +45,145 @@ class PortionPickerSheet extends StatefulWidget {
 }
 
 class _PortionPickerSheetState extends State<PortionPickerSheet> {
-  static const List<double> _portionMultipliers = <double>[
-    0.25,
-    0.5,
-    0.75,
-    1.0,
-    1.25,
-    1.5,
-    1.75,
-    2.0,
-    2.25,
-    2.5,
-    2.75,
-    3.0,
-    3.25,
-    3.5,
-    3.75,
-    4.0,
-  ];
-
-  double _selectedGrams = 100;
-  final _customController = TextEditingController(text: '100');
-  final _focusNode = FocusNode(); // For keyboard management
-  late final FixedExtentScrollController _portionWheelController;
+  late PortionSelection _selection;
+  late final TextEditingController _amountController;
+  final FocusNode _amountFocusNode = FocusNode();
   bool _isAdding = false;
+
+  NutritionUnit get _unit => widget.item.nutritionUnit;
 
   String get _productKey => CustomPortion.createProductKey(
         barcode: widget.item.barcode,
         name: widget.item.name,
       );
 
+  List<ServingSize> get _servingOptions => widget.item.servings
+      .where((serving) => serving.unit == _unit && serving.selection.isValid)
+      .take(12)
+      .toList();
+
   ServingSize? get _baseServing {
-    if (widget.item.servings.isEmpty) {
-      return null;
+    final options = _servingOptions;
+    if (options.isEmpty) return null;
+    for (final serving in options) {
+      if ((serving.multiplier - 1).abs() < 0.001) return serving;
     }
-
-    for (final serving in widget.item.servings) {
-      if ((serving.multiplier - 1.0).abs() < 0.001) {
-        return serving;
-      }
-    }
-
-    return widget.item.servings.first;
+    return options.first;
   }
 
   @override
   void initState() {
     super.initState();
-    _portionWheelController = FixedExtentScrollController(
-      initialItem: _portionMultipliers.indexOf(1.0),
+    _selection = _defaultSelection();
+    _amountController = TextEditingController(
+      text: _formatNumber(_selection.amount),
     );
+  }
 
-    // Select first serving by default if available
-    final defaultServing = _baseServing;
-    if (defaultServing != null) {
-      _selectedGrams = defaultServing.grams;
-      _customController.text = defaultServing.grams.toStringAsFixed(0);
+  PortionSelection _defaultSelection() {
+    final remembered = widget.item.lastUsedPortion;
+    if (remembered != null && remembered.unit == _unit && remembered.isValid) {
+      return remembered;
     }
+    return _baseServing?.selection ??
+        PortionSelection(amount: 100, unit: _unit);
   }
 
   @override
   void dispose() {
-    _customController.dispose();
-    _focusNode.dispose();
-    _portionWheelController.dispose();
+    _amountController.dispose();
+    _amountFocusNode.dispose();
     super.dispose();
   }
 
   void _dismissKeyboard() {
-    FocusScope.of(context).unfocus();
+    _amountFocusNode.unfocus();
+  }
+
+  void _selectPortion(PortionSelection selection) {
+    if (!selection.isValid || selection.unit != _unit) return;
+    _dismissKeyboard();
+    setState(() {
+      _selection = selection;
+      _amountController.text = _formatNumber(selection.amount);
+      _amountController.selection = TextSelection.collapsed(
+        offset: _amountController.text.length,
+      );
+    });
+  }
+
+  void _onExactAmountChanged(String value) {
+    final amount = _parseLocaleNumber(value);
+    setState(() {
+      _selection = PortionSelection(
+        amount: amount != null && amount > 0 ? amount : 0,
+        unit: _unit,
+      );
+    });
+  }
+
+  double? _parseLocaleNumber(String value) {
+    var normalized = value.replaceAll(RegExp(r'[\s\u00a0]'), '');
+    if (normalized.isEmpty) return null;
+
+    final commaIndex = normalized.lastIndexOf(',');
+    final dotIndex = normalized.lastIndexOf('.');
+    if (commaIndex >= 0 && dotIndex >= 0) {
+      final decimalIndex = commaIndex > dotIndex ? commaIndex : dotIndex;
+      final integerPart = normalized.substring(0, decimalIndex);
+      final decimalPart = normalized.substring(decimalIndex + 1);
+      normalized =
+          '${integerPart.replaceAll(RegExp(r'[.,]'), '')}.$decimalPart';
+    } else if (commaIndex >= 0) {
+      normalized = normalized.replaceAll(',', '.');
+    }
+    return double.tryParse(normalized);
+  }
+
+  NutritionTotals get _calculatedNutrients =>
+      widget.item.calculateForSelection(_selection);
+
+  String _formatNumber(double value) {
+    if (value == value.roundToDouble()) return value.toStringAsFixed(0);
+    return value.toStringAsFixed(2).replaceFirst(RegExp(r'0+$'), '');
+  }
+
+  String _formatLocalizedNumber(BuildContext context, double value) {
+    final locale = Localizations.localeOf(context).toString();
+    final decimalDigits = (value - value.roundToDouble()).abs() < 0.001
+        ? 0
+        : ((value * 10) - (value * 10).roundToDouble()).abs() < 0.001
+            ? 1
+            : 2;
+    return NumberFormat.decimalPatternDigits(
+      locale: locale,
+      decimalDigits: decimalDigits,
+    ).format(value);
+  }
+
+  String _selectionLabel(BuildContext context, PortionSelection selection) {
+    final amount = _formatLocalizedNumber(context, selection.amount);
+    final canonical = '$amount ${selection.unit.symbol}';
+    final label = selection.humanLabel;
+    if (label == null || label.trim().isEmpty) return canonical;
+    final quantity = selection.labelQuantity;
+    final quantityText =
+        quantity == null ? '' : '${_formatLocalizedNumber(context, quantity)} ';
+    return '$quantityText$label ($canonical)';
   }
 
   Future<void> _addAndClose() async {
-    if (_isAdding) return;
-
+    if (_isAdding || !_selection.isValid) return;
     _dismissKeyboard();
     setState(() => _isAdding = true);
 
     final result = await context.read<FoodIntakeController>().logFoodItem(
           item: widget.item,
-          grams: _selectedGrams,
+          selection: _selection,
           meal: widget.meal,
         );
 
     if (!mounted) return;
-
     switch (result) {
       case Success<FoodEntry>(value: final entry):
         Navigator.pop(context);
@@ -138,87 +196,205 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
     }
   }
 
-  NutritionTotals get _calculatedNutrients =>
-      widget.item.calculateFor(_selectedGrams);
-
-  void _onPortionMultiplierSelected(double multiplier) {
-    final baseServing = _baseServing;
-    if (baseServing == null) {
-      return;
-    }
-
-    setState(() {
-      _selectedGrams = baseServing.grams * multiplier;
-      _customController.text = _selectedGrams.toStringAsFixed(0);
-    });
-  }
-
-  void _onCustomAmountChanged(String value) {
-    final grams = double.tryParse(value);
-    if (grams != null && grams > 0) {
-      setState(() {
-        _selectedGrams = grams;
-      });
-      _syncWheelToGrams(grams);
-    }
-  }
-
-  void _syncWheelToGrams(double grams) {
-    final baseServing = _baseServing;
-    if (baseServing == null || !_portionWheelController.hasClients) {
-      return;
-    }
-
-    final multiplier = grams / baseServing.grams;
-    final index = _portionMultipliers.indexWhere(
-      (option) => (option - multiplier).abs() < 0.001,
-    );
-    if (index != -1) {
-      _portionWheelController.jumpToItem(index);
-    }
-  }
-
   void _showSavePresetDialog() {
     final l10n = AppLocalizations.of(context)!;
     final nameController = TextEditingController();
-
-    showDialog(
+    showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: Text(l10n.saveAsPreset),
         content: TextField(
           controller: nameController,
+          autofocus: true,
           decoration: InputDecoration(
             labelText: l10n.portionName,
             hintText: l10n.portionNameHint,
           ),
-          autofocus: true,
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: () => Navigator.pop(dialogContext),
             child: Text(l10n.cancel),
           ),
-          ElevatedButton(
-            onPressed: () {
-              if (nameController.text.trim().isNotEmpty) {
-                final portion = CustomPortion(
-                  id: const Uuid().v4(),
-                  productKey: _productKey,
-                  name: nameController.text.trim(),
-                  grams: _selectedGrams,
-                  createdAt: DateTime.now(),
-                );
-                context.read<NutritionProvider>().addCustomPortion(portion);
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(l10n.portionSaved)),
-                );
-              }
+          FilledButton(
+            onPressed: () async {
+              final name = nameController.text.trim();
+              if (name.isEmpty) return;
+              final portion = CustomPortion(
+                id: const Uuid().v4(),
+                productKey: _productKey,
+                name: name,
+                grams: _selection.amount,
+                unit: _selection.unit,
+                label: _selection.humanLabel,
+                quantity: _selection.labelQuantity,
+                createdAt: DateTime.now(),
+              );
+              await context.read<NutritionProvider>().addCustomPortion(portion);
+              if (!mounted || !dialogContext.mounted) return;
+              Navigator.pop(dialogContext);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(l10n.portionSaved)),
+              );
             },
             child: Text(l10n.save),
           ),
         ],
+      ),
+    );
+  }
+
+  void _openEditSheet() {
+    final lookupService = widget.lookupService;
+    final barcode = widget.barcode;
+    if (lookupService == null || barcode == null) return;
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => EditProductSheet(
+        barcode: barcode,
+        existingProduct: widget.item,
+        showSubmitToOff: true,
+        onSave: (product) async {
+          await lookupService.saveUserCorrection(barcode, product);
+          widget.onProductUpdated?.call(product);
+        },
+        onReset: () async {
+          Navigator.pop(context);
+          final result = await lookupService.resetCorrection(barcode);
+          if (result case Success<BarcodeLookupData>(value: final data)) {
+            final product = data.item;
+            if (product != null) widget.onProductUpdated?.call(product);
+          }
+        },
+      ),
+    );
+  }
+
+  Future<void> _renamePortion(
+    BuildContext sheetContext,
+    CustomPortion portion,
+    void Function(void Function()) updateSheet,
+  ) async {
+    final controller = TextEditingController(text: portion.name);
+    final name = await showDialog<String>(
+      context: sheetContext,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(AppLocalizations.of(context)!.edit),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          textInputAction: TextInputAction.done,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(AppLocalizations.of(context)!.cancel),
+          ),
+          FilledButton(
+            onPressed: () =>
+                Navigator.pop(dialogContext, controller.text.trim()),
+            child: Text(AppLocalizations.of(context)!.save),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (name == null || name.isEmpty || name == portion.name) return;
+    if (!mounted) return;
+
+    final provider = context.read<NutritionProvider>();
+    await provider.removeCustomPortion(portion.id);
+    await provider.addCustomPortion(
+      CustomPortion(
+        id: portion.id,
+        productKey: portion.productKey,
+        name: name,
+        grams: portion.grams,
+        unit: portion.unit,
+        label: portion.label,
+        quantity: portion.quantity,
+        createdAt: portion.createdAt,
+      ),
+    );
+    updateSheet(() {});
+  }
+
+  void _showEditPortionsSheet(List<CustomPortion> portions) {
+    final l10n = AppLocalizations.of(context)!;
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, updateSheet) {
+          final current = context
+              .watch<NutritionProvider>()
+              .getCustomPortionsForProduct(_productKey)
+              .where((portion) => portion.unit == _unit)
+              .toList();
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.editPortions,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 12),
+                  if (current.isEmpty)
+                    Text(l10n.customAmount)
+                  else
+                    ...current.map(
+                      (portion) => ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(portion.name),
+                        subtitle:
+                            Text(_selectionLabel(context, portion.selection)),
+                        leading: const Icon(Icons.bookmark_outline),
+                        trailing: Wrap(
+                          spacing: 0,
+                          children: [
+                            IconButton(
+                              tooltip: l10n.edit,
+                              onPressed: () => _renamePortion(
+                                sheetContext,
+                                portion,
+                                updateSheet,
+                              ),
+                              icon: const Icon(Icons.edit_outlined),
+                            ),
+                            IconButton(
+                              tooltip: l10n.delete,
+                              onPressed: () async {
+                                await context
+                                    .read<NutritionProvider>()
+                                    .removeCustomPortion(portion.id);
+                                updateSheet(() {});
+                              },
+                              icon: const Icon(Icons.delete_outline),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(sheetContext),
+                      child: Text(l10n.cancel),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -229,19 +405,17 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
     final l10n = AppLocalizations.of(context)!;
     final customPortions = context
         .watch<NutritionProvider>()
-        .getCustomPortionsForProduct(_productKey);
+        .getCustomPortionsForProduct(_productKey)
+        .where((portion) => portion.unit == _unit)
+        .toList();
     final nutrients = _calculatedNutrients;
-
-    // Track keyboard height to adjust layout on iOS
     final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
-    final isKeyboardVisible = keyboardHeight > 0;
 
     return GestureDetector(
-      // Dismiss keyboard when tapping outside TextField
       onTap: _dismissKeyboard,
       child: DraggableScrollableSheet(
-        initialChildSize: 0.65,
-        minChildSize: 0.4,
+        initialChildSize: 0.7,
+        minChildSize: 0.45,
         maxChildSize: 0.95,
         expand: false,
         builder: (context, scrollController) => Container(
@@ -251,107 +425,85 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
           ),
           child: Column(
             children: [
-              // Drag handle
-              _DragHandle(),
-
-              // Product header
+              const _DragHandle(),
               _ProductHeader(
                 item: widget.item,
-                grams: _selectedGrams,
+                selection: _selection,
                 nutrients: nutrients,
                 onEdit: widget.barcode != null && widget.lookupService != null
-                    ? () => _openEditSheet()
+                    ? _openEditSheet
                     : null,
               ),
-
               Expanded(
-                child: NotificationListener<ScrollNotification>(
-                  // Only dismiss keyboard on user-initiated drag scrolls
-                  // (not on programmatic scrolls caused by layout changes)
-                  onNotification: (notification) {
-                    if (notification is ScrollStartNotification &&
-                        notification.dragDetails != null) {
-                      _dismissKeyboard();
-                    }
-                    return false;
-                  },
-                  child: ListView(
-                    controller: scrollController,
-                    padding: const EdgeInsets.all(AppTheme.spaceLG),
-                    keyboardDismissBehavior:
-                        ScrollViewKeyboardDismissBehavior.onDrag,
-                    children: [
-                      // Preset portions from API
-                      if (_baseServing != null) ...[
-                        _SectionTitle(title: l10n.portion),
-                        const SizedBox(height: AppTheme.spaceSM2),
-                        _PortionGrid(
-                          controller: _portionWheelController,
-                          multipliers: _portionMultipliers,
-                          baseGrams: _baseServing!.grams,
-                          selectedGrams: _selectedGrams,
-                          onChanged: (multiplier) {
-                            _dismissKeyboard();
-                            _onPortionMultiplierSelected(multiplier);
-                          },
-                        ),
-                        const SizedBox(height: 24),
-                      ],
-
-                      // Custom portions (user-defined)
-                      if (customPortions.isNotEmpty) ...[
-                        _SectionTitle(
-                          title: l10n.myPortions,
-                          trailing: TextButton(
-                            onPressed: () =>
-                                _showEditPortionsSheet(customPortions),
-                            child: Text(l10n.edit),
-                          ),
-                        ),
-                        const SizedBox(height: AppTheme.spaceSM2),
-                        _CustomPortionChips(
-                          portions: customPortions,
-                          selectedGrams: _selectedGrams,
-                          onSelect: (portion) {
-                            _dismissKeyboard();
-                            setState(() {
-                              _selectedGrams = portion.grams;
-                              _customController.text =
-                                  portion.grams.toStringAsFixed(0);
-                            });
-                            _syncWheelToGrams(portion.grams);
-                          },
-                        ),
-                        const SizedBox(height: 24),
-                      ],
-
-                      // Custom amount input
-                      _SectionTitle(title: l10n.customAmount),
-                      const SizedBox(height: AppTheme.spaceSM2),
-                      _CustomAmountInput(
-                        controller: _customController,
-                        focusNode: _focusNode,
-                        onChanged: _onCustomAmountChanged,
-                        onSubmitted: (_) =>
-                            _addAndClose(), // Add directly when pressing Done
-                        onSavePreset: _showSavePresetDialog,
-                      ),
-
-                      // Extra padding when keyboard is visible to allow scrolling
-                      if (isKeyboardVisible)
-                        SizedBox(height: keyboardHeight * 0.5),
-                    ],
+                child: ListView(
+                  controller: scrollController,
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: const EdgeInsets.fromLTRB(
+                    AppTheme.spaceLG,
+                    AppTheme.spaceLG,
+                    AppTheme.spaceLG,
+                    24,
                   ),
+                  children: [
+                    if (_servingOptions.isNotEmpty) ...[
+                      _SectionTitle(title: l10n.portion),
+                      const SizedBox(height: AppTheme.spaceSM2),
+                      _ServingChips(
+                        servings: _servingOptions,
+                        selected: _selection,
+                        onSelect: (serving) =>
+                            _selectPortion(serving.selection),
+                      ),
+                      const SizedBox(height: AppTheme.spaceLG),
+                    ],
+                    if (customPortions.isNotEmpty) ...[
+                      _SectionTitle(
+                        title: l10n.myPortions,
+                        trailing: TextButton(
+                          onPressed: () =>
+                              _showEditPortionsSheet(customPortions),
+                          child: Text(l10n.edit),
+                        ),
+                      ),
+                      const SizedBox(height: AppTheme.spaceSM2),
+                      _SavedPortionChips(
+                        portions: customPortions,
+                        selected: _selection,
+                        onSelect: (portion) =>
+                            _selectPortion(portion.selection),
+                      ),
+                      const SizedBox(height: AppTheme.spaceLG),
+                    ],
+                    _SectionTitle(title: l10n.customAmount),
+                    const SizedBox(height: AppTheme.spaceSM2),
+                    _ExactAmountInput(
+                      controller: _amountController,
+                      focusNode: _amountFocusNode,
+                      unit: _unit,
+                      onChanged: _onExactAmountChanged,
+                      onSubmitted: (_) => _dismissKeyboard(),
+                      onSavePreset: _showSavePresetDialog,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      l10n.portionPickerKeyboardHint,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    if (keyboardHeight > 0)
+                      SizedBox(height: keyboardHeight * 0.55),
+                  ],
                 ),
               ),
-
-              // Bottom action bar - with keyboard-aware padding
               _AddButton(
-                grams: _selectedGrams,
+                selection: _selection,
                 calories: nutrients.calories,
                 keyboardHeight: keyboardHeight,
                 isAdding: _isAdding,
-                onAdd: _addAndClose,
+                onAdd: _selection.isValid ? _addAndClose : null,
               ),
             ],
           ),
@@ -359,76 +511,11 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
       ),
     );
   }
-
-  void _openEditSheet() {
-    final lookupService = widget.lookupService;
-    final barcode = widget.barcode!;
-    if (lookupService == null) return;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => EditProductSheet(
-        barcode: barcode,
-        existingProduct: widget.item,
-        showSubmitToOff: true,
-        onSave: (product) async {
-          await lookupService.saveUserCorrection(barcode, product);
-          if (widget.onProductUpdated != null) {
-            widget.onProductUpdated!(product);
-          }
-        },
-        onReset: () async {
-          Navigator.pop(context);
-          final resetResult = await lookupService.resetCorrection(barcode);
-          if (resetResult case Success<BarcodeLookupData>(value: final data)) {
-            if (data.item != null && widget.onProductUpdated != null) {
-              widget.onProductUpdated!(data.item!);
-            }
-          }
-        },
-      ),
-    );
-  }
-
-  void _showEditPortionsSheet(List<CustomPortion> portions) {
-    final l10n = AppLocalizations.of(context)!;
-
-    showModalBottomSheet(
-      context: context,
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              l10n.editPortions,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 16),
-            ...portions.map(
-              (p) => ListTile(
-                title: Text(p.name),
-                subtitle: Text('${p.grams.toStringAsFixed(0)}g'),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  onPressed: () {
-                    context.read<NutritionProvider>().removeCustomPortion(p.id);
-                    Navigator.pop(ctx);
-                  },
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 class _DragHandle extends StatelessWidget {
+  const _DragHandle();
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -445,13 +532,13 @@ class _DragHandle extends StatelessWidget {
 
 class _ProductHeader extends StatelessWidget {
   final FoodItem item;
-  final double grams;
+  final PortionSelection selection;
   final NutritionTotals nutrients;
   final VoidCallback? onEdit;
 
   const _ProductHeader({
     required this.item,
-    required this.grams,
+    required this.selection,
     required this.nutrients,
     this.onEdit,
   });
@@ -459,8 +546,14 @@ class _ProductHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final l10n = AppLocalizations.of(context)!;
     final isDark = theme.brightness == Brightness.dark;
+    final amount = selection.amount == selection.amount.roundToDouble()
+        ? selection.amount.toStringAsFixed(0)
+        : selection.amount.toStringAsFixed(2);
+    final label = selection.humanLabel;
+    final portionText = label == null || label.isEmpty
+        ? '$amount ${selection.unit.symbol}'
+        : '${selection.labelQuantity == null ? '' : '${selection.labelQuantity} '}$label ($amount ${selection.unit.symbol})';
 
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -469,14 +562,11 @@ class _ProductHeader extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(
-            color: theme.dividerColor.withValues(alpha: 0.5),
-          ),
+          bottom: BorderSide(color: theme.dividerColor.withValues(alpha: 0.5)),
         ),
       ),
       child: Row(
         children: [
-          // Product image
           Container(
             width: 56,
             height: 56,
@@ -493,13 +583,11 @@ class _ProductHeader extends StatelessWidget {
                     fit: BoxFit.cover,
                     cacheWidth: 112,
                     cacheHeight: 112,
-                    errorBuilder: (_, __, ___) => _placeholderIcon(theme),
+                    errorBuilder: (_, __, ___) => _placeholder(theme),
                   )
-                : _placeholderIcon(theme),
+                : _placeholder(theme),
           ),
           const SizedBox(width: 12),
-
-          // Product info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -513,18 +601,18 @@ class _ProductHeader extends StatelessWidget {
                   ),
                 Text(
                   item.name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${grams.toStringAsFixed(0)}g = ${nutrients.calories.toStringAsFixed(0)} kcal',
+                  '$portionText · ${nutrients.calories.toStringAsFixed(0)} kcal',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
@@ -532,28 +620,26 @@ class _ProductHeader extends StatelessWidget {
           ),
           if (onEdit != null)
             IconButton(
+              onPressed: onEdit,
+              tooltip: AppLocalizations.of(context)!.edit,
               icon: Icon(
                 Icons.edit_outlined,
                 size: 20,
                 color: theme.colorScheme.onSurfaceVariant,
               ),
-              onPressed: onEdit,
-              tooltip: l10n.edit,
             ),
         ],
       ),
     );
   }
 
-  Widget _placeholderIcon(ThemeData theme) {
-    return Center(
-      child: Icon(
-        Icons.restaurant_outlined,
-        color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-        size: 24,
-      ),
-    );
-  }
+  Widget _placeholder(ThemeData theme) => Center(
+        child: Icon(
+          Icons.restaurant_outlined,
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+          size: 24,
+        ),
+      );
 }
 
 class _SectionTitle extends StatelessWidget {
@@ -579,245 +665,153 @@ class _SectionTitle extends StatelessWidget {
   }
 }
 
-class _PortionGrid extends StatelessWidget {
-  final FixedExtentScrollController controller;
-  final List<double> multipliers;
-  final double baseGrams;
-  final double selectedGrams;
-  final ValueChanged<double> onChanged;
+class _ServingChips extends StatelessWidget {
+  final List<ServingSize> servings;
+  final PortionSelection selected;
+  final ValueChanged<ServingSize> onSelect;
 
-  const _PortionGrid({
-    required this.controller,
-    required this.multipliers,
-    required this.baseGrams,
-    required this.selectedGrams,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final l10n = AppLocalizations.of(context)!;
-    final currentPortions = selectedGrams / baseGrams;
-
-    return Column(
-      children: [
-        Container(
-          height: 188,
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest.withValues(
-              alpha: 0.35,
-            ),
-            borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-            border: Border.all(
-              color: theme.colorScheme.outline.withValues(alpha: 0.15),
-            ),
-          ),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              IgnorePointer(
-                child: Container(
-                  height: 60,
-                  margin: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                    border: Border.all(
-                      color: theme.colorScheme.primary.withValues(alpha: 0.18),
-                    ),
-                  ),
-                ),
-              ),
-              ListWheelScrollView.useDelegate(
-                controller: controller,
-                itemExtent: 60,
-                perspective: 0.003,
-                diameterRatio: 1.6,
-                physics: const FixedExtentScrollPhysics(),
-                useMagnifier: true,
-                magnification: 1.06,
-                overAndUnderCenterOpacity: 0.55,
-                onSelectedItemChanged: (index) => onChanged(multipliers[index]),
-                childDelegate: ListWheelChildBuilderDelegate(
-                  childCount: multipliers.length,
-                  builder: (context, index) {
-                    final multiplier = multipliers[index];
-                    final grams = baseGrams * multiplier;
-
-                    return Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          '${_formatPortionValue(context, multiplier)} ${l10n.portion}',
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${grams.toStringAsFixed(0)}g',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          '${_formatPortionValue(context, currentPortions)} ${l10n.portion} • ${selectedGrams.toStringAsFixed(0)}g',
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.primary,
-            fontWeight: FontWeight.w600,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          '1 ${l10n.portion} = ${baseGrams.toStringAsFixed(0)}g',
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
-  }
-
-  String _formatPortionValue(BuildContext context, double value) {
-    final locale = Localizations.localeOf(context).toString();
-    final decimalDigits = (value - value.roundToDouble()).abs() < 0.001
-        ? 0
-        : ((value * 10) - (value * 10).roundToDouble()).abs() < 0.001
-            ? 1
-            : 2;
-
-    return NumberFormat.decimalPatternDigits(
-      locale: locale,
-      decimalDigits: decimalDigits,
-    ).format(value);
-  }
-}
-
-class _CustomPortionChips extends StatelessWidget {
-  final List<CustomPortion> portions;
-  final double selectedGrams;
-  final Function(CustomPortion) onSelect;
-
-  const _CustomPortionChips({
-    required this.portions,
-    required this.selectedGrams,
+  const _ServingChips({
+    required this.servings,
+    required this.selected,
     required this.onSelect,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
     return Wrap(
       spacing: AppTheme.spaceSM,
       runSpacing: AppTheme.spaceSM,
-      children: portions.map((p) {
-        final isSelected = (selectedGrams - p.grams).abs() < 0.1;
-
-        return Material(
-          color: isSelected
-              ? theme.colorScheme.secondary
-                  .withValues(alpha: isDark ? 0.25 : 0.12)
-              : theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-          child: InkWell(
-            onTap: () => onSelect(p),
-            borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppTheme.spaceMD,
-                vertical: AppTheme.spaceSM,
-              ),
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: isSelected
-                      ? theme.colorScheme.secondary
-                      : theme.colorScheme.outline.withValues(alpha: 0.2),
-                  width: isSelected ? 2 : 1,
-                ),
-                borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Custom portion icon
-                  Icon(
-                    Icons.bookmark_rounded,
-                    size: 16,
-                    color: isSelected
-                        ? theme.colorScheme.secondary
-                        : theme.colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 6),
-                  // Portion name
-                  Text(
-                    p.name,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight:
-                          isSelected ? FontWeight.w600 : FontWeight.w500,
-                      color: isSelected
-                          ? theme.colorScheme.secondary
-                          : theme.colorScheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  // Grams badge
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? theme.colorScheme.secondary.withValues(alpha: 0.2)
-                          : theme.colorScheme.onSurface.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(AppTheme.radiusXS),
-                    ),
-                    child: Text(
-                      '${p.grams.toStringAsFixed(0)}g',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: isSelected
-                            ? theme.colorScheme.secondary
-                            : theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+      children: servings
+          .map(
+            (serving) => _ServingChip(
+              label: serving.name,
+              detail: _canonicalText(context, serving.selection),
+              selected: _sameSelection(selected, serving.selection),
+              onTap: () => onSelect(serving),
             ),
-          ),
-        );
-      }).toList(),
+          )
+          .toList(),
     );
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// CUSTOM AMOUNT INPUT - Better layout with inline save button
-// ─────────────────────────────────────────────────────────────────────────────
+class _SavedPortionChips extends StatelessWidget {
+  final List<CustomPortion> portions;
+  final PortionSelection selected;
+  final ValueChanged<CustomPortion> onSelect;
 
-class _CustomAmountInput extends StatelessWidget {
+  const _SavedPortionChips({
+    required this.portions,
+    required this.selected,
+    required this.onSelect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: AppTheme.spaceSM,
+      runSpacing: AppTheme.spaceSM,
+      children: portions
+          .map(
+            (portion) => _ServingChip(
+              label: portion.name,
+              detail: _canonicalText(context, portion.selection),
+              selected: _sameSelection(selected, portion.selection),
+              saved: true,
+              onTap: () => onSelect(portion),
+            ),
+          )
+          .toList(),
+    );
+  }
+}
+
+class _ServingChip extends StatelessWidget {
+  final String label;
+  final String detail;
+  final bool selected;
+  final bool saved;
+  final VoidCallback onTap;
+
+  const _ServingChip({
+    required this.label,
+    required this.detail,
+    required this.selected,
+    this.saved = false,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color =
+        saved ? theme.colorScheme.secondary : theme.colorScheme.primary;
+    return Material(
+      color: selected
+          ? color.withValues(alpha: 0.14)
+          : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.65),
+      borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+        onTap: onTap,
+        child: Container(
+          constraints: const BoxConstraints(minWidth: 88),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: selected
+                  ? color
+                  : theme.colorScheme.outline.withValues(alpha: 0.18),
+              width: selected ? 1.5 : 1,
+            ),
+            borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (saved) ...[
+                    Icon(Icons.bookmark_outline, size: 14, color: color),
+                    const SizedBox(width: 4),
+                  ],
+                  Text(
+                    label,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                      color: selected ? color : theme.colorScheme.onSurface,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 2),
+              Text(
+                detail,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ExactAmountInput extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
+  final NutritionUnit unit;
   final ValueChanged<String> onChanged;
   final ValueChanged<String> onSubmitted;
   final VoidCallback onSavePreset;
 
-  const _CustomAmountInput({
+  const _ExactAmountInput({
     required this.controller,
     required this.focusNode,
+    required this.unit,
     required this.onChanged,
     required this.onSubmitted,
     required this.onSavePreset,
@@ -827,96 +821,60 @@ class _CustomAmountInput extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Row(
       children: [
-        Row(
-          children: [
-            // Gram input - larger and more prominent
-            Expanded(
-              flex: 2,
-              child: TextField(
-                controller: controller,
-                focusNode: focusNode,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                textInputAction: TextInputAction.done,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-                textAlign: TextAlign.center,
-                decoration: InputDecoration(
-                  suffixText: 'g',
-                  suffixStyle: theme.textTheme.titleMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: AppTheme.spaceMD,
-                    vertical: AppTheme.spaceMD,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                    borderSide: BorderSide(
-                      color: theme.colorScheme.outline.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                    borderSide: BorderSide(
-                      color: theme.colorScheme.primary,
-                      width: 2,
-                    ),
-                  ),
-                ),
-                onChanged: onChanged,
-                onSubmitted: onSubmitted,
+        Expanded(
+          child: TextField(
+            controller: controller,
+            focusNode: focusNode,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            textInputAction: TextInputAction.done,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+            decoration: InputDecoration(
+              suffixText: unit.symbol,
+              suffixStyle: theme.textTheme.titleMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: AppTheme.spaceMD,
+                vertical: AppTheme.spaceMD,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppTheme.radiusMD),
               ),
             ),
-            const SizedBox(width: 12),
-            // Save preset button - icon only for cleaner look
-            IconButton.filled(
-              onPressed: onSavePreset,
-              icon: const Icon(Icons.bookmark_add_outlined),
-              tooltip: l10n.saveAsPreset,
-              style: IconButton.styleFrom(
-                backgroundColor: theme.colorScheme.primaryContainer,
-                foregroundColor: theme.colorScheme.onPrimaryContainer,
-                padding: const EdgeInsets.all(AppTheme.spaceMD),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        // Hint text explaining keyboard behavior
-        Text(
-          l10n.pressEnterToAdd,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
+            onChanged: onChanged,
+            onSubmitted: onSubmitted,
           ),
-          textAlign: TextAlign.center,
+        ),
+        const SizedBox(width: 12),
+        IconButton.filled(
+          onPressed: onSavePreset,
+          tooltip: l10n.saveAsPreset,
+          icon: const Icon(Icons.bookmark_add_outlined),
+          style: IconButton.styleFrom(
+            backgroundColor: theme.colorScheme.primaryContainer,
+            foregroundColor: theme.colorScheme.onPrimaryContainer,
+            padding: const EdgeInsets.all(AppTheme.spaceMD),
+          ),
         ),
       ],
     );
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ADD BUTTON - Keyboard-aware with proper padding
-// ─────────────────────────────────────────────────────────────────────────────
-
 class _AddButton extends StatelessWidget {
-  final double grams;
+  final PortionSelection selection;
   final double calories;
   final double keyboardHeight;
   final bool isAdding;
-  final VoidCallback onAdd;
+  final VoidCallback? onAdd;
 
   const _AddButton({
-    required this.grams,
+    required this.selection,
     required this.calories,
     required this.keyboardHeight,
     required this.isAdding,
@@ -927,34 +885,33 @@ class _AddButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
-
+    final amount = _formatNumber(selection.amount);
+    final label = selection.humanLabel;
+    final portion = label == null || label.isEmpty
+        ? '$amount ${selection.unit.symbol}'
+        : '${selection.labelQuantity == null ? '' : '${_formatNumber(selection.labelQuantity!)} '}$label · $amount ${selection.unit.symbol}';
     return AnimatedContainer(
       duration: AppTheme.animFaster,
-      curve: Curves.easeOutCubic,
       padding: EdgeInsets.fromLTRB(
         16,
         12,
         16,
-        // Add extra padding when keyboard is visible
         keyboardHeight > 0 ? keyboardHeight + 12 : 16,
       ),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         border: Border(
-          top: BorderSide(
-            color: theme.dividerColor.withValues(alpha: 0.3),
-          ),
+          top: BorderSide(color: theme.dividerColor.withValues(alpha: 0.3)),
         ),
       ),
       child: SafeArea(
         top: false,
-        // Disable bottom safe area when keyboard is visible (we handle it manually)
         bottom: keyboardHeight == 0,
         child: SizedBox(
           width: double.infinity,
-          child: ElevatedButton(
+          child: FilledButton(
             onPressed: isAdding ? null : onAdd,
-            style: ElevatedButton.styleFrom(
+            style: FilledButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppTheme.radiusMD),
@@ -967,8 +924,8 @@ class _AddButton extends StatelessWidget {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : Text(
-                    l10n.addWithAmount(
-                      grams.toStringAsFixed(0),
+                    l10n.addPortionWithAmount(
+                      portion,
                       calories.toStringAsFixed(0),
                     ),
                     style: theme.textTheme.labelLarge,
@@ -978,4 +935,25 @@ class _AddButton extends StatelessWidget {
       ),
     );
   }
+
+  String _formatNumber(double value) {
+    if (value == value.roundToDouble()) return value.toStringAsFixed(0);
+    return value.toStringAsFixed(2).replaceFirst(RegExp(r'0+$'), '');
+  }
+}
+
+String _canonicalText(BuildContext context, PortionSelection selection) {
+  final locale = Localizations.localeOf(context).toString();
+  final amount = NumberFormat.decimalPatternDigits(
+    locale: locale,
+    decimalDigits: selection.amount == selection.amount.roundToDouble() ? 0 : 2,
+  ).format(selection.amount);
+  return '$amount ${selection.unit.symbol}';
+}
+
+bool _sameSelection(PortionSelection first, PortionSelection second) {
+  return first.unit == second.unit &&
+      (first.amount - second.amount).abs() < 0.001 &&
+      first.humanLabel == second.humanLabel &&
+      first.labelQuantity == second.labelQuantity;
 }

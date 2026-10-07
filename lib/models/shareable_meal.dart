@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:uuid/uuid.dart';
 
 import 'package:sophis/models/food_entry.dart';
+import 'package:sophis/models/nutrition_unit.dart';
 import 'package:sophis/services/gemini/models/models.dart';
 
 /// A food item that can be shared between users
@@ -14,6 +15,9 @@ class SharedFoodItem {
   final double fat;
   final double fiber;
   final double? portionGrams;
+  final NutritionUnit? portionUnit;
+  final String? portionLabel;
+  final double? portionQuantity;
 
   const SharedFoodItem({
     required this.name,
@@ -23,6 +27,9 @@ class SharedFoodItem {
     required this.fat,
     this.fiber = 0,
     this.portionGrams,
+    this.portionUnit,
+    this.portionLabel,
+    this.portionQuantity,
   });
 
   /// Compact JSON for URL encoding
@@ -34,6 +41,9 @@ class SharedFoodItem {
         'f': fat,
         'fi': fiber,
         if (portionGrams != null) 'g': portionGrams,
+        if (portionUnit != null) 'u': portionUnit!.storageValue,
+        if (portionLabel != null) 'l': portionLabel,
+        if (portionQuantity != null) 'q': portionQuantity,
       };
 
   factory SharedFoodItem.fromJson(Map<String, dynamic> json) => SharedFoodItem(
@@ -44,6 +54,11 @@ class SharedFoodItem {
         fat: (json['f'] as num).toDouble(),
         fiber: (json['fi'] as num?)?.toDouble() ?? 0,
         portionGrams: json['g'] != null ? (json['g'] as num).toDouble() : null,
+        portionUnit: json['u'] == null
+            ? (json['g'] == null ? null : NutritionUnit.gram)
+            : NutritionUnitX.fromStorage(json['u'] as String),
+        portionLabel: json['l'] as String?,
+        portionQuantity: (json['q'] as num?)?.toDouble(),
       );
 
   /// Create from a FoodEntry
@@ -54,6 +69,10 @@ class SharedFoodItem {
         carbs: entry.carbs,
         fat: entry.fat,
         fiber: entry.fiber,
+        portionGrams: entry.portionAmount,
+        portionUnit: entry.portionUnit,
+        portionLabel: entry.portionLabel,
+        portionQuantity: entry.portionQuantity,
       );
 
   /// Create from a FoodAnalysis (AI result)
@@ -69,6 +88,7 @@ class SharedFoodItem {
         fat: analysis.fat,
         fiber: analysis.fiber,
         portionGrams: analysis.portionGrams,
+        portionUnit: NutritionUnit.gram,
       );
 
   /// Convert to a FoodEntry for logging
@@ -82,6 +102,10 @@ class SharedFoodItem {
         fiber: fiber,
         timestamp: DateTime.now(),
         meal: meal,
+        portionAmount: portionGrams,
+        portionUnit: portionUnit,
+        portionLabel: portionLabel,
+        portionQuantity: portionQuantity,
       );
 }
 

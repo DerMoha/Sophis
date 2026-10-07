@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:sophis/models/custom_portion.dart';
 import 'package:sophis/models/food_item.dart';
 import 'package:sophis/models/meal_plan.dart';
+import 'package:sophis/models/meal_template.dart';
+import 'package:sophis/models/nutrition_unit.dart';
 import 'package:sophis/models/nutrition_goals.dart';
 import 'package:sophis/models/recipe.dart';
 import 'package:sophis/models/serving_size.dart';
@@ -30,6 +32,7 @@ class NutritionPersistence {
   static const _recentFoodsKey = 'recent_foods';
   static const _userStatsKey = 'user_stats';
   static const _shoppingListKey = 'shopping_list_checked';
+  static const _mealTemplatesKey = 'meal_templates';
   static const _goalsDocumentKey = 'account_goals';
   static const _profileDocumentKey = 'account_profile';
 
@@ -106,6 +109,8 @@ class NutritionPersistence {
     final portionRows = await _database.getAllCustomPortions();
     final statsRow = await _database.getUserStats();
     final checkedRows = await _database.getPlannedMealsChecked();
+    final mealTemplates =
+        await _readList(_mealTemplatesKey, MealTemplate.fromJson);
 
     return NutritionPersistentState(
       recipes: recipeRows.map(_recipeFromRow).toList(),
@@ -118,6 +123,7 @@ class NutritionPersistence {
       userStats:
           statsRow == null ? const UserStats() : _userStatsFromRow(statsRow),
       shoppingListChecked: checkedRows.toSet(),
+      mealTemplates: mealTemplates,
     );
   }
 
@@ -335,6 +341,24 @@ class NutritionPersistence {
         _userStatsToRow(stats),
       );
 
+  Future<void> saveMealTemplates(
+    List<MealTemplate> templates, {
+    bool transactional = true,
+  }) async {
+    Future<void> write() async {
+      await _database.writeNutritionDocument(
+        _mealTemplatesKey,
+        jsonEncode(templates.map((template) => template.toJson()).toList()),
+      );
+    }
+
+    if (transactional) {
+      await _database.transaction(write);
+    } else {
+      await write();
+    }
+  }
+
   Future<NutritionGoals?> loadGoals() async {
     final document = await _database.readNutritionDocument(_goalsDocumentKey);
     if (document != null) {
@@ -444,6 +468,7 @@ class NutritionPersistence {
       shoppingListChecked: (await _readRawList(_shoppingListKey))
           .map((value) => value as String)
           .toSet(),
+      mealTemplates: await _readList(_mealTemplatesKey, MealTemplate.fromJson),
     );
   }
 
@@ -461,7 +486,8 @@ class NutritionPersistence {
     final stats = await _database.getUserStats();
     if (stats != null) return true;
     final checked = await _database.getPlannedMealsChecked();
-    return checked.isNotEmpty;
+    if (checked.isNotEmpty) return true;
+    return await _hasDocument(_mealTemplatesKey);
   }
 
   Future<void> _writeCanonicalRows(
@@ -493,6 +519,7 @@ class NutritionPersistence {
       state.shoppingListChecked.toList()..sort(),
       transactional: false,
     );
+    await saveMealTemplates(state.mealTemplates, transactional: false);
   }
 
   Future<void> _reconcileLegacyState() async {
@@ -509,6 +536,7 @@ class NutritionPersistence {
       _recentFoodsKey,
       _userStatsKey,
       _shoppingListKey,
+      _mealTemplatesKey,
     ]) {
       documentPresence[key] = await _hasDocument(key);
     }
@@ -565,6 +593,9 @@ class NutritionPersistence {
         sqlite.shoppingListChecked,
         documentPresent: documentPresence[_shoppingListKey] ?? false,
       ),
+      mealTemplates: documentPresence[_mealTemplatesKey] == true
+          ? current.mealTemplates
+          : const [],
     );
 
     final documents = _encodeState(state);
@@ -663,6 +694,9 @@ class NutritionPersistence {
         _userStatsKey: jsonEncode(state.userStats.toJson()),
         _shoppingListKey:
             jsonEncode(state.shoppingListChecked.toList()..sort()),
+        _mealTemplatesKey: jsonEncode(
+          state.mealTemplates.map((value) => value.toJson()).toList(),
+        ),
       };
 
   RecipeRow _recipeToRow(Recipe recipe) => RecipeRow(
@@ -700,6 +734,7 @@ class NutritionPersistence {
         carbsPer100g: food.carbsPer100g,
         fatPer100g: food.fatPer100g,
         fiberPer100g: food.fiberPer100g,
+        nutritionUnit: food.nutritionUnit.storageValue,
         barcode: food.barcode,
         brand: food.brand,
         imageUrl: food.imageUrl,
@@ -757,6 +792,9 @@ class NutritionPersistence {
         productKey: portion.productKey,
         name: portion.name,
         grams: portion.grams,
+        unit: portion.unit.storageValue,
+        displayLabel: portion.label,
+        displayQuantity: portion.quantity,
         createdAt: portion.createdAt.toUtc(),
       );
 
@@ -765,6 +803,9 @@ class NutritionPersistence {
         productKey: row.productKey,
         name: row.name,
         grams: row.grams,
+        unit: NutritionUnitX.fromStorage(row.unit),
+        label: row.displayLabel,
+        quantity: row.displayQuantity,
         createdAt: row.createdAt,
       );
 
@@ -875,6 +916,7 @@ class NutritionPersistence {
               totalDaysLogged: statsRow.totalDaysLogged,
             ),
       shoppingListChecked: checkedRows.toSet(),
+      mealTemplates: const [],
     );
   }
 
@@ -887,6 +929,7 @@ class NutritionPersistence {
         carbsPer100g: row.carbsPer100g,
         fatPer100g: row.fatPer100g,
         fiberPer100g: row.fiberPer100g,
+        nutritionUnit: NutritionUnitX.fromStorage(row.nutritionUnit),
         barcode: row.barcode,
         brand: row.brand,
         imageUrl: row.imageUrl,
@@ -902,6 +945,7 @@ class NutritionPersistence {
         carbsPer100g: row.carbsPer100g,
         fatPer100g: row.fatPer100g,
         fiberPer100g: row.fiberPer100g,
+        nutritionUnit: NutritionUnitX.fromStorage(row.nutritionUnit),
         barcode: row.barcode,
         brand: row.brand,
         imageUrl: row.imageUrl,
@@ -972,6 +1016,7 @@ class NutritionPersistentState {
   final Map<String, String> recentFoodMeals;
   final UserStats userStats;
   final Set<String> shoppingListChecked;
+  final List<MealTemplate> mealTemplates;
 
   const NutritionPersistentState({
     required this.recipes,
@@ -983,5 +1028,6 @@ class NutritionPersistentState {
     required this.recentFoodMeals,
     required this.userStats,
     required this.shoppingListChecked,
+    this.mealTemplates = const [],
   });
 }

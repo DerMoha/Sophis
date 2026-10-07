@@ -2,7 +2,11 @@ import 'package:uuid/uuid.dart';
 
 import 'package:sophis/models/food_entry.dart';
 import 'package:sophis/models/food_item.dart';
+import 'package:sophis/models/nutrition_unit.dart';
+import 'package:sophis/models/nutrition_totals.dart';
+import 'package:sophis/models/portion_selection.dart';
 import 'package:sophis/models/shareable_meal.dart';
+import 'package:sophis/models/serving_size.dart';
 import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/services/service_result.dart';
 
@@ -20,7 +24,8 @@ class FoodIntakeController {
 
   Future<ServiceResult<FoodEntry>> logFoodItem({
     required FoodItem item,
-    required double grams,
+    PortionSelection? selection,
+    double? grams,
     required String meal,
   }) async {
     final mealError = _validateText(meal, 'Meal is required');
@@ -29,11 +34,21 @@ class FoodIntakeController {
     final nameError = _validateText(item.name, 'Food name is required');
     if (nameError != null) return _failure(nameError);
 
-    if (grams <= 0) {
+    final resolvedSelection = selection ??
+        (grams == null
+            ? null
+            : PortionSelection(amount: grams, unit: item.nutritionUnit));
+    if (resolvedSelection == null || !resolvedSelection.isValid) {
       return _failure('Portion must be greater than zero');
     }
 
-    final nutrients = item.calculateFor(grams);
+    final nutrients = _calculateNutrition(item, resolvedSelection);
+    if (nutrients == null) {
+      return _failure(
+        'This portion uses ${resolvedSelection.unit.symbol}, but the food is '
+        'defined per ${item.nutritionUnit.symbol}',
+      );
+    }
     final nutritionError = _validateNutrition(
       calories: nutrients.calories,
       protein: nutrients.protein,
@@ -47,18 +62,29 @@ class FoodIntakeController {
         ? '${item.brand} ${item.name}'
         : item.name;
     final entry = _createEntry(
-      name: '$displayName (${grams.toStringAsFixed(0)}g)',
+      name: '$displayName (${_formatSelection(resolvedSelection)})',
       calories: nutrients.calories,
       protein: nutrients.protein,
       carbs: nutrients.carbs,
       fat: nutrients.fat,
       fiber: nutrients.fiber,
       meal: meal,
+      sourceFoodId: item.id,
+      portionAmount: resolvedSelection.amount,
+      portionUnit: resolvedSelection.unit,
+      portionLabel: resolvedSelection.humanLabel,
+      portionQuantity: resolvedSelection.labelQuantity,
     );
 
     try {
       await _nutrition.addFoodEntry(entry);
-      await _nutrition.addRecentFood(item, meal: meal);
+      final recentItem = selection == null
+          ? item
+          : item.copyWith(lastUsedPortion: resolvedSelection);
+      await _nutrition.addRecentFood(
+        recentItem,
+        meal: meal,
+      );
       return Success(entry);
     } catch (e) {
       return _unknownFailure(e);
@@ -102,6 +128,14 @@ class FoodIntakeController {
       return _unknownFailure(e);
     }
   }
+
+  /// Compatibility wrapper for callers that have not migrated to selections.
+  Future<ServiceResult<FoodEntry>> logFoodItemByGrams({
+    required FoodItem item,
+    required double grams,
+    required String meal,
+  }) =>
+      logFoodItem(item: item, grams: grams, meal: meal);
 
   Future<ServiceResult<FoodEntry>> logManualEntry({
     required String name,
@@ -188,6 +222,10 @@ class FoodIntakeController {
           fat: item.fat,
           fiber: item.fiber,
           meal: targetMeal,
+          portionAmount: item.portionGrams,
+          portionUnit: item.portionUnit,
+          portionLabel: item.portionLabel,
+          portionQuantity: item.portionQuantity,
         ),
       );
     }
@@ -218,14 +256,7 @@ class FoodIntakeController {
 
     try {
       await _nutrition.addCustomFood(
-        _createCustomFood(
-          name: entry.name.trim(),
-          calories: entry.calories,
-          protein: entry.protein,
-          carbs: entry.carbs,
-          fat: entry.fat,
-          fiber: entry.fiber,
-        ),
+        _customFoodFromEntry(entry),
       );
       return Success(entry);
     } catch (e) {
@@ -241,6 +272,11 @@ class FoodIntakeController {
     required double fat,
     required double fiber,
     required String meal,
+    String? sourceFoodId,
+    double? portionAmount,
+    NutritionUnit? portionUnit,
+    String? portionLabel,
+    double? portionQuantity,
   }) {
     return FoodEntry(
       id: _idGenerator(),
@@ -252,7 +288,35 @@ class FoodIntakeController {
       fiber: fiber,
       timestamp: _now(),
       meal: meal,
+      sourceFoodId: sourceFoodId,
+      portionAmount: portionAmount,
+      portionUnit: portionUnit,
+      portionLabel: portionLabel,
+      portionQuantity: portionQuantity,
     );
+  }
+
+  NutritionTotals? _calculateNutrition(
+    FoodItem item,
+    PortionSelection selection,
+  ) {
+    if (selection.unit != item.nutritionUnit) return null;
+    return item.calculateForSelection(selection);
+  }
+
+  String _formatSelection(PortionSelection selection) {
+    final amount = _formatNumber(selection.amount);
+    final canonical = '$amount${selection.unit.symbol}';
+    final label = selection.humanLabel;
+    if (label == null || label.trim().isEmpty) return canonical;
+    final quantity = selection.labelQuantity;
+    final quantityText = quantity == null ? '' : '${_formatNumber(quantity)} ';
+    return '$quantityText$label ($canonical)';
+  }
+
+  String _formatNumber(double value) {
+    if (value == value.roundToDouble()) return value.toStringAsFixed(0);
+    return value.toStringAsFixed(2).replaceFirst(RegExp(r'0+$'), '');
   }
 
   FoodItem _createCustomFood({
@@ -272,6 +336,51 @@ class FoodIntakeController {
       carbsPer100g: carbs,
       fatPer100g: fat,
       fiberPer100g: fiber,
+    );
+  }
+
+  FoodItem _customFoodFromEntry(FoodEntry entry) {
+    final selection = entry.portionSelection;
+    if (selection == null || !selection.isValid) {
+      return _createCustomFood(
+        name: entry.name.trim(),
+        calories: entry.calories,
+        protein: entry.protein,
+        carbs: entry.carbs,
+        fat: entry.fat,
+        fiber: entry.fiber,
+      );
+    }
+
+    final factor = selection.amount / 100;
+    final suffix = ' (${entry.displayPortionText})';
+    final name = entry.name.endsWith(suffix)
+        ? entry.name.substring(0, entry.name.length - suffix.length)
+        : entry.name.trim();
+    final servingName = selection.humanLabel == null
+        ? _formatSelection(selection)
+        : selection.humanLabel!;
+
+    return FoodItem(
+      id: 'custom_${_idGenerator()}',
+      name: name,
+      category: 'custom',
+      caloriesPer100g: entry.calories / factor,
+      proteinPer100g: entry.protein / factor,
+      carbsPer100g: entry.carbs / factor,
+      fatPer100g: entry.fat / factor,
+      fiberPer100g: entry.fiber / factor,
+      nutritionUnit: selection.unit,
+      servings: [
+        ServingSize(
+          name: servingName,
+          grams: selection.amount,
+          unit: selection.unit,
+          isCustom: true,
+          label: selection.humanLabel,
+          quantity: selection.labelQuantity,
+        ),
+      ],
     );
   }
 

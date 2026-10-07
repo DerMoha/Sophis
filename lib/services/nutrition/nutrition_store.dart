@@ -6,6 +6,7 @@ import 'package:sophis/models/custom_portion.dart';
 import 'package:sophis/models/food_entry.dart';
 import 'package:sophis/models/food_item.dart';
 import 'package:sophis/models/meal_plan.dart';
+import 'package:sophis/models/meal_template.dart';
 import 'package:sophis/models/nutrition_backup.dart';
 import 'package:sophis/models/recipe.dart';
 import 'package:sophis/models/social/social_snapshot.dart';
@@ -310,6 +311,7 @@ final class NutritionStore {
         recentFoodMeals: Map.unmodifiable(persistent.recentFoodMeals),
         userStats: persistent.userStats,
         shoppingListChecked: Set.unmodifiable(persistent.shoppingListChecked),
+        mealTemplates: List.unmodifiable(persistent.mealTemplates),
         progressPhotos: List.unmodifiable(photos),
       );
     });
@@ -348,6 +350,21 @@ final class NutritionStore {
 
   Future<void> _deleteCustomPortion(String id) =>
       _persistence.deleteCustomPortion(id, transactional: false);
+
+  Future<void> _saveMealTemplate(MealTemplate template) async {
+    final state = await _persistence.load();
+    final templates = [...state.mealTemplates]
+      ..removeWhere((value) => value.id == template.id)
+      ..add(template);
+    await _persistence.saveMealTemplates(templates, transactional: false);
+  }
+
+  Future<void> _deleteMealTemplate(String id) async {
+    final state = await _persistence.load();
+    final templates =
+        state.mealTemplates.where((template) => template.id != id).toList();
+    await _persistence.saveMealTemplates(templates, transactional: false);
+  }
 
   Future<void> _setShoppingItemChecked(
     String key, {
@@ -578,8 +595,7 @@ final class DeleteFoodEntry extends NutritionCommand {
   const DeleteFoodEntry(this.id);
 
   @override
-  Future<void> apply(NutritionStore store) =>
-      store._deleteFoodEntry(id).then((_) {});
+  Future<void> apply(NutritionStore store) => store._deleteFoodEntry(id);
 }
 
 final class SaveWaterEntry extends NutritionCommand {
@@ -723,6 +739,22 @@ final class DeleteCustomPortion extends NutritionCommand {
 
   @override
   Future<void> apply(NutritionStore store) => store._deleteCustomPortion(id);
+}
+
+final class SaveMealTemplate extends NutritionCommand {
+  final MealTemplate value;
+  const SaveMealTemplate(this.value);
+
+  @override
+  Future<void> apply(NutritionStore store) => store._saveMealTemplate(value);
+}
+
+final class DeleteMealTemplate extends NutritionCommand {
+  final String id;
+  const DeleteMealTemplate(this.id);
+
+  @override
+  Future<void> apply(NutritionStore store) => store._deleteMealTemplate(id);
 }
 
 final class SetShoppingItemChecked extends NutritionCommand {
@@ -887,6 +919,10 @@ final class RestoreBackupV2 extends NutritionCommand {
       backup.shoppingListChecked,
       transactional: false,
     );
+    await store._persistence.saveMealTemplates(
+      backup.mealTemplates,
+      transactional: false,
+    );
     await store._saveGoals(backup.goals);
     await store._saveProfile(backup.profile);
   }
@@ -1049,6 +1085,17 @@ SyncMutation? _syncMutationFor(NutritionCommand command) => switch (command) {
           entityId: id,
           operation: 'delete',
         ),
+      SaveMealTemplate(:final value) => SyncMutation(
+          entityType: 'meal_template',
+          entityId: value.id,
+          operation: 'upsert',
+          payloadJson: jsonEncode(value.toJson()),
+        ),
+      DeleteMealTemplate(:final id) => SyncMutation(
+          entityType: 'meal_template',
+          entityId: id,
+          operation: 'delete',
+        ),
       SetShoppingItemChecked(:final key, :final checked) => SyncMutation(
           entityType: 'shopping_item',
           entityId: key,
@@ -1174,6 +1221,7 @@ final class NutritionSnapshot {
   final Map<String, String> recentFoodMeals;
   final UserStats userStats;
   final Set<String> shoppingListChecked;
+  final List<MealTemplate> mealTemplates;
   final List<ProgressPhoto> progressPhotos;
 
   const NutritionSnapshot({
@@ -1195,6 +1243,7 @@ final class NutritionSnapshot {
     required this.recentFoodMeals,
     required this.userStats,
     required this.shoppingListChecked,
+    this.mealTemplates = const [],
     required this.progressPhotos,
   });
 }

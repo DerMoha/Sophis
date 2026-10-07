@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:sophis/l10n/generated/app_localizations.dart';
+import 'package:sophis/models/food_entry.dart';
 import 'package:sophis/models/food_item.dart';
+import 'package:sophis/models/nutrition_unit.dart';
 import 'package:sophis/providers/nutrition_provider.dart';
+import 'package:sophis/services/food_intake_controller.dart';
+import 'package:sophis/services/nutrition/food_log_controller.dart';
+import 'package:sophis/services/service_result.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/components/portion_picker_sheet.dart';
 import 'package:sophis/ui/screens/add_food_screen.dart';
@@ -15,8 +20,8 @@ import 'package:sophis/ui/screens/nutrition_label_scanner_screen.dart';
 Future<void> showQuickAddSheet(
   BuildContext context, {
   required String mealType,
-}) {
-  return showModalBottomSheet<void>(
+}) async {
+  final entry = await showModalBottomSheet<FoodEntry>(
     context: context,
     isScrollControlled: true,
     shape: const RoundedRectangleBorder(
@@ -39,9 +44,22 @@ Future<void> showQuickAddSheet(
       ),
     ),
   );
+  if (entry == null || !context.mounted) return;
+  final l10n = AppLocalizations.of(context)!;
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(l10n.quickAddAdded(entry.name)),
+      action: SnackBarAction(
+        label: l10n.undo,
+        onPressed: () => context.read<NutritionProvider>().removeFoodEntry(
+              entry.id,
+            ),
+      ),
+    ),
+  );
 }
 
-class _QuickAddContent extends StatelessWidget {
+class _QuickAddContent extends StatefulWidget {
   final String mealType;
   final ScrollController scrollController;
   final BuildContext sheetContext;
@@ -51,6 +69,35 @@ class _QuickAddContent extends StatelessWidget {
     required this.scrollController,
     required this.sheetContext,
   });
+
+  @override
+  State<_QuickAddContent> createState() => _QuickAddContentState();
+}
+
+class _QuickAddContentState extends State<_QuickAddContent> {
+  String? _loggingFoodId;
+
+  Future<void> _logRecentFood(FoodItem food) async {
+    if (_loggingFoodId != null) return;
+    setState(() => _loggingFoodId = food.id);
+    final selection = FoodLogController.defaultPortionFor(food);
+    final result = await context.read<FoodIntakeController>().logFoodItem(
+          item: food,
+          selection: selection,
+          meal: widget.mealType,
+        );
+    if (!mounted) return;
+    setState(() => _loggingFoodId = null);
+    switch (result) {
+      case Success<FoodEntry>(value: final entry):
+        if (!widget.sheetContext.mounted) return;
+        Navigator.pop(widget.sheetContext, entry);
+      case Failure<FoodEntry>(message: final message):
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message)),
+        );
+    }
+  }
 
   Future<bool> _confirmCameraAccess(BuildContext context) async {
     final l10n = AppLocalizations.of(context)!;
@@ -78,11 +125,12 @@ class _QuickAddContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-    final recentFoods =
-        context.watch<NutritionProvider>().getRecentFoodsForMeal(mealType);
+    final recentFoods = context
+        .watch<NutritionProvider>()
+        .getRecentFoodsForMeal(widget.mealType);
 
     return ListView(
-      controller: scrollController,
+      controller: widget.scrollController,
       padding: const EdgeInsets.fromLTRB(0, 8, 0, 16),
       children: [
         Center(
@@ -150,8 +198,20 @@ class _QuickAddContent extends StatelessWidget {
             itemBuilder: (context, index) {
               return _RecentFoodChip(
                 food: foods[index],
-                mealType: mealType,
-                sheetContext: sheetContext,
+                isLogging: _loggingFoodId == foods[index].id,
+                onLog: _logRecentFood,
+                onEdit: () {
+                  Navigator.pop(widget.sheetContext);
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (_) => PortionPickerSheet(
+                      item: foods[index],
+                      meal: widget.mealType,
+                    ),
+                  );
+                },
               );
             },
           ),
@@ -177,10 +237,10 @@ class _QuickAddContent extends StatelessWidget {
           label: l10n.searchFood,
           color: theme.colorScheme.primary,
           onTap: () {
-            Navigator.pop(sheetContext);
+            Navigator.pop(widget.sheetContext);
             Navigator.push(
               context,
-              AppTheme.slideRoute(FoodSearchScreen(meal: mealType)),
+              AppTheme.slideRoute(FoodSearchScreen(meal: widget.mealType)),
             );
           },
         ),
@@ -191,10 +251,10 @@ class _QuickAddContent extends StatelessWidget {
           onTap: () async {
             if (!await _confirmCameraAccess(context)) return;
             if (!context.mounted) return;
-            Navigator.pop(sheetContext);
+            Navigator.pop(widget.sheetContext);
             Navigator.push(
               context,
-              AppTheme.slideRoute(BarcodeScannerScreen(meal: mealType)),
+              AppTheme.slideRoute(BarcodeScannerScreen(meal: widget.mealType)),
             );
           },
         ),
@@ -203,10 +263,12 @@ class _QuickAddContent extends StatelessWidget {
           label: l10n.nutritionLabelScannerTitle,
           color: theme.colorScheme.primary,
           onTap: () {
-            Navigator.pop(sheetContext);
+            Navigator.pop(widget.sheetContext);
             Navigator.push(
               context,
-              AppTheme.slideRoute(NutritionLabelScannerScreen(meal: mealType)),
+              AppTheme.slideRoute(
+                NutritionLabelScannerScreen(meal: widget.mealType),
+              ),
             );
           },
         ),
@@ -215,10 +277,10 @@ class _QuickAddContent extends StatelessWidget {
           label: l10n.manualEntry,
           color: theme.colorScheme.primary,
           onTap: () {
-            Navigator.pop(sheetContext);
+            Navigator.pop(widget.sheetContext);
             Navigator.push(
               context,
-              AppTheme.slideRoute(AddFoodScreen(meal: mealType)),
+              AppTheme.slideRoute(AddFoodScreen(meal: widget.mealType)),
             );
           },
         ),
@@ -237,10 +299,10 @@ class _QuickAddContent extends StatelessWidget {
           label: l10n.aiRecognition,
           color: theme.colorScheme.primary,
           onTap: () {
-            Navigator.pop(sheetContext);
+            Navigator.pop(widget.sheetContext);
             Navigator.push(
               context,
-              AppTheme.slideRoute(AIFoodCameraScreen(meal: mealType)),
+              AppTheme.slideRoute(AIFoodCameraScreen(meal: widget.mealType)),
             );
           },
         ),
@@ -260,36 +322,32 @@ class _QuickAddContent extends StatelessWidget {
 
 class _RecentFoodChip extends StatelessWidget {
   final FoodItem food;
-  final String mealType;
-  final BuildContext sheetContext;
+  final bool isLogging;
+  final Future<void> Function(FoodItem food) onLog;
+  final VoidCallback onEdit;
 
   const _RecentFoodChip({
     required this.food,
-    required this.mealType,
-    required this.sheetContext,
+    required this.isLogging,
+    required this.onLog,
+    required this.onEdit,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final calories = food.caloriesPer100g;
+    final selection = FoodLogController.defaultPortionFor(food);
+    final calories = food.calculateForSelection(selection).calories;
+    final amount = selection.amount == selection.amount.roundToDouble()
+        ? selection.amount.toStringAsFixed(0)
+        : selection.amount.toStringAsFixed(1);
 
     return GestureDetector(
-      onTap: () {
-        Navigator.pop(sheetContext);
-        showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.transparent,
-          builder: (_) => PortionPickerSheet(
-            item: food,
-            meal: mealType,
-          ),
-        );
-      },
+      onTap: isLogging ? null : () => onLog(food),
+      onLongPress: isLogging ? null : onEdit,
       child: Container(
-        width: 120,
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        width: 142,
+        padding: const EdgeInsets.fromLTRB(10, 8, 8, 8),
         decoration: BoxDecoration(
           color:
               theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
@@ -304,7 +362,7 @@ class _RecentFoodChip extends StatelessWidget {
           children: [
             Text(
               food.name,
-              maxLines: 1,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: theme.textTheme.labelMedium?.copyWith(
                 fontWeight: FontWeight.w600,
@@ -312,10 +370,34 @@ class _RecentFoodChip extends StatelessWidget {
             ),
             const SizedBox(height: 2),
             Text(
-              '${calories.toStringAsFixed(0)} kcal',
+              '$amount ${selection.unit.symbol} · ${calories.toStringAsFixed(0)} kcal',
               style: theme.textTheme.labelSmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
+            ),
+            const SizedBox(height: 2),
+            Row(
+              children: [
+                Icon(
+                  isLogging ? Icons.hourglass_top : Icons.bolt_outlined,
+                  size: 12,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 3),
+                Expanded(
+                  child: Text(
+                    isLogging
+                        ? AppLocalizations.of(context)!.quickAddAdding
+                        : AppLocalizations.of(context)!
+                            .quickAddTapToAddHoldToEdit,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

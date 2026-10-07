@@ -13,6 +13,7 @@ import 'package:sophis/models/supplement.dart';
 import 'package:sophis/models/supplement_log.dart';
 import 'package:sophis/models/recipe.dart';
 import 'package:sophis/models/food_item.dart';
+import 'package:sophis/models/nutrition_unit.dart';
 import 'package:sophis/models/meal_plan.dart';
 import 'package:sophis/models/custom_portion.dart';
 import 'package:sophis/models/user_stats.dart';
@@ -40,6 +41,11 @@ class Foods extends Table {
   RealColumn get fiber => real().withDefault(const Constant(0))();
   DateTimeColumn get timestamp => dateTime()();
   TextColumn get meal => text()(); // 'breakfast', 'lunch', etc.
+  TextColumn get sourceFoodId => text().nullable()();
+  RealColumn get portionAmount => real().nullable()();
+  TextColumn get portionUnit => text().nullable()();
+  TextColumn get portionLabel => text().nullable()();
+  RealColumn get portionQuantity => real().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -165,6 +171,7 @@ class BarcodeProducts extends Table {
       boolean().withDefault(const Constant(false))();
   DateTimeColumn get cachedAt => dateTime()();
   TextColumn get source => text().withDefault(const Constant('api'))();
+  TextColumn get nutritionUnit => text().withDefault(const Constant('gram'))();
 
   @override
   Set<Column> get primaryKey => {barcode};
@@ -204,6 +211,7 @@ class CustomFoods extends Table {
   TextColumn get brand => text().nullable()();
   TextColumn get imageUrl => text().nullable()();
   TextColumn get servingsJson => text().nullable()();
+  TextColumn get nutritionUnit => text().withDefault(const Constant('gram'))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -265,6 +273,9 @@ class CustomPortions extends Table {
   TextColumn get productKey => text()();
   TextColumn get name => text()();
   RealColumn get grams => real()();
+  TextColumn get unit => text().withDefault(const Constant('gram'))();
+  TextColumn get displayLabel => text().nullable()();
+  RealColumn get displayQuantity => real().nullable()();
   DateTimeColumn get createdAt => dateTime()();
 
   @override
@@ -285,6 +296,7 @@ class RecentFoods extends Table {
   TextColumn get brand => text().nullable()();
   TextColumn get imageUrl => text().nullable()();
   TextColumn get servingsJson => text().nullable()();
+  TextColumn get nutritionUnit => text().withDefault(const Constant('gram'))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -636,6 +648,43 @@ class DatabaseService extends _$DatabaseService {
             );
             await migrator.alterTable(TableMigration(supplementLogs));
           }
+          if (from < 12 && to >= 12) {
+            await _addColumnIfMissing(migrator, foods, foods.sourceFoodId);
+            await _addColumnIfMissing(migrator, foods, foods.portionAmount);
+            await _addColumnIfMissing(migrator, foods, foods.portionUnit);
+            await _addColumnIfMissing(migrator, foods, foods.portionLabel);
+            await _addColumnIfMissing(migrator, foods, foods.portionQuantity);
+            await _addColumnIfMissing(
+              migrator,
+              barcodeProducts,
+              barcodeProducts.nutritionUnit,
+            );
+            await _addColumnIfMissing(
+              migrator,
+              customFoods,
+              customFoods.nutritionUnit,
+            );
+            await _addColumnIfMissing(
+              migrator,
+              recentFoods,
+              recentFoods.nutritionUnit,
+            );
+            await _addColumnIfMissing(
+              migrator,
+              customPortions,
+              customPortions.unit,
+            );
+            await _addColumnIfMissing(
+              migrator,
+              customPortions,
+              customPortions.displayLabel,
+            );
+            await _addColumnIfMissing(
+              migrator,
+              customPortions,
+              customPortions.displayQuantity,
+            );
+          }
           if (from < 13 && to >= 13) {
             await migrator.createTable(foodSharingOrigins);
             await customStatement(
@@ -714,6 +763,13 @@ class DatabaseService extends _$DatabaseService {
             fiber: row.fiber,
             timestamp: row.timestamp,
             meal: row.meal,
+            sourceFoodId: row.sourceFoodId,
+            portionAmount: row.portionAmount,
+            portionUnit: row.portionUnit == null
+                ? null
+                : NutritionUnitX.fromStorage(row.portionUnit),
+            portionLabel: row.portionLabel,
+            portionQuantity: row.portionQuantity,
           ),
         )
         .toList();
@@ -731,6 +787,11 @@ class DatabaseService extends _$DatabaseService {
         fiber: Value(entry.fiber),
         timestamp: Value(entry.timestamp),
         meal: Value(entry.meal),
+        sourceFoodId: Value(entry.sourceFoodId),
+        portionAmount: Value(entry.portionAmount),
+        portionUnit: Value(entry.portionUnit?.storageValue),
+        portionLabel: Value(entry.portionLabel),
+        portionQuantity: Value(entry.portionQuantity),
       ),
     );
   }
@@ -747,6 +808,11 @@ class DatabaseService extends _$DatabaseService {
         fiber: Value(entry.fiber),
         timestamp: Value(entry.timestamp),
         meal: Value(entry.meal),
+        sourceFoodId: Value(entry.sourceFoodId),
+        portionAmount: Value(entry.portionAmount),
+        portionUnit: Value(entry.portionUnit?.storageValue),
+        portionLabel: Value(entry.portionLabel),
+        portionQuantity: Value(entry.portionQuantity),
       ),
     );
   }
@@ -832,6 +898,11 @@ class DatabaseService extends _$DatabaseService {
               fiber: Value(entry.fiber),
               timestamp: Value(entry.timestamp),
               meal: Value(entry.meal),
+              sourceFoodId: Value(entry.sourceFoodId),
+              portionAmount: Value(entry.portionAmount),
+              portionUnit: Value(entry.portionUnit?.storageValue),
+              portionLabel: Value(entry.portionLabel),
+              portionQuantity: Value(entry.portionQuantity),
             ),
           ),
           mode: InsertMode.insertOrReplace,
@@ -854,6 +925,11 @@ class DatabaseService extends _$DatabaseService {
         fiber: Value(entry.fiber),
         timestamp: Value(entry.timestamp),
         meal: Value(entry.meal),
+        sourceFoodId: Value(entry.sourceFoodId),
+        portionAmount: Value(entry.portionAmount),
+        portionUnit: Value(entry.portionUnit?.storageValue),
+        portionLabel: Value(entry.portionLabel),
+        portionQuantity: Value(entry.portionQuantity),
       ),
     );
   }
@@ -1657,6 +1733,7 @@ class DatabaseService extends _$DatabaseService {
         carbsPer100g: Value(food.carbsPer100g),
         fatPer100g: Value(food.fatPer100g),
         fiberPer100g: Value(food.fiberPer100g),
+        nutritionUnit: Value(food.nutritionUnit),
         barcode: Value(food.barcode),
         brand: Value(food.brand),
         imageUrl: Value(food.imageUrl),
@@ -1676,6 +1753,7 @@ class DatabaseService extends _$DatabaseService {
         carbsPer100g: Value(food.carbsPer100g),
         fatPer100g: Value(food.fatPer100g),
         fiberPer100g: Value(food.fiberPer100g),
+        nutritionUnit: Value(food.nutritionUnit),
         barcode: Value(food.barcode),
         brand: Value(food.brand),
         imageUrl: Value(food.imageUrl),
@@ -1699,6 +1777,7 @@ class DatabaseService extends _$DatabaseService {
                 carbsPer100g: Value(f.carbsPer100g),
                 fatPer100g: Value(f.fatPer100g),
                 fiberPer100g: Value(f.fiberPer100g),
+                nutritionUnit: Value(f.nutritionUnit),
                 barcode: Value(f.barcode),
                 brand: Value(f.brand),
                 imageUrl: Value(f.imageUrl),
@@ -1927,6 +2006,9 @@ class DatabaseService extends _$DatabaseService {
         productKey: Value(portion.productKey),
         name: Value(portion.name),
         grams: Value(portion.grams),
+        unit: Value(portion.unit),
+        displayLabel: Value(portion.displayLabel),
+        displayQuantity: Value(portion.displayQuantity),
         createdAt: Value(portion.createdAt),
       ),
     );
@@ -1939,6 +2021,9 @@ class DatabaseService extends _$DatabaseService {
         productKey: Value(portion.productKey),
         name: Value(portion.name),
         grams: Value(portion.grams),
+        unit: Value(portion.unit),
+        displayLabel: Value(portion.displayLabel),
+        displayQuantity: Value(portion.displayQuantity),
         createdAt: Value(portion.createdAt),
       ),
     );
@@ -1991,6 +2076,7 @@ class DatabaseService extends _$DatabaseService {
                 carbsPer100g: Value(f.carbsPer100g),
                 fatPer100g: Value(f.fatPer100g),
                 fiberPer100g: Value(f.fiberPer100g),
+                nutritionUnit: Value(f.nutritionUnit),
                 barcode: Value(f.barcode),
                 brand: Value(f.brand),
                 imageUrl: Value(f.imageUrl),
@@ -2346,6 +2432,9 @@ class DatabaseService extends _$DatabaseService {
                 productKey: Value(p.productKey),
                 name: Value(p.name),
                 grams: Value(p.grams),
+                unit: Value(p.unit.storageValue),
+                displayLabel: Value(p.label),
+                displayQuantity: Value(p.quantity),
                 createdAt: Value(p.createdAt),
               ),
             )
@@ -2367,6 +2456,7 @@ class DatabaseService extends _$DatabaseService {
               carbsPer100g: f.carbsPer100g,
               fatPer100g: f.fatPer100g,
               fiberPer100g: f.fiberPer100g,
+              nutritionUnit: f.nutritionUnit.storageValue,
               barcode: f.barcode,
               brand: f.brand,
               imageUrl: f.imageUrl,
