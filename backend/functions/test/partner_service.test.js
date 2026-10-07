@@ -291,3 +291,30 @@ test('shared whitelisted goals only under current independent partner consent', 
   await partners.disconnect('bob', id);
   await denied(partners.goals('bob', { connectionId: id }));
 });
+
+test('rejected stale goal retries and stale clears without overwriting newer targets', async () => {
+  const id = await connect();
+  const consent = await settings('alice', id, { goals: true });
+  const payload = { connectionId: id, consentRevision: consent.revision, goals: { calories: 2000, protein: 100, carbs: 250, fat: 70 }, sourceRevision: 10 };
+  await partners.syncGoals('alice', payload);
+  await partners.syncGoals('alice', { ...payload, sourceRevision: 12, goals: { ...payload.goals, calories: 2200 } });
+  await partners.syncGoals('alice', payload);
+  await partners.syncGoals('alice', { ...payload, sourceRevision: 11, goals: null });
+  assert.equal((await partners.goals('bob', { connectionId: id })).goals[0].calories, 2200);
+  await settings('alice', id, { goals: false });
+  const fresh = await settings('alice', id, { goals: true });
+  await partners.syncGoals('alice', { ...payload, consentRevision: fresh.revision, sourceRevision: 13 });
+  await denied(partners.syncGoals('alice', { ...payload, sourceRevision: 14, goals: null }));
+  assert.equal((await partners.goals('bob', { connectionId: id })).goals[0].calories, 2000);
+  await assert.rejects(partners.syncGoals('alice', { ...payload, consentRevision: fresh.revision, sourceRevision: 15, goals: { ...payload.goals, protein: -1 } }), { code: 'invalid-argument' });
+});
+
+test('revoked goals during degradation while leaving other permissions enabled', async () => {
+  const id = await connect();
+  const consent = await settings('alice', id, { goals: true, meals: true });
+  await partners.syncGoals('alice', { connectionId: id, consentRevision: consent.revision, sourceRevision: 1, goals: { calories: 2000, protein: 100, carbs: 250, fat: 70 } });
+  await social.ref('socialConfig', 'operating').set({ disabled: true });
+  await settings('alice', id, { goals: false, meals: true });
+  const own = (await partners.ref(id).get()).data().settings.alice;
+  assert.equal(own.meals, true); assert.equal(own.goalsSnapshot, null);
+});

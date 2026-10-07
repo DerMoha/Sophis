@@ -147,8 +147,11 @@ export class PartnerService {
     if (input.goals != null && typeof input.goals !== 'boolean') fail('invalid-argument', 'Invalid goal consent.');
     desired.goals = input.goals ?? false;
     number(input.baseRevision, Number.MAX_SAFE_INTEGER);
-    // Pausing and switching everything off continue working during degradation.
-    if (!desired.paused && [...fields, 'goals'].some((field) => desired[field])) await this.social.consume(uid);
+    // Individual revocations must work even if unrelated sharing stays on.
+    const prior = await this.authorized(uid, input.connectionId);
+    const previous = prior.settings[uid];
+    const expanding = !desired.paused && [...fields, 'goals'].some((field) => desired[field] && (!previous[field] || previous.paused));
+    if (expanding) await this.social.consume(uid);
     return this.db.runTransaction(async (tx) => {
       const connection = await this.authorized(uid, input.connectionId, tx);
       const current = connection.settings[uid];
@@ -186,6 +189,7 @@ export class PartnerService {
     }
     const date = input.localDate == null ? {} : dateFields(input);
     const sourceRevision = number(input.sourceRevision ?? this.social.clock(), Number.MAX_SAFE_INTEGER, true);
+    if (!Number.isSafeInteger(sourceRevision)) fail('invalid-argument', 'Invalid goal revision.');
     if (input.goals != null) await this.social.consume(uid);
     return this.db.runTransaction(async (tx) => {
       const connection = await this.authorized(uid, input.connectionId, tx);
