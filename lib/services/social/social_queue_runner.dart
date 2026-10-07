@@ -19,28 +19,29 @@ final class SocialQueueRunner {
 
   SocialQueueRunner({required this.store, required this.transport});
 
+  /// Returns false after a failure so automatic drains stop immediately.
   /// Bounded work on app resume/connectivity restoration. No unbounded listener
   /// or tight retry loop. The caller displays persisted queued/review status.
-  Future<void> flush({DateTime? now, int limit = 20}) async {
-    if (_running) return;
+  Future<bool> flush({DateTime? now, int limit = 20}) async {
+    if (_running) return false;
     _running = true;
     try {
       final session = await store.session();
-      if (session.accountId == null) return;
+      if (session.accountId == null) return false;
       final clock = now ?? DateTime.now();
       for (var index = 0; index < limit; index++) {
         if (transport.accountId != session.accountId ||
             !await store.isCurrent(session)) {
-          return;
+          return false;
         }
         final command = await store.nextCommand(session, clock);
-        if (command == null) return;
+        if (command == null) return true;
         if (transport.accountId != session.accountId ||
             !await store.isCurrent(session)) {
-          return;
+          return false;
         }
         final result = await transport.send(session, command);
-        if (!await store.isCurrent(session)) return;
+        if (!await store.isCurrent(session)) return false;
         if (result is Success<void>) {
           await store.acknowledge(session, command.operationId);
         } else {
@@ -52,9 +53,10 @@ final class SocialQueueRunner {
             requiresReview: failure.errorType != ServiceErrorType.network &&
                 failure.errorType != ServiceErrorType.rateLimited,
           );
-          return;
+          return false;
         }
       }
+      return true;
     } finally {
       _running = false;
     }

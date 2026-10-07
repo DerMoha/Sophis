@@ -64,6 +64,15 @@ void main() {
       expect(transport.sent, ['one']);
       expect(await store.nextCommand(alice, now), isNull);
     });
+    test('stopped automatic replay after a rate limit and retained other work', () async {
+      await store.enqueue(alice, command('one'));
+      await store.enqueue(alice, command('two', target: 'post2'));
+      final transport = _Transport()..result = const Failure(ServiceErrorType.rateLimited, 'Limit reached');
+      final healthy = await SocialQueueRunner(store: store, transport: transport).flush(now: now);
+      expect(healthy, isFalse);
+      expect(transport.sent, ['one']);
+      expect((await store.nextCommand(alice, now))?.operationId, 'two');
+    });
     test('deleted stale edits and publications before replay', () async {
       await store.enqueue(alice, command('publish'));
       await store.enqueue(alice, command('edit', action: 'editPost'));

@@ -112,8 +112,10 @@ final class SocialProvider extends ChangeNotifier with WidgetsBindingObserver {
         );
         _projectionPending = _projectionPending || more;
       }
-      await runtime.queue.flush();
-      if (await runtime.store.nextCommand(session, DateTime.now()) != null) {
+      final healthy = await runtime.queue.flush();
+      if (!healthy) {
+        _projectionPending = false;
+      } else if (await runtime.store.nextCommand(session, DateTime.now()) != null) {
         _projectionPending = true;
       }
     } catch (_) {
