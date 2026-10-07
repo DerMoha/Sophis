@@ -15,19 +15,37 @@ final class FirebaseSocialAuth implements SocialCredentials {
   final SocialLocalStore store;
   late final StreamSubscription<User?> _subscription;
   Future<void> _accountSync = Future<void>.value();
+  final Completer<void> _ready = Completer<void>();
+  Object? _syncError;
   int _epoch = 0;
   bool _busy = false;
   bool _closed = false;
 
   FirebaseSocialAuth({required this.auth, required this.store, this.appCheck}) {
-    _subscription = auth.authStateChanges().listen((user) {
-      _epoch++;
-      _accountSync = _accountSync.then((_) async {
-        final current = await store.session();
-        final uid = user?.uid;
-        if (current.accountId != uid) await store.switchAccount(uid);
-      });
-    });
+    _subscription = auth.authStateChanges().listen(
+      (user) {
+        _epoch++;
+        _accountSync = _accountSync.then((_) async {
+          final current = await store.session();
+          final uid = user?.uid;
+          if (current.accountId != uid) await store.switchAccount(uid);
+          _syncError = null;
+          if (!_ready.isCompleted) _ready.complete();
+        }).catchError((Object error, StackTrace trace) {
+          _syncError = error;
+          if (!_ready.isCompleted) _ready.completeError(error, trace);
+        });
+      },
+      onError: (Object error, StackTrace trace) {
+        _syncError = error;
+        if (!_ready.isCompleted) _ready.completeError(error, trace);
+      },
+    );
+  }
+
+  Future<void> ready() async {
+    await _ready.future.timeout(const Duration(seconds: 15));
+    await _accountSync;
   }
 
   Stream<User?> get changes => auth.authStateChanges();
@@ -48,6 +66,9 @@ final class FirebaseSocialAuth implements SocialCredentials {
 
   Future<SocialTokens> _tokensFor(String accountId) async {
     await _accountSync;
+    if (_syncError != null) {
+      throw StateError('Social account could not synchronize');
+    }
     final epoch = _epoch;
     final user = auth.currentUser;
     if (_closed || user == null || user.uid != accountId) {
