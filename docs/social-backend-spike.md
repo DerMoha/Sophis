@@ -76,7 +76,12 @@ and registered-app configuration (or explicit demo emulator mode) is available.
   edits cannot make historical meals eligible. Legacy/restore rows are unclassified.
   Revisions and incremental sequence cursors commit with diary writes. Minimal
   deletion facts survive removal so paused partner copies can be deleted later.
-  This ledger still needs consent-filtered projection and social queue integration.
+  `PartnerProjection` now filters these facts through accepted connection consent,
+  active periods and per-kind generations before queueing meal snapshots or numeric
+  contributions. Durable local checkpoints/receipts commit with queued intent in
+  social schema v2; account changes clear them. Historical/restored and paused logs
+  are excluded. Deletions continue while paused. This is separate from the private
+  nutrition outbox.
 
 ## Emulator workflow
 
@@ -198,8 +203,9 @@ Firestore job-created trigger; Auth is deleted only after hosted data cleanup.
 ## Verification on this working tree
 
 - `flutter analyze --no-pub`: no issues.
-- `flutter test --no-pub`: 386 tests passed on the current working tree.
-- Backend emulator suite: 37 tests passed; backend code unchanged in this phase.
+- `flutter test --no-pub`: 392 tests passed on the current working tree.
+- Backend emulator suite: 40 tests passed, including independent goal consent,
+  stale retries/clears and revocation while ordinary work is disabled.
 - iPhone 18 Pro / iOS 27 simulator: native account and sharing flows passed with
   actual Firebase Auth/Functions emulators and SQLite stores. The sharing flow
   used two accounts sequentially on one simulator: invitation preview/request,
@@ -214,6 +220,47 @@ Firestore job-created trigger; Auth is deleted only after hosted data cleanup.
   for the final validation; production limits were not changed.
 - Signed builds, physical devices, Android, two simultaneous devices, native OCR
   and notification delivery remain unvalidated.
+
+## Partner goals and progress
+
+The accepted scope now includes calorie/protein/carbohydrate/fat targets, under
+an independent outgoing goal switch for each accepted partner connection. Only
+those four numeric targets are serialized; fiber, weight, user profile, health
+source records and exercise-derived calories are excluded. The server stores the
+snapshot within connection settings, hides it from the generic connection list,
+and authorizes goal reads separately. Consent revisions reject stale queued work;
+monotonic source revisions prevent late goal retries/clears overwriting newer
+values. Turning goals off removes the snapshot, including during quota degradation
+when unrelated permissions remain enabled. Pause freezes targets; disconnection,
+block and account deletion revoke access through existing connection authorization.
+
+People and Connections link to Partners. The native UI supports partner approval,
+outgoing goal/progress/meal permissions, pause/disconnection, incoming targets and
+shared daily progress, bounded partner meals and independent diary import. Target
+and summary permissions remain independent. Progress is labelled as shared entries
+from activation onward, not an unfiltered whole-diary total. The display uses the
+sharing author's IANA timezone when available; native timezone lookup follows the
+[plugin's documented identifier API](https://pub.dev/packages/flutter_timezone/example).
+
+Nutrition changes trigger debounced projection only after optional social startup
+and profile/consent loading. Refresh and app resume retry eligible work; no
+background sync or unbounded listener is introduced. Concurrent projection callers
+wait for the same drain. Projection pages and queue replay are bounded per pass. Automatic drains stop
+after the first network/rate failure rather than trying the remaining backlog
+against an exhausted allowance.
+Future connectivity restoration/background scheduling and explicit queue-review
+UI remain useful hardening work.
+
+`integration_test/social_partner_screens_test.dart` passed on iPhone 18 Pro/iOS 27
+with actual Auth/Functions emulators and SQLite. Two accounts sequentially on one
+simulator enabled target/progress/meal switches through actual screens, verified
+400/2200 kcal and 20/130 g protein, excluded a historical 999 kcal entry, froze
+values on pause, excluded a paused meal, and revoked targets while retaining
+shared progress. The fixture restored the original local goals and diary. Actual
+screenshots were captured and visually reviewed at default simulator text size.
+The existing two-account deliberate sharing/import/edit/delete simulator flow
+also passed after partner wiring. This remains emulator validation; no production Firebase configuration or billing
+was enabled, and Android/physical/two-device behavior is not established.
 
 ## Sharing and reuse phase
 
@@ -236,8 +283,8 @@ This phase completes the initial text sharing/import flow, not all of milestones
 1. Queued-operation review, account deletion, profile editing/avatar,
    localization and social-specific accessibility checks. Removal/block screens
    still need native adversarial tests.
-2. Connect server partner consent and local logging-origin facts to filtered
-   events, durable per-connection queues and meal-photo attachment modeling.
+2. Extend the initial consent-filtered partner projection with meal-photo
+   attachment modeling and additional native pause/resume/edit/deletion trials.
    Never feed the entire existing nutrition outbox into this social transport.
 3. Photo compression/attachment and protected photo display, activity, reports,
    optional generic-text FCM, automated orphan maintenance and abuse controls.
@@ -290,7 +337,9 @@ Optional screenshots are written under the simulator app's Application Support
 `social-test-screenshots` directory while it is installed. Synthetic
 accounts are emulator-only; diary entries are compared before/after, never reset.
 Use `integration_test/social_sharing_screens_test.dart` as the target for the
-publication/approval/reaction/import/edit/delete flow. Both tests capture actual
+publication/approval/reaction/import/edit/delete flow, or
+`integration_test/social_partner_screens_test.dart` for partner goals/progress,
+permission switches, pause and goal revocation. These tests capture actual
 native screen pixels when `SOCIAL_SCREENSHOTS=true`. Copy screenshots out before
 uninstalling the app; `flutter run` with a terminal and detach preserves it.
 
