@@ -1,16 +1,15 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:provider/provider.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:sophis/main.dart' as app;
 import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/providers/social_provider.dart';
 import 'package:sophis/services/social/social_runtime.dart';
 import 'package:sophis/ui/screens/social/people_screen.dart';
+
+import 'social_screen_capture.dart';
 
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -20,17 +19,6 @@ void main() {
     const MethodChannel('dexterous.com/flutter/local_notifications'),
     (call) async => call.method == 'initialize' ? true : null,
   );
-
-  Future<void> capture(WidgetTester tester, String name) async {
-    if (!const bool.fromEnvironment('SOCIAL_SCREENSHOTS')) return;
-    await tester.pumpAndSettle();
-    if (Platform.isAndroid) await binding.convertFlutterSurfaceToImage();
-    final bytes = await binding.takeScreenshot(name);
-    final directory = await getApplicationSupportDirectory();
-    final screenshots = Directory('${directory.path}/social-test-screenshots');
-    await screenshots.create(recursive: true);
-    await File('${screenshots.path}/$name.png').writeAsBytes(bytes);
-  }
 
   Future<void> waitFor(WidgetTester tester, bool Function() condition) async {
     for (var attempt = 0; attempt < 150 && !condition(); attempt++) {
@@ -63,7 +51,7 @@ void main() {
       tester,
       () => find.text('Create an account').evaluate().isNotEmpty,
     );
-    await capture(tester, 'people-account');
+    await captureSocialScreen(binding, tester, 'people-account');
     await tester.tap(find.widgetWithText(TextButton, 'Create an account'));
     await tester.pumpAndSettle();
     final email =
@@ -83,7 +71,7 @@ void main() {
       tester,
       () => find.text('Your private profile').evaluate().isNotEmpty,
     );
-    await capture(tester, 'people-profile');
+    await captureSocialScreen(binding, tester, 'people-profile');
     await tester.enterText(find.byType(TextField).first, 'Simulator Chef');
     FocusManager.instance.primaryFocus?.unfocus();
     await tester.pumpAndSettle();
@@ -100,13 +88,13 @@ void main() {
       ),
       findsOneWidget,
     );
-    await capture(tester, 'people-feed');
+    await captureSocialScreen(binding, tester, 'people-feed');
     await tester.tap(find.byTooltip('Connections'));
     await waitFor(
       tester,
       () => find.text('Invite a friend').evaluate().isNotEmpty,
     );
-    await capture(tester, 'people-connections');
+    await captureSocialScreen(binding, tester, 'people-connections');
     await tester.tap(find.widgetWithText(FilledButton, 'Invite a friend'));
     await waitFor(
       tester,
@@ -118,7 +106,7 @@ void main() {
       ),
       findsOneWidget,
     );
-    await capture(tester, 'people-invitation');
+    await captureSocialScreen(binding, tester, 'people-invitation');
     await tester.ensureVisible(find.widgetWithText(TextButton, 'Revoke'));
     await tester.tap(find.widgetWithText(TextButton, 'Revoke'));
     await waitFor(
@@ -136,7 +124,7 @@ void main() {
           app.navigatorKey.currentContext!.read<SocialProvider>().accountId ==
           null,
     );
-    await capture(tester, 'people-signed-out');
+    await captureSocialScreen(binding, tester, 'people-signed-out');
     final after = (await nutrition.store.snapshot())
         .value
         .foodEntries
