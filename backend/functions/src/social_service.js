@@ -152,6 +152,71 @@ export class SocialService {
       return { accountId: uid, displayName };
     });
   }
+  async ownProfile(uid) {
+    await this.consume(uid);
+    const [profile, deleted] = await this.db.getAll(this.profile(uid), this.ref('socialDeletedAccounts', uid));
+    if (deleted.exists || profile.data()?.deletingAt != null) fail('permission-denied', 'Account is unavailable.');
+    return { profile: profile.exists ? { accountId: uid, displayName: profile.data().displayName, avatarBlobId: profile.data().avatarBlobId ?? null } : null };
+  }
+  async previewInvitation(uid, token) {
+    await this.requireActive(uid);
+    text(token, 100);
+    await this.consume(uid);
+    const invitationId = hash(token);
+    const invitation = (await this.ref('socialInvitations', invitationId).get()).data();
+    if (!invitation || invitation.revokedAt != null || invitation.expiresAt <= this.clock()) fail('not-found', 'Invitation is unavailable.');
+    const inviterId = invitation.inviterId;
+    if (uid === inviterId) fail('invalid-argument', 'This is your own invitation.');
+    const profile = (await this.profile(inviterId).get()).data();
+    if (!profile || profile.deletingAt != null || await this.blocked(uid, inviterId)) fail('permission-denied', 'Invitation is unavailable.');
+    if (invitation.uses >= invitation.maxUses) {
+      const ownRequest = invitation.audience === 'partner'
+        ? await this.ref('socialPartners', pairId(invitationId, uid)).get()
+        : await this.follow(uid, inviterId).get();
+      if (!ownRequest.exists) fail('not-found', 'Invitation has already been used.');
+    }
+    return { inviterId, displayName: profile.displayName, audience: invitation.audience ?? 'follow', expiresAt: invitation.expiresAt };
+  }
+  async relationships(uid, input = {}) {
+    await this.requireActive(uid);
+    await this.consume(uid);
+    if (!['incoming', 'outgoing'].includes(input.direction)) fail('invalid-argument', 'Invalid direction.');
+    const incoming = input.direction === 'incoming';
+    let query = this.db.collection('socialFollows').where(incoming ? 'followedId' : 'followerId', '==', uid)
+      .orderBy('createdAt', 'desc').orderBy(FieldPath.documentId(), 'desc');
+    if (input.cursor != null) {
+      number(input.cursor.createdAt, Number.MAX_SAFE_INTEGER);
+      query = query.startAfter(input.cursor.createdAt, id(input.cursor.id));
+    }
+    const records = await query.limit(LIMITS.pageSize).get();
+    const relationships = [];
+    for (const record of records.docs) {
+      const follow = record.data(), otherId = incoming ? follow.followerId : follow.followedId;
+      const profile = (await this.profile(otherId).get()).data();
+      if (profile && profile.deletingAt == null && !await this.blocked(uid, otherId)) {
+        const reverse = await this.follow(incoming ? uid : otherId, incoming ? otherId : uid).get();
+        relationships.push({ id: record.id, accountId: otherId, displayName: profile.displayName,
+          status: follow.status, reciprocalStatus: reverse.data()?.status ?? null, createdAt: follow.createdAt });
+      }
+    }
+    const last = records.docs.at(-1);
+    return { relationships, cursor: records.size === LIMITS.pageSize ? { id: last.id, createdAt: last.data().createdAt } : null };
+  }
+  async requestReciprocal(uid, otherId) {
+    id(otherId);
+    await this.requireActive(uid);
+    await this.consume(uid);
+    return this.db.runTransaction(async (tx) => {
+      const [approved, reverse, other, me] = await tx.getAll(this.follow(otherId, uid), this.follow(uid, otherId), this.profile(otherId), this.profile(uid));
+      if (approved.data()?.status !== 'accepted' || !other.exists || other.data().deletingAt != null ||
+          !me.exists || me.data().deletingAt != null || await this.blocked(uid, otherId, tx)) fail('permission-denied', 'Reciprocal request is unavailable.');
+      if (reverse.exists) return { status: reverse.data().status };
+      const outgoing = await tx.get(this.db.collection('socialFollows').where('followerId', '==', uid).limit(LIMITS.followedAuthors));
+      if (outgoing.size >= LIMITS.followedAuthors) fail('resource-exhausted', 'Connection limit reached.');
+      tx.create(this.follow(uid, otherId), { followerId: uid, followedId: otherId, status: 'pending', createdAt: this.clock() });
+      return { status: 'pending' };
+    });
+  }
   async createInvitation(uid, audience = 'follow') {
     if (!['follow', 'partner'].includes(audience)) fail('invalid-argument', 'Invalid invitation audience.');
     await this.requireActive(uid);

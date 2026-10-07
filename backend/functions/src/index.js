@@ -33,6 +33,10 @@ export const social = onCall({
   if (!data || typeof data.action !== 'string') throw new HttpsError('invalid-argument', 'An action is required.');
   try {
     switch (data.action) {
+      case 'ownProfile': return await service.ownProfile(uid);
+      case 'previewInvitation': return await service.previewInvitation(uid, data.token);
+      case 'relationships': return await service.relationships(uid, data);
+      case 'requestReciprocal': return await service.requestReciprocal(uid, data.otherId);
       case 'setProfile': return await service.setProfile(uid, data);
       case 'createInvitation': return await service.createInvitation(uid, data.audience ?? 'follow');
       case 'revokeInvitation': return await service.revokeInvitation(uid, data.token);

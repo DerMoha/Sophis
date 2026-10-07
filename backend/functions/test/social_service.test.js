@@ -235,3 +235,39 @@ test('cancelled an unpublished operation before a delayed publish without reserv
   await service.beginDeletion('alice');
   await denied(service.deletePost('alice', pairId('alice', 'afterDeletion'), 'afterDeletion'));
 });
+
+test('previewed invitations privately before consumption and hid expired, blocked and other-recipient invites', async () => {
+  const invitation = await service.createInvitation('alice');
+  assert.equal((await service.previewInvitation('bob', invitation.token)).displayName, 'alice');
+  await service.requestFollow('bob', invitation.token);
+  assert.equal((await service.previewInvitation('bob', invitation.token)).audience, 'follow');
+  await assert.rejects(service.previewInvitation('eve', invitation.token), { code: 'not-found' });
+  await service.blockAccount('alice', 'bob');
+  await denied(service.previewInvitation('bob', invitation.token));
+  now = invitation.expiresAt;
+  await assert.rejects(service.previewInvitation('eve', invitation.token), { code: 'not-found' });
+});
+
+test('listed only own relationship participants and required separate approval for reciprocal follows', async () => {
+  const invitation = await service.createInvitation('alice');
+  await service.requestFollow('bob', invitation.token);
+  await denied(service.requestReciprocal('alice', 'bob'));
+  assert.equal((await service.relationships('alice', { direction: 'incoming' })).relationships[0].accountId, 'bob');
+  assert.equal((await service.relationships('eve', { direction: 'incoming' })).relationships.length, 0);
+  await service.approveFollow('alice', 'bob');
+  await service.requestReciprocal('alice', 'bob');
+  await service.requestReciprocal('alice', 'bob');
+  const { id } = await service.publish('bob', post());
+  await denied(service.readPost('alice', id));
+  await service.approveFollow('bob', 'alice');
+  assert.equal((await service.readPost('alice', id)).authorId, 'bob');
+  await service.blockAccount('bob', 'alice');
+  assert.equal((await service.relationships('alice', { direction: 'outgoing' })).relationships.length, 0);
+});
+
+test('loaded only the authenticated own profile and allowed missing-profile onboarding', async () => {
+  assert.equal((await service.ownProfile('alice')).profile.displayName, 'alice');
+  assert.equal((await service.ownProfile('newAccount')).profile, null);
+  await service.beginDeletion('alice');
+  await denied(service.ownProfile('alice'));
+});
