@@ -27,7 +27,7 @@ class QuickActionsSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 12),
+          padding: const EdgeInsets.only(left: 4, bottom: 6),
           child: Text(
             l10n.quickActions,
             style: theme.textTheme.labelMedium?.copyWith(
@@ -44,26 +44,18 @@ class QuickActionsSection extends StatelessWidget {
   }
 
   Widget _buildChipRow(ThemeData theme) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final columnCount = actions.length == 1 ? 1 : 2;
-        final itemWidth = columnCount == 1
-            ? constraints.maxWidth
-            : (constraints.maxWidth - 8) / columnCount;
-
-        return Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: actions
-              .map(
-                (action) => SizedBox(
-                  width: itemWidth,
-                  child: _buildChip(theme, action),
-                ),
-              )
-              .toList(),
-        );
-      },
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: actions
+            .map(
+              (action) => Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: _buildChip(theme, action),
+              ),
+            )
+            .toList(),
+      ),
     );
   }
 
@@ -77,7 +69,7 @@ class QuickActionsSection extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppTheme.radiusLG),
         child: Container(
           constraints: const BoxConstraints(minHeight: 48),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(AppTheme.radiusLG),
@@ -87,15 +79,13 @@ class QuickActionsSection extends StatelessWidget {
             children: [
               Icon(action.icon, size: 18, color: color),
               const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  action.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.w600,
-                  ),
+              Text(
+                action.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],

@@ -3,10 +3,67 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:sophis/models/nutrition_goals.dart';
 import 'package:sophis/ui/screens/home_screen.dart';
+import 'package:sophis/ui/screens/home/modern/widgets/calorie_hero_card.dart';
+import 'package:sophis/ui/screens/home/modern/widgets/macros_card.dart';
+import 'package:sophis/ui/screens/macro_details_screen.dart';
 
 import '../helpers/test_services.dart';
 
 void main() {
+  testWidgets('calorie summary showed burned calories and the adjusted goal',
+      (tester) async {
+    await pumpTestApp(
+      tester,
+      const Scaffold(
+        body: CalorieHeroCard(
+          consumed: 900,
+          baseGoal: 2200,
+          effectiveGoal: 2520,
+          remaining: 1620,
+          progress: 900 / 2520,
+          burnedCalories: 320,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('+320 kcal burned'), findsOneWidget);
+    expect(find.text('Goal: 2520 kcal'), findsOneWidget);
+  });
+
+  testWidgets('Today kept breakfast visible below the compact summary',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final nutrition = await createLoadedWidgetNutritionProvider(tester);
+    final settings = await createWidgetTestSettingsProvider(tester);
+    nutrition.attachSettingsProvider(settings);
+    await nutrition.setGoals(NutritionGoals(calories: 2200));
+    await pumpTestApp(
+      tester,
+      const HomeScreen(),
+      nutritionProvider: nutrition,
+      settingsProvider: settings,
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Calories'), findsOneWidget);
+    expect(find.text('+0 kcal burned'), findsNothing);
+    expect(find.text('Macronutrients'), findsNothing);
+    expect(find.text('Quick Actions'), findsOneWidget);
+    final breakfast = find.text('Breakfast');
+    expect(breakfast, findsOneWidget);
+    expect(
+      tester.getBottomLeft(breakfast).dy,
+      lessThan(tester.getTopLeft(find.byType(NavigationBar)).dy),
+    );
+    expect(tester.takeException(), isNull);
+    await tester.tap(find.byType(MacrosCard));
+    await tester.pumpAndSettle();
+    expect(find.byType(MacroDetailsScreen), findsOneWidget);
+  });
+
   testWidgets('AppShell remained available without nutrition goals', (
     tester,
   ) async {

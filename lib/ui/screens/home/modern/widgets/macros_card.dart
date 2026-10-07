@@ -8,11 +8,13 @@ import 'package:sophis/ui/screens/macro_details_screen.dart';
 
 /// Macro rings card for the modern home screen.
 class MacrosCard extends StatelessWidget {
+  final bool embedded;
   final NutritionTotals totals;
   final NutritionGoals goals;
 
   const MacrosCard({
     super.key,
+    this.embedded = false,
     required this.totals,
     required this.goals,
   });
@@ -24,6 +26,7 @@ class MacrosCard extends StatelessWidget {
 
     final rings = <Widget>[
       MacroRing(
+        size: largeText ? 80 : 56,
         label: l10n.protein,
         value: totals.protein,
         goal: goals.protein,
@@ -31,18 +34,21 @@ class MacrosCard extends StatelessWidget {
         excessColor: AppTheme.success,
       ),
       MacroRing(
+        size: largeText ? 80 : 56,
         label: l10n.carbs,
         value: totals.carbs,
         goal: goals.carbs,
         color: AppTheme.carbs,
       ),
       MacroRing(
+        size: largeText ? 80 : 56,
         label: l10n.fat,
         value: totals.fat,
         goal: goals.fat,
         color: AppTheme.fat,
       ),
       MacroRing(
+        size: largeText ? 80 : 56,
         label: l10n.fiber,
         value: totals.fiber,
         goal: goals.fiber,
@@ -50,29 +56,39 @@ class MacrosCard extends StatelessWidget {
       ),
     ];
 
+    final macroRows = largeText
+        ? LayoutBuilder(
+            builder: (context, constraints) {
+              final width = (constraints.maxWidth - 12) / 2;
+              return Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: rings
+                    .map((ring) => SizedBox(width: width, child: ring))
+                    .toList(),
+              );
+            },
+          )
+        : Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: rings.map((ring) => Flexible(child: ring)).toList(),
+          );
+    final content = macroRows;
+    void openDetails() => Navigator.push(
+          context,
+          AppTheme.slideRoute(MacroDetailsScreen(totals: totals, goals: goals)),
+        );
+    if (embedded) {
+      return Semantics(
+        button: true,
+        label: l10n.macronutrients,
+        child: InkWell(onTap: openDetails, child: content),
+      );
+    }
     return GlassCard(
-      onTap: () => Navigator.push(
-        context,
-        AppTheme.slideRoute(MacroDetailsScreen(totals: totals, goals: goals)),
-      ),
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-      child: largeText
-          ? LayoutBuilder(
-              builder: (context, constraints) {
-                final width = (constraints.maxWidth - 12) / 2;
-                return Wrap(
-                  spacing: 12,
-                  runSpacing: 20,
-                  children: rings
-                      .map((ring) => SizedBox(width: width, child: ring))
-                      .toList(),
-                );
-              },
-            )
-          : Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: rings.map((ring) => Flexible(child: ring)).toList(),
-            ),
+      onTap: openDetails,
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      child: content,
     );
   }
 }

@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/components/organic_components.dart';
-import 'package:sophis/ui/screens/home/modern/widgets/boosted_goal_display.dart';
-import 'package:sophis/ui/screens/home/modern/widgets/compact_stat_row.dart';
 
-/// The main calorie display card for the modern home screen.
+/// Daily energy balance, with the next useful number given priority.
 class CalorieHeroCard extends StatelessWidget {
+  final Widget? macros;
   final double consumed;
   final double baseGoal;
   final double effectiveGoal;
@@ -16,6 +15,7 @@ class CalorieHeroCard extends StatelessWidget {
 
   const CalorieHeroCard({
     super.key,
+    this.macros,
     required this.consumed,
     required this.baseGoal,
     required this.effectiveGoal,
@@ -29,90 +29,109 @@ class CalorieHeroCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final isOver = remaining < 0;
-    final statusColor = isOver ? AppTheme.error : AppTheme.success;
-
-    final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.3;
-
-    final progressRing = RadialProgress(
-      value: progress,
-      size: largeText ? 180 : 130,
-      strokeWidth: 12,
-      color: theme.colorScheme.primary,
-      gradient: LinearGradient(
-        colors: [
-          theme.colorScheme.primary,
-          theme.colorScheme.primary.withValues(alpha: 0.6),
-        ],
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AnimatedNumber(
-            value: consumed,
-            style: theme.textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          BoostedGoalDisplay(
-            baseGoal: baseGoal,
-            effectiveGoal: effectiveGoal,
-            burnedCalories: burnedCalories,
-          ),
-          Text(
-            'kcal',
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
-    );
-
-    final details = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(l10n.calories, style: theme.textTheme.titleMedium),
-        const SizedBox(height: AppTheme.spaceSM),
-        CompactStatRow(
-          icon:
-              isOver ? Icons.warning_amber_rounded : Icons.check_circle_outline,
-          value: remaining.abs().toStringAsFixed(0),
-          label: isOver ? l10n.over : l10n.remaining,
-          color: statusColor,
-        ),
-        if (burnedCalories > 0) ...[
-          const SizedBox(height: 8),
-          CompactStatRow(
-            icon: Icons.local_fire_department_rounded,
-            value: burnedCalories.toStringAsFixed(0),
-            label: l10n.burned('').trim(),
-            color: AppTheme.fire,
-          ),
-        ],
-      ],
-    );
+    final color = isOver ? AppTheme.warning : theme.colorScheme.primary;
 
     return GlassCard(
-      padding: const EdgeInsets.all(AppTheme.spaceLG),
-      child: largeText
-          ? Column(
+      tint: theme.colorScheme.primary,
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.local_fire_department_outlined,
+                color: color,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(l10n.calories, style: theme.textTheme.titleMedium),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.end,
+            children: [
+              AnimatedNumber(
+                value: remaining.abs(),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w500,
+                  height: 1.2,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(
+                  'kcal ${isOver ? l10n.over : l10n.remaining}',
+                  style: theme.textTheme.bodyMedium,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Semantics(
+            label: l10n.calories,
+            value:
+                '${consumed.toStringAsFixed(0)} / ${effectiveGoal.toStringAsFixed(0)} kcal',
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(AppTheme.radiusFull),
+              child: LinearProgressIndicator(
+                value: progress.isFinite ? progress.clamp(0.0, 1.0) : 0,
+                minHeight: 6,
+                color: color,
+                backgroundColor: color.withValues(alpha: 0.12),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            spacing: 20,
+            runSpacing: 8,
+            children: [
+              Text(
+                '${consumed.toStringAsFixed(0)} kcal',
+                style: theme.textTheme.bodyMedium,
+              ),
+              Text(
+                '${l10n.goal}: ${effectiveGoal.toStringAsFixed(0)} kcal',
+                style: theme.textTheme.bodyMedium,
+              ),
+            ],
+          ),
+          if (burnedCalories > 0) ...[
+            const SizedBox(height: 8),
+            Row(
               children: [
-                progressRing,
-                const SizedBox(height: AppTheme.spaceLG),
-                Align(alignment: Alignment.centerLeft, child: details),
-              ],
-            )
-          : Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                progressRing,
-                const SizedBox(width: AppTheme.spaceLG),
-                Expanded(child: details),
+                const Icon(
+                  Icons.local_fire_department_outlined,
+                  size: 16,
+                  color: AppTheme.fire,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    l10n.burned('${burnedCalories.toStringAsFixed(0)} kcal'),
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ),
               ],
             ),
+          ],
+          if (macros != null) ...[
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 10),
+              child: Divider(),
+            ),
+            macros!,
+          ],
+        ],
+      ),
     );
   }
 }

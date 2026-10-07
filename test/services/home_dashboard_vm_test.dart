@@ -121,12 +121,13 @@ void main() {
       );
     }
 
-    testWidgets('first slot is configured quick actions',
+    testWidgets('prioritized the daily balance before configured quick actions',
         (WidgetTester tester) async {
       await tester.pumpWidget(
         wrapApp((context) {
           final slots = buildDashboardSlots(context, createVm());
-          final quickActions = slots.first as DashboardQuickActions;
+          expect(slots.first, isA<DashboardCalorieHero>());
+          final quickActions = slots.whereType<DashboardQuickActions>().single;
           return Text(quickActions.actions.first.id);
         }),
       );
@@ -273,7 +274,7 @@ void main() {
       expect(find.text('0'), findsOneWidget);
     });
 
-    testWidgets('DashboardSpace between CalorieHero and Macros is 12px',
+    testWidgets('DashboardSpace after the combined nutrition card is 12px',
         (WidgetTester tester) async {
       await tester.pumpWidget(
         wrapApp((context) {

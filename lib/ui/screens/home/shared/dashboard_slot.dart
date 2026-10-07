@@ -32,6 +32,8 @@ class DashboardSpace extends DashboardSlot {
 
 /// The calorie hero card. Always present when goals are set.
 class DashboardCalorieHero extends DashboardSlot {
+  final NutritionTotals? totals;
+  final NutritionGoals? goals;
   final double consumed;
   final double baseGoal;
   final double effectiveGoal;
@@ -40,6 +42,8 @@ class DashboardCalorieHero extends DashboardSlot {
   final double burnedCalories;
 
   const DashboardCalorieHero({
+    this.totals,
+    this.goals,
     required this.consumed,
     required this.baseGoal,
     required this.effectiveGoal,
@@ -121,6 +125,8 @@ Widget renderDashboardSlot(
   return switch (slot) {
     DashboardSpace(:final height) => SizedBox(height: height),
     DashboardCalorieHero(
+      :final totals,
+      :final goals,
       :final consumed,
       :final baseGoal,
       :final effectiveGoal,
@@ -131,6 +137,9 @@ Widget renderDashboardSlot(
       FadeInSlide(
         index: fadeIndex,
         child: CalorieHeroCard(
+          macros: totals != null && goals != null
+              ? MacrosCard(totals: totals, goals: goals, embedded: true)
+              : null,
           consumed: consumed,
           baseGoal: baseGoal,
           effectiveGoal: effectiveGoal,

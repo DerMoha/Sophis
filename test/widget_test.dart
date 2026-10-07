@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/intl.dart';
 import 'package:sophis/ui/screens/home_screen.dart';
 
 import 'helpers/test_services.dart';
@@ -19,7 +20,10 @@ void main() {
     );
     await tester.pump(const Duration(seconds: 2));
 
-    expect(find.text('Sophis'), findsOneWidget);
+    expect(
+      find.text(DateFormat.yMMMMEEEEd('en').format(DateTime.now())),
+      findsOneWidget,
+    );
     expect(find.text('Today'), findsWidgets);
     expect(find.text('Diary'), findsWidgets);
     expect(find.text('More'), findsOneWidget);

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/providers/settings_provider.dart';
@@ -48,12 +49,27 @@ class _HomeScreenModernState extends State<HomeScreenModern> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
+    final baseTheme = Theme.of(context);
+    TextStyle? serif(TextStyle? style) => style?.copyWith(
+          fontFamily: 'DM Serif Display',
+          fontWeight: FontWeight.w400,
+        );
+    final theme = baseTheme.copyWith(
+      textTheme: baseTheme.textTheme.copyWith(
+        headlineMedium: serif(baseTheme.textTheme.headlineMedium),
+        headlineSmall: serif(baseTheme.textTheme.headlineSmall),
+        displaySmall: serif(baseTheme.textTheme.displaySmall),
+        titleMedium: serif(baseTheme.textTheme.titleMedium),
+      ),
+    );
 
-    return Scaffold(
-      body: Consumer<NutritionProvider>(
-        builder: (context, nutrition, _) =>
-            _buildDashboard(context, l10n, theme),
+    return Theme(
+      data: theme,
+      child: Scaffold(
+        body: Consumer<NutritionProvider>(
+          builder: (context, nutrition, _) =>
+              _buildDashboard(context, l10n, theme),
+        ),
       ),
     );
   }
@@ -66,58 +82,63 @@ class _HomeScreenModernState extends State<HomeScreenModern> {
     final vm = readHomeDashboardVM(context);
     final slots = buildDashboardSlots(context, vm);
     final children = dashboardSlotsToWidgets(context, slots);
-    final bottomPadding = MediaQuery.paddingOf(context).bottom + 180;
+    final bottomPadding = MediaQuery.paddingOf(context).bottom + 104;
 
-    return CustomScrollView(
-      controller: _scrollController,
-      physics: const BouncingScrollPhysics(),
-      slivers: [
-        SliverToBoxAdapter(
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          l10n.today,
-                          style: theme.textTheme.headlineMedium,
-                        ),
-                      ),
-                      IconButton(
-                        tooltip: l10n.customizeDashboard,
-                        onPressed: () => Navigator.push(
-                          context,
-                          AppTheme.slideRoute(
-                            const DashboardSettingsScreen(),
+    return RefreshIndicator(
+      onRefresh: () => _refreshBurnedCalories(context),
+      child: CustomScrollView(
+        controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverToBoxAdapter(
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            l10n.today,
+                            style: theme.textTheme.headlineMedium,
                           ),
                         ),
-                        icon: const Icon(Icons.tune_rounded),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    l10n.appTitle,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+                        IconButton(
+                          tooltip: l10n.customizeDashboard,
+                          onPressed: () => Navigator.push(
+                            context,
+                            AppTheme.slideRoute(
+                              const DashboardSettingsScreen(),
+                            ),
+                          ),
+                          icon: const Icon(Icons.tune_rounded),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 4),
+                    Text(
+                      DateFormat.yMMMMEEEEd(
+                        Localizations.localeOf(context).toString(),
+                      ).format(DateTime.now()),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
-        SliverPadding(
-          padding: EdgeInsets.fromLTRB(20, 8, 20, bottomPadding),
-          sliver: SliverList(
-            delegate: SliverChildListDelegate(children),
+          SliverPadding(
+            padding: EdgeInsets.fromLTRB(20, 8, 20, bottomPadding),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate(children),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

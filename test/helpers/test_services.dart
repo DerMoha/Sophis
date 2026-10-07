@@ -16,6 +16,7 @@ import 'package:sophis/services/home_widget_service.dart';
 import 'package:sophis/services/notification_service.dart';
 import 'package:sophis/services/storage_service.dart';
 import 'package:sophis/ui/theme/animations.dart';
+import 'package:sophis/ui/theme/app_theme.dart';
 
 class MockNotificationService extends Mock implements NotificationService {}
 
@@ -263,6 +264,7 @@ Future<void> pumpTestApp(
   ];
 
   final app = MaterialApp(
+    theme: AppTheme.lightTheme,
     locale: locale,
     localizationsDelegates: AppLocalizations.localizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,

@@ -20,9 +20,9 @@ class AppSurface extends StatelessWidget {
       padding: padding,
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLG),
         border: Border.all(
-          color: theme.colorScheme.outline.withValues(alpha: 0.14),
+          color: theme.colorScheme.outline.withValues(alpha: 0.35),
         ),
       ),
       child: child,
@@ -102,7 +102,15 @@ class AppNavigationRow extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Icon(icon, size: 21, color: theme.colorScheme.primary),
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+                ),
+                child: Icon(icon, size: 20, color: theme.colorScheme.primary),
+              ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(

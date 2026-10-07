@@ -28,8 +28,6 @@ class _AppShellState extends State<AppShell> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final showAddAction = _selectedIndex < 2;
-    final compactAddAction = MediaQuery.sizeOf(context).width < 500 ||
-        MediaQuery.textScalerOf(context).scale(1) > 1.3;
 
     void addFood() => showQuickAddSheet(
           context,
@@ -46,21 +44,12 @@ class _AppShellState extends State<AppShell> {
         ],
       ),
       floatingActionButton: showAddAction
-          ? compactAddAction
-              ? Semantics(
-                  button: true,
-                  label: l10n.addFood,
-                  child: FloatingActionButton(
-                    onPressed: addFood,
-                    tooltip: l10n.addFood,
-                    child: const Icon(Icons.add),
-                  ),
-                )
-              : FloatingActionButton.extended(
-                  onPressed: addFood,
-                  icon: const Icon(Icons.add),
-                  label: Text(l10n.addFood),
-                )
+          ? FloatingActionButton.extended(
+              onPressed: addFood,
+              tooltip: l10n.addFood,
+              icon: const Icon(Icons.add_rounded),
+              label: Text(l10n.addFood),
+            )
           : null,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,

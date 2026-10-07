@@ -4,8 +4,8 @@ import 'package:flutter/services.dart';
 export 'blob_painter.dart';
 export 'gradient_mesh_painter.dart';
 
-/// Liquid Vitality Design System for Sophis
-/// A warm, organic aesthetic that celebrates nourishment
+/// Shared visual system for Sophis
+/// Consistent typography, surfaces, and controls across light and dark modes.
 class AppTheme {
   // ═══════════════════════════════════════════════════════════════════════════
   // ORGANIC COLOR PALETTE - Food-inspired, warm and inviting
@@ -30,17 +30,17 @@ class AppTheme {
   static const Color fiber = Color(0xFF8B5CF6); // Violet - plant-based
 
   // Light Theme Palette
-  static const Color _lightBg = Color(0xFFFFFBF7); // Warm cream
+  static const Color _lightBg = Color(0xFFF5F6F8); // Warm cream
   static const Color _lightSurface = Color(0xFFFFFFFF);
-  static const Color _lightSurfaceAlt = Color(0xFFFFF8F0); // Soft peach tint
-  static const Color _lightText = Color(0xFF1C1917); // Warm black
-  static const Color _lightTextSecondary = Color(0xFF78716C); // Stone
+  static const Color _lightSurfaceAlt = Color(0xFFF0F2F5); // Soft peach tint
+  static const Color _lightText = Color(0xFF18212F); // Ink
+  static const Color _lightTextSecondary = Color(0xFF667085); // Stone
   static const Color _lightBorder = Color(0xFFE7E5E4); // Stone border
 
   // Dark Theme Palette
-  static const Color _darkBg = Color(0xFF0C0A09); // Rich black
-  static const Color _darkSurface = Color(0xFF1C1917); // Warm dark
-  static const Color _darkSurfaceAlt = Color(0xFF292524); // Stone dark
+  static const Color _darkBg = Color(0xFF101318); // Rich black
+  static const Color _darkSurface = Color(0xFF1A2028); // Raised surface
+  static const Color _darkSurfaceAlt = Color(0xFF252D38); // Stone dark
   static const Color _darkText = Color(0xFFFAFAF9); // Warm white
   static const Color _darkTextSecondary = Color(0xFFA8A29E); // Stone light
   static const Color _darkBorder = Color(0xFF44403C); // Stone border dark
@@ -252,8 +252,37 @@ class AppTheme {
         error: error,
         onSurface: _lightText,
         onSurfaceVariant: _lightTextSecondary,
+        outline: _lightBorder,
       ),
       scaffoldBackgroundColor: _lightBg,
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: _lightSurface,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        height: 76,
+        indicatorColor: accentColor.withValues(alpha: 0.12),
+        labelTextStyle: WidgetStateProperty.resolveWith(
+          (states) => TextStyle(
+            fontFamily: 'Plus Jakarta Sans',
+            fontSize: 12,
+            fontWeight: states.contains(WidgetState.selected)
+                ? FontWeight.w700
+                : FontWeight.w500,
+            color: states.contains(WidgetState.selected)
+                ? accentColor
+                : _lightTextSecondary,
+          ),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          minimumSize: const Size(48, 48),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(radiusMD),
+          ),
+        ),
+      ),
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         foregroundColor: _lightText,
@@ -262,10 +291,10 @@ class AppTheme {
         centerTitle: false,
         systemOverlayStyle: SystemUiOverlayStyle.dark,
         titleTextStyle: const TextStyle(
-          fontFamily: 'DM Serif Display',
+          fontFamily: 'Plus Jakarta Sans',
           color: _lightText,
-          fontSize: 24,
-          fontWeight: FontWeight.w400,
+          fontSize: 22,
+          fontWeight: FontWeight.w600,
         ),
         iconTheme: IconThemeData(color: _lightText.withValues(alpha: 0.8)),
       ),
@@ -355,7 +384,10 @@ class AppTheme {
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: accentColor,
         foregroundColor: Colors.white,
-        elevation: 4,
+        elevation: 0,
+        focusElevation: 0,
+        hoverElevation: 0,
+        highlightElevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radiusLG),
         ),
@@ -374,10 +406,10 @@ class AppTheme {
           borderRadius: BorderRadius.circular(radiusXL),
         ),
         titleTextStyle: const TextStyle(
-          fontFamily: 'DM Serif Display',
+          fontFamily: 'Plus Jakarta Sans',
           color: _lightText,
           fontSize: 22,
-          fontWeight: FontWeight.w400,
+          fontWeight: FontWeight.w600,
         ),
       ),
       snackBarTheme: SnackBarThemeData(
@@ -454,8 +486,37 @@ class AppTheme {
         error: error,
         onSurface: _darkText,
         onSurfaceVariant: _darkTextSecondary,
+        outline: _darkBorder,
       ),
       scaffoldBackgroundColor: _darkBg,
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: _darkSurface,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        height: 76,
+        indicatorColor: accentColor.withValues(alpha: 0.12),
+        labelTextStyle: WidgetStateProperty.resolveWith(
+          (states) => TextStyle(
+            fontFamily: 'Plus Jakarta Sans',
+            fontSize: 12,
+            fontWeight: states.contains(WidgetState.selected)
+                ? FontWeight.w700
+                : FontWeight.w500,
+            color: states.contains(WidgetState.selected)
+                ? accentColor
+                : _darkTextSecondary,
+          ),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          minimumSize: const Size(48, 48),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(radiusMD),
+          ),
+        ),
+      ),
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         foregroundColor: _darkText,
@@ -464,10 +525,10 @@ class AppTheme {
         centerTitle: false,
         systemOverlayStyle: SystemUiOverlayStyle.light,
         titleTextStyle: const TextStyle(
-          fontFamily: 'DM Serif Display',
+          fontFamily: 'Plus Jakarta Sans',
           color: _darkText,
-          fontSize: 24,
-          fontWeight: FontWeight.w400,
+          fontSize: 22,
+          fontWeight: FontWeight.w600,
         ),
         iconTheme: IconThemeData(color: _darkText.withValues(alpha: 0.8)),
       ),
@@ -557,7 +618,10 @@ class AppTheme {
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: accentColor,
         foregroundColor: Colors.white,
-        elevation: 4,
+        elevation: 0,
+        focusElevation: 0,
+        hoverElevation: 0,
+        highlightElevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radiusLG),
         ),
@@ -576,10 +640,10 @@ class AppTheme {
           borderRadius: BorderRadius.circular(radiusXL),
         ),
         titleTextStyle: const TextStyle(
-          fontFamily: 'DM Serif Display',
+          fontFamily: 'Plus Jakarta Sans',
           color: _darkText,
           fontSize: 22,
-          fontWeight: FontWeight.w400,
+          fontWeight: FontWeight.w600,
         ),
       ),
       snackBarTheme: SnackBarThemeData(
@@ -640,49 +704,49 @@ class AppTheme {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // TYPOGRAPHY - DM Serif Display (headers) + Plus Jakarta Sans (body)
+  // TYPOGRAPHY - Plus Jakarta Sans
   // ═══════════════════════════════════════════════════════════════════════════
 
   static TextTheme _buildTextTheme(Color primaryColor, Color secondaryColor) {
     return TextTheme(
       // Display - Large hero text
       displayLarge: TextStyle(
-        fontFamily: 'DM Serif Display',
+        fontFamily: 'Plus Jakarta Sans',
         fontSize: 48,
-        fontWeight: FontWeight.w400,
+        fontWeight: FontWeight.w600,
         color: primaryColor,
         letterSpacing: -1,
       ),
       displayMedium: TextStyle(
-        fontFamily: 'DM Serif Display',
+        fontFamily: 'Plus Jakarta Sans',
         fontSize: 40,
-        fontWeight: FontWeight.w400,
+        fontWeight: FontWeight.w600,
         color: primaryColor,
         letterSpacing: -0.5,
       ),
       displaySmall: TextStyle(
-        fontFamily: 'DM Serif Display',
+        fontFamily: 'Plus Jakarta Sans',
         fontSize: 32,
-        fontWeight: FontWeight.w400,
+        fontWeight: FontWeight.w600,
         color: primaryColor,
       ),
       // Headlines - Section titles
       headlineLarge: TextStyle(
-        fontFamily: 'DM Serif Display',
+        fontFamily: 'Plus Jakarta Sans',
         fontSize: 28,
-        fontWeight: FontWeight.w400,
+        fontWeight: FontWeight.w600,
         color: primaryColor,
       ),
       headlineMedium: TextStyle(
-        fontFamily: 'DM Serif Display',
+        fontFamily: 'Plus Jakarta Sans',
         fontSize: 24,
-        fontWeight: FontWeight.w400,
+        fontWeight: FontWeight.w600,
         color: primaryColor,
       ),
       headlineSmall: TextStyle(
-        fontFamily: 'DM Serif Display',
+        fontFamily: 'Plus Jakarta Sans',
         fontSize: 20,
-        fontWeight: FontWeight.w400,
+        fontWeight: FontWeight.w600,
         color: primaryColor,
       ),
       // Titles - Card headers, list items

@@ -50,17 +50,16 @@ class GlassCard extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     final decoration = BoxDecoration(
-      color: tint?.withValues(alpha: isDark ? 0.15 : 0.9) ??
-          theme.colorScheme.surface.withValues(alpha: isDark ? 0.8 : 0.95),
+      color: tint == null
+          ? theme.colorScheme.surface
+          : Color.alphaBlend(
+              tint!.withValues(alpha: isDark ? 0.12 : 0.06),
+              theme.colorScheme.surface,
+            ),
       borderRadius: borderRadius ?? BorderRadius.circular(AppTheme.radiusLG),
       border: showBorder
-          ? Border.all(
-              color:
-                  isDark ? CachedColors.borderDark : CachedColors.borderLight,
-              width: 1,
-            )
+          ? Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.35))
           : null,
-      boxShadow: AppTheme.shadowLG(isDark),
     );
 
     final content = Container(

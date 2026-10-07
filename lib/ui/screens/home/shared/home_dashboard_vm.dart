@@ -126,7 +126,7 @@ List<DashboardSlot> buildDashboardSlots(
 ) {
   final slots = <DashboardSlot>[];
 
-  // 1. User-configured shortcuts. These use the same visibility and ordering
+  // User-configured shortcuts. These use the same visibility and ordering
   // settings as the dashboard customization screen.
   final actions = buildHomeActions(
     context,
@@ -134,28 +134,11 @@ List<DashboardSlot> buildDashboardSlots(
     Theme.of(context),
     vm.visibleDashboardCards,
   );
-  if (actions.isNotEmpty) {
-    slots.add(
-      DashboardQuickActions(
-        actions: actions,
-        size: vm.quickActionSize,
-      ),
-    );
-    slots.add(const DashboardSpace(24));
-  }
 
   final showGuidance = vm.guidance != null &&
       vm.visibleDashboardCards.any(
         (card) => card.id == DashboardCardIds.dailyGuidance,
       );
-  if (showGuidance) {
-    // With no goals the guidance card is intentionally kept below the meal
-    // log so the primary logging action remains visible on the first screen.
-    if (vm.goals != null) {
-      slots.add(DashboardDailyGuidance(guidance: vm.guidance!));
-      slots.add(const DashboardSpace(12));
-    }
-  }
 
   // 2. Goal progress is optional. Without nutrition goals, the dashboard
   // remains a focused food log and starts directly with today's meals.
@@ -163,6 +146,8 @@ List<DashboardSlot> buildDashboardSlots(
   if (goals != null) {
     slots.add(
       DashboardCalorieHero(
+        totals: vm.totals,
+        goals: goals,
         consumed: vm.totals.calories,
         baseGoal: goals.calories.toDouble(),
         effectiveGoal: vm.effectiveGoal,
@@ -172,8 +157,13 @@ List<DashboardSlot> buildDashboardSlots(
       ),
     );
     slots.add(const DashboardSpace(12));
-    slots.add(DashboardMacros(totals: vm.totals, goals: goals));
-    slots.add(const DashboardSpace(24));
+  }
+
+  // Keep shortcuts within reach without displacing the daily balance.
+  if (actions.isNotEmpty) {
+    slots
+        .add(DashboardQuickActions(actions: actions, size: vm.quickActionSize));
+    slots.add(const DashboardSpace(12));
   }
 
   // 4. Today's meals. Secondary trackers live under More.
@@ -191,7 +181,7 @@ List<DashboardSlot> buildDashboardSlots(
     }
   }
 
-  if (showGuidance && vm.goals == null) {
+  if (showGuidance) {
     slots.add(const DashboardSpace(12));
     slots.add(DashboardDailyGuidance(guidance: vm.guidance!));
   }
