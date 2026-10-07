@@ -68,4 +68,13 @@ post_install do |installer|
       config.build_settings['CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER'] = 'NO'
     end
   end
+  # Google ML Kit has no native arm64 simulator slice. The plugin's opt-in
+  # helper adapts vendored Pods for the current platform on every build and
+  # restores their device platform when compiling for a physical iPhone.
+  require File.expand_path(
+    '.symlinks/plugins/google_mlkit_commons/ios/scripts/apple_silicon_simulator',
+    __dir__,
+  )
+  mlkit_apple_silicon_simulator_patch(installer)
+
 end

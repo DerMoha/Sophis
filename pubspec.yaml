@@ -27,7 +27,7 @@ dependencies:
   # Phase 3: AI
   google_generative_ai: ^0.4.6
   mime: ^2.0.0
-  google_mlkit_text_recognition: ^0.16.0
+  google_mlkit_text_recognition: ^0.17.0
   image_picker: ^1.0.7
   
   # Phase 5: Notifications
@@ -77,6 +77,9 @@ dev_dependencies:
   mocktail: ^1.0.4
 
 flutter:
+  # ML Kit and Firebase share native libraries; mixed SwiftPM/Pods duplicates them.
+  config:
+    enable-swift-package-manager: false
   uses-material-design: true
   generate: true
   fonts:

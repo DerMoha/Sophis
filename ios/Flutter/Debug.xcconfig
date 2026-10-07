@@ -1,3 +1,7 @@
 #include? "../Pods/Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"
 
 #include "Generated.xcconfig"
+
+// The opt-in ML Kit Podfile helper enables arm64 simulator builds.
+// Override Flutter's generated exclusion, which only inspects vendor podspecs.
+EXCLUDED_ARCHS[sdk=iphonesimulator*] = i386
