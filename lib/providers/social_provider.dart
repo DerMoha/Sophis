@@ -106,6 +106,12 @@ final class SocialProvider extends ChangeNotifier {
       _action(() async {
         final runtime = _runtime;
         if (runtime == null) return;
+        _epoch++;
+        profile = null;
+        needsProfile = false;
+        posts = [];
+        cursor = null;
+        showingCache = false;
         final result = create
             ? await runtime.auth.createAccount(email, password)
             : await runtime.auth.signIn(email, password);
@@ -177,6 +183,20 @@ final class SocialProvider extends ChangeNotifier {
         } else if (result is Failure<SocialFeedPage>) {
           message = result.message;
         }
+      });
+
+  Future<void> deletePost(String postId) => _action(() async {
+        final epoch = _epoch;
+        final result = await _runtime?.repository.deletePost(postId);
+        if (_closed || epoch != _epoch) return;
+        if (result is Failure<void>) {
+          message = result.message;
+          return;
+        }
+        posts = posts.where((post) => post.id != postId).toList();
+        _notify();
+        await _refresh();
+        message ??= 'Deletion saved to send.';
       });
 
   Future<void> signOut() => _action(() async {

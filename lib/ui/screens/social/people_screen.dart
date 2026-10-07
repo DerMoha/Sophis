@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import 'package:sophis/providers/social_provider.dart';
 import 'package:sophis/ui/components/common/app_surface.dart';
 import 'package:sophis/ui/screens/social/social_connections_screen.dart';
+import 'package:sophis/ui/screens/social/social_source_screen.dart';
+import 'package:sophis/ui/screens/social/social_post_card.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 
 class PeopleScreen extends StatefulWidget {
@@ -157,28 +159,21 @@ class _PeopleScreenState extends State<PeopleScreen>
                     'No shared meals yet. Invite a friend or partner from Connections.',
                   ),
                 ),
+              FilledButton.icon(
+                onPressed: social.busy
+                    ? null
+                    : () => Navigator.push(
+                          context,
+                          AppTheme.slideRoute(const SocialSourceScreen()),
+                        ),
+                icon: const Icon(Icons.ios_share_outlined),
+                label: const Text('Share a meal or recipe'),
+              ),
+              const SizedBox(height: 16),
               for (final post in social.posts)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
-                  child: AppSurface(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          post.snapshot.title,
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        Text(post.isRecipe ? 'Recipe' : 'Meal'),
-                        if (post.caption != null) Text(post.caption!),
-                        const SizedBox(height: 8),
-                        for (final item in post.snapshot.items) Text(item.name),
-                        if (post.nutritionVisible)
-                          Text(
-                            '${post.snapshot.items.fold(0.0, (sum, item) => sum + item.calories).round()} kcal · ${post.snapshot.servings} servings',
-                          ),
-                      ],
-                    ),
-                  ),
+                  child: SocialPostCard(post: post),
                 ),
               if (social.cursor != null)
                 TextButton(
@@ -360,7 +355,10 @@ class _PeopleScreenState extends State<PeopleScreen>
       ),
     );
     if (confirm == true && mounted) {
+      _email.clear();
       _password.clear();
+      _name.clear();
+      _creating = false;
       await social.signOut();
     }
   }
