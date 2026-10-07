@@ -55,6 +55,8 @@ export const social = onCall({
       case 'requestPartner': return await partners.request(uid, data);
       case 'acceptPartner': return await partners.accept(uid, data.connectionId);
       case 'partners': return await partners.list(uid);
+      case 'syncPartnerGoals': return await partners.syncGoals(uid, data);
+      case 'partnerGoals': return await partners.goals(uid, data);
       case 'partnerSettings': return await partners.updateSettings(uid, data);
       case 'disconnectPartner': return await partners.disconnect(uid, data.connectionId);
       case 'syncPartnerMeal': return await partners.syncMeal(uid, data);

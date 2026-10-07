@@ -7,7 +7,7 @@ const fail = (code, message) => { throw new SocialError(code, message); };
 const tokenHash = (value) => createHash('sha256').update(value).digest('hex');
 const fields = ['meals', 'summaries', 'photos'];
 export function defaultPartnerSettings() {
-  return { meals: false, summaries: false, photos: false, paused: false, revision: 0,
+  return { meals: false, summaries: false, photos: false, goals: false, goalsSnapshot: null, paused: false, revision: 0,
     mealGeneration: 0, summaryGeneration: 0, photoGeneration: 0,
     mealPeriods: [], summaryPeriods: [], photoPeriods: [] };
 }
@@ -127,7 +127,13 @@ export class PartnerService {
     for (const record of records.docs) {
       try {
         const connection = await this.authorized(uid, record.id, null, { allowPending: true });
-        connections.push({ id: record.id, ...connection });
+        const other = connection.participants.find((account) => account !== uid);
+        const profile = (await this.social.profile(other).get()).data();
+        connections.push({ id: record.id, ...connection, displayName: profile.displayName,
+          settings: Object.fromEntries(Object.entries(connection.settings).map(([account, settings]) => {
+            const { goalsSnapshot, ...publicSettings } = settings;
+            return [account, publicSettings];
+          })) });
       } catch (error) { if (!(error instanceof SocialError) || error.code !== 'permission-denied') throw error; }
     }
     return { connections };
@@ -138,14 +144,17 @@ export class PartnerService {
       if (typeof input[field] !== 'boolean') fail('invalid-argument', 'Invalid partner sharing settings.');
       desired[field] = input[field];
     }
+    if (input.goals != null && typeof input.goals !== 'boolean') fail('invalid-argument', 'Invalid goal consent.');
+    desired.goals = input.goals ?? false;
     number(input.baseRevision, Number.MAX_SAFE_INTEGER);
     // Pausing and switching everything off continue working during degradation.
-    if (!desired.paused && fields.some((field) => desired[field])) await this.social.consume(uid);
+    if (!desired.paused && [...fields, 'goals'].some((field) => desired[field])) await this.social.consume(uid);
     return this.db.runTransaction(async (tx) => {
       const connection = await this.authorized(uid, input.connectionId, tx);
       const current = connection.settings[uid];
       if (current.revision !== input.baseRevision) fail('failed-precondition', 'Sharing settings changed. Refresh before retrying.');
       const next = { ...current, ...desired, revision: current.revision + 1 };
+      if (!desired.goals) next.goalsSnapshot = null;
       const now = this.social.clock();
       for (const field of fields) {
         const key = periodKey[field], generation = generationKey[field];
@@ -170,6 +179,35 @@ export class PartnerService {
       return { settings: next };
     });
   }
+  async syncGoals(uid, input) {
+    const goals = {};
+    for (const key of input.goals == null ? [] : ['calories', 'protein', 'carbs', 'fat']) {
+      goals[key] = number(input.goals?.[key], key === 'calories' ? 100000 : 10000);
+    }
+    const date = input.localDate == null ? {} : dateFields(input);
+    const sourceRevision = number(input.sourceRevision ?? this.social.clock(), Number.MAX_SAFE_INTEGER, true);
+    if (input.goals != null) await this.social.consume(uid);
+    return this.db.runTransaction(async (tx) => {
+      const connection = await this.authorized(uid, input.connectionId, tx);
+      const settings = connection.settings[uid];
+      if (settings.revision !== input.consentRevision || (input.goals != null && (!settings.goals || settings.paused))) {
+        fail('permission-denied', 'Goal sharing consent changed.');
+      }
+      if ((settings.goalSourceRevision ?? 0) >= sourceRevision) return {};
+      const next = { ...settings, goalSourceRevision: sourceRevision, goalsSnapshot: input.goals == null ? null : { ...goals, ...date, sourceRevision, updatedAt: this.social.clock() } };
+      tx.update(this.ref(input.connectionId), { settings: { ...connection.settings, [uid]: next } });
+      return {};
+    });
+  }
+  async goals(uid, input) {
+    await this.social.consume(uid);
+    const connection = await this.authorized(uid, input.connectionId);
+    return { goals: connection.participants.flatMap((authorId) => {
+      const settings = connection.settings[authorId];
+      return settings.goals && settings.goalsSnapshot
+        ? [{ authorId, ...settings.goalsSnapshot, paused: settings.paused }] : [];
+    }) };
+  }
   async disconnect(uid, connectionId) {
     // Revocation has no ordinary-work quota gate and does not require the other
     // account to remain active (including blocked/deleting counterparts).
@@ -193,6 +231,7 @@ export class PartnerService {
     return this.db.runTransaction(async (tx) => {
       const connection = await this.authorized(uid, input.connectionId, tx);
       const settings = connection.settings[uid];
+      if (input.consentRevision != null && settings.revision !== input.consentRevision) fail('permission-denied', 'Sharing consent changed.');
       const ref = this.mealRef(input.connectionId, uid, source.sourceMealId);
       const old = (await tx.get(ref)).data();
       if (old?.deletedAt != null) return { id: ref.id, deleted: true, revision: old.sourceRevision };
@@ -267,6 +306,7 @@ export class PartnerService {
     return this.db.runTransaction(async (tx) => {
       const connection = await this.authorized(uid, input.connectionId, tx);
       const settings = connection.settings[uid];
+      if (input.consentRevision != null && settings.revision !== input.consentRevision) fail('permission-denied', 'Sharing consent changed.');
       const ref = this.contributionRef(input.connectionId, uid, source.sourceMealId);
       const old = (await tx.get(ref)).data();
       if (old?.deletedAt != null) return { id: ref.id, deleted: true, revision: old.sourceRevision };
@@ -290,6 +330,7 @@ export class PartnerService {
           localDate: group.localDate, timeZone: group.timeZone, ...totals, revision: (oldSummary?.revision ?? 0) + 1, updatedAt: this.social.clock() } });
       }
       tx.set(ref, next);
+      tx.update(this.ref(input.connectionId), { settings: { ...connection.settings, [uid]: { ...settings, summaryTimeZone: date.timeZone } } });
       for (const update of updates) tx.set(update.ref, update.data);
       return { id: ref.id, revision: source.sourceRevision };
     });

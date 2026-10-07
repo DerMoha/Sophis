@@ -17,7 +17,12 @@ can connect, share dinner once, and log their own portions independently.
 - Two distinct audiences: automatic partner sharing and deliberate follower
   posts. Partner connection requires mutual acceptance; each person controls
   their outgoing sharing independently.
-- Partner receives individual meals and daily calorie/macro totals. Daily
+- Partner receives individual meals and daily calorie/macro totals.
+- Accepted scope addition: per-connection opt-in calorie/protein/carbohydrate/fat
+  targets and progress against those targets. Goal consent is separate from meal
+  and summary consent; no weight, profile or activity-derived data is shared.
+  Progress covers only eligible shared entries and is labelled accordingly.
+  Turning goals off revokes the hosted snapshot; pausing freezes it. Daily
   totals have a separate sharing toggle. Edits/deletes update the partner view;
   previously imported diary entries remain independent copies.
 - Partner photo default includes an existing meal photo when enabled. It never

@@ -267,3 +267,27 @@ test('removed both directions of hosted partner data during account deletion', a
   for (const name of ['socialPartners', 'socialPartnerMeals', 'socialPartnerContributions', 'socialPartnerSummaries']) assert.equal((await db.collection(name).get()).size, 0);
   assert.equal((await social.profile('bob').get()).exists, true);
 });
+
+test('shared whitelisted goals only under current independent partner consent', async () => {
+  const id = await connect();
+  const goals = { calories: 2000, protein: 120, carbs: 250, fat: 70, weight: 80 };
+  await denied(partners.syncGoals('alice', { connectionId: id, consentRevision: 0, goals }));
+  let consent = await settings('alice', id, { goals: true });
+  await partners.syncGoals('alice', { connectionId: id, consentRevision: consent.revision, goals });
+  const shared = (await partners.goals('bob', { connectionId: id })).goals[0];
+  assert.equal(shared.calories, 2000); assert.equal(shared.weight, undefined);
+  await denied(partners.goals('eve', { connectionId: id }));
+  assert.equal((await partners.summaries('bob', { connectionId: id, localDate: day, timeZone: 'Europe/Berlin' })).summaries.length, 0);
+  consent = await settings('alice', id, { goals: true, paused: true });
+  await denied(partners.syncGoals('alice', { connectionId: id, consentRevision: consent.revision, goals }));
+  assert.equal((await partners.goals('bob', { connectionId: id })).goals[0].paused, true);
+  await settings('alice', id, { goals: false, paused: true });
+  assert.equal((await partners.goals('bob', { connectionId: id })).goals.length, 0);
+  assert.equal((await partners.ref(id).get()).data().settings.alice.goalsSnapshot, null);
+  consent = await settings('alice', id, { goals: true, paused: false });
+  await denied(partners.syncGoals('alice', { connectionId: id, consentRevision: 1, goals }));
+  assert.equal((await partners.goals('bob', { connectionId: id })).goals.length, 0);
+  await partners.syncGoals('alice', { connectionId: id, consentRevision: consent.revision, goals });
+  await partners.disconnect('bob', id);
+  await denied(partners.goals('bob', { connectionId: id }));
+});
