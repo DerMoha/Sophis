@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/recipe.dart';
+import 'package:sophis/models/social/social_snapshot.dart';
+import 'package:sophis/ui/screens/social/social_publication_navigation.dart';
 import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
@@ -88,6 +90,10 @@ class RecipesScreen extends StatelessWidget {
                           value: 'add',
                           child: Text(l10n.addToMeal),
                         ),
+                        const PopupMenuItem(
+                          value: 'share',
+                          child: Text('Share with followers'),
+                        ),
                         PopupMenuItem(value: 'edit', child: Text(l10n.edit)),
                         PopupMenuItem(
                           value: 'delete',
@@ -98,6 +104,13 @@ class RecipesScreen extends StatelessWidget {
                         switch (value) {
                           case 'add':
                             _showAddToMealDialog(context, recipe);
+                            break;
+                          case 'share':
+                            openSocialPublication(
+                              context: context,
+                              snapshot: () => SocialSnapshot.fromRecipe(recipe),
+                              isRecipe: true,
+                            );
                             break;
                           case 'edit':
                             Navigator.push(

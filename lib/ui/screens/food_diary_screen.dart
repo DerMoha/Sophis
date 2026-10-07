@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/food_entry.dart';
+import 'package:sophis/models/social/social_snapshot.dart';
+import 'package:sophis/ui/screens/social/social_publication_navigation.dart';
 import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/ui/components/common/ui_primitives.dart';
 import 'package:sophis/ui/screens/food_diary/food_diary_vm.dart';
@@ -372,6 +374,18 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
       calories: totalCal,
       color: mealColor,
       emptyLabel: l10n.noEntries,
+      addMenu: mealEntries.isEmpty
+          ? null
+          : IconButton(
+              tooltip: 'Share with followers',
+              icon: const Icon(Icons.ios_share_outlined),
+              onPressed: () => openSocialPublication(
+                context: context,
+                snapshot: () =>
+                    SocialSnapshot.fromEntries(mealEntries, title: title),
+                isRecipe: false,
+              ),
+            ),
       entries: mealEntries
           .map(
             (entry) => KeyedSubtree(
