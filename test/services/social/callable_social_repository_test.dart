@@ -12,6 +12,7 @@ import 'package:sophis/services/social/callable_social_repository.dart';
 import 'package:sophis/services/social/social_callable_client.dart';
 import 'package:sophis/services/social/social_local_store.dart';
 import 'package:sophis/services/social/social_queue_runner.dart';
+import 'package:sophis/services/social/social_repository.dart';
 
 class _Credentials implements SocialCredentials {
   @override
@@ -151,6 +152,73 @@ void main() {
       expect((await repository.fetchFeed()).isSuccess, isTrue);
       expect(await store.cachedFeed(session), isEmpty);
     });
+    test('queued an owner edit with its revision and rejected another owner',
+        () async {
+      SocialPost post(String author) => SocialPost(
+            id: 'post',
+            authorId: author,
+            snapshot: snapshot,
+            nutritionVisible: true,
+            revision: 3,
+            publishedAt: DateTime(2026),
+          );
+      expect(
+          (await repository.editPost(
+            post: post('bob'),
+            operationId: 'other',
+            snapshot: snapshot,
+            nutritionVisible: true,
+          ))
+              .isFailure,
+          isTrue,);
+      expect(
+          (await repository.editPost(
+            post: post('alice'),
+            operationId: 'edit',
+            snapshot: snapshot,
+            nutritionVisible: false,
+            caption: 'Updated dinner',
+          ))
+              .isSuccess,
+          isTrue,);
+      final command =
+          await store.nextCommand(await store.session(), DateTime.now());
+      expect(command!.action, 'editPost');
+      expect(command.payload['baseRevision'], 3);
+      expect(
+          command.payload['snapshot'].toString(), isNot(contains('calories')),);
+      expect(
+          command.payload['snapshot'].toString(), isNot(contains('private')),);
+    });
+
+    test('hid queued deletions from both server responses and old cached posts',
+        () async {
+      feed = {
+        'posts': [
+          {
+            'id': 'post',
+            'authorId': 'alice',
+            'kind': 'meal',
+            'snapshot': snapshot.toJson(nutritionVisible: true),
+            'nutritionVisible': true,
+            'revision': 1,
+            'publishedAt': 1791374400000,
+          }
+        ],
+        'cursor': null,
+      };
+      expect((await repository.fetchFeed()).value.posts, hasLength(1));
+      final session = await store.session();
+      final oldCache = await store.cachedFeed(session);
+      expect((await repository.deletePost('post')).isSuccess, isTrue);
+      await store.cacheFeed(session, oldCache, DateTime.now());
+      expect(await repository.cachedFeed(), isEmpty);
+      expect((await repository.fetchFeed()).value.posts, isEmpty);
+      expect(await store.cachedFeed(session), isEmpty);
+      await store.switchAccount('bob');
+      expect(await store.pendingDeletionTargets(session), isEmpty);
+    });
+
     test('rejected attempts to publish unavailable nutrition', () async {
       final hidden = SocialSnapshot.fromJson(
         snapshot.toJson(nutritionVisible: false),

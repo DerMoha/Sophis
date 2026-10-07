@@ -159,6 +159,20 @@ final class SocialLocalStore extends GeneratedDatabase {
         return rows.isEmpty ? null : rows.single.read<String>('operation_id');
       });
 
+  Future<Set<String>> pendingDeletionTargets(SocialSession expected) =>
+      transaction(() async {
+        if (expected.accountId == null || !await isCurrent(expected)) return {};
+        final rows = await customSelect(
+          'SELECT target_id FROM social_commands WHERE action = ? AND account_id = ? AND generation = ?',
+          variables: [
+            const Variable('deletePost'),
+            Variable(expected.accountId!),
+            Variable(expected.generation),
+          ],
+        ).get();
+        return rows.map((row) => row.read<String>('target_id')).toSet();
+      });
+
   Future<void> acknowledge(SocialSession expected, String operationId) async {
     await customStatement(
       '''

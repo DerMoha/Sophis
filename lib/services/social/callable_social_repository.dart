@@ -47,8 +47,11 @@ final class CallableSocialRepository implements SocialRepository {
     }
     try {
       final data = result.value as Map<String, dynamic>;
-      final raw = (data['posts'] as List).cast<Map<String, dynamic>>();
-      if (raw.length > 20) throw const FormatException();
+      final received = (data['posts'] as List).cast<Map<String, dynamic>>();
+      if (received.length > 20) throw const FormatException();
+      final deleting = await store.pendingDeletionTargets(session);
+      final raw =
+          received.where((post) => !deleting.contains(post['id'])).toList();
       final posts = raw.map(_post).toList();
       final next = data['cursor'] as Map<String, dynamic>?;
       final page = SocialFeedPage(
@@ -81,7 +84,11 @@ final class CallableSocialRepository implements SocialRepository {
     if (session.accountId != accountId) return [];
     final raw = await store.cachedFeed(session);
     try {
-      final posts = raw.map(_post).toList();
+      final deleting = await store.pendingDeletionTargets(session);
+      final posts = raw
+          .where((post) => !deleting.contains(post['id']))
+          .map(_post)
+          .toList();
       if (!await store.isCurrent(session) || session.accountId != accountId) {
         return [];
       }
@@ -184,6 +191,39 @@ final class CallableSocialRepository implements SocialRepository {
         payload: {
           'postId': postId,
           if (publication != null) 'operationId': publication,
+        },
+        createdAt: DateTime.now(),
+      ),
+    );
+  }
+
+  Future<ServiceResult<void>> editPost({
+    required SocialPost post,
+    required String operationId,
+    required SocialSnapshot snapshot,
+    required bool nutritionVisible,
+    String? caption,
+  }) async {
+    if (post.authorId != accountId) {
+      return const Failure(
+          ServiceErrorType.authFailed, 'Only the author can edit.',);
+    }
+    if (nutritionVisible && !snapshot.nutritionAvailable) {
+      return const Failure(
+          ServiceErrorType.parseError, 'Nutrition is unavailable.',);
+    }
+    return _enqueue(
+      await store.session(),
+      SocialQueuedCommand(
+        operationId: operationId,
+        action: 'editPost',
+        targetId: post.id,
+        payload: {
+          'postId': post.id,
+          'baseRevision': post.revision,
+          'snapshot': snapshot.toJson(nutritionVisible: nutritionVisible),
+          'nutritionVisible': nutritionVisible,
+          'caption': caption?.trim().isEmpty == true ? null : caption,
         },
         createdAt: DateTime.now(),
       ),
