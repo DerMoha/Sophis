@@ -198,15 +198,24 @@ Firestore job-created trigger; Auth is deleted only after hosted data cleanup.
 ## Verification on this working tree
 
 - `flutter analyze`: no issues.
-- `flutter test --no-pub`: 377 tests passed (327 existing plus 50 new).
-- Backend emulator suite: 34 tests passed.
-- Signed native builds and physical-device behavior were not tested.
+- `flutter test --no-pub`: 379 tests passed on the current working tree.
+- Backend emulator suite: 37 tests passed.
+- iPhone 18 Pro / iOS 27 simulator: native integration test passed using actual
+  Firebase Auth/Functions emulators and the SQLite stores. It exercised account
+  creation, profile saving, empty feed, Connections, invitation creation/revocation,
+  and sign-out, asserting that diary entries stayed unchanged. Notification plugin
+  calls were stubbed to isolate an unrelated startup permission prompt.
+- Signed builds, physical devices, Android, two-person screens, native OCR and
+  notification delivery remain unvalidated.
 
 ## Next implementation work
 
-1. Wire the implemented optional Firebase/auth/transport services into
-   People/account screens and password recovery. Persist one social database per
-   device, clear account caches/queue on logout, and expose queue review states.
+1. Complete the initial People screens: queued-operation review, account deletion,
+   profile editing/avatar and localization. Account creation/sign-in/recovery,
+   profile creation, feed loading, directional connections, invitations/QR,
+   reciprocal requests, remove/block and sign-out now have initial UI. The native
+   simulator test covers only the single-account flow above; separate-user
+   acceptance/removal/block screens still need device tests.
 2. Connect server partner consent and local logging-origin facts to filtered
    events, durable per-connection queues and meal-photo attachment modeling.
    Never feed the entire existing nutrition outbox into this social transport.
@@ -241,3 +250,51 @@ Firebase SDK versions are pinned through the application lockfile. The analyzer
 excludes generated `build/**` package copies and example apps; application source
 and tests remain analyzed. Native dependency resolution/builds remain a separate
 validation step; adding Dart packages alone does not prove either phone works.
+
+
+## Native simulator setup
+
+The application opens People from Settings; Firebase starts only when People is
+opened. Missing production dart defines show the guest explanation and a return
+path to tracking. Explicit emulator runs use:
+
+```sh
+flutter run -t integration_test/social_screens_test.dart --no-pub \
+  -d <simulator-id> --dart-define=SOCIAL_EMULATOR_HOST=127.0.0.1 \
+  --dart-define=SOCIAL_SCREENSHOTS=true
+```
+
+Start the Auth, Firestore, Storage and Functions emulators for `demo-sophis` first.
+The test refuses any other project. `flutter run` leaves the tested app open for
+review; use `flutter test` with the same target and emulator define for the
+automated validation run. That command removes its test app at completion.
+Optional screenshots are written under the simulator app's Application Support
+`social-test-screenshots` directory while it is installed. Synthetic
+accounts are emulator-only; diary entries are compared before/after, never reset.
+
+Three native compatibility issues were exposed during real simulator launches:
+
+- Xcode 27 builds require the scene lifecycle. AppDelegate now registers plugins
+  through the implicit-engine callback and Info.plist declares FlutterSceneDelegate,
+  following [Flutter's migration](https://docs.flutter.dev/release/breaking-changes/uiscenedelegate).
+- Firebase SwiftPM and ML Kit CocoaPods duplicated native symbols. The app now uses
+  one CocoaPods dependency path through the documented
+  [project-level SwiftPM setting](https://docs.flutter.dev/packages-and-plugins/swift-package-manager/for-app-developers#how-to-turn-off-swift-package-manager).
+  This is a current compatibility measure; those plugins need a future SwiftPM
+  migration when Flutter stops supporting this fallback.
+- ML Kit lacks a native ARM64 simulator slice. Upgraded the text-recognition plugin
+  to 0.17.1 (commons 0.13.0) and opted into its
+  [maintainer-provided simulator helper](https://github.com/flutter-ml/google_ml_kit_flutter/blob/develop/packages/google_mlkit_commons/README.md).
+  The helper relabels vendored Pods per build platform; Debug.xcconfig overrides
+  Flutter's podspec-derived ARM64 exclusion. The simulator app launched with this
+  setup, but physical-device builds and native OCR still need validation.
+
+The account, profile, empty feed, Connections, invitation/QR and signed-out
+screens were captured and visually reviewed on the simulator. No layout overflow
+was observed at its default text size. Narrow and larger text layouts still need
+a social-specific accessibility pass.
+
+Production uses `SOCIAL_PROJECT_ID`, `SOCIAL_API_KEY`, `SOCIAL_SENDER_ID` and the
+platform-specific `SOCIAL_IOS_APP_ID` / `SOCIAL_ANDROID_APP_ID` dart defines. These
+are registered-app configuration, not authorization to deploy or enable billing.
+Production App Check setup and real configuration remain required before release.
