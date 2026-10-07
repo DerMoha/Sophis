@@ -9,6 +9,8 @@ import 'package:sophis/l10n/generated/app_localizations.dart';
 
 import 'package:sophis/models/shareable_meal.dart';
 import 'package:sophis/providers/settings_provider.dart';
+import 'package:sophis/providers/social_provider.dart';
+import 'package:sophis/ui/screens/social/people_screen.dart';
 import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/services/meal_sharing_service.dart';
 import 'package:sophis/services/barcode_lookup_service.dart';
@@ -74,6 +76,7 @@ class _SophisBootstrapAppState extends State<SophisBootstrapApp> {
         if (runtime != null) {
           return MultiProvider(
             providers: [
+              ChangeNotifierProvider(create: (_) => SocialProvider()),
               ChangeNotifierProvider<SettingsProvider>.value(
                 value: runtime.settings,
               ),
@@ -189,6 +192,22 @@ class _SophisAppState extends State<SophisApp> {
   }
 
   void _handleDeepLink(String url) {
+    final uri = Uri.tryParse(url);
+    if (uri?.scheme == 'sophis' &&
+        uri?.host == 'people' &&
+        uri?.path == '/invite') {
+      final token = uri?.queryParameters['token'];
+      if (token != null && RegExp(r'^[A-Za-z0-9_-]{43}$').hasMatch(token)) {
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (mounted) {
+            navigatorKey.currentState?.push(
+              AppTheme.slideRoute(PeopleScreen(invitationToken: token)),
+            );
+          }
+        });
+      }
+      return;
+    }
     if (!MealSharingService.isShareLink(url)) return;
 
     final meal = ShareableMeal.fromDeepLink(url);

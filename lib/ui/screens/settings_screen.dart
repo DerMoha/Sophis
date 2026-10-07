@@ -6,6 +6,7 @@ import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/ui/components/common/app_surface.dart';
 import 'package:sophis/ui/screens/meal_types_screen.dart';
+import 'package:sophis/ui/screens/social/people_screen.dart';
 import 'package:sophis/ui/screens/settings/sections/sections.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 
@@ -50,6 +51,16 @@ class SettingsScreen extends StatelessWidget {
           AppSection(
             title: l10n.general,
             children: [
+              AppNavigationRow(
+                title: 'People',
+                subtitle:
+                    'Private meal sharing with invited friends and partners',
+                icon: Icons.people_outline,
+                onTap: () => Navigator.push(
+                  context,
+                  AppTheme.slideRoute(const PeopleScreen()),
+                ),
+              ),
               AppNavigationRow(
                 title: l10n.appearance,
                 icon: Icons.palette_outlined,
