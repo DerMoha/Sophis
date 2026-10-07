@@ -7,6 +7,8 @@ import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/models/nutrition_goals.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/theme/animations.dart';
+import 'package:sophis/services/nutrition_guidance_service.dart';
+import 'package:sophis/ui/components/weekly_review_card.dart';
 
 class ActivityGraphScreen extends StatefulWidget {
   const ActivityGraphScreen({super.key});
@@ -50,6 +52,11 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
         builder: (context, nutrition, _) {
           final data = _getHistoricalData(nutrition, _selectedDays);
           final goals = nutrition.goals;
+          final weeklyReview = const NutritionGuidanceService().calculateWeekly(
+            entries: nutrition.entries,
+            weights: nutrition.weightEntries,
+            goals: goals,
+          );
 
           if (data.isEmpty) {
             return Center(
@@ -103,9 +110,15 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Protein chart
                 FadeInSlide(
                   index: 2,
+                  child: WeeklyReviewCard(review: weeklyReview),
+                ),
+                const SizedBox(height: 16),
+
+                // Protein chart
+                FadeInSlide(
+                  index: 3,
                   child: _buildChartCard(
                     title: l10n.protein,
                     data: data,
@@ -121,7 +134,7 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
 
                 // Carbs chart
                 FadeInSlide(
-                  index: 3,
+                  index: 4,
                   child: _buildChartCard(
                     title: l10n.carbs,
                     data: data,
@@ -137,7 +150,7 @@ class _ActivityGraphScreenState extends State<ActivityGraphScreen> {
 
                 // Fat chart
                 FadeInSlide(
-                  index: 4,
+                  index: 5,
                   child: _buildChartCard(
                     title: l10n.fat,
                     data: data,

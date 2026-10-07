@@ -280,6 +280,12 @@ class _DashboardCardTile extends StatelessWidget {
           icon: Icons.photo_camera_outlined,
           color: AppTheme.emerald,
         );
+      case DashboardCardIds.dailyGuidance:
+        return _CardInfo(
+          label: l10n.dailyGuidance,
+          icon: Icons.lightbulb_outline,
+          color: const Color(0xFF14B8A6),
+        );
       default:
         return _CardInfo(
           label: id,

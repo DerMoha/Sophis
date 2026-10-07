@@ -11,6 +11,8 @@ import 'package:sophis/ui/components/streak_card.dart';
 import 'package:sophis/ui/components/supplements_today_card.dart';
 import 'package:sophis/ui/screens/home/modern/widgets/widgets.dart';
 import 'package:sophis/ui/screens/home/shared/home_actions.dart';
+import 'package:sophis/services/nutrition_guidance_service.dart';
+import 'package:sophis/ui/components/daily_guidance_card.dart';
 import 'package:sophis/ui/theme/animations.dart';
 
 /// A single element of the home dashboard, decided by the [HomeDashboardVM].
@@ -90,7 +92,10 @@ class DashboardMealHeader extends DashboardSlot {
 class DashboardMealSection extends DashboardSlot {
   final CustomMealType mealType;
   final bool showMacros;
-  const DashboardMealSection({required this.mealType, required this.showMacros});
+  const DashboardMealSection({
+    required this.mealType,
+    required this.showMacros,
+  });
 }
 
 /// Quick actions grid. Only present when there is at least one visible action.
@@ -98,6 +103,13 @@ class DashboardQuickActions extends DashboardSlot {
   final List<HomeAction> actions;
   final QuickActionSize size;
   const DashboardQuickActions({required this.actions, required this.size});
+}
+
+/// Compact deterministic next-step guidance card.
+class DashboardDailyGuidance extends DashboardSlot {
+  final NutritionGuidance guidance;
+
+  const DashboardDailyGuidance({required this.guidance});
 }
 
 /// Renders a [DashboardSlot] to a widget. Exposed for tests and the screen.
@@ -181,6 +193,10 @@ Widget renderDashboardSlot(
     DashboardQuickActions(:final actions, :final size) => FadeInSlide(
         index: fadeIndex,
         child: QuickActionsSection(actions: actions, size: size),
+      ),
+    DashboardDailyGuidance(:final guidance) => FadeInSlide(
+        index: fadeIndex,
+        child: DailyGuidanceCard(guidance: guidance),
       ),
   };
 }

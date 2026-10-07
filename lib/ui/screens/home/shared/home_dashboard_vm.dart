@@ -9,6 +9,7 @@ import 'package:sophis/models/nutrition_totals.dart';
 import 'package:sophis/models/user_stats.dart';
 import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/providers/settings_provider.dart';
+import 'package:sophis/services/nutrition_guidance_service.dart';
 import 'package:sophis/ui/screens/home/shared/dashboard_slot.dart';
 import 'package:sophis/ui/screens/home/shared/home_actions.dart';
 
@@ -34,6 +35,7 @@ class HomeDashboardVM {
   final QuickActionSize quickActionSize;
   final UserStats userStats;
   final bool showSupplements;
+  final NutritionGuidance? guidance;
 
   const HomeDashboardVM({
     required this.totals,
@@ -52,6 +54,7 @@ class HomeDashboardVM {
     required this.quickActionSize,
     required this.userStats,
     required this.showSupplements,
+    this.guidance,
   });
 
   bool get isOverGoal => goals != null && remaining < 0;
@@ -78,6 +81,17 @@ HomeDashboardVM readHomeDashboardVM(BuildContext context) {
   final burned = nutrition.burnedCalories;
   final effectiveGoal = (goals?.calories ?? 0) + burned;
   final remaining = goals == null ? 0.0 : effectiveGoal - totals.calories;
+  final remainingSlots = settings.mealTypes
+      .where((meal) => nutrition.getEntriesByMeal(meal.id).isEmpty)
+      .length;
+  final guidance = const NutritionGuidanceService().calculateDaily(
+    consumed: totals,
+    goals: goals,
+    burnedCalories: burned,
+    remainingMealSlots: remainingSlots,
+    plannedMeals: nutrition.getPlannedMealsForDate(DateTime.now()),
+    recentFoods: nutrition.recentFoods,
+  );
 
   return HomeDashboardVM(
     totals: totals,
@@ -98,6 +112,7 @@ HomeDashboardVM readHomeDashboardVM(BuildContext context) {
     quickActionSize: settings.quickActionSize,
     userStats: nutrition.userStats,
     showSupplements: settings.showSupplements,
+    guidance: guidance,
   );
 }
 
@@ -127,6 +142,19 @@ List<DashboardSlot> buildDashboardSlots(
       ),
     );
     slots.add(const DashboardSpace(24));
+  }
+
+  final showGuidance = vm.guidance != null &&
+      vm.visibleDashboardCards.any(
+        (card) => card.id == DashboardCardIds.dailyGuidance,
+      );
+  if (showGuidance) {
+    // With no goals the guidance card is intentionally kept below the meal
+    // log so the primary logging action remains visible on the first screen.
+    if (vm.goals != null) {
+      slots.add(DashboardDailyGuidance(guidance: vm.guidance!));
+      slots.add(const DashboardSpace(12));
+    }
   }
 
   // 2. Goal progress is optional. Without nutrition goals, the dashboard
@@ -161,6 +189,11 @@ List<DashboardSlot> buildDashboardSlots(
     if (i < vm.mealTypes.length - 1) {
       slots.add(const DashboardSpace(12));
     }
+  }
+
+  if (showGuidance && vm.goals == null) {
+    slots.add(const DashboardSpace(12));
+    slots.add(DashboardDailyGuidance(guidance: vm.guidance!));
   }
 
   return slots;
