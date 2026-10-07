@@ -20,8 +20,9 @@ import 'social_screen_capture.dart';
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   binding.defaultBinaryMessenger.setMockMethodCallHandler(
-      const MethodChannel('dexterous.com/flutter/local_notifications'),
-      (call) async => call.method == 'initialize' ? true : null,);
+    const MethodChannel('dexterous.com/flutter/local_notifications'),
+    (call) async => call.method == 'initialize' ? true : null,
+  );
   Future<void> waitFor(WidgetTester tester, bool Function() condition) async {
     for (var i = 0; i < 300 && !condition(); i++) {
       await tester.pump(const Duration(milliseconds: 200));
@@ -56,8 +57,10 @@ void main() {
     String? connectionId;
     navigator
         .push(MaterialPageRoute<void>(builder: (_) => const PeopleScreen()));
-    await waitFor(tester,
-        () => app.navigatorKey.currentContext!.read<SocialProvider>().ready,);
+    await waitFor(
+      tester,
+      () => app.navigatorKey.currentContext!.read<SocialProvider>().ready,
+    );
     final social = app.navigatorKey.currentContext!.read<SocialProvider>();
     Future<void> switchAccount(String email) async {
       await social.signOut();
@@ -68,39 +71,59 @@ void main() {
     Future<void> openDetail() async {
       navigator.popUntil((route) => route.isFirst);
       await tester.pumpAndSettle();
-      navigator.push(MaterialPageRoute<void>(
+      navigator.push(
+        MaterialPageRoute<void>(
           builder: (_) =>
-              SocialPartnerDetailScreen(connectionId: connectionId!),),);
+              SocialPartnerDetailScreen(connectionId: connectionId!),
+        ),
+      );
       await waitFor(
-          tester,
-          () =>
-              find.text('Share nutrition goals').evaluate().isNotEmpty &&
-              find.byWidgetPredicate((widget) => widget is LinearProgressIndicator && widget.value == null).evaluate().isEmpty,);
+        tester,
+        () =>
+            find.byKey(const ValueKey('partner_today')).evaluate().isNotEmpty &&
+            find
+                .byWidgetPredicate((widget) =>
+                    widget is LinearProgressIndicator && widget.value == null,)
+                .evaluate()
+                .isEmpty,
+      );
     }
 
     Future<void> change(String title, String field, bool value) async {
+      await tester.scrollUntilVisible(find.text('Sharing settings'), 300,
+          scrollable: find.descendant(
+            of: find.byType(SocialPartnerDetailScreen),
+            matching: find.byType(Scrollable),
+          ).first,);
+      if (find.text('Share nutrition goals').evaluate().isEmpty) {
+        await tap(tester, find.text('Sharing settings'));
+      }
       final tile = find.widgetWithText(SwitchTile, title);
       await tap(
-          tester, find.descendant(of: tile, matching: find.byType(Switch)),);
+        tester,
+        find.descendant(of: tile, matching: find.byType(Switch)),
+      );
       await waitFor(
-          tester, () => social.partners.single.ownSettings[field] == value,);
+        tester,
+        () => social.partners.single.ownSettings[field] == value,
+      );
       await waitFor(
-          tester,
-          () =>
-              find.byWidgetPredicate((widget) => widget is LinearProgressIndicator && widget.value == null).evaluate().isEmpty ||
-              find.text('Share nutrition goals').evaluate().isEmpty,);
+        tester,
+        () => find.byType(LinearProgressIndicator).evaluate().isEmpty,
+      );
       await tester.pumpAndSettle();
     }
 
     FoodEntry entry(String suffix, double calories) => FoodEntry(
-        id: 'partner_${marker}_$suffix',
-        name: 'Rice bowl $suffix $marker',
-        calories: calories,
-        protein: 20,
-        carbs: 50,
-        fat: 10,
-        timestamp: DateTime.now(),
-        meal: 'dinner',);
+          id: 'partner_${marker}_$suffix',
+          name: 'Rice bowl $suffix $marker',
+          calories: calories,
+          protein: 20,
+          carbs: 50,
+          fat: 10,
+          timestamp: DateTime.now(),
+          meal: 'dinner',
+        );
     try {
       await social.signOut();
       await social.authenticate(authorEmail, password, create: true);
@@ -113,24 +136,37 @@ void main() {
       final preview =
           (await social.runtime!.accounts.preview(invite.token)).value;
       expect(
-          (await social.runtime!.accounts.request(preview, invite.token))
-              .isSuccess,
-          isTrue,);
+        (await social.runtime!.accounts.request(preview, invite.token))
+            .isSuccess,
+        isTrue,
+      );
       await switchAccount(authorEmail);
-      navigator.push(MaterialPageRoute<void>(
-          builder: (_) => const SocialPartnersScreen(),),);
+      navigator.push(
+        MaterialPageRoute<void>(
+          builder: (_) => const SocialPartnersScreen(),
+        ),
+      );
       await waitFor(
-          tester, () => find.text('Accept partner').evaluate().isNotEmpty,);
+        tester,
+        () => find.text('Accept partner').evaluate().isNotEmpty,
+      );
       connectionId = social.partners.single.id;
       await tap(tester, find.text('Accept partner'));
-      await waitFor(tester,
-          () => find.text('Goals, progress and meals').evaluate().isNotEmpty,);
+      await waitFor(
+        tester,
+        () => find.text('Goals, progress and meals').evaluate().isNotEmpty,
+      );
       await tap(tester, find.text('Goals, progress and meals'));
-      await waitFor(tester,
-          () => find.text('Share nutrition goals').evaluate().isNotEmpty,);
+      await waitFor(
+        tester,
+        () => find.byKey(const ValueKey('partner_today')).evaluate().isNotEmpty,
+      );
       await nutrition.store.commit(SaveFoodEntry(entry('historical', 999)));
-      await nutrition.store.commit(SaveGoals(
-          NutritionGoals(calories: 2200, protein: 130, carbs: 260, fat: 75),),);
+      await nutrition.store.commit(
+        SaveGoals(
+          NutritionGoals(calories: 2200, protein: 130, carbs: 260, fat: 75),
+        ),
+      );
       await nutrition.reloadAll();
       await change('Share nutrition goals', 'goals', true);
       await change('Share daily progress', 'summaries', true);
@@ -140,10 +176,19 @@ void main() {
       await social.syncPartnerChanges();
       await switchAccount(recipientEmail);
       await openDetail();
-      expect(find.text('Calories: 400 / 2200 kcal'), findsOneWidget, reason: tester.widgetList<Text>(find.byType(Text)).map((text) => text.data).join(' | '));
+      expect(find.text('Calories: 400 / 2200 kcal'), findsOneWidget,
+          reason: tester
+              .widgetList<Text>(find.byType(Text))
+              .map((text) => text.data)
+              .join(' | '),);
       expect(find.text('Protein: 20 / 130 g'), findsOneWidget);
       await captureSocialScreen(binding, tester, 'partner-goals-progress');
-      await tester.scrollUntilVisible(find.text('Rice bowl shared $marker'), 300, scrollable: find.byType(Scrollable).first);
+      await tester.scrollUntilVisible(
+          find.text('Rice bowl shared $marker'), 300,
+          scrollable: find.descendant(
+            of: find.byType(SocialPartnerDetailScreen),
+            matching: find.byType(Scrollable),
+          ).first,);
       expect(find.text('Rice bowl shared $marker'), findsOneWidget);
       expect(find.text('Rice bowl historical $marker'), findsNothing);
       await captureSocialScreen(binding, tester, 'partner-shared-meal');
@@ -151,8 +196,11 @@ void main() {
       await openDetail();
       await change('Pause sharing', 'paused', true);
       await nutrition.store.commit(SaveFoodEntry(entry('paused', 500)));
-      await nutrition.store.commit(SaveGoals(
-          NutritionGoals(calories: 2500, protein: 150, carbs: 300, fat: 80),),);
+      await nutrition.store.commit(
+        SaveGoals(
+          NutritionGoals(calories: 2500, protein: 150, carbs: 300, fat: 80),
+        ),
+      );
       await nutrition.reloadAll();
       await social.syncPartnerChanges();
       await switchAccount(recipientEmail);
@@ -160,22 +208,27 @@ void main() {
       expect(find.text('Calories: 400 / 2200 kcal'), findsOneWidget);
       expect(find.text('Rice bowl paused $marker'), findsNothing);
       expect(
-          find.text(
-              'Partner sharing is paused. Previously shared values are frozen.',),
-          findsOneWidget,);
+        find.text(
+          'Partner sharing is paused. Previously shared values are frozen.',
+        ),
+        findsOneWidget,
+      );
       await switchAccount(authorEmail);
       await openDetail();
       await change('Share nutrition goals', 'goals', false);
       await switchAccount(recipientEmail);
       await openDetail();
-      expect(find.text('Your partner has not shared nutrition goals.'),
-          findsOneWidget,);
+      expect(
+        find.text('Your partner has not shared nutrition goals.'),
+        findsOneWidget,
+      );
       expect(find.text('Calories: 400 / — kcal'), findsOneWidget);
       expect(
-          (await social.runtime!.partners
-                  .request('disconnectPartner', {'connectionId': connectionId}))
-              .isSuccess,
-          isTrue,);
+        (await social.runtime!.partners
+                .request('disconnectPartner', {'connectionId': connectionId}))
+            .isSuccess,
+        isTrue,
+      );
     } finally {
       await social.signOut();
       for (final suffix in ['historical', 'shared', 'paused']) {
@@ -185,8 +238,10 @@ void main() {
       await nutrition.store.commit(SaveGoals(original.goals));
       await nutrition.reloadAll();
       final after = (await nutrition.store.snapshot()).value;
-      expect(after.foodEntries.map((e) => e.toJson()).toList(),
-          original.foodEntries.map((e) => e.toJson()).toList(),);
+      expect(
+        after.foodEntries.map((e) => e.toJson()).toList(),
+        original.foodEntries.map((e) => e.toJson()).toList(),
+      );
       expect(after.goals?.toJson(), original.goals?.toJson());
     }
   });

@@ -11,7 +11,8 @@ import 'package:sophis/providers/social_provider.dart';
 import 'package:sophis/services/service_result.dart';
 import 'package:sophis/services/social/social_partner_repository.dart';
 import 'package:sophis/services/social/social_repository.dart';
-import 'package:sophis/ui/components/common/app_surface.dart';
+import 'package:sophis/ui/components/organic_components.dart';
+import 'package:sophis/ui/screens/social/social_visuals.dart';
 import 'package:sophis/ui/components/settings/settings_tiles.dart';
 import 'package:sophis/ui/screens/social/social_import_screen.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
@@ -84,9 +85,10 @@ class _SocialPartnersScreenState extends State<SocialPartnersScreen> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          const Text(
-            'Automatic meals, shared daily progress and nutrition goals. Each person chooses their own outgoing permissions.',
-          ),
+          const SocialIdentity(
+              name: 'Better together',
+              subtitle: 'Your private circle, one day at a time',
+              icon: Icons.favorite_outline,),
           const SizedBox(height: 16),
           if (_busy) const LinearProgressIndicator(),
           if (_message != null) Text(_message!),
@@ -100,14 +102,17 @@ class _SocialPartnersScreenState extends State<SocialPartnersScreen> {
             for (final connection in social.partners)
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
-                child: AppSurface(
+                child: GlassCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        connection.displayName,
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
+                      SocialIdentity(
+                          name: connection.displayName,
+                          subtitle: connection.accepted
+                              ? 'Connected privately'
+                              : 'Partner invitation',
+                          icon: Icons.favorite_outline,),
+                      const SizedBox(height: 16),
                       if (connection.accepted)
                         TextButton(
                           onPressed: _busy
@@ -158,6 +163,7 @@ class _SocialPartnerDetailScreenState extends State<SocialPartnerDetailScreen> {
   String? _message;
   String? _dateLabel;
   bool _busy = false;
+  bool _sharingExpanded = false;
   int? _epoch;
 
   @override
@@ -350,108 +356,60 @@ class _SocialPartnerDetailScreenState extends State<SocialPartnerDetailScreen> {
           if (_message != null) Text(_message!),
           if (!valid) const Text('Your account changed. Return to People.'),
           if (connection != null) ...[
-            Text(
-              'Goals and shared progress',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            if (_dateLabel != null) Text(_dateLabel!),
+            SocialIdentity(
+                name: connection.displayName,
+                subtitle: 'Your private partner space',
+                icon: Icons.favorite_outline,),
+            const SizedBox(height: 24),
             if (connection.otherSettings['paused'] == true)
-              const Text(
-                'Partner sharing is paused. Previously shared values are frozen.',
-              ),
+              const SocialNotice(
+                  message:
+                      'Partner sharing is paused. Previously shared values are frozen.',
+                  icon: Icons.pause_circle_outline,),
             if (_goals == null)
-              const Text('Your partner has not shared nutrition goals.'),
+              const SocialNotice(
+                  message: 'Your partner has not shared nutrition goals.',),
             if (connection.otherSettings['summaries'] != true)
-              const Text('Your partner has not shared daily progress.'),
-            const Text(
-              'Progress includes only entries shared from activation onward. Earlier meals and meals logged during a pause are excluded.',
-            ),
+              const SocialNotice(
+                  message: 'Your partner has not shared daily progress.',),
+            PartnerTodayCard(
+                key: const ValueKey('partner_today'),
+                goals: _goals,
+                summary: _summary,
+                progressShared: connection.otherSettings['summaries'] == true,
+                dateLabel: _dateLabel,),
+            const SocialNotice(
+                message:
+                    'Progress includes only entries shared from activation onward. Earlier meals and meals logged during a pause are excluded.',),
             const SizedBox(height: 12),
-            AppSurface(
-              child: Column(
-                children: [
-                  for (final metric in [
-                    ('calories', 'Calories', 'kcal'),
-                    ('protein', 'Protein', 'g'),
-                    ('carbs', 'Carbohydrates', 'g'),
-                    ('fat', 'Fat', 'g'),
-                  ])
-                    _buildMetric(
-                      context,
-                      metric.$1,
-                      metric.$2,
-                      metric.$3,
-                      connection,
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Your sharing permissions',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const Text(
-              'These switches control what this partner receives from you.',
-            ),
-            IgnorePointer(
-              ignoring: _busy,
-              child: Column(
-                children: [
-                  for (final setting in [
-                    (
-                      'goals',
-                      'Share nutrition goals',
-                      'Your calorie, protein, carbohydrate and fat targets.'
-                    ),
-                    (
-                      'summaries',
-                      'Share daily progress',
-                      'Only eligible logged entries contribute to totals.'
-                    ),
-                    (
-                      'meals',
-                      'Share logged meals',
-                      'Automatically share newly logged meals from activation onward.'
-                    ),
-                    (
-                      'paused',
-                      'Pause sharing',
-                      'Freeze shared values. Turning an individual permission off revokes that data.'
-                    ),
-                  ])
-                    SwitchTile(
-                      title: setting.$2,
-                      subtitle: setting.$3,
-                      icon: Icons.share_outlined,
-                      value: connection.ownSettings[setting.$1] == true,
-                      onChanged: (value) => _change(setting.$1, value),
-                    ),
-                ],
-              ),
-            ),
-            TextButton(
-              onPressed: _busy ? null : _disconnect,
-              child: const Text('Disconnect partner'),
-            ),
-            const SizedBox(height: 20),
             Text(
               'Partner meals',
               style: Theme.of(context).textTheme.titleLarge,
             ),
-            if (_meals.isEmpty) const Text('No shared partner meals yet.'),
+            if (_meals.isEmpty)
+              const GlassCard(
+                  child: SocialIdentity(
+                      name: 'A little inspiration',
+                      subtitle: 'No shared partner meals yet.',
+                      icon: Icons.restaurant_outlined,),),
             for (final meal in _meals)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
-                child: AppSurface(
+                child: GlassCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      SocialIdentity(
+                          name: (meal['snapshot'] as Map)['title'] as String,
+                          subtitle: '${meal['localDate']} · Shared meal',
+                          icon: Icons.restaurant_outlined,),
+                      const SizedBox(height: 12),
                       Text(
-                        (meal['snapshot'] as Map)['title'] as String,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      Text(meal['localDate'] as String),
+                          '${SocialSnapshot.fromJson(meal['snapshot'] as Map<String, dynamic>, nutritionVisible: true).items.fold(0.0, (sum, item) => sum + item.calories).round()} kcal',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(color: AppTheme.fire),),
                       TextButton.icon(
                         onPressed: _busy
                             ? null
@@ -490,33 +448,64 @@ class _SocialPartnerDetailScreenState extends State<SocialPartnerDetailScreen> {
                 onPressed: _busy ? null : _more,
                 child: const Text('Load more meals'),
               ),
+            const SizedBox(height: 24),
+            GlassCard(
+                padding: EdgeInsets.zero,
+                child: ExpansionTile(
+                  key: const ValueKey('partner_sharing_settings'),
+              initiallyExpanded: _sharingExpanded,
+              onExpansionChanged: (expanded) => _sharingExpanded = expanded,
+                  leading: Icon(Icons.tune,
+                      color: Theme.of(context).colorScheme.primary,),
+                  title: const Text('Sharing settings'),
+                  subtitle:
+                      Text('Choose what ${connection.displayName} receives'),
+                  childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  shape: const Border(),
+                  collapsedShape: const Border(),
+                  children: [
+                    IgnorePointer(
+                      ignoring: _busy,
+                      child: Column(
+                        children: [
+                          for (final setting in [
+                            (
+                              'goals',
+                              'Share nutrition goals',
+                              'Your calorie, protein, carbohydrate and fat targets.'
+                            ),
+                            (
+                              'summaries',
+                              'Share daily progress',
+                              'Only eligible logged entries contribute to totals.'
+                            ),
+                            (
+                              'meals',
+                              'Share logged meals',
+                              'Automatically share newly logged meals from activation onward.'
+                            ),
+                            (
+                              'paused',
+                              'Pause sharing',
+                              'Freeze shared values. Turning an individual permission off revokes that data.'
+                            ),
+                          ])
+                            SwitchTile(
+                              title: setting.$2,
+                              subtitle: setting.$3,
+                              icon: Icons.share_outlined,
+                              value: connection.ownSettings[setting.$1] == true,
+                              onChanged: (value) => _change(setting.$1, value),
+                            ),
+                        ],
+                      ),
+                    ),
+                    TextButton(
+                        onPressed: _busy ? null : _disconnect,
+                        child: const Text('Disconnect partner'),),
+                  ],
+                ),),
           ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMetric(
-    BuildContext context,
-    String key,
-    String label,
-    String unit,
-    PartnerConnection connection,
-  ) {
-    final target = (_goals?[key] as num?)?.toDouble();
-    final current = connection.otherSettings['summaries'] == true
-        ? (_summary?[key] as num?)?.toDouble() ?? 0
-        : null;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '$label: ${current == null ? '—' : current.round()} / ${target == null ? '—' : target.round()} $unit',
-          ),
-          if (target != null && target > 0 && current != null)
-            LinearProgressIndicator(value: (current / target).clamp(0, 1)),
         ],
       ),
     );
