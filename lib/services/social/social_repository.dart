@@ -7,6 +7,7 @@ final class SocialPost {
   final SocialSnapshot snapshot;
   final bool nutritionVisible;
   final int revision;
+  final bool isRecipe;
   final DateTime publishedAt;
   final String? caption;
   final String? photoBlobId;
@@ -17,6 +18,7 @@ final class SocialPost {
     required this.snapshot,
     required this.nutritionVisible,
     required this.revision,
+    this.isRecipe = false,
     required this.publishedAt,
     this.caption,
     this.photoBlobId,

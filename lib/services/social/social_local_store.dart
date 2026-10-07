@@ -146,6 +146,19 @@ final class SocialLocalStore extends GeneratedDatabase {
         );
       });
 
+  Future<String?> pendingPublicationOperation(
+    SocialSession expected,
+    String postId,
+  ) =>
+      transaction(() async {
+        if (!await isCurrent(expected)) return null;
+        final rows = await customSelect(
+          "SELECT operation_id FROM social_commands WHERE target_id = ? AND action = 'publish' LIMIT 1",
+          variables: [Variable(postId)],
+        ).get();
+        return rows.isEmpty ? null : rows.single.read<String>('operation_id');
+      });
+
   Future<void> acknowledge(SocialSession expected, String operationId) async {
     await customStatement(
       '''
@@ -216,8 +229,10 @@ final class SocialLocalStore extends GeneratedDatabase {
 
   /// Invoke when a server refresh detects removal/block, and before presenting
   /// cached data after relationship changes. Imports are separate local copies.
-  Future<void> clearCache() async =>
-      customStatement('DELETE FROM social_cache');
+  Future<void> clearCache({SocialSession? expected}) => transaction(() async {
+        if (expected != null && !await isCurrent(expected)) return;
+        await customStatement('DELETE FROM social_cache');
+      });
 }
 
 final class SocialSession {
