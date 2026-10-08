@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:sophis/models/nutrition_goals.dart';
+import 'package:sophis/ui/components/organic/progress.dart';
 import 'package:sophis/ui/screens/home_screen.dart';
 import 'package:sophis/ui/screens/home/modern/widgets/calorie_hero_card.dart';
 import 'package:sophis/ui/screens/home/modern/widgets/macros_card.dart';
@@ -25,9 +26,10 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
-    expect(find.text('+320 kcal burned'), findsOneWidget);
-    expect(find.text('Goal: 2520 kcal'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('+320'), findsOneWidget);
+    expect(find.text('/ 2520'), findsOneWidget);
+    expect(find.text('2200'), findsOneWidget);
   });
 
   testWidgets('Today kept breakfast visible below the compact summary',
@@ -49,6 +51,15 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Calories'), findsOneWidget);
+    final hero = find.byType(CalorieHeroCard);
+    expect(
+        find.descendant(
+            of: hero, matching: find.byType(LinearProgressIndicator),),
+        findsNothing,);
+    expect(find.descendant(of: hero, matching: find.byType(RadialProgress)),
+        findsWidgets,);
+    expect(find.descendant(of: hero, matching: find.byType(MacrosCard)),
+        findsOneWidget,);
     expect(find.text('+0 kcal burned'), findsNothing);
     expect(find.text('Macronutrients'), findsNothing);
     expect(find.text('Quick Actions'), findsOneWidget);

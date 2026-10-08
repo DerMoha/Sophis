@@ -96,8 +96,9 @@ class _BoostedGoalDisplayState extends State<BoostedGoalDisplay>
           ),
         ],
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           Text(
             widget.baseGoal.toStringAsFixed(0),
