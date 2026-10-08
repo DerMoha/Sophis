@@ -80,25 +80,25 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Save profile'));
     await waitFor(
       tester,
-      () => find.text('Hello, Simulator Chef').evaluate().isNotEmpty,
+      () => find.text('Your partners').evaluate().isNotEmpty,
     );
     expect(
       find.text(
-        'No shared meals yet. Invite a friend or partner from Connections.',
+        'No partner connections yet. Use Invite a partner above to connect.',
       ),
       findsOneWidget,
     );
-    await captureSocialScreen(binding, tester, 'people-feed');
-    await tester.tap(find.byTooltip('Connections'));
+    await captureSocialScreen(binding, tester, 'partner-list');
+    await tester.tap(find.byTooltip('Invite a partner'));
     await waitFor(
       tester,
-      () => find.text('Invite a friend').evaluate().isNotEmpty,
+      () => find.text('Invite a partner').evaluate().isNotEmpty,
     );
     await captureSocialScreen(binding, tester, 'people-connections');
-    await tester.tap(find.widgetWithText(FilledButton, 'Invite a friend'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Invite a partner'));
     await waitFor(
       tester,
-      () => find.text('Follow invitation').evaluate().isNotEmpty,
+      () => find.text('Partner invitation').evaluate().isNotEmpty,
     );
     expect(
       find.text(
@@ -111,7 +111,7 @@ void main() {
     await tester.tap(find.widgetWithText(TextButton, 'Revoke'));
     await waitFor(
       tester,
-      () => find.text('Follow invitation').evaluate().isEmpty,
+      () => find.text('Partner invitation').evaluate().isEmpty,
     );
     navigator.pop();
     await tester.pumpAndSettle();
@@ -132,6 +132,6 @@ void main() {
         .toList();
     expect(after, before);
     expect(find.text('Cook, share, encourage'), findsOneWidget);
-    expect(find.text('Hello, Simulator Chef'), findsNothing);
+    expect(find.text('Your partners'), findsNothing);
   });
 }

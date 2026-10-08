@@ -109,14 +109,14 @@ void main() {
       );
       await waitFor(
         tester,
-        () => find.byType(LinearProgressIndicator).evaluate().isEmpty,
+        () => find.byWidgetPredicate((widget) => widget is LinearProgressIndicator && widget.value == null).evaluate().isEmpty,
       );
       await tester.pumpAndSettle();
     }
 
     FoodEntry entry(String suffix, double calories) => FoodEntry(
           id: 'partner_${marker}_$suffix',
-          name: 'Rice bowl $suffix $marker',
+          name: suffix == 'shared' ? 'Rice bowl' : 'Rice bowl $suffix $marker',
           calories: calories,
           protein: 20,
           carbs: 50,
@@ -154,9 +154,10 @@ void main() {
       await tap(tester, find.text('Accept partner'));
       await waitFor(
         tester,
-        () => find.text('Goals, progress and meals').evaluate().isNotEmpty,
+        () => find.text('View today').evaluate().isNotEmpty,
       );
-      await tap(tester, find.text('Goals, progress and meals'));
+      await captureSocialScreen(binding, tester, 'partner-list');
+      await tap(tester, find.text('View today'));
       await waitFor(
         tester,
         () => find.byKey(const ValueKey('partner_today')).evaluate().isNotEmpty,
@@ -184,14 +185,18 @@ void main() {
       expect(find.text('Protein: 20 / 130 g'), findsOneWidget);
       await captureSocialScreen(binding, tester, 'partner-goals-progress');
       await tester.scrollUntilVisible(
-          find.text('Rice bowl shared $marker'), 300,
+          find.text('Rice bowl'), 300,
           scrollable: find.descendant(
             of: find.byType(SocialPartnerDetailScreen),
             matching: find.byType(Scrollable),
           ).first,);
-      expect(find.text('Rice bowl shared $marker'), findsOneWidget);
+      expect(find.text('Rice bowl'), findsOneWidget);
       expect(find.text('Rice bowl historical $marker'), findsNothing);
       await captureSocialScreen(binding, tester, 'partner-shared-meal');
+      await tap(tester, find.text('Choose items from this day'));
+      await captureSocialScreen(binding, tester, 'partner-copy-items');
+      navigator.pop();
+      await tester.pumpAndSettle();
       await switchAccount(authorEmail);
       await openDetail();
       await change('Pause sharing', 'paused', true);

@@ -52,10 +52,10 @@ class SettingsScreen extends StatelessWidget {
             title: l10n.general,
             children: [
               AppNavigationRow(
-                title: 'People',
+                title: 'Partner sharing',
                 subtitle:
-                    'Private meal sharing with invited friends and partners',
-                icon: Icons.people_outline,
+                    'Goals, daily intake and meals',
+                icon: Icons.favorite_outline,
                 onTap: () => Navigator.push(
                   context,
                   AppTheme.slideRoute(const PeopleScreen()),

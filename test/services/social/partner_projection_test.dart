@@ -95,6 +95,18 @@ void main() {
     await social.close();
   });
 
+  test('shared and updated the author meal category without repeating unchanged work', () async {
+    now = start.add(const Duration(minutes: 1));
+    await nutrition.commit(SaveFoodEntry(entry('food')));
+    await project(connection(meals: true));
+    expect((await drain()).single.payload['mealCategory'], 'lunch');
+    await project(connection(meals: true));
+    expect(await drain(), isEmpty);
+    await nutrition.commit(SaveFoodEntry(entry('food').copyWith(meal: 'dinner')));
+    await project(connection(meals: true));
+    expect((await drain()).single.payload['mealCategory'], 'dinner');
+  });
+
   test('shared goals separately without diary, fiber or profile fields',
       () async {
     await nutrition.commit(SaveFoodEntry(entry('private')));

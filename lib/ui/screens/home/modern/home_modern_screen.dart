@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sophis/ui/screens/social/people_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:sophis/l10n/generated/app_localizations.dart';
@@ -104,6 +105,14 @@ class _HomeScreenModernState extends State<HomeScreenModern> {
                             l10n.today,
                             style: theme.textTheme.headlineMedium,
                           ),
+                        ),
+                        IconButton(
+                          tooltip: 'Partner sharing',
+                          onPressed: () => Navigator.push(
+                            context,
+                            AppTheme.slideRoute(const PeopleScreen()),
+                          ),
+                          icon: const Icon(Icons.favorite_outline),
                         ),
                         IconButton(
                           tooltip: l10n.customizeDashboard,

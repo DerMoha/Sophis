@@ -285,7 +285,7 @@ final class CallableSocialRepository implements SocialRepository {
       if (session.accountId == null || session.accountId != accountId) {
         return const Failure(
           ServiceErrorType.authFailed,
-          'Sign in to use People.',
+          'Sign in to use Partner sharing.',
         );
       }
       await store.enqueue(session, command);

@@ -55,6 +55,16 @@ void main() {
   });
 
   group('SocialLocalStore', () {
+    test('retired posting work while retaining partner updates and deletion', () async {
+      await store.enqueue(alice, command('post'));
+      await store.enqueue(alice, command('reaction', action: 'react', target: 'reaction'));
+      await store.enqueue(alice, command('partner', action: 'syncPartnerMeal', target: 'meal'));
+      await store.enqueue(alice, command('delete', action: 'deletePost', target: 'old-post'));
+      await store.retirePublishing();
+      final transport = _Transport();
+      await SocialQueueRunner(store: store, transport: transport).flush(now: now);
+      expect(transport.sent, ['delete', 'partner']);
+    });
     test('deduplicated offline publication operations', () async {
       await store.enqueue(alice, command('one'));
       await store.enqueue(alice, command('one'));

@@ -105,7 +105,10 @@ final class SocialLocalStore extends GeneratedDatabase {
             final target = row.read<String>('target_id');
             final key = target.substring(0, target.lastIndexOf(':'));
             if (row.read<String>('action') != 'syncPartnerGoals') {
-              await customStatement('DELETE FROM social_partner_projection WHERE id = ?', [key]);
+              await customStatement(
+                'DELETE FROM social_partner_projection WHERE id = ?',
+                [key],
+              );
             }
             await customStatement(
               'DELETE FROM social_commands WHERE operation_id = ?',
@@ -113,6 +116,13 @@ final class SocialLocalStore extends GeneratedDatabase {
             );
           }
         }
+      });
+
+  Future<void> retirePublishing() => transaction(() async {
+        await customStatement(
+          "DELETE FROM social_commands WHERE action IN ('publish', 'editPost', 'react')",
+        );
+        await customStatement('DELETE FROM social_cache');
       });
 
   Future<SocialSession> session() async {
@@ -343,7 +353,16 @@ final class SocialQueuedCommand {
     required this.createdAt,
     this.attempts = 0,
   }) : payload = Map.unmodifiable(payload) {
-    if (!['publish', 'editPost', 'deletePost', 'react', 'syncPartnerGoals', 'syncPartnerMeal', 'syncPartnerContribution', 'deletePartnerSource'].contains(action)) {
+    if (![
+      'publish',
+      'editPost',
+      'deletePost',
+      'react',
+      'syncPartnerGoals',
+      'syncPartnerMeal',
+      'syncPartnerContribution',
+      'deletePartnerSource',
+    ].contains(action)) {
       throw ArgumentError('Unsupported queued social action');
     }
     if (payload.containsKey('accountId') ||

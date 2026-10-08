@@ -70,7 +70,7 @@ final class SocialRuntime {
 
   static Future<SocialRuntime> open() async {
     final config = configuration();
-    if (config == null) throw StateError('People is not configured');
+    if (config == null) throw StateError('Partner sharing is not configured');
     final directory = await getApplicationSupportDirectory();
     final store = SocialLocalStore(
       NativeDatabase.createInBackground(
@@ -87,6 +87,7 @@ final class SocialRuntime {
         store: store,
       );
       await auth.ready();
+      await store.retirePublishing();
       final client = SocialCallableClient(
         credentials: auth,
         store: store,

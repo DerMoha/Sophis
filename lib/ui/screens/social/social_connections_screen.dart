@@ -22,9 +22,6 @@ class SocialConnectionsScreen extends StatefulWidget {
 
 class _SocialConnectionsScreenState extends State<SocialConnectionsScreen> {
   final _token = TextEditingController();
-  String _direction = 'incoming';
-  List<SocialRelationship> _relationships = [];
-  Map<String, dynamic>? _cursor;
   SocialInvitation? _invitation;
   SocialInvitationPreview? _preview;
   String? _previewToken;
@@ -37,7 +34,7 @@ class _SocialConnectionsScreenState extends State<SocialConnectionsScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      unawaited(_load());
+
       if (widget.invitationToken != null) _token.text = widget.invitationToken!;
     });
   }
@@ -70,34 +67,14 @@ class _SocialConnectionsScreenState extends State<SocialConnectionsScreen> {
         setState(() {
           _busy = false;
           if (social.sessionVersion != epoch) {
-            _relationships = [];
             _invitation = null;
             _preview = null;
-            _message = 'Your account changed. Refresh Connections.';
+            _message = 'Your account changed. Return to Partner sharing.';
           }
         });
       }
     }
   }
-
-  Future<void> _load({bool more = false}) => _perform((accounts) async {
-        final social = context.read<SocialProvider>();
-        final epoch = social.sessionVersion;
-        final result = await accounts.relationships(
-          _direction,
-          cursor: more ? _cursor : null,
-        );
-        if (!mounted || epoch != social.sessionVersion) return;
-        if (result is Success<SocialRelationshipPage>) {
-          _relationships = more
-              ? [..._relationships, ...result.value.relationships]
-              : result.value.relationships;
-          _cursor = result.value.cursor;
-          _loadedEpoch = epoch;
-        } else if (result is Failure<SocialRelationshipPage>) {
-          _message = result.message;
-        }
-      });
 
   Future<void> _createInvitation(String audience) => _perform((accounts) async {
         final result = await accounts.invite(audience);
@@ -117,7 +94,12 @@ class _SocialConnectionsScreenState extends State<SocialConnectionsScreen> {
         }
         final result = await accounts.preview(token);
         if (!mounted) return;
-        if (result is Success<SocialInvitationPreview>) {
+        if (result is Success<SocialInvitationPreview> &&
+            result.value.audience != 'partner') {
+          _preview = null;
+          _message =
+              'This invitation is for a retired feature. Ask for a partner invitation.';
+        } else if (result is Success<SocialInvitationPreview>) {
           _preview = result.value;
           _previewToken = token;
         } else if (result is Failure<SocialInvitationPreview>) {
@@ -133,14 +115,7 @@ class _SocialConnectionsScreenState extends State<SocialConnectionsScreen> {
         (_loadedEpoch == null || _loadedEpoch == social.sessionVersion);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Connections'),
-        actions: [
-          IconButton(
-            tooltip: 'Refresh connections',
-            onPressed: _busy ? null : () => _load(),
-            icon: const Icon(Icons.refresh),
-          ),
-        ],
+        title: const Text('Invite a partner'),
       ),
       body: SafeArea(
         child: ListView(
@@ -166,7 +141,7 @@ class _SocialConnectionsScreenState extends State<SocialConnectionsScreen> {
                 label: const Text('Partners · goals and meals'),
               ),
               const Text(
-                'Follows show deliberate posts, including earlier posts after approval. Partner connections require mutual acceptance and separate outgoing sharing consent.',
+                'Connect using a private invitation. After both people accept, each person chooses whether to share goals, daily intake and meals.',
               ),
               const SizedBox(height: 16),
               Wrap(
@@ -174,11 +149,6 @@ class _SocialConnectionsScreenState extends State<SocialConnectionsScreen> {
                 runSpacing: 8,
                 children: [
                   FilledButton.icon(
-                    onPressed: _busy ? null : () => _createInvitation('follow'),
-                    icon: const Icon(Icons.person_add_outlined),
-                    label: const Text('Invite a friend'),
-                  ),
-                  OutlinedButton.icon(
                     onPressed:
                         _busy ? null : () => _createInvitation('partner'),
                     icon: const Icon(Icons.favorite_outline),
@@ -321,159 +291,10 @@ class _SocialConnectionsScreenState extends State<SocialConnectionsScreen> {
                     ],
                   ),
                 ),
-              const SizedBox(height: 24),
-              SegmentedButton<String>(
-                segments: const [
-                  ButtonSegment(value: 'incoming', label: Text('Followers')),
-                  ButtonSegment(value: 'outgoing', label: Text('Following')),
-                ],
-                selected: {
-                  _direction,
-                },
-                onSelectionChanged: _busy
-                    ? null
-                    : (values) {
-                        setState(() {
-                          _direction = values.single;
-                          _relationships = [];
-                          _cursor = null;
-                        });
-                        unawaited(_load());
-                      },
-              ),
-              const SizedBox(height: 12),
-              if (_relationships.isEmpty && !_busy)
-                const Text('No connections in this list yet.'),
-              for (final relationship in _relationships)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: GlassCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          relationship.displayName,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        Text(
-                          relationship.status == 'pending'
-                              ? 'Waiting for approval'
-                              : 'Approved',
-                        ),
-                        Wrap(
-                          spacing: 8,
-                          children: [
-                            if (_direction == 'incoming' &&
-                                relationship.status == 'pending')
-                              TextButton(
-                                onPressed: _busy
-                                    ? null
-                                    : () async {
-                                        await _perform((accounts) async {
-                                          final result = await accounts
-                                              .approve(relationship.accountId);
-                                          if (result is Failure<void>) {
-                                            _message = result.message;
-                                          }
-                                        });
-                                        await _load();
-                                      },
-                                child: const Text('Approve'),
-                              ),
-                            if (_direction == 'incoming' &&
-                                relationship.status == 'accepted' &&
-                                relationship.reciprocalStatus == null)
-                              TextButton(
-                                onPressed: _busy
-                                    ? null
-                                    : () async {
-                                        await _perform((accounts) async {
-                                          final result =
-                                              await accounts.requestReciprocal(
-                                            relationship.accountId,
-                                          );
-                                          if (result is Failure<void>) {
-                                            _message = result.message;
-                                          }
-                                        });
-                                        await _load();
-                                      },
-                                child: const Text('Request to follow back'),
-                              ),
-                            TextButton(
-                              onPressed: _busy
-                                  ? null
-                                  : () => _remove(relationship, block: false),
-                              child: Text(
-                                _direction == 'incoming'
-                                    ? 'Remove'
-                                    : 'Unfollow',
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: _busy
-                                  ? null
-                                  : () => _remove(relationship, block: true),
-                              child: const Text('Block'),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              if (_cursor != null)
-                TextButton(
-                  onPressed: _busy ? null : () => _load(more: true),
-                  child: const Text('Load more connections'),
-                ),
             ],
           ],
         ),
       ),
     );
-  }
-
-  Future<void> _remove(
-    SocialRelationship relationship, {
-    required bool block,
-  }) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          block
-              ? 'Block ${relationship.displayName}?'
-              : 'Remove this connection?',
-        ),
-        content: const Text(
-          'Server access is revoked. Diary copies already imported remain independent.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Confirm'),
-          ),
-        ],
-      ),
-    );
-    if (confirm != true || !mounted) return;
-    await _perform((_) async {
-      final repository = context.read<SocialProvider>().runtime!.repository;
-      final result = block
-          ? await repository.block(relationship.accountId)
-          : _direction == 'incoming'
-              ? await repository.removeFollower(relationship.accountId)
-              : await repository.unfollow(relationship.accountId);
-      if (result is Failure<void>) _message = result.message;
-    });
-    if (mounted) {
-      await _load();
-      if (mounted) await context.read<SocialProvider>().refresh();
-    }
   }
 }

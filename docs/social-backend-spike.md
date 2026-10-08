@@ -1,3 +1,5 @@
+> Historical social-network spike. Current scope is defined in [Partner sharing](private-social-feature-plan.md); posts, follows, reactions and social photos are retired.
+
 # Social backend spike — implementation status
 
 Prepared 2026-10-07. The product scope remains authoritative in

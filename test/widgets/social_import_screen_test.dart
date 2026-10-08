@@ -42,6 +42,63 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  testWidgets('logged only selected partner items and rejected empty selection',
+      (tester) async {
+    final nutrition = await createLoadedWidgetNutritionProvider(tester);
+    final settings = await createWidgetTestSettingsProvider(tester);
+    final social = SocialProvider(configured: false);
+    addTearDown(social.dispose);
+    await pumpTestApp(
+      tester,
+      ChangeNotifierProvider.value(
+        value: social,
+        child: SocialImportScreen(
+          post: post(
+            SocialSnapshot(
+              title: 'Partner day',
+              servings: 1,
+              items: const [
+                SharedFoodItem(
+                  name: 'Rice',
+                  calories: 200,
+                  protein: 4,
+                  carbs: 40,
+                  fat: 1,
+                ),
+                SharedFoodItem(
+                  name: 'Beans',
+                  calories: 100,
+                  protein: 8,
+                  carbs: 15,
+                  fat: 1,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      nutritionProvider: nutrition,
+      settingsProvider: settings,
+    );
+    Future<void> toggle(String name) async {
+      final tile = find.widgetWithText(CheckboxListTile, name);
+      await tester.ensureVisible(tile);
+      await tester.tap(tile);
+      await tester.pumpAndSettle();
+    }
+
+    await toggle('Rice');
+    await toggle('Beans');
+    await submit(tester, 'Add my portion');
+    expect(find.text('Choose at least one item to log.'), findsOneWidget);
+    expect((await nutrition.store.snapshot()).value.foodEntries, isEmpty);
+    await toggle('Beans');
+    await submit(tester, 'Add my portion');
+    final entry = (await nutrition.store.snapshot()).value.foodEntries.single;
+    expect(entry.name, 'Beans');
+    expect(entry.calories, 100);
+  });
+
   testWidgets(
       'required hidden nutrition and saved only the chosen portion in a custom meal',
       (tester) async {

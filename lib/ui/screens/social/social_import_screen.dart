@@ -90,7 +90,7 @@ class _SocialImportScreenState extends State<SocialImportScreen> {
         title: widget.post.snapshot.title,
         servings: widget.post.snapshot.servings,
         items: [
-          for (final review in _items)
+          for (final review in _items.where((item) => item.selected))
             SharedFoodItem(
               name: review.item.name,
               calories: widget.post.snapshot.nutritionAvailable
@@ -117,7 +117,12 @@ class _SocialImportScreenState extends State<SocialImportScreen> {
       );
 
   Future<void> _save() async {
-    if (_busy || !_form.currentState!.validate()) return;
+    if (_busy) return;
+    if (!_items.any((item) => item.selected)) {
+      setState(() => _message = 'Choose at least one item to log.');
+      return;
+    }
+    if (!_form.currentState!.validate()) return;
     if (context.read<SocialProvider>().sessionVersion != _sessionVersion) {
       return;
     }
@@ -245,25 +250,46 @@ class _SocialImportScreenState extends State<SocialImportScreen> {
             if (!widget.post.snapshot.nutritionAvailable) ...[
               const GlassCard(
                 child: Text(
-                  'Nutrition was hidden. Enter nutrition for each item in the shared batch before saving. Unknown nutrition will not be logged as zero.',
+                  'Nutrition was hidden. Enter nutrition for each item in the shared portion before saving. Unknown nutrition will not be logged as zero.',
                 ),
               ),
               const SizedBox(height: 16),
             ],
+            if (!widget.saveRecipe)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 12),
+                child: Text('Select all items or just the ones you ate.'),
+              ),
             for (final review in _items) ...[
               GlassCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      review.item.name,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
+                    if (!widget.saveRecipe)
+                      Material(
+                        type: MaterialType.transparency,
+                        child: CheckboxListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(review.item.name),
+                          value: review.selected,
+                          onChanged: _busy
+                              ? null
+                              : (value) => setState(() {
+                                    review.selected = value ?? false;
+                                  }),
+                        ),
+                      )
+                    else
+                      Text(
+                        review.item.name,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
                     if (review.item.portionGrams != null)
                       Text(
-                        '${review.item.portionGrams} ${review.item.portionUnit?.symbol ?? ''} in the shared batch',
+                        '${review.item.portionGrams} ${review.item.portionUnit?.symbol ?? ''} in the shared portion',
                       ),
-                    if (!widget.post.snapshot.nutritionAvailable)
+                    if (review.selected &&
+                        !widget.post.snapshot.nutritionAvailable)
                       for (var index = 0;
                           index < review.nutrients.length;
                           index++)
@@ -319,7 +345,7 @@ class _SocialImportScreenState extends State<SocialImportScreen> {
                     : 'Your servings',
                 helperText: widget.saveRecipe
                     ? 'Whole servings; ingredient amounts stay for the entire batch.'
-                    : 'Shared batch: ${widget.post.snapshot.servings} servings',
+                    : 'Shared portion: ${widget.post.snapshot.servings} servings',
               ),
               validator: (text) {
                 final error = _number(text, positive: true, maximum: 1000);
@@ -374,6 +400,7 @@ class _SocialImportScreenState extends State<SocialImportScreen> {
 
 class _ItemReview {
   final SharedFoodItem item;
+  bool selected = true;
   final List<TextEditingController> nutrients =
       List.generate(5, (_) => TextEditingController());
   final TextEditingController mass = TextEditingController();

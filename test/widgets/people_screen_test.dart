@@ -39,7 +39,7 @@ void main() {
     await tester.tap(find.text('Tracking'));
     await tester.pumpAndSettle();
     expect(opened, isFalse);
-    expect(find.text('Cook, share, encourage'), findsOneWidget);
+    expect(find.text('Your partner’s day, alongside yours'), findsOneWidget);
     await tester.tap(find.text('Continue tracking'));
     await tester.pumpAndSettle();
     expect(find.text('Tracking'), findsOneWidget);
@@ -62,7 +62,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('People could not connect. Try again.'), findsOneWidget);
+    expect(find.text('Partner sharing could not connect. Try again.'), findsOneWidget);
     expect(attempts, 1);
     await tester.tap(find.text('Try again'));
     await tester.pumpAndSettle();

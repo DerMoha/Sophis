@@ -7,7 +7,6 @@ import { getStorage } from 'firebase-admin/storage';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { cleanupPartnerContent } from './partner_cleanup.js';
 import { PartnerService } from './partner_service.js';
-import { uploadPhoto } from './photo_service.js';
 import { SocialError, SocialService } from './social_service.js';
 
 initializeApp();
@@ -28,30 +27,23 @@ export const social = onCall({
   enforceAppCheck: !emulator,
 }, async (request) => {
   const uid = request.auth?.uid;
-  if (!uid) throw new HttpsError('unauthenticated', 'Sign in to use People.');
+  if (!uid) throw new HttpsError('unauthenticated', 'Sign in to use Partner sharing.');
   const data = request.data;
   if (!data || typeof data.action !== 'string') throw new HttpsError('invalid-argument', 'An action is required.');
   try {
     switch (data.action) {
       case 'ownProfile': return await service.ownProfile(uid);
       case 'previewInvitation': return await service.previewInvitation(uid, data.token);
-      case 'relationships': return await service.relationships(uid, data);
-      case 'requestReciprocal': return await service.requestReciprocal(uid, data.otherId);
       case 'setProfile': return await service.setProfile(uid, data);
-      case 'createInvitation': return await service.createInvitation(uid, data.audience ?? 'follow');
+      case 'createInvitation': {
+        if (data.audience != null && data.audience !== 'partner') throw new HttpsError('failed-precondition', 'Only partner invitations are supported.');
+        return await service.createInvitation(uid, 'partner');
+      }
       case 'revokeInvitation': return await service.revokeInvitation(uid, data.token);
-      case 'requestFollow': return await service.requestFollow(uid, data.token);
-      case 'approveFollow': return await service.approveFollow(uid, data.followerId);
       case 'removeFollower': return await service.removeFollow(uid, data.otherId, true);
       case 'unfollow': return await service.removeFollow(uid, data.otherId, false);
       case 'block': return await service.blockAccount(uid, data.otherId);
-      case 'publish': return await service.publish(uid, data);
-      case 'editPost': return await service.editPost(uid, data);
       case 'deletePost': return await service.deletePost(uid, data.postId, data.operationId);
-      case 'feed': return await service.feed(uid, data);
-      case 'react': return await service.react(uid, data);
-      case 'uploadPhoto': return await uploadPhoto(service, uid, data);
-      case 'readPhoto': return await service.readPhoto(uid, data.blobId);
       case 'requestPartner': return await partners.request(uid, data);
       case 'acceptPartner': return await partners.accept(uid, data.connectionId);
       case 'partners': return await partners.list(uid);

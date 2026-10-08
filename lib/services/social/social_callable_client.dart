@@ -155,12 +155,12 @@ final class SocialCallableClient implements SocialCommandTransport {
     } on TimeoutException {
       return const Failure(
         ServiceErrorType.network,
-        'People is taking too long. Try again.',
+        'Partner sharing is taking too long. Try again.',
       );
     } on http.ClientException {
       return const Failure(
         ServiceErrorType.network,
-        'People is offline. Try again later.',
+        'Partner sharing is offline. Try again later.',
       );
     } on StateError {
       return _changed();
@@ -184,7 +184,7 @@ final class SocialCallableClient implements SocialCommandTransport {
 
   Failure<Object?> _changed() => const Failure(
         ServiceErrorType.authFailed,
-        'Your account changed. Open People again.',
+        'Your account changed. Open Partner sharing again.',
       );
 
   Failure<Object?> _failure(String? status) => switch (status) {
@@ -210,7 +210,7 @@ final class SocialCallableClient implements SocialCommandTransport {
           ),
         'UNAVAILABLE' || 'DEADLINE_EXCEEDED' || 'INTERNAL' => const Failure(
             ServiceErrorType.network,
-            'People is temporarily unavailable. Try again later.',
+            'Partner sharing is temporarily unavailable. Try again later.',
           ),
         _ => const Failure(
             ServiceErrorType.unknown,

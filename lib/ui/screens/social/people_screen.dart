@@ -5,10 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:sophis/providers/social_provider.dart';
 import 'package:sophis/ui/components/organic_components.dart';
 import 'package:sophis/ui/screens/social/social_connections_screen.dart';
-import 'package:sophis/ui/screens/social/social_source_screen.dart';
-import 'package:sophis/ui/screens/social/social_post_card.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
-import 'package:sophis/ui/screens/social/social_visuals.dart';
 import 'package:sophis/ui/screens/social/social_partners_screen.dart';
 
 class PeopleScreen extends StatefulWidget {
@@ -75,11 +72,17 @@ class _PeopleScreenState extends State<PeopleScreen>
     }
     return Scaffold(
       appBar: AppBar(
-        title: const Text('People'),
+        title: const Text('Partner sharing'),
         actions: [
           if (social.profile != null)
             IconButton(
-              tooltip: 'Connections',
+              tooltip: 'Refresh partners',
+              onPressed: social.busy ? null : social.refresh,
+              icon: const Icon(Icons.refresh),
+            ),
+          if (social.profile != null)
+            IconButton(
+              tooltip: 'Invite a partner',
               onPressed: () => Navigator.push(
                 context,
                 AppTheme.slideRoute(const SocialConnectionsScreen()),
@@ -112,7 +115,7 @@ class _PeopleScreenState extends State<PeopleScreen>
               _buildIntroduction(),
               const SizedBox(height: 16),
               const Text(
-                'People is not available in this build yet. Your local tracking remains available.',
+                'Partner sharing is not available in this build yet. Your local tracking remains available.',
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context),
@@ -134,68 +137,7 @@ class _PeopleScreenState extends State<PeopleScreen>
                       child: const Text('Retry account'),
                     )
             else ...[
-              SocialIdentity(
-                  name: 'Hello, ${social.profile!.displayName}',
-                  subtitle: 'A little inspiration, shared privately',
-                  icon: Icons.waving_hand_outlined,),
-              const SizedBox(height: 24),
-              GlassCard(
-                  child: SocialIdentity(
-                      name: 'Your partner space',
-                      subtitle: 'Shared meals, goals and daily progress',
-                      icon: Icons.favorite_outline,
-                      trailing: IconButton(
-                          tooltip: 'Partners · goals and meals',
-                          onPressed: social.busy
-                              ? null
-                              : () => Navigator.push(
-                                  context,
-                                  AppTheme.slideRoute(
-                                      const SocialPartnersScreen(),),),
-                          icon: const Icon(Icons.arrow_forward_rounded),),),),
-              const SizedBox(height: 12),
-              if (social.showingCache)
-                const Text(
-                  'Saved feed · connect to refresh access and new posts',
-                ),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  onPressed: social.busy ? null : social.refresh,
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Refresh feed'),
-                ),
-              ),
-              if (social.posts.isEmpty)
-                const Padding(
-                    padding: EdgeInsets.only(bottom: 20),
-                    child: GlassCard(
-                        child: SocialIdentity(
-                            name: 'Good food is better together',
-                            subtitle:
-                                'No shared meals yet. Invite a friend or partner from Connections.',
-                            icon: Icons.restaurant_outlined,),),),
-              FilledButton.icon(
-                onPressed: social.busy
-                    ? null
-                    : () => Navigator.push(
-                          context,
-                          AppTheme.slideRoute(const SocialSourceScreen()),
-                        ),
-                icon: const Icon(Icons.ios_share_outlined),
-                label: const Text('Share a meal or recipe'),
-              ),
-              const SizedBox(height: 16),
-              for (final post in social.posts)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: SocialPostCard(post: post),
-                ),
-              if (social.cursor != null)
-                TextButton(
-                  onPressed: social.busy ? null : social.loadMore,
-                  child: const Text('Load more'),
-                ),
+              const SocialPartnersScreen(embedded: true),
             ],
           ],
         ),
@@ -210,16 +152,16 @@ class _PeopleScreenState extends State<PeopleScreen>
             const Icon(Icons.people_outline, size: 40),
             const SizedBox(height: 12),
             Text(
-              'Cook, share, encourage',
+              'Your partner’s day, alongside yours',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
             const Text(
-              'Connect privately with invited friends and partners. Share meals deliberately, choose what your partners receive, and log your own portions.',
+              'View your partner’s nutrition goals, daily intake and meals. Copy the items you ate into your own diary. You each choose what to share.',
             ),
             const SizedBox(height: 8),
             const Text(
-              'An account is optional. Your diary stays on this device and is not automatically uploaded.',
+              'An account is optional. Only the goals, intake and meals you enable are shared with your partner.',
             ),
           ],
         ),
@@ -315,7 +257,7 @@ class _PeopleScreenState extends State<PeopleScreen>
               child: const Text('Forgot password?'),
             ),
             const Text(
-              'On a shared device, sign out when finished. Social caches and pending work are cleared; your local diary stays on the device.',
+              'On a shared device, sign out when finished. Partner caches and pending updates are cleared; your local diary stays on the device.',
             ),
           ],
         ),
@@ -329,7 +271,7 @@ class _PeopleScreenState extends State<PeopleScreen>
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           const Text(
-            'Choose a display name for your invited connections. You can change it later.',
+            'Choose a display name for your partner. You can change it later.',
           ),
           const SizedBox(height: 12),
           TextField(
@@ -356,7 +298,7 @@ class _PeopleScreenState extends State<PeopleScreen>
       builder: (context) => AlertDialog(
         title: const Text('Sign out?'),
         content: const Text(
-          'This clears your saved social feed and pending social actions. Your local diary remains on this device.',
+          'This clears your cached partner data and pending updates. Your local diary remains on this device.',
         ),
         actions: [
           TextButton(

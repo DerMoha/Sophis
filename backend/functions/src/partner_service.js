@@ -159,6 +159,7 @@ export class PartnerService {
       const next = { ...current, ...desired, revision: current.revision + 1 };
       if (!desired.goals) next.goalsSnapshot = null;
       if (!desired.summaries) delete next.summaryTimeZone;
+      if (!desired.meals) delete next.mealTimeZone;
       const now = this.social.clock();
       for (const field of fields) {
         const key = periodKey[field], generation = generationKey[field];
@@ -230,6 +231,10 @@ export class PartnerService {
     const source = sourceFields(input, this.social.clock());
     const date = dateFields(input);
     const snapshot = validateSnapshot(input.snapshot, true);
+    const mealCategory = input.mealCategory ?? null;
+    if (mealCategory != null && (typeof mealCategory !== 'string' || !mealCategory.trim() || mealCategory.length > 128)) {
+      fail('invalid-argument', 'Invalid meal category.');
+    }
     const photoBlobId = input.photoBlobId == null ? null : id(input.photoBlobId);
     await this.social.requireActive(uid);
     await this.social.consume(uid);
@@ -242,7 +247,13 @@ export class PartnerService {
       if (old?.deletedAt != null) return { id: ref.id, deleted: true, revision: old.sourceRevision };
       const existing = old?.mealGeneration === settings.mealGeneration ? old : null;
       eligibility(settings, 'meals', source, existing);
-      if (existing && source.sourceRevision <= existing.sourceRevision) return { id: ref.id, revision: existing.sourceRevision };
+      if (existing && source.sourceRevision <= existing.sourceRevision) {
+        // Upgrade old snapshots without replacing newer food content.
+        if (source.sourceRevision === existing.sourceRevision && existing.mealCategory == null && mealCategory != null) {
+          tx.update(ref, { mealCategory });
+        }
+        return { id: ref.id, revision: existing.sourceRevision };
+      }
       const oldPhotoRef = old?.photoBlobId ? this.social.ref('socialBlobs', old.photoBlobId) : null;
       const newPhotoRef = photoBlobId ? this.social.ref('socialBlobs', photoBlobId) : null;
       const photoRefs = [...new Map([oldPhotoRef, newPhotoRef].filter(Boolean).map((ref) => [ref.path, ref])).values()];
@@ -259,9 +270,10 @@ export class PartnerService {
         tx.update(oldPhotoRef, { state: 'deleting', partnerMealId: null, cleanupAfter: 0 });
       }
       if (newPhotoRef) tx.update(newPhotoRef, { partnerMealId: ref.id, partnerMealGeneration: settings.mealGeneration, partnerPhotoGeneration: settings.photoGeneration, connectionId: input.connectionId, cleanupAfter: null });
-      tx.set(ref, { connectionId: input.connectionId, authorId: uid, ...source, ...date, snapshot,
+      tx.set(ref, { connectionId: input.connectionId, authorId: uid, ...source, ...date, snapshot, mealCategory,
         photoBlobId, photoGeneration: settings.photoGeneration, mealGeneration: settings.mealGeneration,
         publishedAt: existing?.publishedAt ?? this.social.clock(), updatedAt: this.social.clock(), deletedAt: null });
+      tx.update(this.ref(input.connectionId), { settings: { ...connection.settings, [uid]: { ...settings, mealTimeZone: date.timeZone } } });
       return { id: ref.id, revision: source.sourceRevision };
     });
   }
@@ -277,9 +289,14 @@ export class PartnerService {
   async meals(uid, input) {
     await this.social.requireActive(uid);
     await this.social.consume(uid);
-    await this.authorized(uid, input.connectionId);
-    let query = this.db.collection('socialPartnerMeals').where('connectionId', '==', id(input.connectionId))
-      .orderBy('publishedAt', 'desc').orderBy(FieldPath.documentId(), 'desc');
+    const connection = await this.authorized(uid, input.connectionId);
+    let query = this.db.collection('socialPartnerMeals').where('connectionId', '==', id(input.connectionId));
+    if (input.localDate != null || input.timeZone != null) {
+      const date = dateFields(input);
+      query = query.where('authorId', '==', connection.participants.find((participant) => participant !== uid))
+        .where('localDate', '==', date.localDate).where('timeZone', '==', date.timeZone);
+    }
+    query = query.orderBy('publishedAt', 'desc').orderBy(FieldPath.documentId(), 'desc');
     if (input.cursor != null) {
       number(input.cursor.publishedAt, Number.MAX_SAFE_INTEGER);
       query = query.startAfter(input.cursor.publishedAt, id(input.cursor.id));

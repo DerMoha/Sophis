@@ -321,3 +321,36 @@ test('revoked goals during degradation while leaving other permissions enabled',
   const own = (await partners.ref(id).get()).data().settings.alice;
   assert.equal(own.meals, true); assert.equal(own.goalsSnapshot, null);
 });
+
+test('partner day filtered author, date and timezone before pagination', async () => {
+  const connectionId = await connect();
+  await settings('alice', connectionId, { meals: true });
+  await settings('bob', connectionId, { meals: true });
+  await partners.syncMeal('alice', meal(connectionId, 'today'));
+  assert.equal((await partners.list('bob')).connections[0].settings.alice.mealTimeZone, 'Europe/Berlin');
+  await partners.syncMeal('bob', meal(connectionId, 'own'));
+  for (let index = 0; index < 21; index++) {
+    now += 1;
+    await partners.syncMeal('alice', meal(connectionId, `yesterday${index}`, { localDate: '2026-10-06' }));
+  }
+  await partners.syncMeal('alice', meal(connectionId, 'other-zone', { timeZone: 'UTC' }));
+  const result = await partners.meals('bob', { connectionId, localDate: day, timeZone: 'Europe/Berlin' });
+  assert.deepEqual(result.meals.map((entry) => entry.sourceMealId), ['today']);
+  assert.equal(result.cursor, null);
+  await denied(partners.meals('eve', { connectionId, localDate: day, timeZone: 'Europe/Berlin' }));
+  await assert.rejects(partners.meals('bob', { connectionId, localDate: '2026-02-30', timeZone: 'Europe/Berlin' }), { code: 'invalid-argument' });
+});
+
+test('retained meal categories, upgraded old snapshots, and ignored stale category changes', async () => {
+  const connectionId = await connect();
+  await settings('alice', connectionId, { meals: true });
+  await partners.syncMeal('alice', meal(connectionId));
+  await partners.syncMeal('alice', meal(connectionId, 'meal1', { mealCategory: 'lunch' }));
+  const ref = partners.mealRef(connectionId, 'alice', 'meal1');
+  assert.equal((await ref.get()).data().mealCategory, 'lunch');
+  now++;
+  await partners.syncMeal('alice', meal(connectionId, 'meal1', { originallyLoggedAt: now - 1, sourceRevision: 2, mealCategory: 'dinner' }));
+  await partners.syncMeal('alice', meal(connectionId, 'meal1', { originallyLoggedAt: now - 1, mealCategory: 'breakfast' }));
+  assert.equal((await ref.get()).data().mealCategory, 'dinner');
+  await assert.rejects(partners.syncMeal('alice', meal(connectionId, 'invalid', { mealCategory: 123 })), { code: 'invalid-argument' });
+});

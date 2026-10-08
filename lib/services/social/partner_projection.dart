@@ -25,7 +25,7 @@ final class PartnerProjection {
     if (!connection.accepted || !await store.isCurrent(session)) return false;
     final settings = connection.ownSettings;
     final revision = settings['revision'] as int;
-    final checkpointKey = '${connection.id}:$revision';
+    final checkpointKey = '${connection.id}:$revision:meal-categories';
     final checkpoint = await store.partnerProjection(session, checkpointKey);
     final changes = await nutrition.foodSharingChanges(
       afterSequence: checkpoint['sequence'] as int? ?? 0,
@@ -73,7 +73,9 @@ final class PartnerProjection {
         if (!eligible ||
             change.changedAt.millisecondsSinceEpoch < start ||
             (logged < start && receipt.isEmpty) ||
-            receipt['revision'] == change.revision) {
+            (receipt['revision'] == change.revision &&
+                (kind != 'meals' ||
+                    receipt['mealCategory'] == change.entry!.meal))) {
           continue;
         }
         final entry = change.entry!;
@@ -86,6 +88,7 @@ final class PartnerProjection {
               DateFormat('yyyy-MM-dd').format(entry.timestamp.toLocal()),
           'timeZone': timeZone,
           'consentRevision': revision,
+          if (kind == 'meals') 'mealCategory': entry.meal,
           if (kind == 'meals')
             'snapshot': SocialSnapshot.fromEntries([entry], title: entry.name)
                 .toJson(nutritionVisible: true)
@@ -100,7 +103,10 @@ final class PartnerProjection {
           session,
           connection,
           key,
-          {'revision': change.revision},
+          {
+            'revision': change.revision,
+            if (kind == 'meals') 'mealCategory': entry.meal,
+          },
           kind == 'meals' ? 'syncPartnerMeal' : 'syncPartnerContribution',
           payload,
         );
@@ -134,9 +140,11 @@ final class PartnerProjection {
     final receipt = await store.partnerProjection(session, key);
     if (receipt['signature'] == signature) return changes.length == 100;
     final sourceRevision = math.max(
-      receipt['sourceRevision'] as int? ?? DateTime.now().millisecondsSinceEpoch,
-      settings['goalSourceRevision'] as int? ?? 0,
-    ) + 1;
+          receipt['sourceRevision'] as int? ??
+              DateTime.now().millisecondsSinceEpoch,
+          settings['goalSourceRevision'] as int? ?? 0,
+        ) +
+        1;
     await _queue(
       session,
       connection,

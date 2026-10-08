@@ -7,7 +7,6 @@ import 'package:sophis/services/social/partner_projection.dart';
 import 'package:sophis/services/social/social_partner_repository.dart';
 import 'package:sophis/services/service_result.dart';
 import 'package:sophis/services/social/social_account_repository.dart';
-import 'package:sophis/services/social/social_repository.dart';
 import 'package:sophis/services/social/social_runtime.dart';
 
 /// Owns only optional social state; guest nutrition startup never opens Firebase.
@@ -30,9 +29,6 @@ final class SocialProvider extends ChangeNotifier with WidgetsBindingObserver {
   String? message;
   SocialProfile? profile;
   bool needsProfile = false;
-  List<SocialPost> posts = [];
-  SocialFeedCursor? cursor;
-  bool showingCache = false;
 
   SocialProvider({
     Future<SocialRuntime> Function()? factory,
@@ -115,7 +111,8 @@ final class SocialProvider extends ChangeNotifier with WidgetsBindingObserver {
       final healthy = await runtime.queue.flush();
       if (!healthy) {
         _projectionPending = false;
-      } else if (await runtime.store.nextCommand(session, DateTime.now()) != null) {
+      } else if (await runtime.store.nextCommand(session, DateTime.now()) !=
+          null) {
         _projectionPending = true;
       }
     } catch (_) {
@@ -156,16 +153,13 @@ final class SocialProvider extends ChangeNotifier with WidgetsBindingObserver {
         needsProfile = false;
         profile = null;
         partners = [];
-        posts = [];
-        cursor = null;
-        showingCache = false;
         message = null;
         _notify();
       });
       await _loadAccount();
       ready = true;
     } catch (_) {
-      message = 'People could not connect. Try again.';
+      message = 'Partner sharing could not connect. Try again.';
       _opening = null;
     } finally {
       busy = false;
@@ -187,12 +181,6 @@ final class SocialProvider extends ChangeNotifier with WidgetsBindingObserver {
     profile = result.value;
     needsProfile = profile == null;
     if (profile != null) {
-      final cached = await runtime.repository.cachedFeed();
-      if (_closed || epoch != _epoch || uid != accountId) return;
-      posts = cached;
-      showingCache = posts.isNotEmpty;
-      _notify();
-      await _refresh();
       await refreshPartners();
     }
   }
@@ -209,9 +197,6 @@ final class SocialProvider extends ChangeNotifier with WidgetsBindingObserver {
         profile = null;
         needsProfile = false;
         partners = [];
-        posts = [];
-        cursor = null;
-        showingCache = false;
         final result = create
             ? await runtime.auth.createAccount(email, password)
             : await runtime.auth.signIn(email, password);
@@ -222,7 +207,6 @@ final class SocialProvider extends ChangeNotifier with WidgetsBindingObserver {
         _shownAccount = result.value;
         profile = null;
         partners = [];
-        posts = [];
         await _loadAccount();
       });
 
@@ -240,7 +224,6 @@ final class SocialProvider extends ChangeNotifier with WidgetsBindingObserver {
         if (result is Success<SocialProfile>) {
           profile = result.value;
           needsProfile = false;
-          await _refresh();
           await refreshPartners();
         }
         if (result is Failure<SocialProfile>) message = result.message;
@@ -250,65 +233,13 @@ final class SocialProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<void> refresh() => _action(_refresh);
   Future<void> _refresh() async {
-    final runtime = _runtime;
-    if (runtime == null || profile == null) return;
-    final epoch = _epoch;
-    await runtime.queue.flush();
-    final result = await runtime.repository.fetchFeed();
-    if (_closed || epoch != _epoch) return;
-    if (result is Success<SocialFeedPage>) {
-      posts = result.value.posts;
-      cursor = result.value.cursor;
-      showingCache = false;
-    } else if (result is Failure<SocialFeedPage>) {
-      message = result.message;
-      if (result.errorType == ServiceErrorType.authFailed) {
-        partners = [];
-        posts = [];
-        showingCache = false;
-      }
-    }
+    await refreshPartners();
   }
-
-  Future<void> loadMore() => _action(() async {
-        final next = cursor;
-        if (next == null) return;
-        final epoch = _epoch;
-        final result = await _runtime?.repository.fetchFeed(cursor: next);
-        if (_closed || epoch != _epoch) return;
-        if (result is Success<SocialFeedPage>) {
-          final byId = {for (final post in posts) post.id: post};
-          for (final post in result.value.posts) {
-            byId[post.id] = post;
-          }
-          posts = byId.values.toList();
-          cursor = result.value.cursor;
-        } else if (result is Failure<SocialFeedPage>) {
-          message = result.message;
-        }
-      });
-
-  Future<void> deletePost(String postId) => _action(() async {
-        final epoch = _epoch;
-        final result = await _runtime?.repository.deletePost(postId);
-        if (_closed || epoch != _epoch) return;
-        if (result is Failure<void>) {
-          message = result.message;
-          return;
-        }
-        posts = posts.where((post) => post.id != postId).toList();
-        _notify();
-        await _refresh();
-        message ??= 'Deletion saved to send.';
-      });
 
   Future<void> signOut() => _action(() async {
         _epoch++;
         profile = null;
         partners = [];
-        posts = [];
-        cursor = null;
-        showingCache = false;
         final result = await _runtime?.auth.signOut();
         if (result is Failure<void>) message = result.message;
         _shownAccount = accountId;
