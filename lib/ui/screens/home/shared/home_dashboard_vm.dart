@@ -135,11 +135,6 @@ List<DashboardSlot> buildDashboardSlots(
     vm.visibleDashboardCards,
   );
 
-  final showGuidance = vm.guidance != null &&
-      vm.visibleDashboardCards.any(
-        (card) => card.id == DashboardCardIds.dailyGuidance,
-      );
-
   // 2. Goal progress is optional. Without nutrition goals, the dashboard
   // remains a focused food log and starts directly with today's meals.
   final goals = vm.goals;
@@ -179,11 +174,6 @@ List<DashboardSlot> buildDashboardSlots(
     if (i < vm.mealTypes.length - 1) {
       slots.add(const DashboardSpace(12));
     }
-  }
-
-  if (showGuidance) {
-    slots.add(const DashboardSpace(12));
-    slots.add(DashboardDailyGuidance(guidance: vm.guidance!));
   }
 
   return slots;
