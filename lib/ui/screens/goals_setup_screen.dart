@@ -7,7 +7,6 @@ import 'package:sophis/models/nutrition_goals.dart';
 import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
-import 'package:sophis/ui/theme/animations.dart';
 import 'package:sophis/utils/unit_converter.dart';
 import 'package:sophis/ui/components/organic_components.dart';
 
@@ -215,251 +214,176 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
           ),
         ],
       ),
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          // Content
-          SliverPadding(
-            padding: AppTheme.pagePadding,
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Calculator Section
-                      FadeInSlide(
-                        index: 0,
-                        child: OrganicCard(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    width: 44,
-                                    height: 44,
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          theme.colorScheme.primary,
-                                          theme.colorScheme.primary
-                                              .withValues(alpha: 0.7),
-                                        ],
+      body: SingleChildScrollView(
+        padding: AppTheme.pagePadding,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              GlassCard(
+                child: Column(
+                  children: [
+                    _buildDropdown<Goal>(
+                      value: _goal,
+                      label: l10n.goal,
+                      icon: Icons.flag_outlined,
+                      items: Goal.values,
+                      itemLabel: _goalLabel,
+                      onChanged: (value) => setState(() => _goal = value),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildInputField(
+                      controller: _targetWeightController,
+                      label: targetWeightLabel,
+                      icon: Icons.emoji_events_outlined,
+                      suffix: weightUnit,
+                      allowDecimal: true,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              GlassCard(
+                child: Column(
+                  children: [
+                    _buildInputField(
+                      controller: _caloriesController,
+                      label: l10n.calories,
+                      icon: Icons.local_fire_department_outlined,
+                      suffix: 'kcal',
+                      large: true,
+                    ),
+                    const SizedBox(height: 8),
+                    Material(
+                      color: Colors.transparent,
+                      child: ExpansionTile(
+                        title: Text(l10n.macronutrients),
+                        tilePadding: EdgeInsets.zero,
+                        maintainState: true,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Column(
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _MacroInput(
+                                        controller: _proteinController,
+                                        label: l10n.protein,
+                                        color: AppTheme.protein,
                                       ),
-                                      borderRadius: BorderRadius.circular(
-                                        AppTheme.radiusMD,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: _MacroInput(
+                                        controller: _carbsController,
+                                        label: l10n.carbs,
+                                        color: AppTheme.carbs,
                                       ),
                                     ),
-                                    child: const Icon(
-                                      Icons.calculate_outlined,
-                                      color: Colors.white,
-                                      size: 24,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 14),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          l10n.calculate,
-                                          style: theme.textTheme.titleMedium,
-                                        ),
-                                        Text(
-                                          l10n.basedOnProfile,
-                                          style: theme.textTheme.bodySmall
-                                              ?.copyWith(
-                                            color: theme
-                                                .colorScheme.onSurfaceVariant,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 24),
-
-                              // Weight & Height
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildInputField(
-                                      controller: _weightController,
-                                      label: weightLabel,
-                                      icon: Icons.monitor_weight_outlined,
-                                      suffix: weightUnit,
-                                      allowDecimal: true,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: _buildInputField(
-                                      controller: _heightController,
-                                      label: heightLabel,
-                                      icon: Icons.height_outlined,
-                                      suffix: heightUnit,
-                                      allowDecimal: true,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: AppTheme.spaceSM2),
-
-                              // Age & Gender
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildInputField(
-                                      controller: _ageController,
-                                      label: l10n.age,
-                                      icon: Icons.cake_outlined,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: _buildDropdown<Gender>(
-                                      value: _gender,
-                                      label: l10n.gender,
-                                      icon: Icons.person_outline,
-                                      items: Gender.values,
-                                      itemLabel: (g) => _genderLabel(g),
-                                      onChanged: (v) =>
-                                          setState(() => _gender = v),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: AppTheme.spaceSM2),
-
-                              // Activity Level
-                              _buildDropdown<ActivityLevel>(
-                                value: _activityLevel,
-                                label: l10n.activityLevel,
-                                icon: Icons.directions_run_outlined,
-                                items: ActivityLevel.values,
-                                itemLabel: (a) => _activityLabel(a),
-                                onChanged: (v) =>
-                                    setState(() => _activityLevel = v),
-                              ),
-                              const SizedBox(height: AppTheme.spaceSM2),
-
-                              // Goal
-                              _buildDropdown<Goal>(
-                                value: _goal,
-                                label: l10n.goal,
-                                icon: Icons.flag_outlined,
-                                items: Goal.values,
-                                itemLabel: (g) => _goalLabel(g),
-                                onChanged: (v) => setState(() => _goal = v),
-                              ),
-                              const SizedBox(height: AppTheme.spaceLG2),
-
-                              // Calculate Button
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton.icon(
-                                  onPressed: _calculateFromProfile,
-                                  icon:
-                                      const Icon(Icons.auto_awesome, size: 20),
-                                  label: Text(l10n.calculateCalories),
+                                  ],
                                 ),
-                              ),
-                            ],
+                                const SizedBox(height: 16),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _MacroInput(
+                                        controller: _fatController,
+                                        label: l10n.fat,
+                                        color: AppTheme.fat,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: _MacroInput(
+                                        controller: _fiberController,
+                                        label: l10n.fiber,
+                                        color: AppTheme.fiber,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
+                        ],
                       ),
-                      const SizedBox(height: 24),
-
-                      // Manual Goals Section
-                      FadeInSlide(
-                        index: 1,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            SectionHeader(
-                              title: l10n.orSetManually,
-                              icon: Icons.tune_outlined,
-                            ),
-                            GlassCard(
-                              padding: const EdgeInsets.all(20),
-                              child: Column(
-                                children: [
-                                  _buildInputField(
-                                    controller: _caloriesController,
-                                    label: l10n.calories,
-                                    icon: Icons.local_fire_department_outlined,
-                                    suffix: 'kcal',
-                                    large: true,
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: _MacroInput(
-                                          controller: _proteinController,
-                                          label: l10n.protein,
-                                          color: AppTheme.protein,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: _MacroInput(
-                                          controller: _carbsController,
-                                          label: l10n.carbs,
-                                          color: AppTheme.carbs,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: _MacroInput(
-                                          controller: _fatController,
-                                          label: l10n.fat,
-                                          color: AppTheme.fat,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: _MacroInput(
-                                          controller: _fiberController,
-                                          label: l10n.fiber,
-                                          color: AppTheme.fiber,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              GlassCard(
+                child: Material(
+                  color: Colors.transparent,
+                  child: ExpansionTile(
+                    title: Text(l10n.calculateCalories),
+                    subtitle: Text(l10n.basedOnProfile),
+                    tilePadding: EdgeInsets.zero,
+                    maintainState: true,
+                    initiallyExpanded:
+                        context.read<NutritionProvider>().goals == null,
+                    children: [
+                      const SizedBox(height: 16),
+                      _buildInputField(
+                        controller: _weightController,
+                        label: weightLabel,
+                        suffix: weightUnit,
+                        allowDecimal: true,
                       ),
-                      const SizedBox(height: 24),
-
-                      // Target Weight
-                      FadeInSlide(
-                        index: 2,
-                        child: GlassCard(
-                          padding: const EdgeInsets.all(20),
-                          child: _buildInputField(
-                            controller: _targetWeightController,
-                            label: targetWeightLabel,
-                            icon: Icons.emoji_events_outlined,
-                            suffix: weightUnit,
-                            allowDecimal: true,
+                      const SizedBox(height: 16),
+                      _buildInputField(
+                        controller: _heightController,
+                        label: heightLabel,
+                        suffix: heightUnit,
+                        allowDecimal: true,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildInputField(
+                        controller: _ageController,
+                        label: l10n.age,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildDropdown<Gender>(
+                        value: _gender,
+                        label: l10n.gender,
+                        icon: Icons.person_outline,
+                        items: Gender.values,
+                        itemLabel: _genderLabel,
+                        onChanged: (value) => setState(() => _gender = value),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildDropdown<ActivityLevel>(
+                        value: _activityLevel,
+                        label: l10n.activityLevel,
+                        icon: Icons.directions_run_outlined,
+                        items: ActivityLevel.values,
+                        itemLabel: _activityLabel,
+                        onChanged: (value) =>
+                            setState(() => _activityLevel = value),
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed: _calculateFromProfile,
+                          icon: const Icon(Icons.calculate_outlined),
+                          label: Text(
+                            l10n.calculateCalories,
+                            textAlign: TextAlign.center,
                           ),
                         ),
                       ),
                     ],
                   ),
                 ),
-              ]),
-            ),
+              ),
+              SizedBox(height: MediaQuery.viewInsetsOf(context).bottom + 24),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -482,6 +406,7 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
       style: large ? theme.textTheme.titleLarge : null,
       decoration: InputDecoration(
         labelText: label,
+        floatingLabelBehavior: FloatingLabelBehavior.always,
         suffixText: suffix,
         prefixIcon: icon != null ? Icon(icon, size: 20) : null,
       ),
@@ -501,6 +426,7 @@ class _GoalsSetupScreenState extends State<GoalsSetupScreen> {
       isExpanded: true,
       decoration: InputDecoration(
         labelText: label,
+        floatingLabelBehavior: FloatingLabelBehavior.always,
         prefixIcon: Icon(icon, size: 20),
       ),
       items: items
