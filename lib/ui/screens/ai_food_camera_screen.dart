@@ -395,6 +395,9 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
+            behavior: SnackBarBehavior.fixed,
+            shape: const RoundedRectangleBorder(),
+            duration: const Duration(seconds: 2),
             content: Text(AppLocalizations.of(context)!.addedSnack(entry.name)),
           ),
         );
@@ -459,7 +462,6 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-    final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.3;
 
     final hasApiKey =
         context.select<SettingsProvider, bool>((s) => s.hasGeminiApiKey);
@@ -477,143 +479,85 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        actions: [
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.only(right: 4),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _remainingRequests <= 3
-                      ? AppTheme.warning.withValues(alpha: 0.1)
-                      : AppTheme.success.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.bolt,
-                      size: 14,
-                      color: _remainingRequests <= 3
-                          ? AppTheme.warning
-                          : AppTheme.success,
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            SizedBox(
+              height: 112,
+              child: _images.isEmpty
+                  ? Center(
+                      child: Text(
+                        l10n.takePhotosPrompt,
+                        style: TextStyle(color: theme.disabledColor),
+                      ),
+                    )
+                  : ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.all(8),
+                      itemCount: _images.length,
+                      itemBuilder: (context, index) => AiFoodImageTile(
+                        image: _images[index],
+                        onRemove: () => _removeImage(index),
+                      ),
                     ),
-                    if (!largeText) ...[
-                      const SizedBox(width: 2),
-                      Text(
-                        l10n.imagesLeft(_remainingRequests),
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: _remainingRequests <= 3
-                              ? AppTheme.warning
-                              : AppTheme.success,
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Column(
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      '${l10n.imagesLeft(_remainingRequests)} · ${_images.length}/$maxImages',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _canAnalyze && _images.length < maxImages
+                              ? () => _pickImage(ImageSource.camera)
+                              : null,
+                          icon: const Icon(Icons.camera_alt),
+                          label: Text(l10n.camera),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _canAnalyze && _images.length < maxImages
+                              ? () => _pickImage(ImageSource.gallery)
+                              : null,
+                          icon: const Icon(Icons.photo_library),
+                          label: Text(l10n.gallery),
                         ),
                       ),
                     ],
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed:
+                          _canAnalyze && _images.isNotEmpty && !_isLoading
+                              ? () => _analyzeFood()
+                              : null,
+                      icon: const Icon(Icons.auto_awesome),
+                      label: Text(l10n.analyzeWithAI),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-                ),
-                child: Text(
-                  '${_images.length}/$maxImages',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
-          ),
-          if (_results != null && _results!.isNotEmpty) ...[
-            IconButton(
-              icon: const Icon(Icons.share_outlined),
-              onPressed: _shareAllFoods,
-              tooltip: l10n.share,
-            ),
-            TextButton(
-              onPressed: _isAddingFood ? null : _addAllFoods,
-              child: Text(l10n.addAll),
-            ),
+            const Divider(),
+            _buildResultsArea(l10n, theme),
           ],
-        ],
-      ),
-      body: Column(
-        children: [
-          SizedBox(
-            height: 140,
-            child: _images.isEmpty
-                ? Center(
-                    child: Text(
-                      l10n.takePhotosPrompt,
-                      style: TextStyle(color: theme.disabledColor),
-                    ),
-                  )
-                : ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.all(8),
-                    itemCount: _images.length,
-                    itemBuilder: (context, index) => AiFoodImageTile(
-                      image: _images[index],
-                      onRemove: () => _removeImage(index),
-                    ),
-                  ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: _canAnalyze && _images.length < maxImages
-                            ? () => _pickImage(ImageSource.camera)
-                            : null,
-                        icon: const Icon(Icons.camera_alt),
-                        label: Text(l10n.camera),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: _canAnalyze && _images.length < maxImages
-                            ? () => _pickImage(ImageSource.gallery)
-                            : null,
-                        icon: const Icon(Icons.photo_library),
-                        label: Text(l10n.gallery),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: _canAnalyze && _images.isNotEmpty && !_isLoading
-                        ? () => _analyzeFood()
-                        : null,
-                    icon: const Icon(Icons.auto_awesome),
-                    label: Text(l10n.analyzeWithAI),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Divider(),
-          Expanded(
-            child: _buildResultsArea(l10n, theme),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -681,43 +625,64 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       );
     }
 
-    return ListView(
+    return Padding(
       padding: const EdgeInsets.all(16),
-      children: [
-        FadeInSlide(
-          index: 0,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.cloud_outlined,
-                    size: 18,
-                    color: theme.colorScheme.primary,
-                  ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'Cloud Gemini Results',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
+      child: Column(
+        children: [
+          FadeInSlide(
+            index: 0,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.cloud_outlined,
+                      size: 18,
+                      color: theme.colorScheme.primary,
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              for (final result in results)
-                AiFoodResultCard(
-                  result: result,
-                  onEdit: () => _showEditSheet(result, allowReAnalyze: true),
-                  onShare: () => _shareSingleFood(result),
-                  onAdd: () => _addFood(result),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        l10n.aiAnalysisResults,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-            ],
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    FilledButton.icon(
+                      onPressed: _isAddingFood ? null : _addAllFoods,
+                      icon: const Icon(Icons.add),
+                      label: Text(l10n.addAll),
+                    ),
+                    TextButton.icon(
+                      onPressed: _shareAllFoods,
+                      icon: const Icon(Icons.share_outlined),
+                      label: Text(l10n.share),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                for (final result in results)
+                  AiFoodResultCard(
+                    result: result,
+                    onEdit: () => _showEditSheet(result, allowReAnalyze: true),
+                    onShare: () => _shareSingleFood(result),
+                    onAdd: () => _addFood(result),
+                  ),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

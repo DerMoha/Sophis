@@ -819,5 +819,12 @@
       "portion": {"type": "String"},
       "calories": {"type": "String"}
     }
-  }
+  },
+  "aiCorrectionDescription": "Describe the correction",
+  "aiCorrectionDescriptionHint": "For example: 2 tomatoes, without oil",
+  "aiAnalysisResults": "Analysis results",
+  "aiEstimateModified": "Edited estimate",
+  "aiManualAdjustments": "Manual adjustments",
+  "aiReanalyzeAction": "Re-analyse",
+  "aiReanalyzeCost": "Uses 1 AI request"
 }

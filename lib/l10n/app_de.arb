@@ -692,5 +692,12 @@
       "portion": {"type": "String"},
       "calories": {"type": "String"}
     }
-  }
+  },
+  "aiCorrectionDescription": "Korrektur beschreiben",
+  "aiCorrectionDescriptionHint": "Zum Beispiel: 2 Tomaten, ohne Öl",
+  "aiAnalysisResults": "Analyseergebnisse",
+  "aiEstimateModified": "Bearbeitete Schätzung",
+  "aiManualAdjustments": "Manuell anpassen",
+  "aiReanalyzeAction": "Neu analysieren",
+  "aiReanalyzeCost": "Verbraucht 1 KI-Anfrage"
 }

@@ -73,7 +73,7 @@ class AiFoodResultCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      'Modified',
+                      l10n.aiEstimateModified,
                       style: TextStyle(
                         fontSize: 11,
                         color: theme.colorScheme.primary,
@@ -84,8 +84,8 @@ class AiFoodResultCard extends StatelessWidget {
                 ),
               ),
             const SizedBox(height: AppTheme.spaceSM2),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -98,8 +98,11 @@ class AiFoodResultCard extends StatelessWidget {
                     Text(food.macrosDisplay, style: theme.textTheme.bodySmall),
                   ],
                 ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
+                const SizedBox(height: AppTheme.spaceSM2),
+                Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: AppTheme.spaceSM,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     IconButton(
                       icon: Icon(

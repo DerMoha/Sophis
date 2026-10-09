@@ -31,6 +31,7 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
   bool _autoScaleEnabled = true;
   bool _isValid = true;
   final _formKey = GlobalKey<FormState>();
+  final _correctionController = TextEditingController();
 
   // Store listeners for proper cleanup
   late final VoidCallback _portionListener;
@@ -61,6 +62,7 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
       controller.removeListener(_validationListener);
     }
 
+    _correctionController.dispose();
     super.dispose();
   }
 
@@ -157,7 +159,12 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
   }
 
   void _reAnalyze() {
-    final hint = widget.result.generateCorrectionHint();
+    final description = _correctionController.text.trim();
+    final hint = description.isEmpty
+        ? widget.result.generateCorrectionHint()
+        : 'User correction: $description. Recalculate the portion weight and all '
+            'nutrition values using this description. The existing values are '
+            'estimates, not constraints.';
     widget.onReAnalyze(hint);
   }
 
@@ -311,288 +318,32 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Food name
-                    TextFormField(
-                      controller: widget.result.nameController,
-                      decoration: InputDecoration(
-                        labelText: l10n.foodName,
-                        hintText: l10n.foodNameHint,
-                        prefixIcon: const Icon(Icons.restaurant, size: 20),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: AppTheme.spaceMD,
-                          vertical: 14,
-                        ),
-                      ),
-                      validator: _validateName,
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Portion size
-                    TextFormField(
-                      controller: widget.result.portionController,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(
-                          RegExp(r'^\d+\.?\d{0,1}'),
-                        ),
-                      ],
-                      decoration: InputDecoration(
-                        labelText: l10n.portionSize,
-                        hintText: '100',
-                        prefixIcon: const Icon(Icons.scale, size: 20),
-                        suffixText: 'g',
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: AppTheme.spaceMD,
-                          vertical: 14,
-                        ),
-                      ),
-                      validator: (v) =>
-                          _validatePositiveNumber(v, l10n.portionSize),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Auto-scale toggle
-                    SwitchTile(
-                      title: l10n.autoScaleNutrition,
-                      subtitle: l10n.autoScaleNutritionSubtitle,
-                      icon: Icons.scale_outlined,
-                      value: _autoScaleEnabled,
-                      onChanged: (value) =>
-                          setState(() => _autoScaleEnabled = value),
-                    ),
-                    const SizedBox(height: 8),
-
-                    // Macros section header
                     Text(
-                      l10n.nutritionValues,
-                      style: theme.textTheme.labelMedium?.copyWith(
+                      widget.result.currentAnalysis.name,
+                      style: theme.textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: AppTheme.spaceXS),
+                    Text(
+                      '${widget.result.currentAnalysis.portionDisplay} • '
+                      '${widget.result.currentAnalysis.caloriesDisplay}',
+                      style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
-                        letterSpacing: 0.5,
                       ),
                     ),
-                    const SizedBox(height: AppTheme.spaceSM2),
-
-                    // Calories
-                    TextFormField(
-                      controller: widget.result.caloriesController,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(
-                          RegExp(r'^\d+\.?\d{0,1}'),
-                        ),
-                      ],
-                      decoration: InputDecoration(
-                        labelText: l10n.calories,
-                        hintText: '200',
-                        prefixIcon: const Icon(
-                          Icons.local_fire_department_outlined,
-                          size: 20,
-                        ),
-                        suffixText: 'kcal',
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: AppTheme.spaceMD,
-                          vertical: 14,
-                        ),
-                      ),
-                      validator: (v) =>
-                          _validatePositiveNumber(v, l10n.calories),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Macros row
-                    Row(
-                      children: [
-                        // Protein
-                        Expanded(
-                          child: TextFormField(
-                            controller: widget.result.proteinController,
-                            keyboardType: TextInputType.number,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.allow(
-                                RegExp(r'^\d+\.?\d{0,1}'),
-                              ),
-                            ],
-                            decoration: InputDecoration(
-                              labelText: l10n.protein,
-                              hintText: '20',
-                              suffixText: 'g',
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: AppTheme.spaceSM,
-                                vertical: 14,
-                              ),
-                            ),
-                            validator: (v) =>
-                                _validatePositiveNumber(v, l10n.protein),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        // Carbs
-                        Expanded(
-                          child: TextFormField(
-                            controller: widget.result.carbsController,
-                            keyboardType: TextInputType.number,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.allow(
-                                RegExp(r'^\d+\.?\d{0,1}'),
-                              ),
-                            ],
-                            decoration: InputDecoration(
-                              labelText: l10n.carbs,
-                              hintText: '30',
-                              suffixText: 'g',
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: AppTheme.spaceSM,
-                                vertical: 14,
-                              ),
-                            ),
-                            validator: (v) =>
-                                _validatePositiveNumber(v, l10n.carbs),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        // Fat
-                        Expanded(
-                          child: TextFormField(
-                            controller: widget.result.fatController,
-                            keyboardType: TextInputType.number,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.allow(
-                                RegExp(r'^\d+\.?\d{0,1}'),
-                              ),
-                            ],
-                            decoration: InputDecoration(
-                              labelText: l10n.fat,
-                              hintText: '10',
-                              suffixText: 'g',
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: AppTheme.spaceSM,
-                                vertical: 14,
-                              ),
-                            ),
-                            validator: (v) =>
-                                _validatePositiveNumber(v, l10n.fat),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Fiber
-                    TextFormField(
-                      controller: widget.result.fiberController,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(
-                          RegExp(r'^\d+\.?\d{0,1}'),
-                        ),
-                      ],
-                      decoration: InputDecoration(
-                        labelText: l10n.fiber,
-                        hintText: '3',
-                        prefixIcon: const Icon(
-                          Icons.eco_outlined,
-                          size: 20,
-                          color: AppTheme.fiber,
-                        ),
-                        suffixText: 'g',
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: AppTheme.spaceMD,
-                          vertical: 14,
-                        ),
-                      ),
-                      validator: (v) =>
-                          _validatePositiveNumber(v, l10n.fiber),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Quick action buttons
+                    const SizedBox(height: AppTheme.spaceLG),
                     if (canReAnalyze) ...[
-                      Text(
-                        l10n.aiQuickActions,
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                          letterSpacing: 0.5,
+                      TextField(
+                        key: const ValueKey('ai-correction-description'),
+                        controller: _correctionController,
+                        minLines: 2,
+                        maxLines: 4,
+                        textCapitalization: TextCapitalization.sentences,
+                        decoration: InputDecoration(
+                          labelText: l10n.aiCorrectionDescription,
+                          hintText: l10n.aiCorrectionDescriptionHint,
+                          alignLabelWithHint: true,
                         ),
                       ),
-                      const SizedBox(height: AppTheme.spaceSM2),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          _QuickActionChip(
-                            label: l10n.expectMoreCalories,
-                            icon: Icons.trending_up,
-                            color: AppTheme.warning,
-                            theme: theme,
-                            onTap: () =>
-                                _triggerQuickReAnalyze(
-                                  'The calories should be higher than estimated',
-                                ),
-                          ),
-                          _QuickActionChip(
-                            label: l10n.expectFewerCalories,
-                            icon: Icons.trending_down,
-                            color: AppTheme.warning,
-                            theme: theme,
-                            onTap: () =>
-                                _triggerQuickReAnalyze(
-                                  'The calories should be lower than estimated',
-                                ),
-                          ),
-                          _QuickActionChip(
-                            label: l10n.portionLooksBigger,
-                            icon: Icons.scale,
-                            color: theme.colorScheme.primary,
-                            theme: theme,
-                            onTap: () =>
-                                _triggerQuickReAnalyze(
-                                  'The portion size looks bigger than estimated',
-                                ),
-                          ),
-                          _QuickActionChip(
-                            label: l10n.portionLooksSmaller,
-                            icon: Icons.scale,
-                            color: theme.colorScheme.primary,
-                            theme: theme,
-                            onTap: () =>
-                                _triggerQuickReAnalyze(
-                                  'The portion size looks smaller than estimated',
-                                ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppTheme.spaceSM2),
-                    ],
-
-                    const SizedBox(height: 24),
-
-                    // Action buttons
-                    Row(
-                      children: [
-                        // Reset button
-                        TextButton.icon(
-                          onPressed: _hasChanges ? _resetToOriginal : null,
-                          icon: const Icon(Icons.restore, size: 18),
-                          label: Text(l10n.resetAction),
-                        ),
-                        const Spacer(),
-                        // Save button
-                        ElevatedButton.icon(
-                          onPressed: _isValid ? _saveChanges : null,
-                          icon: const Icon(Icons.check, size: 18),
-                          label: Text(l10n.saveChanges),
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppTheme.spaceLG,
-                              vertical: AppTheme.spaceSM,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    // Re-analyze button (conditional)
-                    if (canReAnalyze && _hasChanges) ...[
                       const SizedBox(height: AppTheme.spaceSM2),
                       SizedBox(
                         width: double.infinity,
@@ -600,18 +351,324 @@ class _EditFoodAnalysisSheetState extends State<EditFoodAnalysisSheet> {
                           onPressed: _showReAnalyzeConfirmation,
                           icon: const Icon(Icons.auto_awesome, size: 18),
                           label: Text(
-                            l10n.askAiReanalyze(widget.remainingRequests),
-                            style: theme.textTheme.bodySmall,
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppTheme.spaceLG,
-                              vertical: AppTheme.spaceSM,
-                            ),
+                            l10n.aiReanalyzeAction,
+                            textAlign: TextAlign.center,
                           ),
                         ),
                       ),
+                      const SizedBox(height: AppTheme.spaceSM),
+                      Text(
+                        '${l10n.aiReanalyzeCost} · ${l10n.imagesLeft(widget.remainingRequests)}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: AppTheme.spaceLG),
                     ],
+                    Material(
+                      color: theme.colorScheme.surface,
+                      child: ExpansionTile(
+                        key: const ValueKey('ai-manual-adjustments'),
+                        tilePadding: EdgeInsets.zero,
+                        childrenPadding: const EdgeInsets.only(
+                          top: AppTheme.spaceMD,
+                        ),
+                        maintainState: true,
+                        initiallyExpanded: !canReAnalyze,
+                        leading: const Icon(Icons.tune),
+                        title: Text(l10n.aiManualAdjustments),
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Food name
+                              TextFormField(
+                                controller: widget.result.nameController,
+                                decoration: InputDecoration(
+                                  labelText: l10n.foodName,
+                                  hintText: l10n.foodNameHint,
+                                  prefixIcon:
+                                      const Icon(Icons.restaurant, size: 20),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: AppTheme.spaceMD,
+                                    vertical: 14,
+                                  ),
+                                ),
+                                validator: _validateName,
+                              ),
+                              const SizedBox(height: 16),
+
+                              // Portion size
+                              TextFormField(
+                                controller: widget.result.portionController,
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.allow(
+                                    RegExp(r'^\d+\.?\d{0,1}'),
+                                  ),
+                                ],
+                                decoration: InputDecoration(
+                                  labelText: l10n.portionSize,
+                                  hintText: '100',
+                                  prefixIcon: const Icon(Icons.scale, size: 20),
+                                  suffixText: 'g',
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: AppTheme.spaceMD,
+                                    vertical: 14,
+                                  ),
+                                ),
+                                validator: (v) => _validatePositiveNumber(
+                                  v,
+                                  l10n.portionSize,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+
+                              // Auto-scale toggle
+                              SwitchTile(
+                                title: l10n.autoScaleNutrition,
+                                subtitle: l10n.autoScaleNutritionSubtitle,
+                                icon: Icons.scale_outlined,
+                                value: _autoScaleEnabled,
+                                onChanged: (value) =>
+                                    setState(() => _autoScaleEnabled = value),
+                              ),
+                              const SizedBox(height: 8),
+
+                              // Macros section header
+                              Text(
+                                l10n.nutritionValues,
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              const SizedBox(height: AppTheme.spaceSM2),
+
+                              // Calories
+                              TextFormField(
+                                controller: widget.result.caloriesController,
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.allow(
+                                    RegExp(r'^\d+\.?\d{0,1}'),
+                                  ),
+                                ],
+                                decoration: InputDecoration(
+                                  labelText: l10n.calories,
+                                  hintText: '200',
+                                  prefixIcon: const Icon(
+                                    Icons.local_fire_department_outlined,
+                                    size: 20,
+                                  ),
+                                  suffixText: 'kcal',
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: AppTheme.spaceMD,
+                                    vertical: 14,
+                                  ),
+                                ),
+                                validator: (v) =>
+                                    _validatePositiveNumber(v, l10n.calories),
+                              ),
+                              const SizedBox(height: 16),
+
+                              // Macros row
+                              Row(
+                                children: [
+                                  // Protein
+                                  Expanded(
+                                    child: TextFormField(
+                                      controller:
+                                          widget.result.proteinController,
+                                      keyboardType: TextInputType.number,
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter.allow(
+                                          RegExp(r'^\d+\.?\d{0,1}'),
+                                        ),
+                                      ],
+                                      decoration: InputDecoration(
+                                        labelText: l10n.protein,
+                                        hintText: '20',
+                                        suffixText: 'g',
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                          horizontal: AppTheme.spaceSM,
+                                          vertical: 14,
+                                        ),
+                                      ),
+                                      validator: (v) => _validatePositiveNumber(
+                                        v,
+                                        l10n.protein,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  // Carbs
+                                  Expanded(
+                                    child: TextFormField(
+                                      controller: widget.result.carbsController,
+                                      keyboardType: TextInputType.number,
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter.allow(
+                                          RegExp(r'^\d+\.?\d{0,1}'),
+                                        ),
+                                      ],
+                                      decoration: InputDecoration(
+                                        labelText: l10n.carbs,
+                                        hintText: '30',
+                                        suffixText: 'g',
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                          horizontal: AppTheme.spaceSM,
+                                          vertical: 14,
+                                        ),
+                                      ),
+                                      validator: (v) => _validatePositiveNumber(
+                                        v,
+                                        l10n.carbs,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  // Fat
+                                  Expanded(
+                                    child: TextFormField(
+                                      controller: widget.result.fatController,
+                                      keyboardType: TextInputType.number,
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter.allow(
+                                          RegExp(r'^\d+\.?\d{0,1}'),
+                                        ),
+                                      ],
+                                      decoration: InputDecoration(
+                                        labelText: l10n.fat,
+                                        hintText: '10',
+                                        suffixText: 'g',
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                          horizontal: AppTheme.spaceSM,
+                                          vertical: 14,
+                                        ),
+                                      ),
+                                      validator: (v) =>
+                                          _validatePositiveNumber(v, l10n.fat),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+
+                              // Fiber
+                              TextFormField(
+                                controller: widget.result.fiberController,
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.allow(
+                                    RegExp(r'^\d+\.?\d{0,1}'),
+                                  ),
+                                ],
+                                decoration: InputDecoration(
+                                  labelText: l10n.fiber,
+                                  hintText: '3',
+                                  prefixIcon: const Icon(
+                                    Icons.eco_outlined,
+                                    size: 20,
+                                    color: AppTheme.fiber,
+                                  ),
+                                  suffixText: 'g',
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: AppTheme.spaceMD,
+                                    vertical: 14,
+                                  ),
+                                ),
+                                validator: (v) =>
+                                    _validatePositiveNumber(v, l10n.fiber),
+                              ),
+                              const SizedBox(height: 20),
+
+                              // Quick action buttons
+                              if (canReAnalyze) ...[
+                                Text(
+                                  l10n.aiQuickActions,
+                                  style: theme.textTheme.labelMedium?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                                const SizedBox(height: AppTheme.spaceSM2),
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: [
+                                    _QuickActionChip(
+                                      label: l10n.expectMoreCalories,
+                                      icon: Icons.trending_up,
+                                      color: AppTheme.warning,
+                                      theme: theme,
+                                      onTap: () => _triggerQuickReAnalyze(
+                                        'The calories should be higher than estimated',
+                                      ),
+                                    ),
+                                    _QuickActionChip(
+                                      label: l10n.expectFewerCalories,
+                                      icon: Icons.trending_down,
+                                      color: AppTheme.warning,
+                                      theme: theme,
+                                      onTap: () => _triggerQuickReAnalyze(
+                                        'The calories should be lower than estimated',
+                                      ),
+                                    ),
+                                    _QuickActionChip(
+                                      label: l10n.portionLooksBigger,
+                                      icon: Icons.scale,
+                                      color: theme.colorScheme.primary,
+                                      theme: theme,
+                                      onTap: () => _triggerQuickReAnalyze(
+                                        'The portion size looks bigger than estimated',
+                                      ),
+                                    ),
+                                    _QuickActionChip(
+                                      label: l10n.portionLooksSmaller,
+                                      icon: Icons.scale,
+                                      color: theme.colorScheme.primary,
+                                      theme: theme,
+                                      onTap: () => _triggerQuickReAnalyze(
+                                        'The portion size looks smaller than estimated',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: AppTheme.spaceSM2),
+                              ],
+
+                              const SizedBox(height: 24),
+
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton.icon(
+                                  onPressed: _isValid ? _saveChanges : null,
+                                  icon: const Icon(Icons.check, size: 18),
+                                  label: Text(
+                                    l10n.saveChanges,
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: AppTheme.spaceSM2),
+                              Align(
+                                alignment: Alignment.center,
+                                child: TextButton.icon(
+                                  onPressed:
+                                      _hasChanges ? _resetToOriginal : null,
+                                  icon: const Icon(Icons.restore, size: 18),
+                                  label: Text(l10n.resetAction),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
 
                     // No requests left message
                     if (widget.allowReAnalyze && !canReAnalyze)
@@ -687,11 +744,13 @@ class _QuickActionChip extends StatelessWidget {
             children: [
               Icon(icon, size: 16, color: color),
               const SizedBox(width: 6),
-              Text(
-                label,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w600,
+              Flexible(
+                child: Text(
+                  label,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],
