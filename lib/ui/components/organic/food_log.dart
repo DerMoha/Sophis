@@ -274,16 +274,6 @@ class MealCard extends StatelessWidget {
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
-                                  if (onHeaderTap != null &&
-                                      showHeaderChevron) ...[
-                                    const SizedBox(width: 4),
-                                    Icon(
-                                      Icons.chevron_right,
-                                      size: 18,
-                                      color: theme.colorScheme.onSurfaceVariant
-                                          .withValues(alpha: 0.5),
-                                    ),
-                                  ],
                                 ],
                               ),
                               if (calories > 0)
@@ -340,6 +330,16 @@ class MealCard extends StatelessWidget {
                             ],
                           ),
                         ),
+                        if (onHeaderTap != null && showHeaderChevron)
+                          SizedBox(
+                            width: 40,
+                            height: 40,
+                            child: Icon(
+                              Icons.chevron_right,
+                              size: 20,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
                       ],
                     ),
                   ),
