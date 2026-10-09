@@ -61,8 +61,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-
     final pages = [
       _OnboardingPage(
         icon: Icons.spa_outlined,
@@ -99,52 +97,33 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         eyebrow: l10n.onboardingGoalsEyebrow,
         title: l10n.onboardingGoalsTitle,
         body: l10n.onboardingGoalsBody,
-        points: const [],
+        points: [(Icons.lock_outline, l10n.onboardingGoalPrivacy)],
       ),
     ];
 
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Sophis'),
+        centerTitle: true,
+        automaticallyImplyLeading: false,
+        leading: _page > 0
+            ? IconButton(
+                tooltip: l10n.onboardingBack,
+                onPressed: () => _goToPage(_page - 1),
+                icon: const Icon(Icons.arrow_back),
+              )
+            : null,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 20),
+            child: Center(child: Text('${_page + 1}/${_lastPage + 1}')),
+          ),
+        ],
+      ),
       body: SafeArea(
+        top: false,
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 12, 4),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 0,
-                alignment: WrapAlignment.spaceBetween,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  Text(
-                    'Sophis',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  if (_page < _lastPage)
-                    TextButton(
-                      key: const Key('onboarding-skip-explanations'),
-                      onPressed: () => _goToPage(_lastPage),
-                      child: Text(
-                        l10n.onboardingSkipExplanations,
-                        textAlign: TextAlign.end,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(AppTheme.radiusFull),
-                child: LinearProgressIndicator(
-                  minHeight: 4,
-                  value: (_page + 1) / (_lastPage + 1),
-                  backgroundColor:
-                      theme.colorScheme.primary.withValues(alpha: 0.1),
-                ),
-              ),
-            ),
             Expanded(
               child: PageView(
                 controller: _pageController,
@@ -165,23 +144,27 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Widget _buildNavigation(AppLocalizations l10n) {
-    return Row(
+    return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        if (_page > 0)
-          TextButton.icon(
-            onPressed: () => _goToPage(_page - 1),
-            icon: const Icon(Icons.arrow_back),
-            label: Text(l10n.onboardingBack),
-          )
-        else
-          const Spacer(),
-        const Spacer(),
-        FilledButton.icon(
-          key: const Key('onboarding-next'),
-          onPressed: () => _goToPage(_page + 1),
-          iconAlignment: IconAlignment.end,
-          icon: const Icon(Icons.arrow_forward),
-          label: Text(l10n.onboardingNext),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            key: const Key('onboarding-next'),
+            onPressed: () => _goToPage(_page + 1),
+            iconAlignment: IconAlignment.end,
+            icon: const Icon(Icons.arrow_forward),
+            label: Text(l10n.onboardingNext),
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextButton(
+          key: const Key('onboarding-skip-explanations'),
+          onPressed: () => _goToPage(_lastPage),
+          child: Text(
+            l10n.onboardingSkipExplanations,
+            textAlign: TextAlign.center,
+          ),
         ),
       ],
     );
@@ -206,39 +189,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           child: TextButton(
             key: const Key('onboarding-skip-goals'),
             onPressed: _isFinishing ? null : _finish,
-            child: Column(
-              children: [
-                Text(l10n.onboardingTryFirst),
-                Text(
-                  l10n.onboardingTryFirstHint,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                ),
-              ],
-            ),
+            child: Text(l10n.onboardingTryFirst, textAlign: TextAlign.center),
           ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.lock_outline,
-              size: 14,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                l10n.onboardingGoalPrivacy,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-              ),
-            ),
-          ],
         ),
       ],
     );
@@ -263,7 +215,6 @@ class _OnboardingPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(24, 32, 24, 12),
@@ -271,8 +222,8 @@ class _OnboardingPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 88,
-            height: 88,
+            width: 64,
+            height: 64,
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
@@ -283,11 +234,10 @@ class _OnboardingPage extends StatelessWidget {
                 ],
               ),
               borderRadius: AppTheme.blobRadius,
-              boxShadow: AppTheme.shadowLG(isDark),
             ),
-            child: Icon(icon, color: Colors.white, size: 42),
+            child: Icon(icon, color: Colors.white, size: 32),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
           Text(
             eyebrow,
             style: theme.textTheme.labelMedium?.copyWith(
