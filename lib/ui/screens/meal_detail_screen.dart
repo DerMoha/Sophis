@@ -7,7 +7,7 @@ import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/services/food_intake_controller.dart';
 import 'package:sophis/services/service_result.dart';
-import 'package:sophis/ui/components/nutrition_entry_fields.dart';
+import 'package:sophis/ui/components/edit_food_entry_dialog.dart';
 import 'package:sophis/ui/components/common/ui_primitives.dart';
 import 'package:sophis/ui/components/settings/settings_tiles.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
@@ -529,63 +529,19 @@ class _MealEntryCard extends StatelessWidget {
     );
   }
 
-  void _showEditDialog(BuildContext context, AppLocalizations l10n) {
-    final nameController = TextEditingController(text: entry.name);
-    final caloriesController =
-        TextEditingController(text: entry.calories.toStringAsFixed(0));
-    final proteinController =
-        TextEditingController(text: entry.protein.toStringAsFixed(1));
-    final carbsController =
-        TextEditingController(text: entry.carbs.toStringAsFixed(1));
-    final fatController =
-        TextEditingController(text: entry.fat.toStringAsFixed(1));
-    final fiberController =
-        TextEditingController(text: entry.fiber.toStringAsFixed(1));
-
-    showDialog(
+  Future<void> _showEditDialog(
+    BuildContext context,
+    AppLocalizations l10n,
+  ) async {
+    final updatedEntry = await showDialog<FoodEntry>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.editEntry),
-        content: SingleChildScrollView(
-          child: NutritionEntryFields(
-            nameController: nameController,
-            caloriesController: caloriesController,
-            proteinController: proteinController,
-            carbsController: carbsController,
-            fatController: fatController,
-            fiberController: fiberController,
-            nameLabel: l10n.name,
-            nameTextCapitalization: TextCapitalization.sentences,
-            border: const OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () {
-              final updatedEntry = entry.copyWith(
-                name: nameController.text.trim(),
-                calories:
-                    double.tryParse(caloriesController.text) ?? entry.calories,
-                protein:
-                    double.tryParse(proteinController.text) ?? entry.protein,
-                carbs: double.tryParse(carbsController.text) ?? entry.carbs,
-                fat: double.tryParse(fatController.text) ?? entry.fat,
-                fiber: double.tryParse(fiberController.text) ?? entry.fiber,
-              );
-              context.read<NutritionProvider>().updateFoodEntry(updatedEntry);
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(l10n.entrySaved)),
-              );
-            },
-            child: Text(l10n.save),
-          ),
-        ],
-      ),
+      builder: (_) => EditFoodEntryDialog(entry: entry),
+    );
+    if (updatedEntry == null || !context.mounted) return;
+    await context.read<NutritionProvider>().updateFoodEntry(updatedEntry);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.entrySaved)),
     );
   }
 
