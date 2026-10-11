@@ -66,15 +66,18 @@ final class NutritionStore {
     }
   }
 
-  /// A local projection seam, not a cloud adapter. The caller filters these
-  /// facts through current account/connection consent before creating any social
-  /// payload. Legacy/restore rows have no eligible immutable logging timestamp.
+  /// Local diary changes for accepted partner connections. Full-history reads
+  /// index older rows while retaining their unknown original logging time.
   Future<List<FoodSharingChange>> foodSharingChanges({
     int afterSequence = 0,
     int limit = 100,
+    bool includeHistory = false,
   }) async {
     await _ensureInitialized();
     return _database.transaction(() async {
+      if (includeHistory) {
+        await _database.indexFoodSharingHistory(now: _clock());
+      }
       final rows = await _database.foodSharingChanges(
         afterSequence: afterSequence,
         limit: limit,

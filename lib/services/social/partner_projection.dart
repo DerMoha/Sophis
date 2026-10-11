@@ -9,7 +9,7 @@ import 'package:sophis/services/nutrition/nutrition_store.dart';
 import 'package:sophis/services/social/social_local_store.dart';
 import 'package:sophis/services/social/social_partner_repository.dart';
 
-/// Projects only explicitly consented facts from the logging-origin ledger.
+/// Projects the full food diary and nutrition goals for accepted partners.
 /// The private nutrition outbox, user profile and health records are never read.
 final class PartnerProjection {
   final SocialLocalStore store;
@@ -25,10 +25,11 @@ final class PartnerProjection {
     if (!connection.accepted || !await store.isCurrent(session)) return false;
     final settings = connection.ownSettings;
     final revision = settings['revision'] as int;
-    final checkpointKey = '${connection.id}:$revision:meal-categories';
+    final checkpointKey = '${connection.id}:$revision:full-sharing-v1';
     final checkpoint = await store.partnerProjection(session, checkpointKey);
     final changes = await nutrition.foodSharingChanges(
       afterSequence: checkpoint['sequence'] as int? ?? 0,
+      includeHistory: true,
     );
     for (final change in changes) {
       for (final kind in ['meals', 'summaries']) {
@@ -52,32 +53,15 @@ final class PartnerProjection {
           }
           continue;
         }
-        if (settings[kind] != true ||
-            settings['paused'] == true ||
-            change.entry == null ||
-            change.originallyLoggedAt == null) {
-          continue;
-        }
-        final periods =
-            (settings[kind == 'meals' ? 'mealPeriods' : 'summaryPeriods']
-                    as List)
-                .cast<Map<String, dynamic>>();
-        if (periods.isEmpty || periods.last['end'] != null) continue;
-        final start = periods.last['start'] as num;
-        final logged = change.originallyLoggedAt!.millisecondsSinceEpoch;
-        final eligible = periods.any(
-          (period) =>
-              logged >= (period['start'] as num) &&
-              (period['end'] == null || logged < (period['end'] as num)),
-        );
-        if (!eligible ||
-            change.changedAt.millisecondsSinceEpoch < start ||
-            (logged < start && receipt.isEmpty) ||
+        if (change.entry == null ||
             (receipt['revision'] == change.revision &&
                 (kind != 'meals' ||
                     receipt['mealCategory'] == change.entry!.meal))) {
           continue;
         }
+        // Older/restored entries have no logging origin. Epoch is a stable
+        // transport sentinel; their meal date remains the actual diary date.
+        final logged = change.originallyLoggedAt?.millisecondsSinceEpoch ?? 0;
         final entry = change.entry!;
         final payload = <String, dynamic>{
           'sourceMealId': entry.id,
@@ -118,9 +102,6 @@ final class PartnerProjection {
         checkpointKey,
         {'sequence': changes.last.sequence},
       );
-    }
-    if (settings['goals'] != true || settings['paused'] == true) {
-      return changes.length == 100;
     }
     final payload = <String, dynamic>{
       'consentRevision': revision,

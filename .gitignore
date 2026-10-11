@@ -72,3 +72,6 @@ backend/functions/node_modules/
 backend/.firebase/
 backend/*-debug.log
 backend/functions/*-debug.log
+
+# Local Firebase registered-app build configuration
+config/firebase.production.json

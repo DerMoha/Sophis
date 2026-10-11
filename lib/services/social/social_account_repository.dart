@@ -61,7 +61,7 @@ final class SocialRelationshipPage {
 }
 
 final class SocialAccountRepository {
-  final SocialCallableClient client;
+  final SocialClient client;
   final SocialLocalStore store;
   SocialAccountRepository({required this.client, required this.store});
 

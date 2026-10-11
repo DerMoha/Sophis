@@ -858,6 +858,19 @@ class DatabaseService extends _$DatabaseService {
     return row;
   }
 
+  /// Adds existing diary rows to the ledger without inventing a logging origin.
+  /// Full partner sharing includes these rows even when the diary predates sharing.
+  Future<void> indexFoodSharingHistory({required DateTime now}) async {
+    final missing = await customSelect(
+      'SELECT f.id FROM foods f LEFT JOIN food_sharing_origins o '
+      'ON o.food_id = f.id WHERE o.food_id IS NULL',
+    ).get();
+    for (final row in missing) {
+      await recordFoodSharingOrigin(row.read<String>('id'),
+          deleted: false, now: now,);
+    }
+  }
+
   Future<List<FoodSharingOriginRow>> foodSharingChanges({
     required int afterSequence,
     int limit = 100,

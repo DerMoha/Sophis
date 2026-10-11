@@ -50,19 +50,56 @@ void main() {
     store = SocialLocalStore(NativeDatabase.memory());
     alice = await store.switchAccount('alice');
   });
+  test(
+      'reconciled stale consent uploads while preserving privacy removals and current uploads',
+      () async {
+    SocialQueuedCommand upload(String op, String connection, int revision,
+            {bool deleted = false,}) =>
+        SocialQueuedCommand(
+          operationId: op,
+          action: deleted ? 'deletePartnerSource' : 'syncPartnerMeal',
+          targetId: '$connection:meals:0:food:syncPartnerMeal',
+          payload: {
+            'connectionId': connection,
+            'consentRevision': revision,
+            'sourceMealId': 'food',
+            'sourceRevision': 1,
+          },
+          createdAt: now,
+        );
+    await store.enqueue(alice, upload('stale', 'one', 1));
+    await store.enqueue(alice, upload('current', 'two', 3));
+    await store.enqueue(alice, upload('removed', 'three', 1));
+    await store.enqueue(alice, upload('privacy', 'one', 1, deleted: true));
+    await store.reconcilePartnerUpdates(alice, {'one': 2, 'two': 3});
+    final sent = <String>[];
+    for (;;) {
+      final next = await store.nextCommand(alice, now);
+      if (next == null) break;
+      sent.add(next.operationId);
+      await store.acknowledge(alice, next.operationId);
+    }
+    expect(sent, unorderedEquals(['current', 'privacy']));
+  });
+
   tearDown(() async {
     if (!storeClosed) await store.close();
   });
 
   group('SocialLocalStore', () {
-    test('retired posting work while retaining partner updates and deletion', () async {
+    test('retired posting work while retaining partner updates and deletion',
+        () async {
       await store.enqueue(alice, command('post'));
-      await store.enqueue(alice, command('reaction', action: 'react', target: 'reaction'));
-      await store.enqueue(alice, command('partner', action: 'syncPartnerMeal', target: 'meal'));
-      await store.enqueue(alice, command('delete', action: 'deletePost', target: 'old-post'));
+      await store.enqueue(
+          alice, command('reaction', action: 'react', target: 'reaction'),);
+      await store.enqueue(
+          alice, command('partner', action: 'syncPartnerMeal', target: 'meal'),);
+      await store.enqueue(
+          alice, command('delete', action: 'deletePost', target: 'old-post'),);
       await store.retirePublishing();
       final transport = _Transport();
-      await SocialQueueRunner(store: store, transport: transport).flush(now: now);
+      await SocialQueueRunner(store: store, transport: transport)
+          .flush(now: now);
       expect(transport.sent, ['delete', 'partner']);
     });
     test('deduplicated offline publication operations', () async {
@@ -74,11 +111,15 @@ void main() {
       expect(transport.sent, ['one']);
       expect(await store.nextCommand(alice, now), isNull);
     });
-    test('stopped automatic replay after a rate limit and retained other work', () async {
+    test('stopped automatic replay after a rate limit and retained other work',
+        () async {
       await store.enqueue(alice, command('one'));
       await store.enqueue(alice, command('two', target: 'post2'));
-      final transport = _Transport()..result = const Failure(ServiceErrorType.rateLimited, 'Limit reached');
-      final healthy = await SocialQueueRunner(store: store, transport: transport).flush(now: now);
+      final transport = _Transport()
+        ..result = const Failure(ServiceErrorType.rateLimited, 'Limit reached');
+      final healthy =
+          await SocialQueueRunner(store: store, transport: transport)
+              .flush(now: now);
       expect(healthy, isFalse);
       expect(transport.sent, ['one']);
       expect((await store.nextCommand(alice, now))?.operationId, 'two');

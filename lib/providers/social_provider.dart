@@ -18,6 +18,7 @@ final class SocialProvider extends ChangeNotifier with WidgetsBindingObserver {
   Timer? _partnerTimer;
   Future<void>? _projectionTask;
   bool _projectionPending = false;
+  int _partnerRefreshVersion = 0;
   SocialRuntime? _runtime;
   StreamSubscription<Object?>? _authChanges;
   Future<void>? _opening;
@@ -59,10 +60,25 @@ final class SocialProvider extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> refreshPartners() async {
     final runtime = _runtime;
     final epoch = _epoch;
+    final refresh = ++_partnerRefreshVersion;
     if (runtime == null || profile == null) return;
     final result = await runtime.partners.connections();
-    if (_closed || epoch != _epoch) return;
+    if (_closed || epoch != _epoch || refresh != _partnerRefreshVersion) return;
     if (result is Success<List<PartnerConnection>>) {
+      final session = await runtime.accounts.client.captureSession();
+      if (session == null ||
+          _closed ||
+          epoch != _epoch ||
+          refresh != _partnerRefreshVersion) {
+        return;
+      }
+      await runtime.store.reconcilePartnerUpdates(session, {
+        for (final c in result.value)
+          if (c.accepted) c.id: c.ownSettings['revision'] as int,
+      });
+      if (_closed || epoch != _epoch || refresh != _partnerRefreshVersion) {
+        return;
+      }
       partners = result.value;
       await syncPartnerChanges();
     } else if (result is Failure<List<PartnerConnection>>) {
@@ -109,6 +125,18 @@ final class SocialProvider extends ChangeNotifier with WidgetsBindingObserver {
         _projectionPending = _projectionPending || more;
       }
       final healthy = await runtime.queue.flush();
+      final pending = await runtime.store.partnerQueueStatus(session);
+      if (!await runtime.store.isCurrent(session) || _closed) return;
+      final count = pending.values.fold(0, (sum, value) => sum + value);
+      const pendingMessage =
+          'Partner updates are waiting to send. Refresh Partners to retry.';
+      if (count > 0) {
+        message = pendingMessage;
+        _notify();
+      } else if (message == pendingMessage) {
+        message = null;
+        _notify();
+      }
       if (!healthy) {
         _projectionPending = false;
       } else if (await runtime.store.nextCommand(session, DateTime.now()) !=

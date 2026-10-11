@@ -118,6 +118,46 @@ final class SocialLocalStore extends GeneratedDatabase {
         }
       });
 
+  /// Refresh invalidates stale upload intents before the projection rebuilds
+  /// them under current consent. Privacy removals are always retained.
+  Future<void> reconcilePartnerUpdates(
+    SocialSession expected,
+    Map<String, int> revisions,
+  ) =>
+      transaction(() async {
+        if (!await isCurrent(expected)) return;
+        final rows = await customSelect(
+          "SELECT payload FROM social_commands WHERE action IN ('syncPartnerMeal', 'syncPartnerContribution', 'syncPartnerGoals')",
+        ).get();
+        final stale = <String>{};
+        for (final row in rows) {
+          final payload =
+              jsonDecode(row.read<String>('payload')) as Map<String, dynamic>;
+          final id = payload['connectionId'] as String;
+          if (revisions[id] != payload['consentRevision']) stale.add(id);
+        }
+        for (final id in stale) {
+          await cancelPartnerUpdates(expected, id);
+        }
+        // An explicit refresh/app resume retries reviewed valid-session work;
+        // automatic queue drains still stop on the first failure.
+        await customStatement(
+          "UPDATE social_commands SET status = 'queued', next_attempt_at = 0 WHERE status = 'review' AND action IN ('syncPartnerMeal', 'syncPartnerContribution', 'syncPartnerGoals', 'deletePartnerSource')",
+        );
+      });
+
+  Future<Map<String, int>> partnerQueueStatus(SocialSession expected) =>
+      transaction(() async {
+        if (!await isCurrent(expected)) return {};
+        final rows = await customSelect(
+          "SELECT status, COUNT(*) AS amount FROM social_commands WHERE action IN ('syncPartnerMeal', 'syncPartnerContribution', 'syncPartnerGoals', 'deletePartnerSource') GROUP BY status",
+        ).get();
+        return {
+          for (final row in rows)
+            row.read<String>('status'): row.read<int>('amount'),
+        };
+      });
+
   Future<void> retirePublishing() => transaction(() async {
         await customStatement(
           "DELETE FROM social_commands WHERE action IN ('publish', 'editPost', 'react')",

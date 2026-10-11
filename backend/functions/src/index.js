@@ -11,7 +11,13 @@ import { SocialError, SocialService } from './social_service.js';
 
 initializeApp();
 const emulator = process.env.FUNCTIONS_EMULATOR === 'true';
-const service = new SocialService(getFirestore(), getStorage().bucket(process.env.SOCIAL_STORAGE_BUCKET || (emulator ? 'demo-sophis.firebasestorage.app' : undefined)), { production: !emulator });
+// Partner sharing has no photo uploads. Resolve Storage only when legacy blob
+// cleanup actually needs it, so a new project does not require a Storage bucket.
+const legacyBucket = {
+  file: (path) => getStorage().bucket(process.env.SOCIAL_STORAGE_BUCKET ||
+    (emulator ? 'demo-sophis.firebasestorage.app' : undefined)).file(path),
+};
+const service = new SocialService(getFirestore(), legacyBucket, { production: !emulator });
 
 const partners = new PartnerService(service);
 

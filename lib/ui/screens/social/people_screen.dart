@@ -72,9 +72,13 @@ class _PeopleScreenState extends State<PeopleScreen>
     }
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Partner sharing'),
+        title: Text(
+            social.partners.length == 1 && social.partners.single.accepted
+                ? 'Partner'
+                : 'Partner sharing',),
         actions: [
-          if (social.profile != null)
+          if (social.profile != null &&
+              !(social.partners.length == 1 && social.partners.single.accepted))
             IconButton(
               tooltip: 'Refresh partners',
               onPressed: social.busy ? null : social.refresh,
@@ -157,11 +161,11 @@ class _PeopleScreenState extends State<PeopleScreen>
             ),
             const SizedBox(height: 8),
             const Text(
-              'View your partner’s nutrition goals, daily intake and meals. Copy the items you ate into your own diary. You each choose what to share.',
+              'View your partner’s nutrition goals, daily intake and meals. Copy the items you ate into your own diary. Everything is shared automatically once you connect.',
             ),
             const SizedBox(height: 8),
             const Text(
-              'An account is optional. Only the goals, intake and meals you enable are shared with your partner.',
+              'An account is optional. Connected partners can see each other’s full food diary, goals and daily progress.',
             ),
           ],
         ),

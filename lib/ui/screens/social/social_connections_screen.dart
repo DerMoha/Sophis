@@ -141,7 +141,7 @@ class _SocialConnectionsScreenState extends State<SocialConnectionsScreen> {
                 label: const Text('Partners · goals and meals'),
               ),
               const Text(
-                'Connect using a private invitation. After both people accept, each person chooses whether to share goals, daily intake and meals.',
+                'Connect using a private invitation. After both people accept, your full food diaries, goals and daily progress are shared automatically.',
               ),
               const SizedBox(height: 16),
               Wrap(
@@ -265,7 +265,7 @@ class _SocialConnectionsScreenState extends State<SocialConnectionsScreen> {
                       ),
                       Text(
                         _preview!.audience == 'partner'
-                            ? 'Request a partner connection. Sharing starts only after acceptance and consent.'
+                            ? 'Request a partner connection. Accepting shares your full food diary, goals and daily progress with each other.'
                             : 'Request to follow this person. They must approve before you can see their posts.',
                       ),
                       FilledButton(

@@ -34,10 +34,20 @@ final class SocialTokens {
   });
 }
 
+/// Account-scoped backend contract shared by partner and account repositories.
+abstract interface class SocialClient implements SocialCommandTransport {
+  Future<SocialSession?> captureSession();
+  Future<ServiceResult<Object?>> call(
+    SocialSession expected,
+    String action,
+    Map<String, dynamic> payload,
+  );
+}
+
 /// Implements Firebase's documented callable protocol so each request uses the
 /// captured user's token. A generic callable SDK can refresh the current user
 /// after an account switch; that must not happen to durable queued commands.
-final class SocialCallableClient implements SocialCommandTransport {
+final class SocialCallableClient implements SocialClient {
   final SocialCredentials credentials;
   final SocialLocalStore store;
   final Uri endpoint;
@@ -60,6 +70,7 @@ final class SocialCallableClient implements SocialCommandTransport {
   @override
   String? get accountId => credentials.accountId;
 
+  @override
   Future<SocialSession?> captureSession() async {
     final uid = accountId;
     final transition = store.transitionVersion;
@@ -78,6 +89,7 @@ final class SocialCallableClient implements SocialCommandTransport {
     return session;
   }
 
+  @override
   Future<ServiceResult<Object?>> call(
     SocialSession expected,
     String action,

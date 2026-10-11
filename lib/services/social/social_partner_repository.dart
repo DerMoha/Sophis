@@ -19,15 +19,34 @@ final class PartnerConnection {
         inviterId = data['inviterId'] as String,
         accepted = data['status'] == 'accepted',
         ownSettings = Map.unmodifiable(
-            Map<String, dynamic>.from((data['settings'] as Map)[uid] as Map),),
-        otherSettings = Map.unmodifiable(Map<String, dynamic>.from(
+          _sharingSettings((data['settings'] as Map)[uid] as Map),
+        ),
+        otherSettings = Map.unmodifiable(
+          _sharingSettings(
             (data['settings'] as Map)[(data['participants'] as List)
-                .firstWhere((id) => id != uid)] as Map,),);
+                .firstWhere((id) => id != uid)] as Map,
+          ),
+        );
+
+  static Map<String, dynamic> _sharingSettings(Map settings) => {
+        ...Map<String, dynamic>.from(settings),
+        'meals': true,
+        'summaries': true,
+        'goals': true,
+        'photos': settings['photos'] == true,
+        'paused': false,
+        'mealPeriods': [
+          {'start': 0, 'end': null},
+        ],
+        'summaryPeriods': [
+          {'start': 0, 'end': null},
+        ],
+      };
 }
 
-/// Partner reads and consent changes are online and use captured account tokens.
+/// Partner reads are online and use captured account tokens.
 final class SocialPartnerRepository {
-  final SocialCallableClient client;
+  final SocialClient client;
   SocialPartnerRepository(this.client);
 
   Future<ServiceResult<Map<String, dynamic>>> request(

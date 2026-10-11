@@ -11,7 +11,6 @@ import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/providers/social_provider.dart';
 import 'package:sophis/services/nutrition/nutrition_store.dart';
 import 'package:sophis/services/social/social_runtime.dart';
-import 'package:sophis/ui/components/settings/settings_tiles.dart';
 import 'package:sophis/ui/screens/social/people_screen.dart';
 import 'package:sophis/ui/screens/social/social_partners_screen.dart';
 
@@ -40,7 +39,7 @@ void main() {
   }
 
   testWidgets(
-      'shared independent partner goals and eligible daily progress with native consent screens',
+      'shared history and goals automatically and opened one partner directly',
       (tester) async {
     expect(SocialRuntime.configuration()?.options.projectId, 'demo-sophis');
     app.main();
@@ -55,6 +54,7 @@ void main() {
     final recipientEmail = 'partner-recipient-$marker@example.invalid';
     const password = 'SophisSimulator123!';
     String? connectionId;
+    String? importedId;
     navigator
         .push(MaterialPageRoute<void>(builder: (_) => const PeopleScreen()));
     await waitFor(
@@ -82,36 +82,13 @@ void main() {
         () =>
             find.byKey(const ValueKey('partner_today')).evaluate().isNotEmpty &&
             find
-                .byWidgetPredicate((widget) =>
-                    widget is LinearProgressIndicator && widget.value == null,)
+                .byWidgetPredicate(
+                  (widget) =>
+                      widget is LinearProgressIndicator && widget.value == null,
+                )
                 .evaluate()
                 .isEmpty,
       );
-    }
-
-    Future<void> change(String title, String field, bool value) async {
-      await tester.scrollUntilVisible(find.text('Sharing settings'), 300,
-          scrollable: find.descendant(
-            of: find.byType(SocialPartnerDetailScreen),
-            matching: find.byType(Scrollable),
-          ).first,);
-      if (find.text('Share nutrition goals').evaluate().isEmpty) {
-        await tap(tester, find.text('Sharing settings'));
-      }
-      final tile = find.widgetWithText(SwitchTile, title);
-      await tap(
-        tester,
-        find.descendant(of: tile, matching: find.byType(Switch)),
-      );
-      await waitFor(
-        tester,
-        () => social.partners.single.ownSettings[field] == value,
-      );
-      await waitFor(
-        tester,
-        () => find.byWidgetPredicate((widget) => widget is LinearProgressIndicator && widget.value == null).evaluate().isEmpty,
-      );
-      await tester.pumpAndSettle();
     }
 
     FoodEntry entry(String suffix, double calories) => FoodEntry(
@@ -154,14 +131,11 @@ void main() {
       await tap(tester, find.text('Accept partner'));
       await waitFor(
         tester,
-        () => find.text('View today').evaluate().isNotEmpty,
-      );
-      await captureSocialScreen(binding, tester, 'partner-list');
-      await tap(tester, find.text('View today'));
-      await waitFor(
-        tester,
         () => find.byKey(const ValueKey('partner_today')).evaluate().isNotEmpty,
       );
+      expect(find.text('View today'), findsNothing);
+      expect(find.byType(Switch), findsNothing);
+      await captureSocialScreen(binding, tester, 'partner-direct');
       await nutrition.store.commit(SaveFoodEntry(entry('historical', 999)));
       await nutrition.store.commit(
         SaveGoals(
@@ -169,65 +143,70 @@ void main() {
         ),
       );
       await nutrition.reloadAll();
-      await change('Share nutrition goals', 'goals', true);
-      await change('Share daily progress', 'summaries', true);
-      await change('Share logged meals', 'meals', true);
       await nutrition.store.commit(SaveFoodEntry(entry('shared', 400)));
+      await nutrition.store.commit(SaveFoodEntry(entry('side', 100)));
       await nutrition.reloadAll();
       await social.syncPartnerChanges();
       await switchAccount(recipientEmail);
       await openDetail();
-      expect(find.text('Calories: 400 / 2200 kcal'), findsOneWidget,
-          reason: tester
-              .widgetList<Text>(find.byType(Text))
-              .map((text) => text.data)
-              .join(' | '),);
-      expect(find.text('Protein: 20 / 130 g'), findsOneWidget);
+      expect(
+        find.text('Calories: 1499 / 2200 kcal'),
+        findsOneWidget,
+        reason: tester
+            .widgetList<Text>(find.byType(Text))
+            .map((text) => text.data)
+            .join(' | '),
+      );
+      expect(find.text('Protein: 60 / 130 g'), findsOneWidget);
       await captureSocialScreen(binding, tester, 'partner-goals-progress');
       await tester.scrollUntilVisible(
-          find.text('Rice bowl'), 300,
-          scrollable: find.descendant(
-            of: find.byType(SocialPartnerDetailScreen),
-            matching: find.byType(Scrollable),
-          ).first,);
+        find.text('Rice bowl'),
+        300,
+        scrollable: find
+            .descendant(
+              of: find.byType(SocialPartnerDetailScreen),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
       expect(find.text('Rice bowl'), findsOneWidget);
-      expect(find.text('Rice bowl historical $marker'), findsNothing);
+      expect(find.text('Rice bowl historical $marker'), findsOneWidget);
       await captureSocialScreen(binding, tester, 'partner-shared-meal');
       await tap(tester, find.text('Choose items from this day'));
       await captureSocialScreen(binding, tester, 'partner-copy-items');
-      navigator.pop();
-      await tester.pumpAndSettle();
-      await switchAccount(authorEmail);
-      await openDetail();
-      await change('Pause sharing', 'paused', true);
-      await nutrition.store.commit(SaveFoodEntry(entry('paused', 500)));
-      await nutrition.store.commit(
-        SaveGoals(
-          NutritionGoals(calories: 2500, protein: 150, carbs: 300, fat: 80),
-        ),
+      final side =
+          find.widgetWithText(CheckboxListTile, 'Rice bowl side $marker');
+      await tap(tester, side);
+      await tap(
+          tester,
+          find.widgetWithText(
+              CheckboxListTile, 'Rice bowl historical $marker',),);
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Your servings'),
+        '0.5',
       );
+      final beforeImport = (await nutrition.store.snapshot())
+          .value
+          .foodEntries
+          .map((e) => e.id)
+          .toSet();
+      await tap(tester, find.text('Add my portion'));
+      await waitFor(
+        tester,
+        () => find.text('Add my portion').evaluate().isEmpty,
+      );
+      final imported = (await nutrition.store.snapshot())
+          .value
+          .foodEntries
+          .where((e) => !beforeImport.contains(e.id))
+          .single;
+      importedId = imported.id;
+      expect(imported.name, 'Rice bowl');
+      expect(imported.calories, 200);
+      // This simulator switches two accounts over the same local diary. Remove
+      // the verified recipient copy before switching back to the author.
+      await nutrition.store.commit(DeleteFoodEntry(imported.id));
       await nutrition.reloadAll();
-      await social.syncPartnerChanges();
-      await switchAccount(recipientEmail);
-      await openDetail();
-      expect(find.text('Calories: 400 / 2200 kcal'), findsOneWidget);
-      expect(find.text('Rice bowl paused $marker'), findsNothing);
-      expect(
-        find.text(
-          'Partner sharing is paused. Previously shared values are frozen.',
-        ),
-        findsOneWidget,
-      );
-      await switchAccount(authorEmail);
-      await openDetail();
-      await change('Share nutrition goals', 'goals', false);
-      await switchAccount(recipientEmail);
-      await openDetail();
-      expect(
-        find.text('Your partner has not shared nutrition goals.'),
-        findsOneWidget,
-      );
-      expect(find.text('Calories: 400 / — kcal'), findsOneWidget);
       expect(
         (await social.runtime!.partners
                 .request('disconnectPartner', {'connectionId': connectionId}))
@@ -236,7 +215,10 @@ void main() {
       );
     } finally {
       await social.signOut();
-      for (final suffix in ['historical', 'shared', 'paused']) {
+      if (importedId != null) {
+        await nutrition.store.commit(DeleteFoodEntry(importedId));
+      }
+      for (final suffix in ['historical', 'shared', 'side', 'paused']) {
         await nutrition.store
             .commit(DeleteFoodEntry('partner_${marker}_$suffix'));
       }

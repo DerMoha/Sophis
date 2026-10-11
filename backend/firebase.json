@@ -1,12 +1,10 @@
 {
-  "functions": [{"source": "functions", "codebase": "social", "runtime": "nodejs22"}],
-  "firestore": {"rules": "firestore.rules", "indexes": "firestore.indexes.json"},
-  "storage": {"rules": "storage.rules"},
+  "firestore": {"rules": "firestore.rules", "indexes": "firestore.spark.indexes.json"},
   "emulators": {
-    "auth": {"port": 9099},
-    "firestore": {"port": 8080},
-    "storage": {"port": 9199},
-    "functions": {"port": 5001},
+    "auth": {"port": 19099},
+    "firestore": {"port": 18080},
+    "hub": {"port": 14400},
+    "logging": {"port": 14500},
     "ui": {"enabled": false},
     "singleProjectMode": true
   }

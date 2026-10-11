@@ -8,8 +8,9 @@ import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:sophis/services/social/callable_social_repository.dart';
 import 'package:sophis/services/social/firebase_social_auth.dart';
+import 'package:sophis/services/social/firebase_project_options.dart';
 import 'package:sophis/services/social/social_account_repository.dart';
-import 'package:sophis/services/social/social_callable_client.dart';
+import 'package:sophis/services/social/firestore_partner_client.dart';
 import 'package:sophis/services/social/social_firebase_configuration.dart';
 import 'package:sophis/services/social/social_local_store.dart';
 import 'package:sophis/services/social/social_queue_runner.dart';
@@ -37,7 +38,8 @@ final class SocialRuntime {
 
   static SocialFirebaseConfiguration? configuration() {
     const host = String.fromEnvironment('SOCIAL_EMULATOR_HOST');
-    if (host.isNotEmpty && !kReleaseMode) {
+    if (host.isNotEmpty) {
+      if (kReleaseMode) return null;
       return const SocialFirebaseConfiguration(
         options: FirebaseOptions(
           apiKey: 'demo-api-key',
@@ -49,7 +51,23 @@ final class SocialRuntime {
       );
     }
     const project = String.fromEnvironment('SOCIAL_PROJECT_ID');
-    const key = String.fromEnvironment('SOCIAL_API_KEY');
+    if (project.isEmpty) {
+      final options = FirebaseProjectOptions.currentPlatform;
+      return options == null
+          ? null
+          : SocialFirebaseConfiguration(options: options);
+    }
+    const sharedKey = String.fromEnvironment('SOCIAL_API_KEY');
+    const iosKey = String.fromEnvironment(
+      'SOCIAL_IOS_API_KEY',
+      defaultValue: sharedKey,
+    );
+    const androidKey = String.fromEnvironment(
+      'SOCIAL_ANDROID_API_KEY',
+      defaultValue: sharedKey,
+    );
+    final key =
+        defaultTargetPlatform == TargetPlatform.iOS ? iosKey : androidKey;
     const sender = String.fromEnvironment('SOCIAL_SENDER_ID');
     const iosId = String.fromEnvironment('SOCIAL_IOS_APP_ID');
     const androidId = String.fromEnvironment('SOCIAL_ANDROID_APP_ID');
@@ -88,12 +106,13 @@ final class SocialRuntime {
       );
       await auth.ready();
       await store.retirePublishing();
-      final client = SocialCallableClient(
+      final client = FirestorePartnerClient(
         credentials: auth,
         store: store,
-        endpoint: config.endpoint,
-        client: httpClient,
-        requireAppCheck: config.emulatorHost == null,
+        projectId: config.options.projectId,
+        emulatorHost: config.emulatorHost,
+        emulatorPort: config.firestoreEmulatorPort,
+        httpClient: httpClient,
       );
       return SocialRuntime(
         auth: auth,

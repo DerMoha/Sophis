@@ -9,8 +9,21 @@ import 'package:flutter/foundation.dart';
 final class SocialFirebaseConfiguration {
   final FirebaseOptions options;
   final String? emulatorHost;
+  final bool enableAppCheck;
+  final int authEmulatorPort;
+  final int firestoreEmulatorPort;
 
-  const SocialFirebaseConfiguration({required this.options, this.emulatorHost});
+  const SocialFirebaseConfiguration({
+    required this.options,
+    this.emulatorHost,
+    this.enableAppCheck = const bool.fromEnvironment('SOCIAL_APP_CHECK'),
+    this.authEmulatorPort = const int.fromEnvironment(
+        'SOCIAL_AUTH_EMULATOR_PORT',
+        defaultValue: 9099,),
+    this.firestoreEmulatorPort = const int.fromEnvironment(
+        'SOCIAL_FIRESTORE_EMULATOR_PORT',
+        defaultValue: 8080,),
+  });
 
   Uri get endpoint => emulatorHost == null
       ? Uri.https(
@@ -32,8 +45,8 @@ final class SocialFirebaseConfiguration {
     final auth = FirebaseAuth.instanceFor(app: app);
     FirebaseAppCheck? check;
     if (emulatorHost != null) {
-      await auth.useAuthEmulator(emulatorHost!, 9099);
-    } else {
+      await auth.useAuthEmulator(emulatorHost!, authEmulatorPort);
+    } else if (enableAppCheck) {
       check = FirebaseAppCheck.instanceFor(app: app);
       await check.activate(
         providerAndroid: const AndroidPlayIntegrityProvider(),

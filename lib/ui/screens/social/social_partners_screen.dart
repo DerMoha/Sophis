@@ -14,8 +14,8 @@ import 'package:sophis/services/social/social_partner_repository.dart';
 import 'package:sophis/services/social/social_repository.dart';
 import 'package:sophis/ui/components/organic_components.dart';
 import 'package:sophis/ui/screens/social/social_visuals.dart';
-import 'package:sophis/ui/components/settings/settings_tiles.dart';
 import 'package:sophis/ui/screens/social/social_import_screen.dart';
+import 'package:sophis/ui/screens/social/social_connections_screen.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 
 class SocialPartnersScreen extends StatefulWidget {
@@ -68,11 +68,37 @@ class _SocialPartnersScreenState extends State<SocialPartnersScreen> {
     await _refresh();
   }
 
+  Future<void> _dismiss(PartnerConnection connection) async {
+    final social = context.read<SocialProvider>();
+    final epoch = social.sessionVersion;
+    setState(() => _busy = true);
+    final result = await social.runtime!.partners.request(
+      'disconnectPartner',
+      {'connectionId': connection.id},
+    );
+    if (!mounted || epoch != social.sessionVersion) return;
+    setState(() {
+      _busy = false;
+      _message =
+          result is Failure<Map<String, dynamic>> ? result.message : null;
+    });
+    await _refresh();
+  }
+
   @override
   Widget build(BuildContext context) {
     final social = context.watch<SocialProvider>();
     final valid = social.profile != null &&
         (_epoch == null || _epoch == social.sessionVersion);
+    if (valid &&
+        social.partners.length == 1 &&
+        social.partners.single.accepted) {
+      return SocialPartnerDetailScreen(
+        key: ValueKey(social.partners.single.id),
+        connectionId: social.partners.single.id,
+        embedded: widget.embedded,
+      );
+    }
     final content = ListView(
       shrinkWrap: widget.embedded,
       physics: widget.embedded ? const NeverScrollableScrollPhysics() : null,
@@ -80,7 +106,7 @@ class _SocialPartnersScreenState extends State<SocialPartnersScreen> {
       children: [
         const SocialIdentity(
           name: 'Your partners',
-          subtitle: 'View a day and copy the meals you shared',
+          subtitle: 'Meals, goals and progress, shared automatically',
           icon: Icons.favorite_outline,
         ),
         const SizedBox(height: 16),
@@ -89,8 +115,23 @@ class _SocialPartnersScreenState extends State<SocialPartnersScreen> {
         if (!valid)
           const Text('Your account changed. Return to Partner sharing.')
         else if (social.partners.isEmpty && !_busy)
-          const Text(
-            'No partner connections yet. Use Invite a partner above to connect.',
+          GlassCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                    'Connect to see each other’s meals, goals and progress.',),
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed: () => Navigator.push(
+                    context,
+                    AppTheme.slideRoute(const SocialConnectionsScreen()),
+                  ),
+                  icon: const Icon(Icons.person_add_outlined),
+                  label: const Text('Connect a partner'),
+                ),
+              ],
+            ),
           )
         else
           for (final connection in social.partners)
@@ -103,7 +144,7 @@ class _SocialPartnersScreenState extends State<SocialPartnersScreen> {
                     SocialIdentity(
                       name: connection.displayName,
                       subtitle: connection.accepted
-                          ? 'Connected privately'
+                          ? 'Meals, goals and progress shared'
                           : 'Partner invitation',
                       icon: Icons.favorite_outline,
                     ),
@@ -131,6 +172,15 @@ class _SocialPartnersScreenState extends State<SocialPartnersScreen> {
                       const Text(
                         'Waiting for partner approval. No data is shared yet.',
                       ),
+                    if (!connection.accepted)
+                      TextButton(
+                        onPressed: _busy ? null : () => _dismiss(connection),
+                        child: Text(
+                          connection.inviterId == social.accountId
+                              ? 'Decline request'
+                              : 'Cancel request',
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -156,7 +206,12 @@ class _SocialPartnersScreenState extends State<SocialPartnersScreen> {
 
 class SocialPartnerDetailScreen extends StatefulWidget {
   final String connectionId;
-  const SocialPartnerDetailScreen({super.key, required this.connectionId});
+  final bool embedded;
+  const SocialPartnerDetailScreen({
+    super.key,
+    required this.connectionId,
+    this.embedded = false,
+  });
   @override
   State<SocialPartnerDetailScreen> createState() =>
       _SocialPartnerDetailScreenState();
@@ -173,7 +228,6 @@ class _SocialPartnerDetailScreenState extends State<SocialPartnerDetailScreen> {
   String? _timeZone;
   DateTime? _selectedDate;
   bool _busy = false;
-  bool _sharingExpanded = false;
   int? _epoch;
 
   @override
@@ -340,30 +394,6 @@ class _SocialPartnerDetailScreenState extends State<SocialPartnerDetailScreen> {
     await _refresh();
   }
 
-  Future<void> _change(String field, bool value) async {
-    final connection = _connection;
-    if (_busy || connection == null) return;
-    final social = context.read<SocialProvider>();
-    final epoch = social.sessionVersion;
-    setState(() => _busy = true);
-    final result =
-        await social.runtime!.partners.settings(connection, field, value);
-    if (!mounted || epoch != social.sessionVersion) return;
-    if (result is Success<Map<String, dynamic>>) {
-      final session = await social.runtime!.accounts.client.captureSession();
-      if (session != null) {
-        await social.runtime!.store
-            .cancelPartnerUpdates(session, connection.id);
-      }
-    }
-    setState(() {
-      _busy = false;
-      _message =
-          result is Failure<Map<String, dynamic>> ? result.message : null;
-    });
-    if (result is Success<Map<String, dynamic>>) await _refresh();
-  }
-
   Future<void> _disconnect() async {
     final social = context.read<SocialProvider>();
     final epoch = social.sessionVersion;
@@ -439,142 +469,100 @@ class _SocialPartnerDetailScreenState extends State<SocialPartnerDetailScreen> {
     final valid = social.profile != null &&
         (_epoch == null || _epoch == social.sessionVersion);
     final connection = valid ? _connection : null;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(connection?.displayName ?? 'Partner'),
-        actions: [
-          IconButton(
-            tooltip: 'Refresh partner',
-            onPressed: _busy ? null : _refresh,
-            icon: const Icon(Icons.refresh),
+    final partner = valid
+        ? connection ??
+            social.partners
+                .where((c) => c.id == widget.connectionId && c.accepted)
+                .firstOrNull
+        : null;
+    final content = ListView(
+      shrinkWrap: widget.embedded,
+      physics: widget.embedded ? const NeverScrollableScrollPhysics() : null,
+      padding: widget.embedded ? EdgeInsets.zero : AppTheme.pagePadding,
+      children: [
+        if (_busy) const LinearProgressIndicator(),
+        if (_message != null) Text(_message!),
+        if (!valid)
+          const Text('Your account changed. Return to Partner sharing.'),
+        if (widget.embedded && partner != null)
+          Row(
+            children: [
+              Expanded(
+                child: SocialIdentity(
+                  name: partner.displayName,
+                  subtitle: 'Your partner’s day',
+                  icon: Icons.favorite_outline,
+                ),
+              ),
+              ..._buildActions(),
+            ],
+          ),
+        if (connection != null) ...[
+          TextButton.icon(
+            onPressed: _busy ? null : _chooseDate,
+            icon: const Icon(Icons.calendar_today_outlined),
+            label: Text(
+              _localDate == null
+                  ? 'Today'
+                  : DateFormat.yMMMMEEEEd().format(DateTime.parse(_localDate!)),
+            ),
+          ),
+          PartnerTodayCard(
+            key: const ValueKey('partner_today'),
+            goals: _goals,
+            summary: _summary,
+            progressShared: true,
+          ),
+          const SizedBox(height: 16),
+          if (_meals.isNotEmpty && _cursor == null)
+            FilledButton.icon(
+              onPressed: _busy ? null : _importDay,
+              icon: const Icon(Icons.playlist_add),
+              label: const Text('Choose items from this day'),
+            ),
+          PartnerMeals(
+            meals: _meals,
+            onImport: _busy ? null : _importMeal,
+          ),
+          if (_cursor != null)
+            TextButton(
+              onPressed: _busy ? null : _more,
+              child: const Text('Load more meals'),
+            ),
+          const SizedBox(height: 24),
+          Text(
+            'You both share your full food diary, nutrition goals and daily progress automatically.',
+            style: Theme.of(context).textTheme.bodySmall,
           ),
         ],
+      ],
+    );
+    if (widget.embedded) return content;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(partner?.displayName ?? 'Partner'),
+        actions: _buildActions(),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          if (_busy) const LinearProgressIndicator(),
-          if (_message != null) Text(_message!),
-          if (!valid)
-            const Text('Your account changed. Return to Partner sharing.'),
-          if (connection != null) ...[
-            TextButton.icon(
-              onPressed: _busy ? null : _chooseDate,
-              icon: const Icon(Icons.calendar_today_outlined),
-              label: Text(
-                _localDate == null
-                    ? 'Today'
-                    : DateFormat.yMMMMEEEEd()
-                        .format(DateTime.parse(_localDate!)),
-              ),
-            ),
-            if (connection.otherSettings['paused'] == true)
-              const SocialNotice(
-                message:
-                    'Partner sharing is paused. Previously shared values are frozen.',
-                icon: Icons.pause_circle_outline,
-              ),
-            if (_goals == null)
-              const SocialNotice(
-                message: 'Your partner has not shared nutrition goals.',
-              ),
-            if (connection.otherSettings['summaries'] != true)
-              const SocialNotice(
-                message: 'Your partner has not shared daily progress.',
-              ),
-            PartnerTodayCard(
-              key: const ValueKey('partner_today'),
-              goals: _goals,
-              summary: _summary,
-              progressShared: connection.otherSettings['summaries'] == true,
-            ),
-            const SizedBox(height: 16),
-            if (_meals.isNotEmpty && _cursor == null)
-              FilledButton.icon(
-                onPressed: _busy ? null : _importDay,
-                icon: const Icon(Icons.playlist_add),
-                label: const Text('Choose items from this day'),
-              ),
-            if (connection.otherSettings['meals'] != true)
-              const SocialNotice(message: 'Your partner has not shared meals.')
-            else
-              PartnerMeals(
-                meals: _meals,
-                onImport: _busy ? null : _importMeal,
-              ),
-            if (_cursor != null)
-              TextButton(
-                onPressed: _busy ? null : _more,
-                child: const Text('Load more meals'),
-              ),
-            const SizedBox(height: 24),
-            GlassCard(
-              padding: EdgeInsets.zero,
-              child: ExpansionTile(
-                key: const ValueKey('partner_sharing_settings'),
-                initiallyExpanded: _sharingExpanded,
-                onExpansionChanged: (expanded) => _sharingExpanded = expanded,
-                leading: Icon(
-                  Icons.tune,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                title: const Text('Sharing settings'),
-                subtitle:
-                    Text('Choose what ${connection.displayName} receives'),
-                childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                shape: const Border(),
-                collapsedShape: const Border(),
-                children: [
-                  const SocialNotice(
-                    message:
-                        'Only food logged after sharing starts is included. Food logged during a pause is excluded.',
-                  ),
-                  IgnorePointer(
-                    ignoring: _busy,
-                    child: Column(
-                      children: [
-                        for (final setting in [
-                          (
-                            'goals',
-                            'Share nutrition goals',
-                            'Your calorie, protein, carbohydrate and fat targets.'
-                          ),
-                          (
-                            'summaries',
-                            'Share daily progress',
-                            'Only eligible logged entries contribute to totals.'
-                          ),
-                          (
-                            'meals',
-                            'Share logged meals',
-                            'Automatically share newly logged meals from activation onward.'
-                          ),
-                          (
-                            'paused',
-                            'Pause sharing',
-                            'Freeze shared values. Turning an individual permission off revokes that data.'
-                          ),
-                        ])
-                          SwitchTile(
-                            title: setting.$2,
-                            subtitle: setting.$3,
-                            icon: Icons.share_outlined,
-                            value: connection.ownSettings[setting.$1] == true,
-                            onChanged: (value) => _change(setting.$1, value),
-                          ),
-                      ],
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: _busy ? null : _disconnect,
-                    child: const Text('Disconnect partner'),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ],
-      ),
+      body: content,
     );
   }
+
+  List<Widget> _buildActions() => [
+        IconButton(
+          tooltip: 'Refresh partner',
+          onPressed: _busy ? null : _refresh,
+          icon: const Icon(Icons.refresh),
+        ),
+        PopupMenuButton<String>(
+          enabled: !_busy && _connection != null,
+          tooltip: 'Partner options',
+          onSelected: (_) => unawaited(_disconnect()),
+          itemBuilder: (_) => const [
+            PopupMenuItem(
+              value: 'disconnect',
+              child: Text('Disconnect partner'),
+            ),
+          ],
+        ),
+      ];
 }

@@ -1,7 +1,7 @@
 import 'package:sophis/services/service_result.dart';
 import 'package:sophis/services/social/social_local_store.dart';
 
-/// Implement with Firebase callable functions. The adapter must capture/recheck
+/// Account-scoped backend transport. The adapter must capture/recheck
 /// the authenticated UID when obtaining credentials, rather than using whichever
 /// account happens to be signed in after an asynchronous token refresh.
 abstract interface class SocialCommandTransport {

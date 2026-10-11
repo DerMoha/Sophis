@@ -11,7 +11,7 @@ import 'package:uuid/uuid.dart';
 /// Screens receive domain data; all wire encoding and durable publication stay
 /// here. Published snapshots and imported private diary copies are independent.
 final class CallableSocialRepository implements SocialRepository {
-  final SocialCallableClient client;
+  final SocialClient client;
   final SocialLocalStore store;
   final Future<ServiceResult<void>> Function() _signOut;
   final Uuid _uuid;

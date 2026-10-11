@@ -8,8 +8,9 @@
   },
   "scripts": {
     "test": "node --test --test-concurrency=1 test/*.test.js",
-    "test:emulator": "firebase emulators:exec --project demo-sophis --config ../firebase.json --only auth,firestore,storage 'npm test'",
-    "check": "node --check src/index.js && node --check src/social_service.js && node --check src/partner_service.js && node --check src/photo_service.js && node --check src/cleanup_service.js"
+    "test:emulator": "firebase emulators:exec --project demo-sophis --config ../firebase.legacy.json --only auth,firestore,storage 'npm test'",
+    "check": "node --check src/index.js && node --check src/social_service.js && node --check src/partner_service.js && node --check src/photo_service.js && node --check src/cleanup_service.js",
+    "test:spark": "firebase emulators:exec --project demo-sophis --config ../firebase.json --only auth,firestore 'node --test test/spark_rules.test.js && cd ../.. && SOPHIS_SPARK_EMULATOR_TEST=1 flutter test test/services/social/firestore_partner_client_emulator_test.dart'"
   },
   "dependencies": {
     "firebase-admin": "^13.5.0",
