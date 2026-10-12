@@ -20,6 +20,8 @@ class _EditFoodEntryDialogState extends State<EditFoodEntryDialog> {
   late final TextEditingController _name;
   late final TextEditingController _amount;
   late final List<TextEditingController> _nutrition;
+  late final List<double> _basis;
+  late final List<double> _values;
   double _factor = 1;
   bool _manual = false;
   final _nutritionKeys = List.generate(5, (_) => GlobalKey());
@@ -32,13 +34,16 @@ class _EditFoodEntryDialogState extends State<EditFoodEntryDialog> {
     final entry = widget.entry;
     _name = TextEditingController(text: entry.name);
     _amount = TextEditingController(text: '${entry.portionAmount ?? 1}');
-    _nutrition = [
+    _basis = [
       entry.calories,
       entry.protein,
       entry.carbs,
       entry.fat,
       entry.fiber,
-    ].map((value) => TextEditingController(text: '$value')).toList();
+    ];
+    _values = List.of(_basis);
+    _nutrition =
+        _values.map((value) => TextEditingController(text: '$value')).toList();
   }
 
   @override
@@ -56,10 +61,11 @@ class _EditFoodEntryDialogState extends State<EditFoodEntryDialog> {
       return;
     }
     final nextFactor = amount / original;
-    for (final controller in _nutrition) {
-      final value = _parse(controller.text);
-      if (value != null) {
-        controller.text = (value / _factor * nextFactor).toStringAsFixed(2);
+    for (var i = 0; i < _nutrition.length; i++) {
+      final value = _parse(_nutrition[i].text);
+      if (value != null && value.isFinite && value >= 0) {
+        _values[i] = _basis[i] * nextFactor;
+        _nutrition[i].text = _values[i].toStringAsFixed(2);
       }
     }
     final scaled = widget.entry.scaledBy(nextFactor);
@@ -93,11 +99,11 @@ class _EditFoodEntryDialogState extends State<EditFoodEntryDialog> {
       context,
       scaled.copyWith(
         name: _name.text.trim(),
-        calories: _parse(_nutrition[0].text),
-        protein: _parse(_nutrition[1].text),
-        carbs: _parse(_nutrition[2].text),
-        fat: _parse(_nutrition[3].text),
-        fiber: _parse(_nutrition[4].text),
+        calories: _values[0],
+        protein: _values[1],
+        carbs: _values[2],
+        fat: _values[3],
+        fiber: _values[4],
       ),
     );
   }
@@ -296,7 +302,16 @@ class _EditFoodEntryDialogState extends State<EditFoodEntryDialog> {
                                               .numberWithOptions(
                                             decimal: true,
                                           ),
-                                          onChanged: (_) => setState(() {}),
+                                          onChanged: (text) {
+                                            final value = _parse(text);
+                                            if (value != null &&
+                                                value.isFinite &&
+                                                value >= 0) {
+                                              _values[i] = value;
+                                              _basis[i] = value / _factor;
+                                            }
+                                            setState(() {});
+                                          },
                                           validator: (text) {
                                             final value = _parse(text ?? '');
                                             return value == null ||
