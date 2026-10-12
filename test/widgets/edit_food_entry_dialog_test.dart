@@ -52,4 +52,48 @@ void main() {
     expect(saved?.name, 'Granola (150.5g)');
     expect(tester.takeException(), isNull);
   });
+  testWidgets('kept name and portion visible while manual nutrition scrolled',
+      (tester) async {
+    tester.view.physicalSize = const Size(393, 700);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final entry = FoodEntry(
+      id: 'skyr',
+      name: 'Milbona SKYR NATUR (1 Portion)',
+      calories: 78,
+      protein: 13.75,
+      carbs: 5,
+      fat: 0.25,
+      fiber: 0,
+      timestamp: DateTime(2026),
+      meal: 'breakfast',
+      portionAmount: 125,
+      portionUnit: NutritionUnit.gram,
+    );
+    await tester.pumpWidget(MaterialApp(
+      theme: ThemeData.dark(),
+      locale: const Locale('de'),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: MediaQuery(
+        data: const MediaQueryData(
+            size: Size(393, 700), textScaler: TextScaler.linear(1.3)),
+        child: Scaffold(body: EditFoodEntryDialog(entry: entry)),
+      ),
+    ));
+    final name = find.byType(TextFormField).first;
+    final initialTop = tester.getTopLeft(name);
+    await tester.tap(find.text('Ernährung'));
+    await tester.pumpAndSettle();
+    expect(find.text('78.0 kcal'), findsNothing);
+    expect(tester.getTopLeft(name), initialTop);
+    expect(tester.getSize(find.byType(Dialog)).width, greaterThan(350));
+    await tester.drag(
+        find.byType(SingleChildScrollView), const Offset(0, -400));
+    await tester.pumpAndSettle();
+    expect(tester.getTopLeft(name), initialTop);
+    expect(name.hitTestable(), findsOneWidget);
+    expect(find.text('Speichern').hitTestable(), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }
