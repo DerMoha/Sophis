@@ -18,6 +18,8 @@ class EditFoodEntryDialog extends StatefulWidget {
 
 class _EditFoodEntryDialogState extends State<EditFoodEntryDialog> {
   final _formKey = GlobalKey<FormState>();
+  final _identityKey = GlobalKey();
+  final _nutritionSectionKey = GlobalKey();
   late final TextEditingController _name;
   late final TextEditingController _amount;
   late final List<TextEditingController> _nutrition;
@@ -145,6 +147,182 @@ class _EditFoodEntryDialogState extends State<EditFoodEntryDialog> {
       AppTheme.fat,
       AppTheme.fiber,
     ];
+    final identity = Padding(
+      key: _identityKey,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(l10n.name, style: theme.textTheme.labelLarge),
+          const SizedBox(height: 6),
+          TextFormField(
+            controller: _name,
+            minLines: 1,
+            maxLines: 2,
+            decoration: const InputDecoration(
+              isDense: true,
+              contentPadding: EdgeInsets.all(14),
+            ),
+            textCapitalization: TextCapitalization.sentences,
+            validator: (value) =>
+                (value ?? '').trim().isEmpty ? l10n.name : null,
+          ),
+          const SizedBox(height: 12),
+          Text(l10n.portionSize, style: theme.textTheme.labelLarge),
+          const SizedBox(height: 6),
+          TextFormField(
+            controller: _amount,
+            decoration: InputDecoration(
+              isDense: true,
+              contentPadding: const EdgeInsets.all(14),
+              suffixText: hasAmount ? entry.portionUnit!.symbol : '×',
+            ),
+            keyboardType: const TextInputType.numberWithOptions(
+              decimal: true,
+            ),
+            onChanged: _scale,
+            validator: (text) {
+              final value = _parse(text ?? '');
+              return value == null || !value.isFinite || value <= 0
+                  ? l10n.portionSize
+                  : null;
+            },
+          ),
+          const SizedBox(height: 6),
+          Text(
+            l10n.autoScaleNutritionSubtitle,
+            style: theme.textTheme.bodySmall,
+          ),
+        ],
+      ),
+    );
+    final nutrition = Padding(
+      key: _nutritionSectionKey,
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.tune_outlined),
+            title: Text(l10n.nutrition),
+            trailing: Icon(
+              _manual ? Icons.expand_less : Icons.expand_more,
+            ),
+            onTap: () => setState(() => _manual = !_manual),
+          ),
+          if (!_manual)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${_format(_values.first)} kcal',
+                    style: theme.textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 16,
+                    runSpacing: 8,
+                    children: [
+                      for (var i = 1; i < labels.length; i++)
+                        Text(
+                          '${labels[i]} ${_format(_values[i])} g',
+                          style: theme.textTheme.bodyMedium
+                              ?.copyWith(color: colors[i]),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          if (_manual)
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final columns = constraints.maxWidth >= 300 &&
+                        MediaQuery.textScalerOf(context).scale(14) <= 20
+                    ? 2
+                    : 1;
+                return Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    for (var i = 0; i < labels.length; i++)
+                      SizedBox(
+                        width: i == 0
+                            ? constraints.maxWidth
+                            : (constraints.maxWidth - (columns - 1) * 12) /
+                                columns,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  i == 0
+                                      ? Icons.local_fire_department_outlined
+                                      : Icons.circle,
+                                  size: i == 0 ? 18 : 8,
+                                  color: colors[i],
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    labels[i],
+                                    style: theme.textTheme.labelLarge,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            TextFormField(
+                              key: _nutritionKeys[i],
+                              controller: _nutrition[i],
+                              decoration: InputDecoration(
+                                isDense: true,
+                                contentPadding: const EdgeInsets.all(14),
+                                suffixText: i == 0 ? 'kcal' : 'g',
+                                filled: true,
+                                fillColor: colors[i].withValues(alpha: 0.08),
+                              ),
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                decimal: true,
+                              ),
+                              onChanged: (text) {
+                                final value = _parse(text);
+                                if (value != null &&
+                                    value.isFinite &&
+                                    value >= 0) {
+                                  _values[i] = value;
+                                  _basis[i] = value / _factor;
+                                }
+                                setState(() {});
+                              },
+                              validator: (text) {
+                                final value = _parse(text ?? '');
+                                return value == null ||
+                                        !value.isFinite ||
+                                        value < 0
+                                    ? labels[i]
+                                    : null;
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+        ],
+      ),
+    );
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       clipBehavior: Clip.antiAlias,
@@ -153,220 +331,53 @@ class _EditFoodEntryDialogState extends State<EditFoodEntryDialog> {
         height: MediaQuery.sizeOf(context).height * 0.9,
         child: Form(
           key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-                child:
-                    Text(l10n.editEntry, style: theme.textTheme.headlineSmall),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(l10n.name, style: theme.textTheme.labelLarge),
-                    const SizedBox(height: 6),
-                    TextFormField(
-                      controller: _name,
-                      minLines: 1,
-                      maxLines: 2,
-                      decoration: const InputDecoration(
-                        isDense: true,
-                        contentPadding: EdgeInsets.all(14),
-                      ),
-                      textCapitalization: TextCapitalization.sentences,
-                      validator: (value) =>
-                          (value ?? '').trim().isEmpty ? l10n.name : null,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(l10n.portionSize, style: theme.textTheme.labelLarge),
-                    const SizedBox(height: 6),
-                    TextFormField(
-                      controller: _amount,
-                      decoration: InputDecoration(
-                        isDense: true,
-                        contentPadding: const EdgeInsets.all(14),
-                        suffixText: hasAmount ? entry.portionUnit!.symbol : '×',
-                      ),
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      onChanged: _scale,
-                      validator: (text) {
-                        final value = _parse(text ?? '');
-                        return value == null || !value.isFinite || value <= 0
-                            ? l10n.portionSize
-                            : null;
-                      },
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      l10n.autoScaleNutritionSubtitle,
-                      style: theme.textTheme.bodySmall,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: const Icon(Icons.tune_outlined),
-                        title: Text(l10n.nutrition),
-                        trailing: Icon(
-                          _manual ? Icons.expand_less : Icons.expand_more,
-                        ),
-                        onTap: () => setState(() => _manual = !_manual),
-                      ),
-                      if (!_manual)
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primary
-                                .withValues(alpha: 0.08),
-                            borderRadius:
-                                BorderRadius.circular(AppTheme.radiusMD),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '${_format(_values.first)} kcal',
-                                style: theme.textTheme.headlineSmall,
-                              ),
-                              const SizedBox(height: 12),
-                              Wrap(
-                                spacing: 16,
-                                runSpacing: 8,
-                                children: [
-                                  for (var i = 1; i < labels.length; i++)
-                                    Text(
-                                      '${labels[i]} ${_format(_values[i])} g',
-                                      style: theme.textTheme.bodyMedium
-                                          ?.copyWith(color: colors[i]),
-                                    ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      if (_manual)
-                        LayoutBuilder(
-                          builder: (context, constraints) {
-                            final columns = constraints.maxWidth >= 300 &&
-                                    MediaQuery.textScalerOf(context)
-                                            .scale(14) <=
-                                        20
-                                ? 2
-                                : 1;
-                            return Wrap(
-                              spacing: 12,
-                              runSpacing: 12,
-                              children: [
-                                for (var i = 0; i < labels.length; i++)
-                                  SizedBox(
-                                    width: i == 0
-                                        ? constraints.maxWidth
-                                        : (constraints.maxWidth -
-                                                (columns - 1) * 12) /
-                                            columns,
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Icon(
-                                              i == 0
-                                                  ? Icons
-                                                      .local_fire_department_outlined
-                                                  : Icons.circle,
-                                              size: i == 0 ? 18 : 8,
-                                              color: colors[i],
-                                            ),
-                                            const SizedBox(width: 6),
-                                            Expanded(
-                                              child: Text(
-                                                labels[i],
-                                                style:
-                                                    theme.textTheme.labelLarge,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 6),
-                                        TextFormField(
-                                          key: _nutritionKeys[i],
-                                          controller: _nutrition[i],
-                                          decoration: InputDecoration(
-                                            isDense: true,
-                                            contentPadding:
-                                                const EdgeInsets.all(14),
-                                            suffixText: i == 0 ? 'kcal' : 'g',
-                                            filled: true,
-                                            fillColor: colors[i]
-                                                .withValues(alpha: 0.08),
-                                          ),
-                                          keyboardType: const TextInputType
-                                              .numberWithOptions(
-                                            decimal: true,
-                                          ),
-                                          onChanged: (text) {
-                                            final value = _parse(text);
-                                            if (value != null &&
-                                                value.isFinite &&
-                                                value >= 0) {
-                                              _values[i] = value;
-                                              _basis[i] = value / _factor;
-                                            }
-                                            setState(() {});
-                                          },
-                                          validator: (text) {
-                                            final value = _parse(text ?? '');
-                                            return value == null ||
-                                                    !value.isFinite ||
-                                                    value < 0
-                                                ? labels[i]
-                                                : null;
-                                          },
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                              ],
-                            );
-                          },
-                        ),
-                    ],
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = MediaQuery.viewInsetsOf(context).bottom > 0 ||
+                  constraints.maxHeight < 500;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+                    child: Text(l10n.editEntry,
+                        style: theme.textTheme.headlineSmall),
                   ),
-                ),
-              ),
-              const Divider(height: 1),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: OverflowBar(
-                  alignment: MainAxisAlignment.end,
-                  spacing: 12,
-                  children: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text(l10n.cancel),
+                  if (!compact) identity,
+                  Expanded(
+                    child: SingleChildScrollView(
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (compact) identity,
+                          nutrition,
+                        ],
+                      ),
                     ),
-                    FilledButton(
-                      onPressed: _save,
-                      child: Text(l10n.save),
+                  ),
+                  const Divider(height: 1),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: OverflowBar(
+                      alignment: MainAxisAlignment.end,
+                      spacing: 12,
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text(l10n.cancel),
+                        ),
+                        FilledButton(
+                          onPressed: _save,
+                          child: Text(l10n.save),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-            ],
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ),

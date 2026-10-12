@@ -82,4 +82,25 @@ void main() {
     expect(find.text('39 kcal'), findsOneWidget);
     expect(find.text('Protein 6,88 g'), findsOneWidget);
   });
+  testWidgets('kept focused nutrition reachable above the keyboard',
+      (tester) async {
+    tester.view.physicalSize = const Size(393, 700);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await openEditor(tester);
+    await tester.tap(find.text('Ernährung'));
+    await tester.pumpAndSettle();
+    final protein = find.byType(TextFormField).at(3);
+    await tester.ensureVisible(protein);
+    await tester.tap(protein);
+    await tester.pump();
+    tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(protein);
+    await tester.pumpAndSettle();
+    expect(protein.hitTestable(), findsOneWidget);
+    expect(find.text('Speichern').hitTestable(), findsOneWidget);
+    expect(tester.getBottomLeft(find.text('Speichern')).dy, lessThan(400));
+    expect(tester.takeException(), isNull);
+  });
 }
