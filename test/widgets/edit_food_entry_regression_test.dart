@@ -6,38 +6,40 @@ import 'package:sophis/models/nutrition_unit.dart';
 import 'package:sophis/ui/components/edit_food_entry_dialog.dart';
 
 Future<void> openEditor(WidgetTester tester) async {
-  await tester.pumpWidget(MaterialApp(
-    locale: const Locale('de'),
-    localizationsDelegates: AppLocalizations.localizationsDelegates,
-    supportedLocales: AppLocalizations.supportedLocales,
-    home: Scaffold(
-      body: EditFoodEntryDialog(
-        entry: FoodEntry(
-          id: 'food',
-          name: 'Food',
-          calories: 78,
-          protein: 13.75,
-          carbs: 5,
-          fat: 0.25,
-          fiber: 0,
-          timestamp: DateTime(2026),
-          meal: 'breakfast',
-          portionAmount: 125,
-          portionUnit: NutritionUnit.gram,
+  await tester.pumpWidget(
+    MaterialApp(
+      locale: const Locale('de'),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(
+        body: EditFoodEntryDialog(
+          entry: FoodEntry(
+            id: 'food',
+            name: 'Food',
+            calories: 78,
+            protein: 13.75,
+            carbs: 5,
+            fat: 0.25,
+            fiber: 0,
+            timestamp: DateTime(2026),
+            meal: 'breakfast',
+            portionAmount: 125,
+            portionUnit: NutritionUnit.gram,
+          ),
         ),
       ),
     ),
-  ));
+  );
 }
 
 void main() {
   testWidgets('reopened invalid manual values after collapsing',
       (tester) async {
     await openEditor(tester);
-    await tester.tap(find.text('Ernährung'));
+    await tester.tap(find.text('Nährwerte anpassen'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextFormField).at(3), '-2');
-    await tester.tap(find.text('Ernährung'));
+    await tester.tap(find.text('Nährwerte anpassen'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Speichern'));
     await tester.pumpAndSettle();
@@ -54,7 +56,7 @@ void main() {
       await tester.enterText(amount, value);
       await tester.pump();
     }
-    await tester.tap(find.text('Ernährung'));
+    await tester.tap(find.text('Nährwerte anpassen'));
     await tester.pumpAndSettle();
     final protein = find.byType(TextFormField).at(3);
     expect(tester.widget<TextFormField>(protein).controller!.text, '13,75');
@@ -72,11 +74,12 @@ void main() {
     expect(find.text('78 kcal'), findsOneWidget);
     expect(find.text('Protein 13,75 g'), findsOneWidget);
     expect(
-        tester
-            .widget<TextFormField>(find.byType(TextFormField).at(1))
-            .controller!
-            .text,
-        '125');
+      tester
+          .widget<TextFormField>(find.byType(TextFormField).at(1))
+          .controller!
+          .text,
+      '125',
+    );
     await tester.enterText(find.byType(TextFormField).at(1), '62,5');
     await tester.pump();
     expect(find.text('39 kcal'), findsOneWidget);
@@ -88,7 +91,7 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await openEditor(tester);
-    await tester.tap(find.text('Ernährung'));
+    await tester.tap(find.text('Nährwerte anpassen'));
     await tester.pumpAndSettle();
     final protein = find.byType(TextFormField).at(3);
     await tester.ensureVisible(protein);

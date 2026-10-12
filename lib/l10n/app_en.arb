@@ -826,5 +826,7 @@
   "aiEstimateModified": "Edited estimate",
   "aiManualAdjustments": "Manual adjustments",
   "aiReanalyzeAction": "Re-analyse",
-  "aiReanalyzeCost": "Uses 1 AI request"
+  "aiReanalyzeCost": "Uses 1 AI request",
+  "editEntryNutritionTitle": "Adjust nutrition",
+  "editEntryNutritionSubtitle": "Values for the selected portion"
 }

@@ -23,21 +23,26 @@ void main() {
       sourceFoodId: 'source',
     );
     FoodEntry? saved;
-    await tester.pumpWidget(MaterialApp(
-      locale: const Locale('de'),
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: Scaffold(
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('de'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
           body: Builder(
-              builder: (context) => TextButton(
-                    onPressed: () async {
-                      saved = await showDialog<FoodEntry>(
-                          context: context,
-                          builder: (_) => EditFoodEntryDialog(entry: entry));
-                    },
-                    child: const Text('edit'),
-                  ))),
-    ));
+            builder: (context) => TextButton(
+              onPressed: () async {
+                saved = await showDialog<FoodEntry>(
+                  context: context,
+                  builder: (_) => EditFoodEntryDialog(entry: entry),
+                );
+              },
+              child: const Text('edit'),
+            ),
+          ),
+        ),
+      ),
+    );
     await tester.tap(find.text('edit'));
     await tester.pumpAndSettle();
     expect(find.byType(TextFormField), findsNWidgets(2));
@@ -70,26 +75,32 @@ void main() {
       portionAmount: 125,
       portionUnit: NutritionUnit.gram,
     );
-    await tester.pumpWidget(MaterialApp(
-      theme: ThemeData.dark(),
-      locale: const Locale('de'),
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: MediaQuery(
-        data: const MediaQueryData(
-            size: Size(393, 700), textScaler: TextScaler.linear(1.3)),
-        child: Scaffold(body: EditFoodEntryDialog(entry: entry)),
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData.dark(),
+        locale: const Locale('de'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: MediaQuery(
+          data: const MediaQueryData(
+            size: Size(393, 700),
+            textScaler: TextScaler.linear(1.3),
+          ),
+          child: Scaffold(body: EditFoodEntryDialog(entry: entry)),
+        ),
       ),
-    ));
+    );
     final name = find.byType(TextFormField).first;
     final initialTop = tester.getTopLeft(name);
-    await tester.tap(find.text('Ernährung'));
+    await tester.tap(find.text('Nährwerte anpassen'));
     await tester.pumpAndSettle();
-    expect(find.text('78.0 kcal'), findsNothing);
+    expect(find.text('78 kcal'), findsNothing);
     expect(tester.getTopLeft(name), initialTop);
     expect(tester.getSize(find.byType(Dialog)).width, greaterThan(350));
     await tester.drag(
-        find.byType(SingleChildScrollView), const Offset(0, -400));
+      find.byType(SingleChildScrollView),
+      const Offset(0, -400),
+    );
     await tester.pumpAndSettle();
     expect(tester.getTopLeft(name), initialTop);
     expect(name.hitTestable(), findsOneWidget);

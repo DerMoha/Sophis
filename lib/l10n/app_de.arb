@@ -699,5 +699,7 @@
   "aiEstimateModified": "Bearbeitete Schätzung",
   "aiManualAdjustments": "Manuell anpassen",
   "aiReanalyzeAction": "Neu analysieren",
-  "aiReanalyzeCost": "Verbraucht 1 KI-Anfrage"
+  "aiReanalyzeCost": "Verbraucht 1 KI-Anfrage",
+  "editEntryNutritionTitle": "Nährwerte anpassen",
+  "editEntryNutritionSubtitle": "Werte für die ausgewählte Portion"
 }

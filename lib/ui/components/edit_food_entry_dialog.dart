@@ -205,7 +205,8 @@ class _EditFoodEntryDialogState extends State<EditFoodEntryDialog> {
           ListTile(
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.tune_outlined),
-            title: Text(l10n.nutrition),
+            title: Text(l10n.editEntryNutritionTitle),
+            subtitle: Text(l10n.editEntryNutritionSubtitle),
             trailing: Icon(
               _manual ? Icons.expand_less : Icons.expand_more,
             ),
@@ -340,8 +341,10 @@ class _EditFoodEntryDialogState extends State<EditFoodEntryDialog> {
                 children: [
                   Padding(
                     padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-                    child: Text(l10n.editEntry,
-                        style: theme.textTheme.headlineSmall),
+                    child: Text(
+                      l10n.editEntry,
+                      style: theme.textTheme.headlineSmall,
+                    ),
                   ),
                   if (!compact) identity,
                   Expanded(
