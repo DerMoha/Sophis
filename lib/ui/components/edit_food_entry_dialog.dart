@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/food_entry.dart';
@@ -24,6 +25,7 @@ class _EditFoodEntryDialogState extends State<EditFoodEntryDialog> {
   late final List<double> _values;
   double _factor = 1;
   bool _manual = false;
+  String? _locale;
   final _nutritionKeys = List.generate(5, (_) => GlobalKey());
 
   double? _parse(String text) => double.tryParse(text.replaceAll(',', '.'));
@@ -46,6 +48,20 @@ class _EditFoodEntryDialogState extends State<EditFoodEntryDialog> {
         _values.map((value) => TextEditingController(text: '$value')).toList();
   }
 
+  String _format(double value) => NumberFormat('0.##', _locale).format(value);
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    if (_locale == locale) return;
+    _locale = locale;
+    for (final controller in [_amount, ..._nutrition]) {
+      final value = _parse(controller.text);
+      if (value != null && value.isFinite) controller.text = _format(value);
+    }
+  }
+
   @override
   void dispose() {
     for (final controller in [_name, _amount, ..._nutrition]) {
@@ -65,7 +81,7 @@ class _EditFoodEntryDialogState extends State<EditFoodEntryDialog> {
       final value = _parse(_nutrition[i].text);
       if (value != null && value.isFinite && value >= 0) {
         _values[i] = _basis[i] * nextFactor;
-        _nutrition[i].text = _values[i].toStringAsFixed(2);
+        _nutrition[i].text = _format(_values[i]);
       }
     }
     final scaled = widget.entry.scaledBy(nextFactor);
@@ -222,7 +238,7 @@ class _EditFoodEntryDialogState extends State<EditFoodEntryDialog> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '${_nutrition.first.text} kcal',
+                                '${_format(_values.first)} kcal',
                                 style: theme.textTheme.headlineSmall,
                               ),
                               const SizedBox(height: 12),
@@ -232,7 +248,7 @@ class _EditFoodEntryDialogState extends State<EditFoodEntryDialog> {
                                 children: [
                                   for (var i = 1; i < labels.length; i++)
                                     Text(
-                                      '${labels[i]} ${_nutrition[i].text} g',
+                                      '${labels[i]} ${_format(_values[i])} g',
                                       style: theme.textTheme.bodyMedium
                                           ?.copyWith(color: colors[i]),
                                     ),

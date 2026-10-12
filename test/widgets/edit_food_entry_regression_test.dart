@@ -57,13 +57,29 @@ void main() {
     await tester.tap(find.text('Ernährung'));
     await tester.pumpAndSettle();
     final protein = find.byType(TextFormField).at(3);
-    expect(tester.widget<TextFormField>(protein).controller!.text, '13.75');
+    expect(tester.widget<TextFormField>(protein).controller!.text, '13,75');
     await tester.enterText(protein, '20');
     await tester.enterText(amount, '250');
     await tester.pump();
-    expect(tester.widget<TextFormField>(protein).controller!.text, '40.00');
+    expect(tester.widget<TextFormField>(protein).controller!.text, '40');
     await tester.enterText(amount, '125');
     await tester.pump();
-    expect(tester.widget<TextFormField>(protein).controller!.text, '20.00');
+    expect(tester.widget<TextFormField>(protein).controller!.text, '20');
+  });
+  testWidgets('formatted German decimals without redundant zeroes',
+      (tester) async {
+    await openEditor(tester);
+    expect(find.text('78 kcal'), findsOneWidget);
+    expect(find.text('Protein 13,75 g'), findsOneWidget);
+    expect(
+        tester
+            .widget<TextFormField>(find.byType(TextFormField).at(1))
+            .controller!
+            .text,
+        '125');
+    await tester.enterText(find.byType(TextFormField).at(1), '62,5');
+    await tester.pump();
+    expect(find.text('39 kcal'), findsOneWidget);
+    expect(find.text('Protein 6,88 g'), findsOneWidget);
   });
 }
