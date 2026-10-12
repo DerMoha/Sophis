@@ -22,6 +22,7 @@ class _EditFoodEntryDialogState extends State<EditFoodEntryDialog> {
   late final List<TextEditingController> _nutrition;
   double _factor = 1;
   bool _manual = false;
+  final _nutritionKeys = List.generate(5, (_) => GlobalKey());
 
   double? _parse(String text) => double.tryParse(text.replaceAll(',', '.'));
 
@@ -67,6 +68,38 @@ class _EditFoodEntryDialogState extends State<EditFoodEntryDialog> {
       _name.text = scaled.name;
     }
     setState(() => _factor = nextFactor);
+  }
+
+  void _save() {
+    final invalid = _nutrition.indexWhere((controller) {
+      final value = _parse(controller.text);
+      return value == null || !value.isFinite || value < 0;
+    });
+    if (invalid >= 0) {
+      setState(() => _manual = true);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _formKey.currentState!.validate();
+        final fieldContext = _nutritionKeys[invalid].currentContext;
+        if (fieldContext != null) {
+          Scrollable.ensureVisible(fieldContext);
+        }
+      });
+      return;
+    }
+    if (!_formKey.currentState!.validate()) return;
+    final scaled = widget.entry.scaledBy(_factor);
+    Navigator.pop(
+      context,
+      scaled.copyWith(
+        name: _name.text.trim(),
+        calories: _parse(_nutrition[0].text),
+        protein: _parse(_nutrition[1].text),
+        carbs: _parse(_nutrition[2].text),
+        fat: _parse(_nutrition[3].text),
+        fiber: _parse(_nutrition[4].text),
+      ),
+    );
   }
 
   @override
@@ -248,6 +281,7 @@ class _EditFoodEntryDialogState extends State<EditFoodEntryDialog> {
                                         ),
                                         const SizedBox(height: 6),
                                         TextFormField(
+                                          key: _nutritionKeys[i],
                                           controller: _nutrition[i],
                                           decoration: InputDecoration(
                                             isDense: true,
@@ -295,21 +329,7 @@ class _EditFoodEntryDialogState extends State<EditFoodEntryDialog> {
                       child: Text(l10n.cancel),
                     ),
                     FilledButton(
-                      onPressed: () {
-                        if (!_formKey.currentState!.validate()) return;
-                        final scaled = entry.scaledBy(_factor);
-                        Navigator.pop(
-                          context,
-                          scaled.copyWith(
-                            name: _name.text.trim(),
-                            calories: _parse(_nutrition[0].text),
-                            protein: _parse(_nutrition[1].text),
-                            carbs: _parse(_nutrition[2].text),
-                            fat: _parse(_nutrition[3].text),
-                            fiber: _parse(_nutrition[4].text),
-                          ),
-                        );
-                      },
+                      onPressed: _save,
                       child: Text(l10n.save),
                     ),
                   ],
