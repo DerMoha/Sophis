@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sophis/ui/components/draft_guard.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
@@ -484,7 +485,7 @@ class _SupplementsScreenState extends State<SupplementsScreen> {
   }
 
   void _showAddSheet(BuildContext context) {
-    showModalBottomSheet(
+    showDraftBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -493,7 +494,7 @@ class _SupplementsScreenState extends State<SupplementsScreen> {
   }
 
   void _showEditSheet(BuildContext context, Supplement supplement) {
-    showModalBottomSheet(
+    showDraftBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,

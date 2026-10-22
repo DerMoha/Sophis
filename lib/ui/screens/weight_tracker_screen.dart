@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:sophis/ui/components/draft_guard.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:sophis/l10n/generated/app_localizations.dart';
+import 'package:sophis/utils/number_utils.dart';
 import 'package:sophis/models/app_settings.dart';
 import 'package:sophis/models/weight_entry.dart';
 import 'package:sophis/providers/nutrition_provider.dart';
@@ -21,6 +23,8 @@ class WeightTrackerScreen extends StatefulWidget {
 class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
   final _weightController = TextEditingController();
   final _noteController = TextEditingController();
+  bool _isSaving = false;
+  String? _weightError;
 
   @override
   void dispose() {
@@ -29,39 +33,40 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
     super.dispose();
   }
 
-  void _addWeight() {
-    final inputValue = double.tryParse(_weightController.text);
+  Future<void> _addWeight() async {
+    if (_isSaving) return;
+    final l10n = AppLocalizations.of(context)!;
+    final inputValue = NumberUtils.parseInput(_weightController.text);
     if (inputValue == null || inputValue <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context)!.enterValidPositiveNumber),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      setState(() => _weightError = l10n.enterValidPositiveNumber);
       return;
     }
-
-    FocusScope.of(context).unfocus();
-
-    // Convert from display unit to kg for storage
+    setState(() {
+      _weightError = null;
+      _isSaving = true;
+    });
     final unitSystem = context.read<SettingsProvider>().unitSystem;
     final weightKg = UnitConverter.inputToKg(inputValue, unitSystem);
-
-    context.read<NutritionProvider>().addWeight(
-          weightKg,
-          note: _noteController.text.isEmpty ? null : _noteController.text,
-        );
-
-    _weightController.clear();
-    _noteController.clear();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(AppLocalizations.of(context)!.entrySaved),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    try {
+      await context.read<NutritionProvider>().addWeight(
+            weightKg,
+            note: _noteController.text.isEmpty ? null : _noteController.text,
+          );
+      if (!mounted) return;
+      _weightController.clear();
+      _noteController.clear();
+      FocusScope.of(context).unfocus();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.entrySaved)),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.saveEntryFailed)),
+      );
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
   @override
@@ -69,263 +74,275 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.weight),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-      ),
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          // Content
-          SliverPadding(
-            padding: AppTheme.pagePadding,
-            sliver: Consumer2<NutritionProvider, SettingsProvider>(
-              builder: (context, nutrition, settings, _) {
-                final entries = nutrition.weightEntries;
-                final latest = nutrition.latestWeight;
-                final profile = nutrition.profile;
-                final unitSystem = settings.unitSystem;
-                final weightLabel = unitSystem == UnitSystem.imperial
-                    ? l10n.weightLb
-                    : l10n.weightKg;
-                final weightUnit = UnitConverter.weightUnit(unitSystem);
+    return DraftGuard(
+      controllers: [_weightController, _noteController],
+      isSaving: _isSaving,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(l10n.weight),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          centerTitle: true,
+        ),
+        body: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            // Content
+            SliverPadding(
+              padding: AppTheme.pagePadding,
+              sliver: Consumer2<NutritionProvider, SettingsProvider>(
+                builder: (context, nutrition, settings, _) {
+                  final entries = nutrition.weightEntries;
+                  final latest = nutrition.latestWeight;
+                  final profile = nutrition.profile;
+                  final unitSystem = settings.unitSystem;
+                  final weightLabel = unitSystem == UnitSystem.imperial
+                      ? l10n.weightLb
+                      : l10n.weightKg;
+                  final weightUnit = UnitConverter.weightUnit(unitSystem);
 
-                return SliverList(
-                  delegate: SliverChildListDelegate([
-                    // Add weight card
-                    FadeInSlide(
-                      index: 0,
-                      child: OrganicCard(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  width: 44,
-                                  height: 44,
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        theme.colorScheme.primary,
-                                        theme.colorScheme.primary
-                                            .withValues(alpha: 0.7),
-                                      ],
-                                    ),
-                                    borderRadius: BorderRadius.circular(
-                                      AppTheme.radiusMD,
-                                    ),
-                                  ),
-                                  child: const Icon(
-                                    Icons.monitor_weight_outlined,
-                                    color: Colors.white,
-                                    size: 24,
-                                  ),
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        l10n.logWeight,
-                                        style: theme.textTheme.titleMedium,
-                                      ),
-                                      Text(
-                                        l10n.trackYourProgress,
-                                        style:
-                                            theme.textTheme.bodySmall?.copyWith(
-                                          color: theme
-                                              .colorScheme.onSurfaceVariant,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 24),
-                            Row(
-                              children: [
-                                Expanded(
-                                  flex: 2,
-                                  child: TextField(
-                                    controller: _weightController,
-                                    keyboardType: TextInputType.number,
-                                    decoration: InputDecoration(
-                                      labelText: weightLabel,
-                                      suffixText: weightUnit,
-                                      prefixIcon: const Icon(
-                                        Icons.scale_outlined,
-                                        size: 20,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  flex: 3,
-                                  child: TextField(
-                                    controller: _noteController,
-                                    decoration: InputDecoration(
-                                      labelText: l10n.noteOptional,
-                                      prefixIcon: const Icon(
-                                        Icons.note_outlined,
-                                        size: 20,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton.icon(
-                                onPressed: _addWeight,
-                                icon: const Icon(Icons.add, size: 20),
-                                label: Text(l10n.add),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: AppTheme.spaceLG2),
-
-                    // Current stats
-                    if (latest != null || profile?.targetWeight != null)
+                  return SliverList(
+                    delegate: SliverChildListDelegate([
+                      // Add weight card
                       FadeInSlide(
-                        index: 1,
-                        child: GlassCard(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 24,
-                            horizontal: 16,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              if (latest != null)
-                                _WeightStat(
-                                  label: l10n.current,
-                                  valueKg: latest.weightKg,
-                                  color: theme.colorScheme.primary,
-                                  unitSystem: unitSystem,
-                                ),
-                              if (profile?.targetWeight != null) ...[
-                                Container(
-                                  width: 1,
-                                  height: 40,
-                                  color: theme.colorScheme.outline
-                                      .withValues(alpha: 0.2),
-                                ),
-                                _WeightStat(
-                                  label: l10n.goal,
-                                  valueKg: profile!.targetWeight!,
-                                  color: AppTheme.success,
-                                  unitSystem: unitSystem,
-                                ),
-                              ],
-                              if (latest != null &&
-                                  profile?.targetWeight != null) ...[
-                                Container(
-                                  width: 1,
-                                  height: 40,
-                                  color: theme.colorScheme.outline
-                                      .withValues(alpha: 0.2),
-                                ),
-                                _WeightStat(
-                                  label: l10n.toGo,
-                                  valueKg:
-                                      (latest.weightKg - profile!.targetWeight!)
-                                          .abs(),
-                                  color: AppTheme.warning,
-                                  unitSystem: unitSystem,
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ),
-                    const SizedBox(height: AppTheme.spaceLG2),
-
-                    // Chart
-                    if (entries.length >= 2)
-                      FadeInSlide(
-                        index: 2,
-                        child: GlassCard(
-                          padding: const EdgeInsets.all(20),
+                        index: 0,
+                        child: OrganicCard(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
                                 children: [
-                                  Icon(
-                                    Icons.insights_outlined,
-                                    size: 20,
-                                    color: theme.colorScheme.primary,
+                                  Container(
+                                    width: 44,
+                                    height: 44,
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          theme.colorScheme.primary,
+                                          theme.colorScheme.primary
+                                              .withValues(alpha: 0.7),
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(
+                                        AppTheme.radiusMD,
+                                      ),
+                                    ),
+                                    child: const Icon(
+                                      Icons.monitor_weight_outlined,
+                                      color: Colors.white,
+                                      size: 24,
+                                    ),
                                   ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    l10n.progress,
-                                    style: theme.textTheme.titleMedium,
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          l10n.logWeight,
+                                          style: theme.textTheme.titleMedium,
+                                        ),
+                                        Text(
+                                          l10n.trackYourProgress,
+                                          style: theme.textTheme.bodySmall
+                                              ?.copyWith(
+                                            color: theme
+                                                .colorScheme.onSurfaceVariant,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ],
                               ),
                               const SizedBox(height: 24),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    flex: 2,
+                                    child: TextField(
+                                      controller: _weightController,
+                                      enabled: !_isSaving,
+                                      keyboardType:
+                                          const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                      ),
+                                      decoration: InputDecoration(
+                                        labelText: weightLabel,
+                                        errorText: _weightError,
+                                        errorMaxLines: 3,
+                                        suffixText: weightUnit,
+                                        prefixIcon: const Icon(
+                                          Icons.scale_outlined,
+                                          size: 20,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    flex: 3,
+                                    child: TextField(
+                                      controller: _noteController,
+                                      enabled: !_isSaving,
+                                      decoration: InputDecoration(
+                                        labelText: l10n.noteOptional,
+                                        prefixIcon: const Icon(
+                                          Icons.note_outlined,
+                                          size: 20,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
                               SizedBox(
-                                height: 200,
-                                child: _buildChart(
-                                  entries.reversed.take(30).toList(),
-                                  unitSystem,
+                                width: double.infinity,
+                                child: ElevatedButton.icon(
+                                  onPressed: _isSaving ? null : _addWeight,
+                                  icon: const Icon(Icons.add, size: 20),
+                                  label: Text(l10n.add),
                                 ),
                               ),
                             ],
                           ),
                         ),
                       ),
-                    const SizedBox(height: 24),
+                      const SizedBox(height: AppTheme.spaceLG2),
 
-                    // History
-                    FadeInSlide(
-                      index: 3,
-                      child: SectionHeader(
-                        title: l10n.history,
-                        icon: Icons.history_outlined,
-                      ),
-                    ),
-
-                    if (entries.isEmpty)
-                      FadeInSlide(
-                        index: 4,
-                        child: EmptyState(
-                          icon: Icons.monitor_weight_outlined,
-                          title: l10n.noEntries,
-                        ),
-                      )
-                    else
-                      ...entries.asMap().entries.map(
-                            (entry) => FadeInSlide(
-                              index: 4 + entry.key,
-                              child: _WeightEntryTile(
-                                weightKg: entry.value.weightKg,
-                                date: entry.value.timestamp,
-                                note: entry.value.note,
-                                unitSystem: unitSystem,
-                                onDelete: () => _confirmDelete(entry.value.id),
-                              ),
+                      // Current stats
+                      if (latest != null || profile?.targetWeight != null)
+                        FadeInSlide(
+                          index: 1,
+                          child: GlassCard(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 24,
+                              horizontal: 16,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                if (latest != null)
+                                  _WeightStat(
+                                    label: l10n.current,
+                                    valueKg: latest.weightKg,
+                                    color: theme.colorScheme.primary,
+                                    unitSystem: unitSystem,
+                                  ),
+                                if (profile?.targetWeight != null) ...[
+                                  Container(
+                                    width: 1,
+                                    height: 40,
+                                    color: theme.colorScheme.outline
+                                        .withValues(alpha: 0.2),
+                                  ),
+                                  _WeightStat(
+                                    label: l10n.goal,
+                                    valueKg: profile!.targetWeight!,
+                                    color: AppTheme.success,
+                                    unitSystem: unitSystem,
+                                  ),
+                                ],
+                                if (latest != null &&
+                                    profile?.targetWeight != null) ...[
+                                  Container(
+                                    width: 1,
+                                    height: 40,
+                                    color: theme.colorScheme.outline
+                                        .withValues(alpha: 0.2),
+                                  ),
+                                  _WeightStat(
+                                    label: l10n.toGo,
+                                    valueKg: (latest.weightKg -
+                                            profile!.targetWeight!)
+                                        .abs(),
+                                    color: AppTheme.warning,
+                                    unitSystem: unitSystem,
+                                  ),
+                                ],
+                              ],
                             ),
                           ),
-                  ]),
-                );
-              },
+                        ),
+                      const SizedBox(height: AppTheme.spaceLG2),
+
+                      // Chart
+                      if (entries.length >= 2)
+                        FadeInSlide(
+                          index: 2,
+                          child: GlassCard(
+                            padding: const EdgeInsets.all(20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.insights_outlined,
+                                      size: 20,
+                                      color: theme.colorScheme.primary,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      l10n.progress,
+                                      style: theme.textTheme.titleMedium,
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 24),
+                                SizedBox(
+                                  height: 200,
+                                  child: _buildChart(
+                                    entries.reversed.take(30).toList(),
+                                    unitSystem,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      const SizedBox(height: 24),
+
+                      // History
+                      FadeInSlide(
+                        index: 3,
+                        child: SectionHeader(
+                          title: l10n.history,
+                          icon: Icons.history_outlined,
+                        ),
+                      ),
+
+                      if (entries.isEmpty)
+                        FadeInSlide(
+                          index: 4,
+                          child: EmptyState(
+                            icon: Icons.monitor_weight_outlined,
+                            title: l10n.weightHistoryEmptyTitle,
+                          ),
+                        )
+                      else
+                        ...entries.asMap().entries.map(
+                              (entry) => FadeInSlide(
+                                index: 4 + entry.key,
+                                child: _WeightEntryTile(
+                                  weightKg: entry.value.weightKg,
+                                  date: entry.value.timestamp,
+                                  note: entry.value.note,
+                                  unitSystem: unitSystem,
+                                  onDelete: () =>
+                                      _confirmDelete(entry.value.id),
+                                ),
+                              ),
+                            ),
+                    ]),
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
