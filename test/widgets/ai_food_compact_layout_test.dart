@@ -63,7 +63,7 @@ void main() {
                       allowComments: true,
                       onEdit: () {},
                       onShare: () {},
-                      onAdd: () => adds++,
+                      onToggleSelection: () => adds++,
                     ),
                   ],
                 ),
@@ -95,7 +95,7 @@ void main() {
       FocusManager.instance.primaryFocus?.unfocus();
       await tester.pumpAndSettle();
       expect(result.commentController.text, 'Davon hatte ich nichts');
-      final add = find.widgetWithText(ElevatedButton, 'Hinzufügen');
+      final add = find.byType(Checkbox);
       await tester.ensureVisible(add);
       await tester.tap(add);
       expect(adds, 1);

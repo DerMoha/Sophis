@@ -869,5 +869,7 @@
   "photographFood": "Photograph food",
   "scanProduct": "Scan product",
   "foodResultDetails": "Notes & nutrition",
-  "captureEntries": "Log entries"
+  "captureEntries": "Log entries",
+  "selectFood": "Select {name}",
+  "addSelection": "Add selection"
 }

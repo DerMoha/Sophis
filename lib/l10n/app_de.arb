@@ -734,5 +734,7 @@
   "photographFood": "Essen fotografieren",
   "scanProduct": "Produkt scannen",
   "foodResultDetails": "Hinweise & Nährwerte",
-  "captureEntries": "Erfassen"
+  "captureEntries": "Erfassen",
+  "selectFood": "{name} auswählen",
+  "addSelection": "Auswahl hinzufügen"
 }

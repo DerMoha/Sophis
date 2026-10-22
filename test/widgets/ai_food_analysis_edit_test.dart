@@ -71,7 +71,7 @@ void main() {
             allowComments: true,
             onEdit: () {},
             onShare: () {},
-            onAdd: () {},
+            onToggleSelection: () {},
           ),
         );
     await tester.pumpWidget(card());
@@ -144,11 +144,11 @@ void main() {
           result: result,
           onEdit: () {},
           onShare: () {},
-          onAdd: () {},
+          onToggleSelection: () {},
         ),
       ),
     );
     expect(tester.takeException(), isNull);
-    expect(find.text('Hinzufügen'), findsOneWidget);
+    expect(find.byType(Checkbox), findsOneWidget);
   });
 }

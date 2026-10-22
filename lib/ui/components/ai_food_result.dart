@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:sophis/models/food_entry.dart';
+import 'package:sophis/services/food_intake_controller.dart';
+import 'package:sophis/services/service_result.dart';
 import 'package:sophis/utils/number_utils.dart';
 
 import 'package:sophis/services/gemini/models/models.dart';
@@ -17,6 +20,7 @@ class EditableFoodResult {
 
   final commentController = TextEditingController();
 
+  bool isSelected = true;
   bool isAdded = false;
   bool isModified = false;
 
@@ -136,4 +140,28 @@ String buildFoodReanalysisHint(List<EditableFoodResult> results) {
     if (comment.isNotEmpty) hint.writeln('User comment: $comment');
   }
   return hint.toString();
+}
+
+/// Adds only checked, unsaved results; successful rows remain marked on retry.
+Future<({Map<FoodEntry, EditableFoodResult> added, String? error})> addSelectedAiFoods(
+  List<EditableFoodResult> results, FoodIntakeController intake, String meal,
+) async {
+  final added = <FoodEntry, EditableFoodResult>{};
+  final selected = results.where((result) => result.isSelected && !result.isAdded).toList();
+  for (final result in selected) {
+    final food = result.currentAnalysis;
+    final saved = await intake.logNutritionEntry(
+      name: '${food.name} (${food.portionDisplay})',
+      calories: food.calories, protein: food.protein, carbs: food.carbs,
+      fat: food.fat, fiber: food.fiber, meal: meal,
+    );
+    switch (saved) {
+      case Success<FoodEntry>(value: final entry):
+        result.isAdded = true;
+        added[entry] = result;
+      case Failure<FoodEntry>(message: final message):
+        return (added: added, error: message);
+    }
+  }
+  return (added: added, error: null);
 }

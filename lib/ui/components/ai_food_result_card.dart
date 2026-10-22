@@ -8,7 +8,8 @@ class AiFoodResultCard extends StatelessWidget {
   final EditableFoodResult result;
   final VoidCallback onEdit;
   final VoidCallback onShare;
-  final VoidCallback onAdd;
+  final VoidCallback onToggleSelection;
+  final bool enabled;
   final bool allowComments;
 
   const AiFoodResultCard({
@@ -16,7 +17,8 @@ class AiFoodResultCard extends StatelessWidget {
     required this.result,
     required this.onEdit,
     required this.onShare,
-    required this.onAdd,
+    required this.onToggleSelection,
+    this.enabled = true,
     this.allowComments = false,
   });
 
@@ -191,15 +193,11 @@ class AiFoodResultCard extends StatelessWidget {
                               ],
                             ),
                           )
-                        : ElevatedButton.icon(
-                            onPressed: onAdd,
-                            icon: const Icon(Icons.add, size: 18),
-                            label: Text(l10n.add),
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
+                        : Semantics(
+                            label: l10n.selectFood(food.name),
+                            child: Checkbox(
+                              value: result.isSelected,
+                              onChanged: enabled ? (_) => onToggleSelection() : null,
                             ),
                           ),
                   ],

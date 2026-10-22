@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:sophis/ui/components/draft_guard.dart';
+import 'package:sophis/ui/components/common/entry_feedback.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:gal/gal.dart';
@@ -408,64 +409,21 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     await _initService();
   }
 
-  Future<bool> _addFood(EditableFoodResult result) async {
-    if (_isAddingFood) return false;
-    if (result.isAdded) return true;
-
-    final food = result.currentAnalysis;
-
-    setState(() => _isAddingFood = true);
-
-    final logResult =
-        await context.read<FoodIntakeController>().logNutritionEntry(
-              name: '${food.name} (${food.portionDisplay})',
-              calories: food.calories,
-              protein: food.protein,
-              carbs: food.carbs,
-              fat: food.fat,
-              fiber: food.fiber,
-              meal: widget.meal,
-            );
-
-    if (!mounted) return false;
-
-    switch (logResult) {
-      case Success(value: final entry):
-        setState(() {
-          result.isAdded = true;
-          _isAddingFood = false;
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            behavior: SnackBarBehavior.fixed,
-            shape: const RoundedRectangleBorder(),
-            duration: const Duration(seconds: 2),
-            content: Text(AppLocalizations.of(context)!.addedSnack(entry.name)),
-          ),
-        );
-        return true;
-      case Failure(message: final message):
-        setState(() => _isAddingFood = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(message)),
-        );
-        return false;
-    }
-  }
-
   Future<void> _addAllFoods() async {
     if (_isAddingFood) return;
-
     final results = _results;
     if (results == null || results.isEmpty) return;
-
-    for (final result in results) {
-      final added = await _addFood(result);
-      if (!added || !mounted) return;
+    setState(() => _isAddingFood = true);
+    final outcome = await addSelectedAiFoods(results, context.read<FoodIntakeController>(), widget.meal);
+    if (!mounted) return;
+    setState(() => _isAddingFood = false);
+    showFoodsAddedFeedback(context, outcome.added.keys.toList(), onUndone: (entry) {
+      if (!mounted) return;
+      setState(() => outcome.added[entry]!.isAdded = false);
+    },);
+    if (outcome.error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(outcome.error!)));
     }
-
-    Navigator.pop(context);
   }
 
   void _shareAllFoods() {
@@ -708,11 +666,6 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    FilledButton.icon(
-                      onPressed: _isAddingFood ? null : _addAllFoods,
-                      icon: const Icon(Icons.add),
-                      label: Text(l10n.addAll),
-                    ),
                     TextButton.icon(
                       onPressed: _shareAllFoods,
                       icon: const Icon(Icons.share_outlined),
@@ -734,7 +687,8 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                     allowComments: true,
                     onEdit: () => _showEditSheet(result, allowReAnalyze: true),
                     onShare: () => _shareSingleFood(result),
-                    onAdd: () => _addFood(result),
+                    enabled: !_isAddingFood,
+                    onToggleSelection: () => setState(() => result.isSelected = !result.isSelected),
                   ),
                 const SizedBox(height: 8),
                 FilledButton.icon(
@@ -753,6 +707,13 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                       : '${l10n.aiReanalyzeCost} · ${l10n.imagesLeft(_remainingRequests)}',
                   style: theme.textTheme.bodySmall,
                 ),
+                const SizedBox(height: 12),
+                SizedBox(width: double.infinity, child: FilledButton.icon(
+                  onPressed: !_isAddingFood && results.any((result) => result.isSelected && !result.isAdded) ? _addAllFoods : null,
+                  icon: const Icon(Icons.add),
+                  label: Text(results.where((result) => !result.isAdded).every((result) => result.isSelected)
+                    ? l10n.addAll : l10n.addSelection,),
+                ),),
               ],
             ),
           ),
