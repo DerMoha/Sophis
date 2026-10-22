@@ -233,7 +233,7 @@ class _SupplementsScreenState extends State<SupplementsScreen> {
                               );
                               if (result.isFailure && context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
+                                  SnackBar(persist: false,
                                     content: Text(
                                       (result as Failure).message,
                                     ),
@@ -244,7 +244,7 @@ class _SupplementsScreenState extends State<SupplementsScreen> {
                             },
                             onDismissed: (direction) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
+                                SnackBar(persist: false,
                                   content: Text(
                                     l10n.supplementDeleted(supplement.name),
                                   ),

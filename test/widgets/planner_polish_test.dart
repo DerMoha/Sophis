@@ -34,9 +34,6 @@ void main() {
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
     await tester.pumpAndSettle();
     expect(provider.getPlannedMealsForDate(meal.date), isEmpty);
-    // The failure message may precede the success snackbar in the queue.
-    await tester.pump(const Duration(seconds: 5));
-    await tester.pumpAndSettle();
     await tester.tap(find.text('Undo'));
     await tester.pump();
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));

@@ -17,8 +17,8 @@ void showFoodsAddedFeedback(BuildContext context, List<FoodEntry> entries, {
   final l10n = AppLocalizations.of(context)!;
   final messenger = ScaffoldMessenger.of(context);
   final nutrition = context.read<NutritionProvider>();
-  messenger.hideCurrentSnackBar();
-  messenger.showSnackBar(SnackBar(
+  messenger.clearSnackBars();
+  messenger.showSnackBar(SnackBar(persist: false, duration: const Duration(seconds: 4),
     content: Text(l10n.added),
     action: SnackBarAction(label: l10n.undo, onPressed: () async {
       try {
@@ -27,7 +27,7 @@ void showFoodsAddedFeedback(BuildContext context, List<FoodEntry> entries, {
           onUndone?.call(entry);
         }
       } catch (_) {
-        if (messenger.mounted) messenger.showSnackBar(SnackBar(content: Text(l10n.changeEntryFailed)));
+        if (messenger.mounted) messenger.showSnackBar(SnackBar(persist: false, content: Text(l10n.changeEntryFailed)));
       }
     },),
   ),);
@@ -45,8 +45,9 @@ Future<void> deleteEntryWithUndo(
   try {
     await remove();
     if (!messenger.mounted) return;
+    messenger.clearSnackBars();
     messenger.showSnackBar(
-      SnackBar(
+      SnackBar(persist: false, duration: const Duration(seconds: 4),
         content: Text(l10n.foodEntryDeleted(label)),
         action: SnackBarAction(
           label: l10n.undo,
@@ -56,7 +57,7 @@ Future<void> deleteEntryWithUndo(
             } catch (_) {
               if (!messenger.mounted) return;
               messenger.showSnackBar(
-                SnackBar(content: Text(l10n.changeEntryFailed)),
+                SnackBar(persist: false, content: Text(l10n.changeEntryFailed)),
               );
             }
           },
@@ -66,7 +67,7 @@ Future<void> deleteEntryWithUndo(
   } catch (_) {
     if (!messenger.mounted) return;
     messenger.showSnackBar(
-      SnackBar(content: Text(l10n.changeEntryFailed)),
+      SnackBar(persist: false, content: Text(l10n.changeEntryFailed)),
     );
   }
 }

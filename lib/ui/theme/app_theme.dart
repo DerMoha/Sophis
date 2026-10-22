@@ -415,6 +415,8 @@ class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: _lightText,
+        actionTextColor: _lightSurface,
+        closeIconColor: _lightSurface,
         contentTextStyle: const TextStyle(
           fontFamily: 'Plus Jakarta Sans',
           color: _lightSurface,
@@ -649,6 +651,8 @@ class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: _darkText,
+        actionTextColor: _darkSurface,
+        closeIconColor: _darkSurface,
         contentTextStyle: const TextStyle(
           fontFamily: 'Plus Jakarta Sans',
           color: _darkSurface,
