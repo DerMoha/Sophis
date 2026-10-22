@@ -246,7 +246,7 @@ class _MealEntryCard extends StatelessWidget {
         children: [
           // Main content - tappable for quick actions
           InkWell(
-            onTap: () => _showEditDialog(context, l10n),
+            onTap: () => _showQuickActions(context, l10n),
             onLongPress: () => _showQuickActions(context, l10n),
             borderRadius: const BorderRadius.vertical(
               top: Radius.circular(AppTheme.radiusMD),

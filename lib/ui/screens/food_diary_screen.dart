@@ -8,6 +8,8 @@ import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/ui/screens/food_diary/food_diary_vm.dart';
 import 'package:sophis/ui/screens/meal_detail_screen.dart';
 import 'package:sophis/ui/components/quick_add_sheet.dart';
+import 'package:sophis/ui/components/repeat_meal_button.dart';
+import 'package:sophis/ui/components/common/entry_feedback.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/theme/animations.dart';
 import 'package:sophis/ui/components/organic_components.dart';
@@ -212,14 +214,14 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
               children: [
                 Row(
                   children: [
-                    IconButton(
+                    if (Navigator.canPop(context)) IconButton(
                       icon: const Icon(Icons.arrow_back_ios_new_rounded),
                       onPressed: () => Navigator.pop(context),
                       style: IconButton.styleFrom(
                         backgroundColor: theme.colorScheme.surface,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    if (Navigator.canPop(context)) const SizedBox(width: 12),
                     IconButton(
                       icon: const Icon(Icons.chevron_left_rounded),
                       onPressed: _goToPreviousDay,
@@ -268,14 +270,14 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
             )
           : Row(
               children: [
-                IconButton(
+                if (Navigator.canPop(context)) IconButton(
                   icon: const Icon(Icons.arrow_back_ios_new_rounded),
                   onPressed: () => Navigator.pop(context),
                   style: IconButton.styleFrom(
                     backgroundColor: theme.colorScheme.surface,
                   ),
                 ),
-                const SizedBox(width: 12),
+                if (Navigator.canPop(context)) const SizedBox(width: 12),
                 // Previous day button
                 IconButton(
                   icon: const Icon(Icons.chevron_left_rounded),
@@ -339,31 +341,27 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
     final vm = buildFoodDiaryVM(context, nutrition, date);
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 120),
       children: [
-        if (_isToday(date)) ...[
-          _buildReuseCard(
-            context,
-            theme,
-            l10n,
-            nutrition,
-            vm.entries,
-          ),
-          const SizedBox(height: AppTheme.spaceLG),
-        ],
         // Nutrition summary (only if there are entries)
         if (!vm.isEmpty)
-          NutritionSummaryCard(
-            title: l10n.summary,
-            proteinLabel: l10n.protein,
-            carbsLabel: l10n.carbs,
-            fatLabel: l10n.fat,
-            fiberLabel: l10n.fiber,
-            totals: vm.totals,
-            goals: vm.goals,
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(color: theme.colorScheme.surface,
+              borderRadius: BorderRadius.circular(AppTheme.radiusMD),),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('${vm.totals.calories.toStringAsFixed(0)} kcal', style: theme.textTheme.titleLarge),
+              const SizedBox(height: 8),
+              Wrap(spacing: 16, runSpacing: 6, children: [
+                Text('${l10n.protein}: ${vm.totals.protein.toStringAsFixed(0)} g'),
+                Text('${l10n.carbs}: ${vm.totals.carbs.toStringAsFixed(0)} g'),
+                Text('${l10n.fat}: ${vm.totals.fat.toStringAsFixed(0)} g'),
+                Text('${l10n.fiber}: ${vm.totals.fiber.toStringAsFixed(0)} g'),
+              ],),
+            ],),
           ),
 
-        if (!vm.isEmpty) const SizedBox(height: 24),
+        if (!vm.isEmpty) const SizedBox(height: 16),
 
         // Meal sections - dynamic from settings
         ...vm.mealTypes.asMap().entries.expand((entry) {
@@ -388,6 +386,11 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
               const SizedBox(height: AppTheme.spaceSM2),
           ];
         }),
+        if (_isToday(date)) ...[
+          const SizedBox(height: 12),
+          ExpansionTile(title: Text(l10n.reuseMeal), tilePadding: EdgeInsets.zero,
+            children: [_buildReuseCard(context, theme, l10n, nutrition, vm.entries)],),
+        ],
       ],
     );
   }
@@ -492,38 +495,22 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
             children: [
               OutlinedButton.icon(
                 onPressed: () async {
-                  final entries = await nutrition.repeatLastMeal(
-                    timestamp: DateTime.now(),
-                  );
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        entries.isEmpty
-                            ? l10n.noMealsToRepeat
-                            : l10n.lastMealRepeated,
-                      ),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.replay_outlined, size: 18),
-                label: Text(l10n.repeatLastMeal),
-              ),
-              OutlinedButton.icon(
-                onPressed: () async {
-                  final entries = await nutrition.copyYesterdayLoggedMeals(
-                    targetDate: DateTime.now(),
-                  );
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        entries.isEmpty
-                            ? l10n.noMealsYesterday
-                            : l10n.mealsCopied,
-                      ),
-                    ),
-                  );
+                  final now = DateTime.now();
+                  final source = nutrition.getEntriesForDate(DateTime(now.year, now.month, now.day - 1));
+                  if (source.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.noMealsYesterday)));
+                    return;
+                  }
+                  final confirmed = await confirmMealCopy(context, source, title: l10n.copyYesterdayMeals);
+                  if (confirmed != true || !context.mounted) return;
+                  try {
+                    final entries = await nutrition.repeatEntries(source);
+                    if (!context.mounted) return;
+                    showFoodsAddedFeedback(context, entries);
+                  } catch (_) {
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.saveEntryFailed)));
+                  }
                 },
                 icon: const Icon(Icons.history_outlined, size: 18),
                 label: Text(l10n.copyYesterdayMeals),
@@ -619,7 +606,7 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
 
   Widget _buildEntryTile(BuildContext context, FoodEntry entry) {
     return FoodEntryTile(
-      onTap: () => showFoodEntryEditor(context, entry),
+      onTap: () => showFoodEntryActions(context, entry),
       onLongPress: () => showFoodEntryActions(context, entry),
       name: entry.name,
       calories: entry.calories,

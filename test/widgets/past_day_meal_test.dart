@@ -39,6 +39,9 @@ void main() {
     await tester.ensureVisible(find.text('Yesterday egg'));
     await tester.tap(find.text('Yesterday egg'));
     await tester.pumpAndSettle();
+    expect(find.byType(EditFoodEntryDialog), findsNothing);
+    await tester.tap(find.text('Edit Entry'));
+    await tester.pumpAndSettle();
     expect(find.byType(EditFoodEntryDialog), findsOneWidget);
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();

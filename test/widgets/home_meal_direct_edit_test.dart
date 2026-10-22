@@ -22,6 +22,8 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Test food'));
       await tester.pumpAndSettle();
+      await tester.tap(find.text('Edit Entry'));
+      await tester.pumpAndSettle();
       expect(find.byType(EditFoodEntryDialog), findsOneWidget);
       expect(find.byType(MealDetailScreen), findsNothing);
       await tester.enterText(find.byType(TextFormField).first, 'Updated food');

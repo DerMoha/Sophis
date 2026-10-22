@@ -49,6 +49,9 @@ void main() {
     expect(find.text('90 kcal'), findsOneWidget);
     await tester.tap(find.text('Fried egg (50g)'));
     await tester.pumpAndSettle();
+    expect(find.byType(EditFoodEntryDialog), findsNothing);
+    await tester.tap(find.text('Eintrag bearbeiten'));
+    await tester.pumpAndSettle();
     expect(find.byType(EditFoodEntryDialog), findsOneWidget);
     await tester.tap(find.text('Abbrechen'));
     await tester.pumpAndSettle();

@@ -149,7 +149,7 @@ class _MealSectionContent extends StatelessWidget {
       carbs: entry.carbs,
       fat: entry.fat,
       fiber: entry.fiber,
-      onTap: () => showFoodEntryEditor(context, entry),
+      onTap: () => showFoodEntryActions(context, entry),
       onLongPress: () => showFoodEntryActions(context, entry),
     );
   }
