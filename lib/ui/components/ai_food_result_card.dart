@@ -9,6 +9,7 @@ class AiFoodResultCard extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onShare;
   final VoidCallback onAdd;
+  final bool allowComments;
 
   const AiFoodResultCard({
     super.key,
@@ -16,6 +17,7 @@ class AiFoodResultCard extends StatelessWidget {
     required this.onEdit,
     required this.onShare,
     required this.onAdd,
+    this.allowComments = false,
   });
 
   @override
@@ -83,22 +85,69 @@ class AiFoodResultCard extends StatelessWidget {
                   ],
                 ),
               ),
-            const SizedBox(height: AppTheme.spaceSM2),
+            Text(
+              '${food.portionDisplay} • ${food.caloriesDisplay}',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            ExpansionTile(
+              key: PageStorageKey(result),
+              maintainState: true,
+              onExpansionChanged: (expanded) {
+                if (!expanded) FocusScope.of(context).unfocus();
+              },
+              initiallyExpanded: result.commentController.text.isNotEmpty,
+              tilePadding: EdgeInsets.zero,
+              childrenPadding: const EdgeInsets.only(bottom: 8),
+              dense: true,
+              minTileHeight: 40,
+              shape: const Border(),
+              collapsedShape: const Border(),
+              title: Text(
+                allowComments ? l10n.foodResultDetails : l10n.nutrition,
+                style: theme.textTheme.bodySmall,
+              ),
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    food.macrosDisplay,
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ),
+                if (allowComments) ...[
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: result.commentController,
+                    minLines: 1,
+                    maxLines: 2,
+                    style: theme.textTheme.bodyMedium,
+                    decoration: InputDecoration(
+                      hintText: l10n.aiFoodComment,
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+                        borderSide:
+                            BorderSide(color: theme.colorScheme.primary),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
             Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${food.portionDisplay} • ${food.caloriesDisplay}',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(food.macrosDisplay, style: theme.textTheme.bodySmall),
-                  ],
-                ),
-                const SizedBox(height: AppTheme.spaceSM2),
                 Wrap(
                   alignment: WrapAlignment.end,
                   spacing: AppTheme.spaceSM,

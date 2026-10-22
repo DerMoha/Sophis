@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:sophis/ui/components/draft_guard.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:gal/gal.dart';
@@ -162,27 +163,43 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     }
 
     try {
-      final picked = await _picker.pickImage(
-        source: source,
-        maxWidth: 1024,
-        maxHeight: 1024,
-        imageQuality: 85,
-      );
+      final List<XFile> picked;
+      if (source == ImageSource.gallery) {
+        picked = await _picker.pickMultiImage(
+          maxWidth: 1024,
+          maxHeight: 1024,
+          imageQuality: 85,
+          limit: maxImages - _images.length,
+        );
+      } else {
+        final photo = await _picker.pickImage(
+          source: source,
+          maxWidth: 1024,
+          maxHeight: 1024,
+          imageQuality: 85,
+        );
+        picked = [if (photo != null) photo];
+      }
 
-      if (picked == null) return;
-
-      _disposeResults(_results);
+      if (!mounted || picked.isEmpty) return;
 
       if (source == ImageSource.camera) {
         try {
-          await Gal.putImage(picked.path);
+          await Gal.putImage(picked.first.path);
         } catch (e) {
           debugPrint('Failed to save to gallery: $e');
         }
       }
 
+      if (!mounted) return;
+      _disposeResults(_results);
+
       setState(() {
-        _images.add(File(picked.path));
+        _images.addAll(
+          picked
+              .take(maxImages - _images.length)
+              .map((image) => File(image.path)),
+        );
         _results = null;
         _error = null;
       });
@@ -206,7 +223,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
   }
 
   Future<void> _analyzeFood({String? correctionHint}) async {
-    if (_images.isEmpty) return;
+    if (_images.isEmpty || _isLoading) return;
     if (!_canAnalyze) {
       setState(() {
         _error = AppLocalizations.of(context)!.errorApiKey;
@@ -230,14 +247,12 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
 
       if (!mounted) return;
 
-      _disposeResults(_results);
-
       switch (analysisResult) {
         case Success<List<FoodAnalysis>>(value: final results):
+          _disposeResults(_results);
           _results =
               results.map((r) => EditableFoodResult(analysis: r)).toList();
         case Failure<List<FoodAnalysis>>(message: final message):
-          _results = null;
           _error = _getUserFriendlyError(message);
           _showApiKeyAction = _isApiKeyFailure(message);
       }
@@ -258,11 +273,39 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     }
   }
 
+  Future<void> _reanalyzeAllFoods() async {
+    final results = _results;
+    if (results == null || _remainingRequests <= 0 || _isLoading) return;
+    final hint = buildFoodReanalysisHint(results);
+    if (_remainingRequests <= 3) {
+      final l10n = AppLocalizations.of(context)!;
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(l10n.confirmReanalysis),
+          content: Text(l10n.reanalysisConfirmation(_remainingRequests)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(l10n.aiReanalyzeAction),
+            ),
+          ],
+        ),
+      );
+      if (!mounted || confirmed != true) return;
+    }
+    await _analyzeFood(correctionHint: hint);
+  }
+
   void _showEditSheet(
     EditableFoodResult result, {
     required bool allowReAnalyze,
   }) {
-    showModalBottomSheet(
+    showDraftBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -475,7 +518,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          l10n.aiFoodRecognition,
+          l10n.photographFood,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -539,18 +582,25 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed:
-                          _canAnalyze && _images.isNotEmpty && !_isLoading
-                              ? () => _analyzeFood()
-                              : null,
-                      icon: const Icon(Icons.auto_awesome),
-                      label: Text(l10n.analyzeWithAI),
+                  if (_results?.isNotEmpty != true) ...[
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _canAnalyze &&
+                                _images.isNotEmpty &&
+                                !_isLoading &&
+                                !_isAddingFood &&
+                                _remainingRequests > 0 &&
+                                !(_results?.any((result) => result.isAdded) ??
+                                    false)
+                            ? _analyzeFood
+                            : null,
+                        icon: const Icon(Icons.auto_awesome),
+                        label: Text(l10n.analyzeWithAI),
+                      ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
@@ -563,7 +613,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
   }
 
   Widget _buildResultsArea(AppLocalizations l10n, ThemeData theme) {
-    if (_error != null) {
+    if (_error != null && _results == null) {
       return FadeInSlide(
         index: 0,
         child: SingleChildScrollView(
@@ -670,14 +720,39 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
+                if (_error != null) ...[
+                  Text(
+                    _error!,
+                    style: TextStyle(color: theme.colorScheme.error),
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 for (final result in results)
                   AiFoodResultCard(
                     result: result,
+                    allowComments: true,
                     onEdit: () => _showEditSheet(result, allowReAnalyze: true),
                     onShare: () => _shareSingleFood(result),
                     onAdd: () => _addFood(result),
                   ),
+                const SizedBox(height: 8),
+                FilledButton.icon(
+                  onPressed: _remainingRequests > 0 &&
+                          !_isAddingFood &&
+                          !results.any((result) => result.isAdded)
+                      ? _reanalyzeAllFoods
+                      : null,
+                  icon: const Icon(Icons.auto_awesome),
+                  label: Text(l10n.aiReanalyzeAll),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  results.any((result) => result.isAdded)
+                      ? l10n.aiBatchAlreadyAdded
+                      : '${l10n.aiReanalyzeCost} · ${l10n.imagesLeft(_remainingRequests)}',
+                  style: theme.textTheme.bodySmall,
+                ),
               ],
             ),
           ),

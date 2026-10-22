@@ -34,6 +34,62 @@ void main() {
         home: Scaffold(body: child),
       );
 
+  test('combined comments with all current meal items', () {
+    final first = createResult();
+    final second = createResult();
+    addTearDown(first.dispose);
+    addTearDown(second.dispose);
+    second.currentAnalysis = FoodAnalysis(
+      name: 'rice',
+      portionGrams: 200,
+      calories: 260,
+      protein: 5,
+      carbs: 56,
+      fat: 1,
+      fiber: 1,
+    );
+    first.commentController.text = '  only one tomato  ';
+    second.commentController.text = 'cooked weight';
+    final hint = buildFoodReanalysisHint([first, second]);
+    expect(hint, contains('Item 1: "diced tomatoes"'));
+    expect(hint, contains('Item 2: "rice", 200.0g'));
+    expect(hint, contains('User comment: only one tomato\n'));
+    expect(hint, contains('User comment: cooked weight'));
+    second.commentController.clear();
+    expect(
+      buildFoodReanalysisHint([first, second]),
+      contains('Item 2: "rice"'),
+    );
+  });
+
+  testWidgets('kept comments when result cards were rebuilt', (tester) async {
+    final result = createResult();
+    addTearDown(result.dispose);
+    Widget card() => app(
+          AiFoodResultCard(
+            result: result,
+            allowComments: true,
+            onEdit: () {},
+            onShare: () {},
+            onAdd: () {},
+          ),
+        );
+    await tester.pumpWidget(card());
+    expect(find.byType(TextField), findsNothing);
+    await tester.tap(find.text('Hinweise & Nährwerte'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'only half');
+    await tester.tap(find.text('Hinweise & Nährwerte'));
+    await tester.pumpAndSettle();
+    expect(find.byType(TextField), findsNothing);
+    await tester.pumpWidget(card());
+    await tester.tap(find.text('Hinweise & Nährwerte'));
+    await tester.pumpAndSettle();
+    expect(find.text('only half'), findsOneWidget);
+    expect(result.commentController.text, 'only half');
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('submitted a description without editing estimated values', (
     tester,
   ) async {
