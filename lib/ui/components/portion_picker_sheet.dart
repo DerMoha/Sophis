@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 import 'package:sophis/ui/components/draft_guard.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -51,6 +52,7 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
   late final TextEditingController _amountController;
   final FocusNode _amountFocusNode = FocusNode();
   bool _isAdding = false;
+  double _sliderMax = 500;
 
   NutritionUnit get _unit => widget.item.nutritionUnit;
 
@@ -77,6 +79,7 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
   void initState() {
     super.initState();
     _selection = _defaultSelection();
+    _sliderMax = math.max(500, math.max(_selection.amount, (_baseServing?.selection.amount ?? 100) * 4)).toDouble();
     _amountController = TextEditingController(
       text: _formatNumber(_selection.amount),
     );
@@ -107,6 +110,7 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
     _dismissKeyboard();
     setState(() {
       _selection = selection;
+      _sliderMax = math.max(_sliderMax, selection.amount);
       _amountController.text = _formatNumber(selection.amount);
       _amountController.selection = TextSelection.collapsed(
         offset: _amountController.text.length,
@@ -117,6 +121,7 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
   void _onExactAmountChanged(String value) {
     final amount = _parseLocaleNumber(value);
     setState(() {
+      if (amount != null) _sliderMax = math.max(_sliderMax, amount);
       _selection = PortionSelection(
         amount: amount != null && amount > 0 ? amount : 0,
         unit: _unit,
@@ -454,34 +459,42 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
                             ? _openEditSheet
                             : null,
                       ),
-                      if (_servingOptions.isNotEmpty) ...[
-                        _SectionTitle(title: l10n.portion),
-                        const SizedBox(height: AppTheme.spaceSM2),
-                        _ServingChips(
-                          servings: _servingOptions,
-                          selected: _selection,
-                          onSelect: (serving) =>
-                              _selectPortion(serving.selection),
-                        ),
-                        const SizedBox(height: AppTheme.spaceLG),
-                      ],
-                      if (customPortions.isNotEmpty) ...[
-                        _SectionTitle(
-                          title: l10n.myPortions,
-                          trailing: TextButton(
-                            onPressed: () =>
-                                _showEditPortionsSheet(customPortions),
-                            child: Text(l10n.edit),
-                          ),
-                        ),
-                        const SizedBox(height: AppTheme.spaceSM2),
-                        _SavedPortionChips(
-                          portions: customPortions,
-                          selected: _selection,
-                          onSelect: (portion) =>
-                              _selectPortion(portion.selection),
-                        ),
-                        const SizedBox(height: AppTheme.spaceLG),
+                      _SectionTitle(title: l10n.portion),
+                      Slider(
+                        key: const ValueKey('portion-slider'),
+                        min: 1,
+                        max: _sliderMax,
+                        value: _selection.amount.clamp(1, _sliderMax).toDouble(),
+                        label: '${_formatNumber(_selection.amount)} ${_unit.symbol}',
+                        onChanged: (value) {
+                          setState(() {
+                            final amount = value.roundToDouble();
+                            _selection = PortionSelection(amount: amount, unit: _unit);
+                            _amountController.text = _formatNumber(amount);
+                          });
+                        },
+                      ),
+                      if (_servingOptions.isNotEmpty || customPortions.isNotEmpty) ...[
+                        SizedBox(height: math.max(48, MediaQuery.textScalerOf(context).scale(16) * 1.5 + 24), child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          children: [
+                            for (final serving in _servingOptions)
+                              Padding(padding: const EdgeInsets.only(right: 8), child: ChoiceChip(
+                                label: Text(serving.name), selected: _sameSelection(_selection, serving.selection),
+                                onSelected: (_) => _selectPortion(serving.selection),
+                              ),),
+                            for (final portion in customPortions)
+                              Padding(padding: const EdgeInsets.only(right: 8), child: ChoiceChip(
+                                label: Text(portion.name), selected: _sameSelection(_selection, portion.selection),
+                                onSelected: (_) => _selectPortion(portion.selection),
+                              ),),
+                          ],
+                        ),),
+                        if (customPortions.isNotEmpty)
+                          Align(alignment: Alignment.centerRight, child: TextButton(
+                            onPressed: () => _showEditPortionsSheet(customPortions), child: Text(l10n.editPortions),
+                          ),),
+                        const SizedBox(height: 8),
                       ],
                       _SectionTitle(title: l10n.customAmount),
                       const SizedBox(height: AppTheme.spaceSM2),
@@ -643,9 +656,8 @@ class _ProductHeader extends StatelessWidget {
 
 class _SectionTitle extends StatelessWidget {
   final String title;
-  final Widget? trailing;
 
-  const _SectionTitle({required this.title, this.trailing});
+  const _SectionTitle({required this.title});
 
   @override
   Widget build(BuildContext context) {
@@ -660,143 +672,7 @@ class _SectionTitle extends StatelessWidget {
                 ),
           ),
         ),
-        if (trailing != null) trailing!,
       ],
-    );
-  }
-}
-
-class _ServingChips extends StatelessWidget {
-  final List<ServingSize> servings;
-  final PortionSelection selected;
-  final ValueChanged<ServingSize> onSelect;
-
-  const _ServingChips({
-    required this.servings,
-    required this.selected,
-    required this.onSelect,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: AppTheme.spaceSM,
-      runSpacing: AppTheme.spaceSM,
-      children: servings
-          .map(
-            (serving) => _ServingChip(
-              label: serving.name,
-              detail: _canonicalText(context, serving.selection),
-              selected: _sameSelection(selected, serving.selection),
-              onTap: () => onSelect(serving),
-            ),
-          )
-          .toList(),
-    );
-  }
-}
-
-class _SavedPortionChips extends StatelessWidget {
-  final List<CustomPortion> portions;
-  final PortionSelection selected;
-  final ValueChanged<CustomPortion> onSelect;
-
-  const _SavedPortionChips({
-    required this.portions,
-    required this.selected,
-    required this.onSelect,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: AppTheme.spaceSM,
-      runSpacing: AppTheme.spaceSM,
-      children: portions
-          .map(
-            (portion) => _ServingChip(
-              label: portion.name,
-              detail: _canonicalText(context, portion.selection),
-              selected: _sameSelection(selected, portion.selection),
-              saved: true,
-              onTap: () => onSelect(portion),
-            ),
-          )
-          .toList(),
-    );
-  }
-}
-
-class _ServingChip extends StatelessWidget {
-  final String label;
-  final String detail;
-  final bool selected;
-  final bool saved;
-  final VoidCallback onTap;
-
-  const _ServingChip({
-    required this.label,
-    required this.detail,
-    required this.selected,
-    this.saved = false,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color =
-        saved ? theme.colorScheme.secondary : theme.colorScheme.primary;
-    return Material(
-      color: selected
-          ? color.withValues(alpha: 0.14)
-          : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.65),
-      borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-        onTap: onTap,
-        child: Container(
-          constraints: const BoxConstraints(minWidth: 88),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: selected
-                  ? color
-                  : theme.colorScheme.outline.withValues(alpha: 0.18),
-              width: selected ? 1.5 : 1,
-            ),
-            borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (saved) ...[
-                    Icon(Icons.bookmark_outline, size: 14, color: color),
-                    const SizedBox(width: 4),
-                  ],
-                  Text(
-                    label,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-                      color: selected ? color : theme.colorScheme.onSurface,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 2),
-              Text(
-                detail,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
@@ -945,15 +821,6 @@ class _AddButton extends StatelessWidget {
     if (value == value.roundToDouble()) return value.toStringAsFixed(0);
     return value.toStringAsFixed(2).replaceFirst(RegExp(r'0+$'), '');
   }
-}
-
-String _canonicalText(BuildContext context, PortionSelection selection) {
-  final locale = Localizations.localeOf(context).toString();
-  final amount = NumberFormat.decimalPatternDigits(
-    locale: locale,
-    decimalDigits: selection.amount == selection.amount.roundToDouble() ? 0 : 2,
-  ).format(selection.amount);
-  return '$amount ${selection.unit.symbol}';
 }
 
 bool _sameSelection(PortionSelection first, PortionSelection second) {

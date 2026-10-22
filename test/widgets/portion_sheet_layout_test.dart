@@ -81,6 +81,15 @@ void main() {
         await tester.tap(find.text('Open'));
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
+        final slider = find.byKey(const ValueKey('portion-slider'));
+        await tester.scrollUntilVisible(slider, 100,
+          scrollable: find.descendant(of: find.byType(ListView), matching: find.byType(Scrollable)).first,
+        );
+        await tester.pumpAndSettle();
+        tester.widget<Slider>(slider).onChanged!(225);
+        await tester.pumpAndSettle();
+        expect(tester.widget<Slider>(slider).value, 225);
+        expect(find.text('225'), findsOneWidget);
         final button = find.byType(FilledButton);
         expect(button.hitTestable(), findsOneWidget);
         expect(
