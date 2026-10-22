@@ -15,8 +15,7 @@ class PeopleScreen extends StatefulWidget {
   State<PeopleScreen> createState() => _PeopleScreenState();
 }
 
-class _PeopleScreenState extends State<PeopleScreen>
-    with WidgetsBindingObserver {
+class _PeopleScreenState extends State<PeopleScreen> {
   final _email = TextEditingController();
   final _password = TextEditingController();
   final _name = TextEditingController();
@@ -28,22 +27,13 @@ class _PeopleScreenState extends State<PeopleScreen>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) unawaited(context.read<SocialProvider>().open());
     });
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && mounted) {
-      unawaited(context.read<SocialProvider>().refresh());
-    }
-  }
-
-  @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
     _email.dispose();
     _password.dispose();
     _name.dispose();
@@ -73,9 +63,10 @@ class _PeopleScreenState extends State<PeopleScreen>
     return Scaffold(
       appBar: AppBar(
         title: Text(
-            social.partners.length == 1 && social.partners.single.accepted
-                ? 'Partner'
-                : 'Partner sharing',),
+          social.partners.length == 1 && social.partners.single.accepted
+              ? 'Partner'
+              : 'Partner sharing',
+        ),
         actions: [
           if (social.profile != null &&
               !(social.partners.length == 1 && social.partners.single.accepted))

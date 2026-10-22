@@ -11,6 +11,10 @@ import 'package:sophis/services/social/social_runtime.dart';
 
 /// Owns only optional social state; guest nutrition startup never opens Firebase.
 final class SocialProvider extends ChangeNotifier with WidgetsBindingObserver {
+  static const _pendingUpdatesMessage =
+      'Partner updates are waiting to send. Refresh Partners to retry.';
+  static const _failedUpdatesMessage =
+      'Partner updates could not be sent. Refresh Partners to retry.';
   final Future<SocialRuntime> Function() _factory;
   final bool configured;
   final NutritionProvider? nutrition;
@@ -57,35 +61,53 @@ final class SocialProvider extends ChangeNotifier with WidgetsBindingObserver {
     );
   }
 
-  Future<void> refreshPartners() async {
+  Future<bool> refreshPartners() async {
     final runtime = _runtime;
     final epoch = _epoch;
     final refresh = ++_partnerRefreshVersion;
-    if (runtime == null || profile == null) return;
+    if (runtime == null || profile == null) return false;
+    if (partners.isEmpty) {
+      final cached = await runtime.partners.cachedConnections();
+      if (_closed || epoch != _epoch || refresh != _partnerRefreshVersion) {
+        return false;
+      }
+      if (cached != null) {
+        partners = cached;
+        _notify();
+      }
+    }
     final result = await runtime.partners.connections();
-    if (_closed || epoch != _epoch || refresh != _partnerRefreshVersion) return;
+    if (_closed || epoch != _epoch || refresh != _partnerRefreshVersion) {
+      return false;
+    }
     if (result is Success<List<PartnerConnection>>) {
       final session = await runtime.accounts.client.captureSession();
       if (session == null ||
           _closed ||
           epoch != _epoch ||
           refresh != _partnerRefreshVersion) {
-        return;
+        return false;
       }
       await runtime.store.reconcilePartnerUpdates(session, {
         for (final c in result.value)
           if (c.accepted) c.id: c.ownSettings['revision'] as int,
       });
       if (_closed || epoch != _epoch || refresh != _partnerRefreshVersion) {
-        return;
+        return false;
       }
       partners = result.value;
-      await syncPartnerChanges();
+      message = null;
+      // Uploading a diary backlog must not block account or partner reads.
+      unawaited(syncPartnerChanges());
     } else if (result is Failure<List<PartnerConnection>>) {
-      partners = [];
+      if (result.errorType == ServiceErrorType.authFailed ||
+          result.errorType == ServiceErrorType.notFound) {
+        partners = [];
+      }
       message = result.message;
     }
     _notify();
+    return result is Success<List<PartnerConnection>>;
   }
 
   Future<void> syncPartnerChanges() {
@@ -107,10 +129,11 @@ final class SocialProvider extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> _projectPartnerChanges() async {
     final runtime = _runtime;
     final local = nutrition;
+    final epoch = _epoch;
     if (_closed || runtime == null || profile == null || local == null) return;
     try {
       final session = await runtime.accounts.client.captureSession();
-      if (session == null) return;
+      if (session == null || _closed || epoch != _epoch) return;
       final timeZone = (await FlutterTimezone.getLocalTimezone()).identifier;
       final projection = PartnerProjection(runtime.store);
       for (final connection in List<PartnerConnection>.of(partners)) {
@@ -126,14 +149,17 @@ final class SocialProvider extends ChangeNotifier with WidgetsBindingObserver {
       }
       final healthy = await runtime.queue.flush();
       final pending = await runtime.store.partnerQueueStatus(session);
-      if (!await runtime.store.isCurrent(session) || _closed) return;
+      if (!await runtime.store.isCurrent(session) ||
+          _closed ||
+          epoch != _epoch) {
+        return;
+      }
       final count = pending.values.fold(0, (sum, value) => sum + value);
-      const pendingMessage =
-          'Partner updates are waiting to send. Refresh Partners to retry.';
       if (count > 0) {
-        message = pendingMessage;
+        message = _pendingUpdatesMessage;
         _notify();
-      } else if (message == pendingMessage) {
+      } else if (message == _pendingUpdatesMessage ||
+          message == _failedUpdatesMessage) {
         message = null;
         _notify();
       }
@@ -144,9 +170,9 @@ final class SocialProvider extends ChangeNotifier with WidgetsBindingObserver {
         _projectionPending = true;
       }
     } catch (_) {
-      if (!_closed) {
-        message =
-            'Partner updates could not be sent. Refresh Partners to retry.';
+      if (!_closed && epoch == _epoch) {
+        message = _failedUpdatesMessage;
+        _notify();
       }
     }
   }
@@ -200,16 +226,45 @@ final class SocialProvider extends ChangeNotifier with WidgetsBindingObserver {
     if (runtime == null || runtime.auth.accountId == null) return;
     final uid = runtime.auth.accountId;
     final epoch = _epoch;
+    final session = await runtime.accounts.client.captureSession();
+    if (session == null || epoch != _epoch || _closed) return;
+    final cached = await runtime.store.partnerCache(session, 'ownProfile');
+    if (epoch != _epoch || _closed) return;
+    if (profile == null && cached != null) {
+      profile = SocialProfile(
+        accountId: cached.data['accountId'] as String,
+        displayName: cached.data['displayName'] as String,
+      );
+      final cachedPartners = await runtime.partners.cachedConnections() ?? [];
+      if (epoch != _epoch || _closed) return;
+      partners = cachedPartners;
+      ready = true;
+      _notify();
+    }
     final result = await runtime.accounts.profile();
     if (_closed || epoch != _epoch || uid != accountId) return;
     if (result is Failure<SocialProfile?>) {
       message = result.message;
+      if (result.errorType == ServiceErrorType.authFailed ||
+          result.errorType == ServiceErrorType.notFound) {
+        await runtime.store.clearPartnerCache(session);
+        if (epoch != _epoch || _closed) return;
+        profile = null;
+        partners = [];
+      }
       return;
     }
     profile = result.value;
     needsProfile = profile == null;
     if (profile != null) {
+      await runtime.store.cachePartnerResponse(session, 'ownProfile', {
+        'accountId': profile!.accountId,
+        'displayName': profile!.displayName,
+      });
       await refreshPartners();
+    } else {
+      await runtime.store.clearPartnerCache(session);
+      partners = [];
     }
   }
 

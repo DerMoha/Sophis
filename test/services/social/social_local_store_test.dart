@@ -53,8 +53,12 @@ void main() {
   test(
       'reconciled stale consent uploads while preserving privacy removals and current uploads',
       () async {
-    SocialQueuedCommand upload(String op, String connection, int revision,
-            {bool deleted = false,}) =>
+    SocialQueuedCommand upload(
+      String op,
+      String connection,
+      int revision, {
+      bool deleted = false,
+    }) =>
         SocialQueuedCommand(
           operationId: op,
           action: deleted ? 'deletePartnerSource' : 'syncPartnerMeal',
@@ -87,15 +91,41 @@ void main() {
   });
 
   group('SocialLocalStore', () {
+    test('retried delayed partner work immediately after refresh', () async {
+      final partner = command('partner', action: 'deletePartnerSource');
+      final unrelated = command('unrelated', action: 'deletePost');
+      for (final item in [partner, unrelated]) {
+        await store.enqueue(alice, item);
+        await store.retry(alice, item, now);
+      }
+      expect(await store.nextCommand(alice, now), isNull);
+
+      await store.reconcilePartnerUpdates(alice, {});
+      expect((await store.nextCommand(alice, now))?.operationId, 'partner');
+      await store.acknowledge(alice, 'partner');
+      expect(await store.nextCommand(alice, now), isNull);
+      expect(
+        (await store.nextCommand(alice, now.add(const Duration(seconds: 3))))
+            ?.operationId,
+        'unrelated',
+      );
+    });
+
     test('retired posting work while retaining partner updates and deletion',
         () async {
       await store.enqueue(alice, command('post'));
       await store.enqueue(
-          alice, command('reaction', action: 'react', target: 'reaction'),);
+        alice,
+        command('reaction', action: 'react', target: 'reaction'),
+      );
       await store.enqueue(
-          alice, command('partner', action: 'syncPartnerMeal', target: 'meal'),);
+        alice,
+        command('partner', action: 'syncPartnerMeal', target: 'meal'),
+      );
       await store.enqueue(
-          alice, command('delete', action: 'deletePost', target: 'old-post'),);
+        alice,
+        command('delete', action: 'deletePost', target: 'old-post'),
+      );
       await store.retirePublishing();
       final transport = _Transport();
       await SocialQueueRunner(store: store, transport: transport)

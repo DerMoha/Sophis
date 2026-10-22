@@ -45,44 +45,48 @@ class _SocialPartnersScreenState extends State<SocialPartnersScreen> {
       _busy = true;
       _epoch = social.sessionVersion;
     });
-    await social.refreshPartners();
-    if (mounted) {
-      setState(() {
-        _busy = false;
-        _message = social.message;
-      });
+    try {
+      await social.refreshPartners();
+      _message = social.message;
+    } catch (_) {
+      _message = 'Could not refresh partner data. Try again.';
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 
-  Future<void> _accept(PartnerConnection connection) async {
-    final social = context.read<SocialProvider>();
-    setState(() => _busy = true);
-    final result = await social.runtime!.partners
-        .request('acceptPartner', {'connectionId': connection.id});
-    if (!mounted) return;
-    setState(() {
-      _busy = false;
-      _message =
-          result is Failure<Map<String, dynamic>> ? result.message : null;
-    });
-    await _refresh();
-  }
+  Future<void> _accept(PartnerConnection connection) =>
+      _changeConnection(connection, 'acceptPartner');
 
-  Future<void> _dismiss(PartnerConnection connection) async {
+  Future<void> _dismiss(PartnerConnection connection) =>
+      _changeConnection(connection, 'disconnectPartner');
+
+  Future<void> _changeConnection(
+    PartnerConnection connection,
+    String action,
+  ) async {
+    if (_busy) return;
     final social = context.read<SocialProvider>();
+    final repository = social.runtime?.partners;
+    if (repository == null) return;
     final epoch = social.sessionVersion;
-    setState(() => _busy = true);
-    final result = await social.runtime!.partners.request(
-      'disconnectPartner',
-      {'connectionId': connection.id},
-    );
-    if (!mounted || epoch != social.sessionVersion) return;
+    var succeeded = false;
     setState(() {
-      _busy = false;
-      _message =
-          result is Failure<Map<String, dynamic>> ? result.message : null;
+      _busy = true;
+      _message = null;
     });
-    await _refresh();
+    try {
+      final result = await repository.request(
+        action,
+        {'connectionId': connection.id},
+      );
+      if (!mounted || epoch != social.sessionVersion) return;
+      succeeded = result is Success<Map<String, dynamic>>;
+      if (result is Failure<Map<String, dynamic>>) _message = result.message;
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+    if (succeeded) await _refresh();
   }
 
   @override
@@ -120,7 +124,8 @@ class _SocialPartnersScreenState extends State<SocialPartnersScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                    'Connect to see each other’s meals, goals and progress.',),
+                  'Connect to see each other’s meals, goals and progress.',
+                ),
                 const SizedBox(height: 16),
                 FilledButton.icon(
                   onPressed: () => Navigator.push(
@@ -227,6 +232,7 @@ class _SocialPartnerDetailScreenState extends State<SocialPartnerDetailScreen> {
   String? _localDate;
   String? _timeZone;
   DateTime? _selectedDate;
+  bool _showingSaved = false;
   bool _busy = false;
   int? _epoch;
 
@@ -238,78 +244,149 @@ class _SocialPartnerDetailScreenState extends State<SocialPartnerDetailScreen> {
     });
   }
 
+  Future<bool> _loadDay(
+    PartnerConnection connection, {
+    required bool cached,
+  }) async {
+    final social = context.read<SocialProvider>();
+    final epoch = social.sessionVersion;
+    final repository = social.runtime?.partners;
+    if (repository == null) return false;
+    Future<Map<String, dynamic>?> read(
+      String action,
+      Map<String, dynamic> payload,
+    ) async {
+      if (cached) return (await repository.cached(action, payload))?.data;
+      final result = await repository.request(action, payload);
+      if (result is Failure<Map<String, dynamic>>) {
+        throw StateError(result.message);
+      }
+      return result.value;
+    }
+
+    final goalData =
+        await read('partnerGoals', {'connectionId': connection.id});
+    if (goalData == null) return false;
+    final goals = (goalData['goals'] as List)
+        .cast<Map<String, dynamic>>()
+        .where((g) => g['authorId'] == connection.otherId)
+        .firstOrNull;
+    final timeZone = goals?['timeZone'] as String? ??
+        connection.otherSettings['summaryTimeZone'] as String? ??
+        connection.otherSettings['mealTimeZone'] as String? ??
+        (await FlutterTimezone.getLocalTimezone()).identifier;
+    final date = DateFormat('yyyy-MM-dd')
+        .format(_selectedDate ?? tz.TZDateTime.now(tz.getLocation(timeZone)));
+    final payload = {
+      'connectionId': connection.id,
+      'localDate': date,
+      'timeZone': timeZone,
+    };
+    final results = await Future.wait([
+      read('partnerSummaries', payload),
+      read('partnerMeals', payload),
+    ]);
+    if (!mounted ||
+        epoch != social.sessionVersion ||
+        results.any((r) => r == null)) {
+      return false;
+    }
+    // A denied read may have removed this connection while sibling reads ran.
+    if (!cached &&
+        await repository.cached('partners', {}) != null &&
+        !(await repository.cachedConnections() ?? [])
+            .any((c) => c.id == connection.id && c.accepted)) {
+      return false;
+    }
+    if (!mounted || epoch != social.sessionVersion) return false;
+    final summary = (results[0]!['summaries'] as List)
+        .cast<Map<String, dynamic>>()
+        .where((item) => item['authorId'] == connection.otherId)
+        .firstOrNull;
+    final meals = (results[1]!['meals'] as List)
+        .cast<Map<String, dynamic>>()
+        .where((item) => item['authorId'] == connection.otherId)
+        .toList();
+    final cursor = results[1]!['cursor'] as Map<String, dynamic>?;
+    setState(() {
+      _connection = connection;
+      _goals = goals;
+      _summary = summary;
+      _meals = meals;
+      _cursor = cursor;
+      _localDate = date;
+      _timeZone = timeZone;
+      _showingSaved = cached;
+    });
+    return true;
+  }
+
+  void _clearDay() {
+    _connection = null;
+    _goals = null;
+    _summary = null;
+    _meals = [];
+    _cursor = null;
+    _showingSaved = false;
+  }
+
   Future<void> _refresh() async {
     if (_busy) return;
     final social = context.read<SocialProvider>();
     final epoch = social.sessionVersion;
     setState(() {
       _busy = true;
+      if (_epoch != null && _epoch != epoch ||
+          _selectedDate != null &&
+              DateFormat('yyyy-MM-dd').format(_selectedDate!) != _localDate) {
+        _clearDay();
+      }
       _epoch = epoch;
-      _cursor = null;
-      _connection = null;
-      _goals = null;
-      _summary = null;
-      _meals = [];
       _message = null;
     });
     try {
-      await social.refreshPartners();
+      final existing = social.partners
+          .where((c) => c.id == widget.connectionId && c.accepted)
+          .firstOrNull;
+      if (existing != null) await _loadDay(existing, cached: true);
+      final refreshed = await social.refreshPartners();
       if (!mounted || epoch != social.sessionVersion) return;
       final connection = social.partners
           .where((c) => c.id == widget.connectionId && c.accepted)
           .firstOrNull;
       if (connection == null) {
-        _message = 'This partner connection is unavailable.';
+        _clearDay();
+        _message = social.message ?? 'This partner connection is unavailable.';
         return;
       }
-      final repository = social.runtime!.partners;
-      final goalResult = await repository
-          .request('partnerGoals', {'connectionId': connection.id});
-      if (goalResult is Failure<Map<String, dynamic>>) {
-        _message = goalResult.message;
+      if (!refreshed) {
+        _showingSaved = _connection != null;
+        _message = social.message;
         return;
       }
-      final goals = (goalResult.value['goals'] as List)
-          .cast<Map<String, dynamic>>()
-          .where((g) => g['authorId'] == connection.otherId)
-          .firstOrNull;
-      final timeZone = goals?['timeZone'] as String? ??
-          connection.otherSettings['summaryTimeZone'] as String? ??
-          connection.otherSettings['mealTimeZone'] as String? ??
-          (await FlutterTimezone.getLocalTimezone()).identifier;
-      final date = DateFormat('yyyy-MM-dd')
-          .format(_selectedDate ?? tz.TZDateTime.now(tz.getLocation(timeZone)));
-      _localDate = date;
-      _timeZone = timeZone;
-      final summaryResult = await repository.request('partnerSummaries', {
-        'connectionId': connection.id,
-        'localDate': date,
-        'timeZone': timeZone,
-      });
-      final mealResult = await repository.request('partnerMeals', {
-        'connectionId': connection.id,
-        'localDate': date,
-        'timeZone': timeZone,
-      });
+      // Updated connection settings invalidate saved content before new reads.
+      final savedGoals = await social.runtime!.partners.cached(
+        'partnerGoals',
+        {'connectionId': connection.id},
+      );
       if (!mounted || epoch != social.sessionVersion) return;
-      if (summaryResult is Failure<Map<String, dynamic>> ||
-          mealResult is Failure<Map<String, dynamic>>) {
-        _message = 'Could not refresh partner data. Try again.';
-        return;
+      if (_connection != null && savedGoals == null) {
+        setState(_clearDay);
       }
-      _connection = connection;
-      _goals = goals;
-      _summary = (summaryResult.value['summaries'] as List)
-          .cast<Map<String, dynamic>>()
-          .where((s) => s['authorId'] == connection.otherId)
-          .firstOrNull;
-      _meals = (mealResult.value['meals'] as List)
-          .cast<Map<String, dynamic>>()
-          .where((m) => m['authorId'] == connection.otherId)
-          .toList();
-      _cursor = mealResult.value['cursor'] as Map<String, dynamic>?;
+      await _loadDay(connection, cached: false);
     } catch (_) {
-      _message = 'Could not refresh partner data. Try again.';
+      if (mounted && epoch == social.sessionVersion) {
+        final cachedConnections =
+            await social.runtime?.partners.cachedConnections();
+        if (!mounted || epoch != social.sessionVersion) return;
+        if (cachedConnections != null &&
+            !cachedConnections
+                .any((c) => c.id == widget.connectionId && c.accepted)) {
+          _clearDay();
+        }
+        _showingSaved = _connection != null;
+        _message = 'Could not refresh partner data. Try again.';
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -417,50 +494,81 @@ class _SocialPartnerDetailScreenState extends State<SocialPartnerDetailScreen> {
       ),
     );
     if (confirmed != true || !mounted || epoch != social.sessionVersion) return;
-    setState(() => _busy = true);
-    final result = await social.runtime!.partners
-        .request('disconnectPartner', {'connectionId': widget.connectionId});
-    if (!mounted || epoch != social.sessionVersion) return;
-    setState(() => _busy = false);
-    if (result is Success<Map<String, dynamic>>) {
-      await _refresh();
-    } else {
-      setState(
-        () => _message = result is Failure<Map<String, dynamic>>
-            ? result.message
-            : 'Could not disconnect.',
-      );
+    setState(() {
+      _busy = true;
+      _message = null;
+    });
+    var succeeded = false;
+    try {
+      final result = await social.runtime!.partners
+          .request('disconnectPartner', {'connectionId': widget.connectionId});
+      if (!mounted || epoch != social.sessionVersion) return;
+      succeeded = result is Success<Map<String, dynamic>>;
+      if (result is Failure<Map<String, dynamic>>) _message = result.message;
+    } catch (_) {
+      if (mounted && epoch == social.sessionVersion) {
+        _message = 'Could not disconnect. Try again.';
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
+    if (succeeded) await _refresh();
   }
 
   Future<void> _more() async {
     if (_busy || _cursor == null) return;
     final social = context.read<SocialProvider>();
     final epoch = social.sessionVersion;
-    setState(() => _busy = true);
-    final result = await social.runtime!.partners.request(
-      'partnerMeals',
-      {
-        'connectionId': widget.connectionId,
-        'cursor': _cursor,
-        'localDate': _localDate,
-        'timeZone': _timeZone,
-      },
-    );
-    if (!mounted || epoch != social.sessionVersion) return;
     setState(() {
-      _busy = false;
-      if (result is Success<Map<String, dynamic>>) {
-        _meals.addAll(
-          (result.value['meals'] as List)
-              .cast<Map<String, dynamic>>()
-              .where((m) => m['authorId'] == _connection?.otherId),
-        );
-        _cursor = result.value['cursor'] as Map<String, dynamic>?;
-      } else {
-        _message = 'Could not load more meals.';
-      }
+      _busy = true;
+      _message = null;
     });
+    final payload = {
+      'connectionId': widget.connectionId,
+      'cursor': _cursor,
+      'localDate': _localDate,
+      'timeZone': _timeZone,
+    };
+    final start = _meals.length;
+    void applyPage(Map<String, dynamic> data) {
+      final meals = (data['meals'] as List)
+          .cast<Map<String, dynamic>>()
+          .where((m) => m['authorId'] == _connection?.otherId)
+          .toList();
+      final cursor = data['cursor'] as Map<String, dynamic>?;
+      _meals = [..._meals.take(start), ...meals];
+      _cursor = cursor;
+    }
+
+    try {
+      final repository = social.runtime!.partners;
+      final cached = await repository.cached('partnerMeals', payload);
+      if (!mounted || epoch != social.sessionVersion) return;
+      if (cached != null) {
+        setState(() {
+          applyPage(cached.data);
+          _showingSaved = true;
+        });
+      }
+      final result = await repository.request('partnerMeals', payload);
+      if (!mounted || epoch != social.sessionVersion) return;
+      if (result is Success<Map<String, dynamic>>) {
+        applyPage(result.value);
+      } else {
+        final failure = result as Failure<Map<String, dynamic>>;
+        if (failure.errorType == ServiceErrorType.authFailed ||
+            failure.errorType == ServiceErrorType.notFound) {
+          _clearDay();
+        }
+        _message = failure.message;
+      }
+    } catch (_) {
+      if (mounted && epoch == social.sessionVersion) {
+        _message = 'Could not load more meals. Try again.';
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   @override
@@ -481,6 +589,10 @@ class _SocialPartnerDetailScreenState extends State<SocialPartnerDetailScreen> {
       padding: widget.embedded ? EdgeInsets.zero : AppTheme.pagePadding,
       children: [
         if (_busy) const LinearProgressIndicator(),
+        if (_showingSaved && valid)
+          const Text(
+            'Showing saved partner data. Refresh to get the latest updates.',
+          ),
         if (_message != null) Text(_message!),
         if (!valid)
           const Text('Your account changed. Return to Partner sharing.'),

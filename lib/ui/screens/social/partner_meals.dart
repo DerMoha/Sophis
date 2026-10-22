@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sophis/l10n/generated/app_localizations.dart';
 
 import 'package:sophis/models/social/social_snapshot.dart';
 import 'package:sophis/models/custom_meal_type.dart';
@@ -14,9 +15,10 @@ class PartnerMeals extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final categories = [
       for (final meal in CustomMealType.defaults)
-        (meal.id, meal.name, meal.icon, meal.color),
+        (meal.id, l10n == null ? meal.name : meal.displayName(l10n), meal.icon, meal.color),
     ];
     final groups = <String, List<Map<String, dynamic>>>{};
     for (final meal in meals) {

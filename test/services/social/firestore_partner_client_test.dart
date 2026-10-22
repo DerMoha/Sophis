@@ -57,6 +57,28 @@ void main() {
   tearDown(() async {
     await store.close();
   });
+  test('timed out stalled credentials without sending a request', () async {
+    final token = Completer<SocialTokens>();
+    credentials.resolve = (_) => token.future;
+    client = FirestorePartnerClient(
+      credentials: credentials,
+      store: store,
+      httpClient: MockClient((r) async {
+        requests++;
+        return respond(r);
+      }),
+      projectId: 'sophis-test',
+      credentialTimeout: const Duration(milliseconds: 10),
+    );
+
+    final result = await client.call(session, 'ownProfile', {});
+    expect(result, isA<Failure<Object?>>());
+    expect((result as Failure).errorType, ServiceErrorType.network);
+    expect(result.message, 'Partner sharing timed out. Try again.');
+    token.complete(const SocialTokens(accountId: 'alice', idToken: 'late'));
+    await Future<void>.delayed(Duration.zero);
+    expect(requests, 0);
+  });
   test('sent captured auth to Firestore over HTTPS with no redirects',
       () async {
     respond = (r) async {
@@ -389,13 +411,14 @@ void main() {
     readTime = serverNow.add(const Duration(seconds: 10));
     expect((await client.call(session, 'partners', {})).isSuccess, isTrue);
     expect(
-        (await client.call(session, 'syncPartnerMeal', {
-          ...payload,
-          'sourceRevision': 2,
-          'changedAt': now.millisecondsSinceEpoch,
-        }))
-            .isSuccess,
-        isTrue,);
+      (await client.call(session, 'syncPartnerMeal', {
+        ...payload,
+        'sourceRevision': 2,
+        'changedAt': now.millisecondsSinceEpoch,
+      }))
+          .isSuccess,
+      isTrue,
+    );
     expect(writes, hasLength(3));
     expect(existing!['originallyLoggedAt'], firstOrigin);
     existing = null;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
@@ -364,7 +365,7 @@ class _SocialImportScreenState extends State<SocialImportScreen> {
                 decoration: const InputDecoration(labelText: 'Meal category'),
                 items: [
                   for (final meal in meals)
-                    DropdownMenuItem(value: meal.id, child: Text(meal.name)),
+                    DropdownMenuItem(value: meal.id, child: Text(meal.displayName(AppLocalizations.of(context)!))),
                 ],
                 onChanged:
                     _busy ? null : (value) => setState(() => _meal = value),

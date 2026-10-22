@@ -17,8 +17,8 @@ import 'package:sophis/services/social/social_queue_runner.dart';
 import 'package:sophis/services/social/social_partner_repository.dart';
 
 final class SocialRuntime {
-  SocialPartnerRepository get partners =>
-      SocialPartnerRepository(accounts.client);
+  late final SocialPartnerRepository partners =
+      SocialPartnerRepository(accounts.client, store: store);
 
   final FirebaseSocialAuth auth;
   final CallableSocialRepository repository;

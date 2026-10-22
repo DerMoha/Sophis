@@ -11,7 +11,7 @@ final class SocialLocalStore extends GeneratedDatabase {
   int get transitionVersion => _transitionVersion;
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   Iterable<TableInfo<Table, Object?>> get allTables => const [];
@@ -23,8 +23,10 @@ final class SocialLocalStore extends GeneratedDatabase {
   MigrationStrategy get migration => MigrationStrategy(
         onUpgrade: (migrator, from, to) async {
           if (from < 2) await _createPartnerProjection();
+          if (from < 3) await _createPartnerCache();
         },
         onCreate: (migrator) async {
+          await _createPartnerCache();
           await _createPartnerProjection();
           await customStatement('''
             CREATE TABLE social_session (
@@ -53,6 +55,134 @@ final class SocialLocalStore extends GeneratedDatabase {
           ''');
         },
       );
+
+  Future<void> _createPartnerCache() => customStatement('''
+    CREATE TABLE social_partner_cache (
+      id TEXT PRIMARY KEY, connection_id TEXT, connection_state TEXT,
+      payload TEXT NOT NULL, cached_at INTEGER NOT NULL
+    )
+  ''');
+
+  Future<String?> _cachedConnectionState(String connectionId) async {
+    final row = await customSelect(
+      "SELECT payload FROM social_partner_cache WHERE id = 'partners'",
+    ).getSingleOrNull();
+    if (row == null) return null;
+    final connections =
+        (jsonDecode(row.read<String>('payload')) as Map)['connections'] as List;
+    for (final raw in connections) {
+      final connection = raw as Map;
+      if (connection['id'] == connectionId &&
+          connection['status'] == 'accepted') {
+        return jsonEncode(connection);
+      }
+    }
+    return null;
+  }
+
+  Future<String?> cachedConnectionState(SocialSession expected, String id) =>
+      transaction(() async {
+        if (!await isCurrent(expected)) return null;
+        return _cachedConnectionState(id);
+      });
+
+  Future<SocialCachedResponse?> partnerCache(
+    SocialSession expected,
+    String key,
+  ) =>
+      transaction(() async {
+        if (expected.accountId == null || !await isCurrent(expected)) {
+          return null;
+        }
+        final row = await customSelect(
+          'SELECT * FROM social_partner_cache WHERE id = ?',
+          variables: [Variable(key)],
+        ).getSingleOrNull();
+        if (row == null) return null;
+        final connection = row.readNullable<String>('connection_id');
+        if (connection != null &&
+            await _cachedConnectionState(connection) !=
+                row.readNullable<String>('connection_state')) {
+          return null;
+        }
+        return SocialCachedResponse(
+          jsonDecode(row.read<String>('payload')) as Map<String, dynamic>,
+          DateTime.fromMillisecondsSinceEpoch(row.read<int>('cached_at')),
+        );
+      });
+
+  Future<void> cachePartnerResponse(
+    SocialSession expected,
+    String key,
+    Map<String, dynamic> data, {
+    String? connectionId,
+    String? connectionState,
+  }) =>
+      transaction(() async {
+        if (expected.accountId == null || !await isCurrent(expected)) return;
+        if (connectionId != null &&
+            (connectionState == null ||
+                await _cachedConnectionState(connectionId) !=
+                    connectionState)) {
+          return;
+        }
+        await customStatement(
+          'INSERT OR REPLACE INTO social_partner_cache VALUES (?, ?, ?, ?, ?)',
+          [
+            key,
+            connectionId,
+            connectionState,
+            jsonEncode(data),
+            DateTime.now().millisecondsSinceEpoch,
+          ],
+        );
+        if (key == 'partners') {
+          final rows = await customSelect(
+            'SELECT id, connection_id, connection_state FROM social_partner_cache WHERE connection_id IS NOT NULL',
+          ).get();
+          for (final row in rows) {
+            if (await _cachedConnectionState(
+                  row.read<String>('connection_id'),
+                ) !=
+                row.readNullable<String>('connection_state')) {
+              await customStatement(
+                'DELETE FROM social_partner_cache WHERE id = ?',
+                [row.read<String>('id')],
+              );
+            }
+          }
+        }
+        // Keep profile/connections and a bounded set of recent day/page responses.
+        await customStatement(
+          'DELETE FROM social_partner_cache WHERE connection_id IS NOT NULL AND id NOT IN (SELECT id FROM social_partner_cache WHERE connection_id IS NOT NULL ORDER BY cached_at DESC, id LIMIT 100)',
+        );
+      });
+
+  Future<void> clearPartnerCache(
+    SocialSession expected, {
+    String? connectionId,
+  }) =>
+      transaction(() async {
+        if (!await isCurrent(expected)) return;
+        if (connectionId == null) {
+          await customStatement('DELETE FROM social_partner_cache');
+        } else {
+          await customStatement(
+            'DELETE FROM social_partner_cache WHERE connection_id = ?',
+            [connectionId],
+          );
+          final cached = await partnerCache(expected, 'partners');
+          if (cached != null) {
+            final data = {
+              ...cached.data,
+              'connections': (cached.data['connections'] as List)
+                  .where((raw) => (raw as Map)['id'] != connectionId)
+                  .toList(),
+            };
+            await cachePartnerResponse(expected, 'partners', data);
+          }
+        }
+      });
 
   Future<void> _createPartnerProjection() => customStatement(
         'CREATE TABLE social_partner_projection (id TEXT PRIMARY KEY, payload TEXT NOT NULL)',
@@ -139,10 +269,10 @@ final class SocialLocalStore extends GeneratedDatabase {
         for (final id in stale) {
           await cancelPartnerUpdates(expected, id);
         }
-        // An explicit refresh/app resume retries reviewed valid-session work;
+        // An explicit refresh/app resume retries pending valid-session work;
         // automatic queue drains still stop on the first failure.
         await customStatement(
-          "UPDATE social_commands SET status = 'queued', next_attempt_at = 0 WHERE status = 'review' AND action IN ('syncPartnerMeal', 'syncPartnerContribution', 'syncPartnerGoals', 'deletePartnerSource')",
+          "UPDATE social_commands SET status = 'queued', next_attempt_at = 0 WHERE status IN ('review', 'queued') AND action IN ('syncPartnerMeal', 'syncPartnerContribution', 'syncPartnerGoals', 'deletePartnerSource')",
         );
       });
 
@@ -184,6 +314,7 @@ final class SocialLocalStore extends GeneratedDatabase {
       await customStatement('DELETE FROM social_commands');
       await customStatement('DELETE FROM social_cache');
       await customStatement('DELETE FROM social_partner_projection');
+      await customStatement('DELETE FROM social_partner_cache');
       await customStatement(
         'UPDATE social_session SET account_id = ?, generation = generation + 1 WHERE singleton = 1',
         [accountId],
@@ -411,4 +542,10 @@ final class SocialQueuedCommand {
       throw ArgumentError('Identity and action belong to the transport');
     }
   }
+}
+
+final class SocialCachedResponse {
+  final Map<String, dynamic> data;
+  final DateTime savedAt;
+  const SocialCachedResponse(this.data, this.savedAt);
 }

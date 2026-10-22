@@ -19,6 +19,7 @@ final class FirestorePartnerClient implements SocialClient {
   final String? emulatorHost;
   final int emulatorPort;
   final DateTime Function() _clock;
+  final Duration credentialTimeout;
   Duration _serverClockOffset = Duration.zero;
 
   FirestorePartnerClient({
@@ -29,6 +30,7 @@ final class FirestorePartnerClient implements SocialClient {
     this.emulatorHost,
     this.emulatorPort = 8080,
     DateTime Function()? clock,
+    this.credentialTimeout = const Duration(seconds: 20),
   }) : _clock = clock ?? DateTime.now {
     if (emulatorHost != null && !projectId.startsWith('demo-')) {
       throw ArgumentError('Emulators require a demo project');
@@ -76,7 +78,8 @@ final class FirestorePartnerClient implements SocialClient {
     Object? body,
   ]) async {
     await _check(s);
-    final tokens = await credentials.tokensFor(s.uid);
+    final tokens =
+        await credentials.tokensFor(s.uid).timeout(credentialTimeout);
     await _check(s);
     if (tokens.accountId != s.uid || tokens.idToken.isEmpty) {
       throw const _RemoteFailure('UNAUTHENTICATED');
