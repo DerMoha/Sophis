@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:sophis/ui/components/draft_guard.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'package:sophis/l10n/generated/app_localizations.dart';
+import 'package:sophis/utils/number_utils.dart';
 import 'package:sophis/models/food_item.dart';
 import 'package:sophis/models/nutrition_unit.dart';
 import 'package:sophis/services/openfoodfacts_write_service.dart';
@@ -38,6 +40,7 @@ class EditProductSheet extends StatefulWidget {
 }
 
 class _EditProductSheetState extends State<EditProductSheet> {
+  final _draftKey = GlobalKey<DraftGuardState>();
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
   late final TextEditingController _brandController;
@@ -93,13 +96,20 @@ class _EditProductSheetState extends State<EditProductSheet> {
   }
 
   String? _validateRequired(String? value) {
-    if (value == null || value.trim().isEmpty) return '';
+    if (value == null || value.trim().isEmpty) {
+      return AppLocalizations.of(context)!.required;
+    }
     return null;
   }
 
   String? _validateNumber(String? value) {
-    if (value == null || value.trim().isEmpty) return '';
-    if (double.tryParse(_normalizeNumber(value)) == null) return '';
+    if (value == null || value.trim().isEmpty) {
+      return AppLocalizations.of(context)!.required;
+    }
+    final amount = NumberUtils.parseInput(value);
+    if (amount == null || amount < 0) {
+      return AppLocalizations.of(context)!.enterValidNonNegativeNumber;
+    }
     return null;
   }
 
@@ -119,7 +129,7 @@ class _EditProductSheetState extends State<EditProductSheet> {
   }
 
   Future<void> _save() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (_isSaving || !(_formKey.currentState?.validate() ?? false)) return;
 
     setState(() => _isSaving = true);
 
@@ -142,7 +152,16 @@ class _EditProductSheetState extends State<EditProductSheet> {
       servings: widget.existingProduct?.servings ?? const [],
     );
 
-    await widget.onSave(product);
+    try {
+      await widget.onSave(product);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isSaving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.saveEntryFailed)),
+      );
+      return;
+    }
 
     if (mounted) {
       final l10n = AppLocalizations.of(context)!;
@@ -156,6 +175,7 @@ class _EditProductSheetState extends State<EditProductSheet> {
     }
 
     if (mounted) {
+      _draftKey.currentState?.markSaved();
       Navigator.pop(context, product);
     }
   }
@@ -228,253 +248,282 @@ class _EditProductSheetState extends State<EditProductSheet> {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
 
-    return ModalSheetSurface(
-      useSafeArea: false,
-      useAnimatedInsets: false,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const ModalSheetHandle(),
-          ModalSheetHeader(
-            icon: Icons.edit_outlined,
-            title: l10n.editProduct,
-          ),
+    return DraftGuard(
+      key: _draftKey,
+      controllers: [
+        _nameController,
+        _brandController,
+        _caloriesController,
+        _proteinController,
+        _carbsController,
+        _fatController,
+        _fiberController,
+      ],
+      hasOtherChanges: _submitToOff ||
+          _nutritionUnit !=
+              (widget.existingProduct?.nutritionUnit ?? NutritionUnit.gram),
+      isSaving: _isSaving,
+      child: ModalSheetSurface(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const ModalSheetHandle(),
+            ModalSheetHeader(
+              icon: Icons.edit_outlined,
+              title: l10n.editProduct,
+            ),
 
-          // Content
-          Flexible(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.only(
-                left: 24,
-                right: 24,
-                top: 24,
-                bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-              ),
-              child: Form(
-                key: _formKey,
-                autovalidateMode: AutovalidateMode.onUserInteraction,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Name
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: InputDecoration(
-                        labelText: l10n.name,
-                        prefixIcon: const Icon(Icons.restaurant, size: 20),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: AppTheme.spaceMD,
-                          vertical: 14,
-                        ),
-                      ),
-                      validator: _validateRequired,
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Brand
-                    TextFormField(
-                      controller: _brandController,
-                      decoration: const InputDecoration(
-                        labelText: 'Brand',
-                        prefixIcon: Icon(Icons.storefront, size: 20),
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: AppTheme.spaceMD,
-                          vertical: 14,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    DropdownButtonFormField<NutritionUnit>(
-                      initialValue: _nutritionUnit,
-                      decoration: InputDecoration(
-                        labelText: l10n.nutritionBasis,
-                        prefixIcon: const Icon(
-                          Icons.straighten_outlined,
-                          size: 20,
-                        ),
-                      ),
-                      items: NutritionUnit.values
-                          .map(
-                            (unit) => DropdownMenuItem<NutritionUnit>(
-                              value: unit,
-                              child: Text(unit.symbol),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() => _nutritionUnit = value);
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Per 100 unit header
-                    Text(
-                      l10n.per100Unit(_nutritionUnit.symbol),
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    const SizedBox(height: AppTheme.spaceSM2),
-
-                    // Calories
-                    TextFormField(
-                      controller: _caloriesController,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(
-                          RegExp(r'[\d.,]'),
-                        ),
-                      ],
-                      decoration: InputDecoration(
-                        labelText: l10n.calories,
-                        prefixIcon: const Icon(
-                          Icons.local_fire_department_outlined,
-                          size: 20,
-                        ),
-                        suffixText: 'kcal',
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: AppTheme.spaceMD,
-                          vertical: 14,
-                        ),
-                      ),
-                      validator: _validateNumber,
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Macros row
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _proteinController,
-                            keyboardType: TextInputType.number,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.allow(
-                                RegExp(r'[\d.,]'),
-                              ),
-                            ],
-                            decoration: InputDecoration(
-                              labelText: l10n.protein,
-                              suffixText: 'g',
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: AppTheme.spaceSM,
-                                vertical: 14,
-                              ),
-                            ),
-                            validator: _validateNumber,
+            // Content
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.only(
+                  left: 24,
+                  right: 24,
+                  top: 24,
+                  bottom: 16,
+                ),
+                child: Form(
+                  key: _formKey,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Name
+                      TextFormField(
+                        controller: _nameController,
+                        decoration: InputDecoration(
+                          labelText: l10n.name,
+                          prefixIcon: const Icon(Icons.restaurant, size: 20),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: AppTheme.spaceMD,
+                            vertical: 14,
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _carbsController,
-                            keyboardType: TextInputType.number,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.allow(
-                                RegExp(r'[\d.,]'),
-                              ),
-                            ],
-                            decoration: InputDecoration(
-                              labelText: l10n.carbs,
-                              suffixText: 'g',
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: AppTheme.spaceSM,
-                                vertical: 14,
-                              ),
-                            ),
-                            validator: _validateNumber,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _fatController,
-                            keyboardType: TextInputType.number,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.allow(
-                                RegExp(r'[\d.,]'),
-                              ),
-                            ],
-                            decoration: InputDecoration(
-                              labelText: l10n.fat,
-                              suffixText: 'g',
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: AppTheme.spaceSM,
-                                vertical: 14,
-                              ),
-                            ),
-                            validator: _validateNumber,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
+                        validator: _validateRequired,
+                      ),
+                      const SizedBox(height: 16),
 
-                    // Fiber row
-                    TextFormField(
-                      controller: _fiberController,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(
-                          RegExp(r'[\d.,]'),
-                        ),
-                      ],
-                      decoration: InputDecoration(
-                        labelText: l10n.fiber,
-                        suffixText: 'g',
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: AppTheme.spaceSM,
-                          vertical: 14,
+                      // Brand
+                      TextFormField(
+                        controller: _brandController,
+                        decoration: const InputDecoration(
+                          labelText: 'Brand',
+                          prefixIcon: Icon(Icons.storefront, size: 20),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: AppTheme.spaceMD,
+                            vertical: 14,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 24),
+                      const SizedBox(height: 16),
 
-                    if (widget.showSubmitToOff) ...[
-                      _buildOffSubmitRow(context),
+                      DropdownButtonFormField<NutritionUnit>(
+                        initialValue: _nutritionUnit,
+                        decoration: InputDecoration(
+                          labelText: l10n.nutritionBasis,
+                          prefixIcon: const Icon(
+                            Icons.straighten_outlined,
+                            size: 20,
+                          ),
+                        ),
+                        items: NutritionUnit.values
+                            .map(
+                              (unit) => DropdownMenuItem<NutritionUnit>(
+                                value: unit,
+                                child: Text(unit.symbol),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() => _nutritionUnit = value);
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Per 100 unit header
+                      Text(
+                        l10n.per100Unit(_nutritionUnit.symbol),
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(height: AppTheme.spaceSM2),
+
+                      // Calories
+                      TextFormField(
+                        controller: _caloriesController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                            RegExp(r'[\d.,]'),
+                          ),
+                        ],
+                        decoration: InputDecoration(
+                          labelText: l10n.calories,
+                          prefixIcon: const Icon(
+                            Icons.local_fire_department_outlined,
+                            size: 20,
+                          ),
+                          suffixText: 'kcal',
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: AppTheme.spaceMD,
+                            vertical: 14,
+                          ),
+                        ),
+                        validator: _validateNumber,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Macros row
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _proteinController,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                      decimal: true,),
+                              inputFormatters: [
+                                FilteringTextInputFormatter.allow(
+                                  RegExp(r'[\d.,]'),
+                                ),
+                              ],
+                              decoration: InputDecoration(
+                                labelText: l10n.protein,
+                                suffixText: 'g',
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: AppTheme.spaceSM,
+                                  vertical: 14,
+                                ),
+                              ),
+                              validator: _validateNumber,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextFormField(
+                              controller: _carbsController,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                      decimal: true,),
+                              inputFormatters: [
+                                FilteringTextInputFormatter.allow(
+                                  RegExp(r'[\d.,]'),
+                                ),
+                              ],
+                              decoration: InputDecoration(
+                                labelText: l10n.carbs,
+                                suffixText: 'g',
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: AppTheme.spaceSM,
+                                  vertical: 14,
+                                ),
+                              ),
+                              validator: _validateNumber,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextFormField(
+                              controller: _fatController,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                      decimal: true,),
+                              inputFormatters: [
+                                FilteringTextInputFormatter.allow(
+                                  RegExp(r'[\d.,]'),
+                                ),
+                              ],
+                              decoration: InputDecoration(
+                                labelText: l10n.fat,
+                                suffixText: 'g',
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: AppTheme.spaceSM,
+                                  vertical: 14,
+                                ),
+                              ),
+                              validator: _validateNumber,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Fiber row
+                      TextFormField(
+                        controller: _fiberController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                            RegExp(r'[\d.,]'),
+                          ),
+                        ],
+                        decoration: InputDecoration(
+                          labelText: l10n.fiber,
+                          suffixText: 'g',
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: AppTheme.spaceSM,
+                            vertical: 14,
+                          ),
+                        ),
+                      ),
                       const SizedBox(height: 24),
-                    ],
 
-                    // Action buttons
-                    Row(
-                      children: [
-                        if (widget.onReset != null)
-                          TextButton.icon(
-                            onPressed: widget.onReset,
-                            icon: const Icon(Icons.restore, size: 18),
-                            label: Text(l10n.resetToApiData),
-                          ),
-                        const Spacer(),
-                        ElevatedButton.icon(
-                          onPressed: _isSaving ? null : _save,
-                          icon: _isSaving
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Icon(Icons.check, size: 18),
-                          label: Text(l10n.saveCorrection),
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppTheme.spaceLG,
-                              vertical: AppTheme.spaceSM,
+                      if (widget.showSubmitToOff) ...[
+                        _buildOffSubmitRow(context),
+                        const SizedBox(height: 24),
+                      ],
+
+                      // Action buttons
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        alignment: WrapAlignment.end,
+                        children: [
+                          if (widget.onReset != null)
+                            TextButton.icon(
+                              onPressed: _isSaving
+                                  ? null
+                                  : () {
+                                      _draftKey.currentState?.markSaved();
+                                      widget.onReset?.call();
+                                    },
+                              icon: const Icon(Icons.restore, size: 18),
+                              label: Text(l10n.resetToApiData),
+                            ),
+                          ElevatedButton.icon(
+                            onPressed: _isSaving ? null : _save,
+                            icon: _isSaving
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(Icons.check, size: 18),
+                            label: Text(l10n.save),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppTheme.spaceLG,
+                                vertical: AppTheme.spaceSM,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

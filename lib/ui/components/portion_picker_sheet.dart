@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:sophis/ui/components/draft_guard.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:sophis/l10n/generated/app_localizations.dart';
+import 'package:sophis/ui/components/common/entry_feedback.dart';
 import 'package:sophis/models/custom_portion.dart';
 import 'package:sophis/models/food_entry.dart';
 import 'package:sophis/models/food_item.dart';
@@ -186,12 +188,14 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
     if (!mounted) return;
     switch (result) {
       case Success<FoodEntry>(value: final entry):
+        showFoodAddedFeedback(context, entry);
         Navigator.pop(context);
         await widget.onLogged?.call(entry);
-      case Failure<FoodEntry>(message: final message):
+      case Failure<FoodEntry>():
         setState(() => _isAdding = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(message)),
+          SnackBar(
+              content: Text(AppLocalizations.of(context)!.saveEntryFailed),),
         );
     }
   }
@@ -249,7 +253,7 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
     final barcode = widget.barcode;
     if (lookupService == null || barcode == null) return;
 
-    showModalBottomSheet<void>(
+    showDraftBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -413,99 +417,94 @@ class _PortionPickerSheetState extends State<PortionPickerSheet> {
 
     return GestureDetector(
       onTap: _dismissKeyboard,
-      child: DraggableScrollableSheet(
-        initialChildSize: 0.7,
-        minChildSize: 0.45,
-        maxChildSize: 0.95,
-        expand: false,
-        builder: (context, scrollController) => Container(
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          child: Column(
-            children: [
-              const _DragHandle(),
-              _ProductHeader(
-                item: widget.item,
-                selection: _selection,
-                nutrients: nutrients,
-                onEdit: widget.barcode != null && widget.lookupService != null
-                    ? _openEditSheet
-                    : null,
-              ),
-              Expanded(
-                child: ListView(
-                  controller: scrollController,
-                  keyboardDismissBehavior:
-                      ScrollViewKeyboardDismissBehavior.onDrag,
-                  padding: const EdgeInsets.fromLTRB(
-                    AppTheme.spaceLG,
-                    AppTheme.spaceLG,
-                    AppTheme.spaceLG,
-                    24,
-                  ),
-                  children: [
-                    if (_servingOptions.isNotEmpty) ...[
-                      _SectionTitle(title: l10n.portion),
-                      const SizedBox(height: AppTheme.spaceSM2),
-                      _ServingChips(
-                        servings: _servingOptions,
-                        selected: _selection,
-                        onSelect: (serving) =>
-                            _selectPortion(serving.selection),
+      child: Padding(
+        padding: EdgeInsets.only(bottom: keyboardHeight),
+        child: DraggableScrollableSheet(
+          initialChildSize: keyboardHeight > 0 ? 1 : 0.7,
+          minChildSize: 0.45,
+          maxChildSize: 1,
+          expand: false,
+          builder: (context, scrollController) => Container(
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            child: Column(
+              children: [
+                const _DragHandle(),
+                Expanded(
+                  child: ListView(
+                    controller: scrollController,
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    padding: const EdgeInsets.fromLTRB(
+                      AppTheme.spaceLG,
+                      AppTheme.spaceLG,
+                      AppTheme.spaceLG,
+                      24,
+                    ),
+                    children: [
+                      _ProductHeader(
+                        item: widget.item,
+                        selection: _selection,
+                        nutrients: nutrients,
+                        onEdit: widget.barcode != null &&
+                                widget.lookupService != null
+                            ? _openEditSheet
+                            : null,
                       ),
-                      const SizedBox(height: AppTheme.spaceLG),
-                    ],
-                    if (customPortions.isNotEmpty) ...[
-                      _SectionTitle(
-                        title: l10n.myPortions,
-                        trailing: TextButton(
-                          onPressed: () =>
-                              _showEditPortionsSheet(customPortions),
-                          child: Text(l10n.edit),
+                      if (_servingOptions.isNotEmpty) ...[
+                        _SectionTitle(title: l10n.portion),
+                        const SizedBox(height: AppTheme.spaceSM2),
+                        _ServingChips(
+                          servings: _servingOptions,
+                          selected: _selection,
+                          onSelect: (serving) =>
+                              _selectPortion(serving.selection),
                         ),
-                      ),
+                        const SizedBox(height: AppTheme.spaceLG),
+                      ],
+                      if (customPortions.isNotEmpty) ...[
+                        _SectionTitle(
+                          title: l10n.myPortions,
+                          trailing: TextButton(
+                            onPressed: () =>
+                                _showEditPortionsSheet(customPortions),
+                            child: Text(l10n.edit),
+                          ),
+                        ),
+                        const SizedBox(height: AppTheme.spaceSM2),
+                        _SavedPortionChips(
+                          portions: customPortions,
+                          selected: _selection,
+                          onSelect: (portion) =>
+                              _selectPortion(portion.selection),
+                        ),
+                        const SizedBox(height: AppTheme.spaceLG),
+                      ],
+                      _SectionTitle(title: l10n.customAmount),
                       const SizedBox(height: AppTheme.spaceSM2),
-                      _SavedPortionChips(
-                        portions: customPortions,
-                        selected: _selection,
-                        onSelect: (portion) =>
-                            _selectPortion(portion.selection),
+                      _ExactAmountInput(
+                        controller: _amountController,
+                        focusNode: _amountFocusNode,
+                        unit: _unit,
+                        onChanged: _onExactAmountChanged,
+                        onSubmitted: (_) => _dismissKeyboard(),
+                        onSavePreset: _showSavePresetDialog,
                       ),
-                      const SizedBox(height: AppTheme.spaceLG),
                     ],
-                    _SectionTitle(title: l10n.customAmount),
-                    const SizedBox(height: AppTheme.spaceSM2),
-                    _ExactAmountInput(
-                      controller: _amountController,
-                      focusNode: _amountFocusNode,
-                      unit: _unit,
-                      onChanged: _onExactAmountChanged,
-                      onSubmitted: (_) => _dismissKeyboard(),
-                      onSavePreset: _showSavePresetDialog,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      l10n.portionPickerKeyboardHint,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    if (keyboardHeight > 0)
-                      SizedBox(height: keyboardHeight * 0.55),
-                  ],
+                  ),
                 ),
-              ),
-              _AddButton(
-                selection: _selection,
-                calories: nutrients.calories,
-                keyboardHeight: keyboardHeight,
-                isAdding: _isAdding,
-                onAdd: _selection.isValid ? _addAndClose : null,
-              ),
-            ],
+                _AddButton(
+                  selection: _selection,
+                  calories: nutrients.calories,
+                  keyboardHeight: 0,
+                  isAdding: _isAdding,
+                  onAdd: _selection.isValid ? _addAndClose : null,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -653,11 +652,13 @@ class _SectionTitle extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          title,
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+        Expanded(
+          child: Text(
+            title,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
         ),
         if (trailing != null) trailing!,
       ],
@@ -891,7 +892,9 @@ class _AddButton extends StatelessWidget {
         ? '$amount ${selection.unit.symbol}'
         : '${selection.labelQuantity == null ? '' : '${_formatNumber(selection.labelQuantity!)} '}$label · $amount ${selection.unit.symbol}';
     return AnimatedContainer(
-      duration: AppTheme.animFaster,
+      duration: MediaQuery.disableAnimationsOf(context)
+          ? Duration.zero
+          : AppTheme.animFaster,
       padding: EdgeInsets.fromLTRB(
         16,
         12,
@@ -928,7 +931,9 @@ class _AddButton extends StatelessWidget {
                       portion,
                       calories.toStringAsFixed(0),
                     ),
-                    style: theme.textTheme.labelLarge,
+                    style: theme.textTheme.labelLarge
+                        ?.copyWith(color: theme.colorScheme.onPrimary),
+                    textAlign: TextAlign.center,
                   ),
           ),
         ),

@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'package:sophis/models/meal_plan.dart';
+import 'package:sophis/ui/components/draft_guard.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gal/gal.dart';
@@ -38,6 +40,8 @@ class AddPlannedMealSheet extends StatefulWidget {
 
 class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
     with SingleTickerProviderStateMixin {
+  final _draftKey = GlobalKey<DraftGuardState>();
+  bool _isSaving = false;
   late TabController _tabController;
   String _selectedMealType = 'breakfast';
   final TextEditingController _searchController = TextEditingController();
@@ -94,107 +98,121 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
     final mealTypes = context.watch<SettingsProvider>().mealTypes;
+    final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
 
-    return ModalSheetSurface(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      child: SizedBox(
-        height: MediaQuery.of(context).size.height * 0.85,
-        child: Column(
-          children: [
-            ModalSheetHandle(color: theme.dividerColor),
-            ModalSheetHeader(
-              title: l10n.addMeal,
-              padding: const EdgeInsets.fromLTRB(20, 16, 16, 8),
-              trailing: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                  border: Border.all(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.12),
-                  ),
-                  borderRadius: BorderRadius.circular(AppTheme.radiusFull),
+    return DraftGuard(
+      key: _draftKey,
+      controllers: const [],
+      isSaving: _isSaving,
+      child: AbsorbPointer(
+        absorbing: _isSaving,
+        child: ModalSheetSurface(
+          backgroundColor: theme.scaffoldBackgroundColor,
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height * 0.85,
+            child: Column(
+              children: [
+                ModalSheetHandle(color: theme.dividerColor),
+                ModalSheetHeader(
+                  title: l10n.addMeal,
+                  padding: const EdgeInsets.fromLTRB(20, 16, 16, 8),
                 ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _selectedMealType,
-                    isDense: true,
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                    icon: Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      color: theme.colorScheme.primary,
+                if (!keyboardOpen) Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                      border: Border.all(
+                        color:
+                            theme.colorScheme.primary.withValues(alpha: 0.12),
+                      ),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusFull),
                     ),
-                    items: mealTypes
-                        .map(
-                          (mealType) => DropdownMenuItem(
-                            value: mealType.id,
-                            child: Text(mealType.name),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedMealType = value!;
-                      });
-                    },
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _selectedMealType,
+                        isDense: true,
+                        isExpanded: true,
+                        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                        icon: Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          color: theme.colorScheme.primary,
+                        ),
+                        items: mealTypes
+                            .map(
+                              (mealType) => DropdownMenuItem(
+                                value: mealType.id,
+                                child: Text(mealType.displayName(l10n)),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedMealType = value!;
+                          });
+                        },
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
 
-            // Tabs
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest.withValues(
-                    alpha: 0.45,
+                // Tabs
+                if (!keyboardOpen) Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color:
+                          theme.colorScheme.surfaceContainerHighest.withValues(
+                        alpha: 0.45,
+                      ),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+                    ),
+                    child: TabBar(
+                      controller: _tabController,
+                      tabs: [
+                        Tab(text: l10n.recipes),
+                        Tab(text: l10n.searchFood),
+                        Tab(text: '📷 ${l10n.scan}'),
+                        Tab(text: l10n.manualEntry),
+                      ],
+                      labelColor: theme.colorScheme.primary,
+                      unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
+                      labelStyle: theme.textTheme.labelMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                      dividerColor: Colors.transparent,
+                      indicator: BoxDecoration(
+                        color: theme.colorScheme.surface,
+                        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                      ),
+                      indicatorSize: TabBarIndicatorSize.tab,
+                      isScrollable: true,
+                    ),
                   ),
-                  borderRadius: BorderRadius.circular(AppTheme.radiusLG),
                 ),
-                child: TabBar(
-                  controller: _tabController,
-                  tabs: [
-                    Tab(text: l10n.recipes),
-                    Tab(text: l10n.searchFood),
-                    Tab(text: '📷 ${l10n.scan}'),
-                    Tab(text: l10n.manualEntry),
-                  ],
-                  labelColor: theme.colorScheme.primary,
-                  unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
-                  labelStyle: theme.textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                  dividerColor: Colors.transparent,
-                  indicator: BoxDecoration(
-                    color: theme.colorScheme.surface,
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                  ),
-                  indicatorSize: TabBarIndicatorSize.tab,
-                  isScrollable: true,
-                ),
-              ),
-            ),
 
-            // Tab content
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.only(bottom: bottomPadding),
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildRecipesTab(context, theme, isDark, l10n),
-                    _buildSearchTab(context, theme, isDark, l10n),
-                    _buildScanRecipeTab(context, theme, isDark, l10n),
-                    _buildManualTab(context, theme, isDark, l10n),
-                  ],
+                // Tab content
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.zero,
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildRecipesTab(context, theme, isDark, l10n),
+                        _buildSearchTab(context, theme, isDark, l10n),
+                        _buildScanRecipeTab(context, theme, isDark, l10n),
+                        _buildManualTab(context, theme, isDark, l10n),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -209,34 +227,17 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
     final recipes = context.watch<NutritionProvider>().recipes;
 
     if (recipes.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.menu_book_outlined,
-                size: AppTheme.iconXL,
-                color:
-                    theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                l10n.noRecipes,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                l10n.noRecipesSubtitle,
-                style: theme.textTheme.bodySmall,
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
+      return ListView(
+        padding: const EdgeInsets.all(24),
+        children: [
+          Icon(Icons.menu_book_outlined, size: AppTheme.iconXL,
+            color: theme.colorScheme.onSurfaceVariant,),
+          const SizedBox(height: 16),
+          Text(l10n.noRecipes, textAlign: TextAlign.center,
+            style: theme.textTheme.titleMedium,),
+          TextButton(onPressed: () => _tabController.animateTo(3),
+            child: Text(l10n.manualEntry),),
+        ],
       );
     }
 
@@ -709,8 +710,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
     }
   }
 
-  void _addExtractedRecipeAsMeal(RecipeExtraction recipe) {
-    final nutrition = context.read<NutritionProvider>();
+  Future<void> _addExtractedRecipeAsMeal(RecipeExtraction recipe) async {
     final l10n = AppLocalizations.of(context)!;
 
     final plannedMeal = PlannedMealFactory.fromExtractedRecipe(
@@ -720,9 +720,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
       fallbackName: l10n.scannedRecipeName,
     );
 
-    nutrition.addPlannedMeal(plannedMeal);
-    Navigator.pop(context);
-    HapticFeedback.mediumImpact();
+    await _savePlannedMeal(plannedMeal);
   }
 
   Widget _buildFoodResultCard(
@@ -915,8 +913,8 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
               ),
               ElevatedButton(
                 onPressed: () {
-                  _addRecipeAsPlannedMeal(recipe, servings);
                   Navigator.pop(context);
+                  _addRecipeAsPlannedMeal(recipe, servings);
                 },
                 child: Text(l10n.add),
               ),
@@ -927,9 +925,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
     );
   }
 
-  void _addRecipeAsPlannedMeal(Recipe recipe, int servings) {
-    final nutrition = context.read<NutritionProvider>();
-
+  Future<void> _addRecipeAsPlannedMeal(Recipe recipe, int servings) async {
     final plannedMeal = PlannedMealFactory.fromRecipe(
       recipe: recipe,
       servings: servings,
@@ -937,22 +933,45 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
       meal: _selectedMealType,
     );
 
-    nutrition.addPlannedMeal(plannedMeal);
-    Navigator.pop(context);
-    HapticFeedback.mediumImpact();
+    await _savePlannedMeal(plannedMeal);
   }
 
-  void _addFoodAsPlannedMeal(FoodItem food) {
-    final nutrition = context.read<NutritionProvider>();
-
+  Future<void> _addFoodAsPlannedMeal(FoodItem food) async {
     final plannedMeal = PlannedMealFactory.fromFoodItem(
       food: food,
       date: widget.date,
       meal: _selectedMealType,
     );
 
-    nutrition.addPlannedMeal(plannedMeal);
-    Navigator.pop(context);
-    HapticFeedback.mediumImpact();
+    await _savePlannedMeal(plannedMeal);
+  }
+
+  Future<void> _savePlannedMeal(PlannedMeal meal) async {
+    if (_isSaving) return;
+    final nutrition = context.read<NutritionProvider>();
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    setState(() => _isSaving = true);
+    try {
+      await nutrition.addPlannedMeal(meal);
+      if (!mounted) return;
+      _draftKey.currentState?.markSaved();
+      if (ModalRoute.of(context)?.popDisposition ==
+          RoutePopDisposition.doNotPop) {
+        // Keep a manual draft in another tab instead of discarding it.
+        _draftKey.currentState?.resumeEditing();
+        messenger
+            .showSnackBar(SnackBar(content: Text(l10n.addedSnack(meal.name))));
+      } else {
+        Navigator.pop(context);
+      }
+      HapticFeedback.mediumImpact();
+    } catch (_) {
+      if (messenger.mounted) {
+        messenger.showSnackBar(SnackBar(content: Text(l10n.saveEntryFailed)));
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 }

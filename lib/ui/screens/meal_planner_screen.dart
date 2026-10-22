@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:sophis/ui/components/common/entry_feedback.dart';
+import 'package:sophis/ui/components/draft_guard.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -7,7 +9,6 @@ import 'package:sophis/models/custom_meal_type.dart';
 import 'package:sophis/models/meal_plan.dart';
 import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/providers/settings_provider.dart';
-import 'package:sophis/ui/components/common/ui_primitives.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/theme/animations.dart';
 import 'package:sophis/ui/components/organic_components.dart';
@@ -21,6 +22,7 @@ class MealPlannerScreen extends StatefulWidget {
 }
 
 class _MealPlannerScreenState extends State<MealPlannerScreen> {
+  final Set<String> _loggingMealIds = {};
   late PageController _dayPageController;
   late ScrollController _dayScrollController;
   late DateTime _baseDate;
@@ -398,16 +400,6 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
               const SizedBox(height: AppTheme.spaceSM2),
           ];
         }),
-
-        // Helpful tip when empty
-        if (meals.isEmpty) ...[
-          const SizedBox(height: 32),
-          EmptyDayHint(
-            icon: Icons.restaurant_menu_outlined,
-            title: l10n.noMealsPlanned,
-            subtitle: l10n.tapToAddFirstMeal,
-          ),
-        ],
       ],
     );
   }
@@ -423,7 +415,7 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
     final totalCal = meals.fold(0.0, (sum, m) => sum + m.calories);
 
     return MealCard(
-      title: mealType.name,
+      title: mealType.displayName(l10n),
       icon: mealType.icon,
       calories: totalCal,
       color: mealType.color,
@@ -457,7 +449,11 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
         color: AppTheme.error,
         child: const Icon(Icons.delete_outline, color: Colors.white),
       ),
-      onDismissed: (_) => nutrition.removePlannedMeal(meal.id),
+      confirmDismiss: (_) async {
+        await _deleteMeal(context, nutrition, meal);
+        // Provider removes the tile only after the durable write succeeds.
+        return false;
+      },
       child: FoodEntryTile(
         name: meal.name,
         calories: meal.calories,
@@ -470,9 +466,21 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
     );
   }
 
+  Future<void> _deleteMeal(
+    BuildContext context,
+    NutritionProvider nutrition,
+    PlannedMeal meal,
+  ) =>
+      deleteEntryWithUndo(
+        context,
+        remove: () => nutrition.removePlannedMeal(meal.id),
+        restore: () => nutrition.addPlannedMeal(meal),
+        label: meal.name,
+      );
+
   void _showAddMealSheet(BuildContext context, {String? mealType}) {
     final selectedDate = _getDateForOffset(_selectedDayOffset);
-    showModalBottomSheet(
+    showDraftBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -507,11 +515,8 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
                 title: Text(l10n.logAsEaten),
                 subtitle: Text(l10n.logAsEatenSubtitle),
                 onTap: () {
-                  nutrition.logPlannedMeal(meal);
                   Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l10n.addedSnack(meal.name))),
-                  );
+                  _logMeal(meal, nutrition);
                 },
               ),
               ListTile(
@@ -533,8 +538,8 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
                   style: const TextStyle(color: AppTheme.error),
                 ),
                 onTap: () {
-                  nutrition.removePlannedMeal(meal.id);
                   Navigator.pop(context);
+                  _deleteMeal(this.context, nutrition, meal);
                 },
               ),
             ],
@@ -542,6 +547,25 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _logMeal(PlannedMeal meal, NutritionProvider nutrition) async {
+    if (!_loggingMealIds.add(meal.id)) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      await nutrition.logPlannedMeal(meal);
+      if (messenger.mounted) {
+        messenger
+            .showSnackBar(SnackBar(content: Text(l10n.addedSnack(meal.name))));
+      }
+    } catch (_) {
+      if (messenger.mounted) {
+        messenger.showSnackBar(SnackBar(content: Text(l10n.saveEntryFailed)));
+      }
+    } finally {
+      _loggingMealIds.remove(meal.id);
+    }
   }
 
   Future<void> _showCopyDialog(BuildContext context, PlannedMeal meal) async {
@@ -559,10 +583,14 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
     );
 
     if (selectedDate != null && mounted) {
-      nutrition.copyPlannedMealToDate(meal, selectedDate);
-      messenger.showSnackBar(
-        SnackBar(content: Text(l10n.mealCopied)),
-      );
+      try {
+        await nutrition.copyPlannedMealToDate(meal, selectedDate);
+        if (!messenger.mounted) return;
+        messenger.showSnackBar(SnackBar(content: Text(l10n.mealCopied)));
+      } catch (_) {
+        if (!messenger.mounted) return;
+        messenger.showSnackBar(SnackBar(content: Text(l10n.saveEntryFailed)));
+      }
     }
   }
 }

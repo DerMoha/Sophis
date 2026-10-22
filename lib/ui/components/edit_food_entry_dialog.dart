@@ -5,6 +5,8 @@ import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/food_entry.dart';
 import 'package:sophis/models/nutrition_unit.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
+import 'package:sophis/ui/components/draft_guard.dart';
+import 'package:sophis/utils/number_utils.dart';
 
 /// Edits a logged portion while retaining its nutrition and source metadata.
 class EditFoodEntryDialog extends StatefulWidget {
@@ -17,6 +19,7 @@ class EditFoodEntryDialog extends StatefulWidget {
 }
 
 class _EditFoodEntryDialogState extends State<EditFoodEntryDialog> {
+  final _draftKey = GlobalKey<DraftGuardState>();
   final _formKey = GlobalKey<FormState>();
   final _identityKey = GlobalKey();
   final _nutritionSectionKey = GlobalKey();
@@ -30,7 +33,7 @@ class _EditFoodEntryDialogState extends State<EditFoodEntryDialog> {
   String? _locale;
   final _nutritionKeys = List.generate(5, (_) => GlobalKey());
 
-  double? _parse(String text) => double.tryParse(text.replaceAll(',', '.'));
+  double? _parse(String text) => NumberUtils.parseInput(text);
 
   @override
   void initState() {
@@ -113,6 +116,7 @@ class _EditFoodEntryDialogState extends State<EditFoodEntryDialog> {
     }
     if (!_formKey.currentState!.validate()) return;
     final scaled = widget.entry.scaledBy(_factor);
+    _draftKey.currentState?.markSaved();
     Navigator.pop(
       context,
       scaled.copyWith(
@@ -324,63 +328,67 @@ class _EditFoodEntryDialogState extends State<EditFoodEntryDialog> {
         ],
       ),
     );
-    return Dialog(
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-      clipBehavior: Clip.antiAlias,
-      child: SizedBox(
-        width: 560,
-        height: MediaQuery.sizeOf(context).height * 0.9,
-        child: Form(
-          key: _formKey,
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final compact = MediaQuery.viewInsetsOf(context).bottom > 0 ||
-                  constraints.maxHeight < 500;
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-                    child: Text(
-                      l10n.editEntry,
-                      style: theme.textTheme.headlineSmall,
+    return DraftGuard(
+      key: _draftKey,
+      controllers: [_name, _amount, ..._nutrition],
+      child: Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        clipBehavior: Clip.antiAlias,
+        child: SizedBox(
+          width: 560,
+          height: MediaQuery.sizeOf(context).height * 0.9,
+          child: Form(
+            key: _formKey,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final compact = MediaQuery.viewInsetsOf(context).bottom > 0 ||
+                    constraints.maxHeight < 500;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+                      child: Text(
+                        l10n.editEntry,
+                        style: theme.textTheme.headlineSmall,
+                      ),
                     ),
-                  ),
-                  if (!compact) identity,
-                  Expanded(
-                    child: SingleChildScrollView(
-                      keyboardDismissBehavior:
-                          ScrollViewKeyboardDismissBehavior.onDrag,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                    if (!compact) identity,
+                    Expanded(
+                      child: SingleChildScrollView(
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            if (compact) identity,
+                            nutrition,
+                          ],
+                        ),
+                      ),
+                    ),
+                    const Divider(height: 1),
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: OverflowBar(
+                        alignment: MainAxisAlignment.end,
+                        spacing: 12,
                         children: [
-                          if (compact) identity,
-                          nutrition,
+                          TextButton(
+                            onPressed: () => Navigator.maybePop(context),
+                            child: Text(l10n.cancel),
+                          ),
+                          FilledButton(
+                            onPressed: _save,
+                            child: Text(l10n.save),
+                          ),
                         ],
                       ),
                     ),
-                  ),
-                  const Divider(height: 1),
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: OverflowBar(
-                      alignment: MainAxisAlignment.end,
-                      spacing: 12,
-                      children: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: Text(l10n.cancel),
-                        ),
-                        FilledButton(
-                          onPressed: _save,
-                          child: Text(l10n.save),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              );
-            },
+                  ],
+                );
+              },
+            ),
           ),
         ),
       ),

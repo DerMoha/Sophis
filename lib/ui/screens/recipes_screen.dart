@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:sophis/ui/components/draft_guard.dart';
+import 'package:sophis/utils/number_utils.dart';
 import 'package:provider/provider.dart';
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/recipe.dart';
@@ -7,6 +10,7 @@ import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/theme/animations.dart';
 import 'package:uuid/uuid.dart';
+import 'package:sophis/ui/components/organic/utility.dart';
 
 class RecipesScreen extends StatelessWidget {
   const RecipesScreen({super.key});
@@ -14,13 +18,13 @@ class RecipesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.recipes),
         actions: [
           IconButton(
+            tooltip: l10n.createRecipe,
             icon: const Icon(Icons.add),
             onPressed: () => Navigator.push(
               context,
@@ -37,21 +41,12 @@ class RecipesScreen extends StatelessWidget {
             return FadeInSlide(
               index: 0,
               child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.restaurant_outlined,
-                      size: AppTheme.iconHero,
-                      color: theme.disabledColor,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      l10n.noEntries,
-                      style: TextStyle(color: theme.disabledColor),
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton.icon(
+                child: SingleChildScrollView(
+                  child: EmptyState(
+                    icon: Icons.restaurant_outlined,
+                    title: l10n.noRecipes,
+                    subtitle: l10n.noRecipesSubtitle,
+                    action: FilledButton.icon(
                       onPressed: () => Navigator.push(
                         context,
                         AppTheme.slideRoute(const RecipeCreateScreen()),
@@ -59,7 +54,7 @@ class RecipesScreen extends StatelessWidget {
                       icon: const Icon(Icons.add),
                       label: Text(l10n.createRecipe),
                     ),
-                  ],
+                  ),
                 ),
               ),
             );
@@ -150,7 +145,8 @@ class RecipesScreen extends StatelessWidget {
             children: [
               TextField(
                 controller: servingsController,
-                keyboardType: TextInputType.number,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
                 decoration: InputDecoration(
                   labelText: l10n.servings,
                 ),
@@ -163,7 +159,7 @@ class RecipesScreen extends StatelessWidget {
                     .map(
                       (mealType) => DropdownMenuItem(
                         value: mealType.id,
-                        child: Text(mealType.name),
+                        child: Text(mealType.displayName(l10n)),
                       ),
                     )
                     .toList(),
@@ -205,6 +201,10 @@ class RecipeCreateScreen extends StatefulWidget {
 }
 
 class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
+  final _draftKey = GlobalKey<DraftGuardState>();
+  bool _isSaving = false;
+  String? _servingsError;
+
   final _nameController = TextEditingController();
   final _servingsController = TextEditingController(text: '1');
   final _notesController = TextEditingController();
@@ -254,13 +254,15 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
               const SizedBox(height: AppTheme.spaceSM2),
               TextField(
                 controller: amountController,
-                keyboardType: TextInputType.number,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
                 decoration: InputDecoration(labelText: l10n.amountGrams),
               ),
               const SizedBox(height: AppTheme.spaceSM2),
               TextField(
                 controller: caloriesController,
-                keyboardType: TextInputType.number,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
                 decoration: InputDecoration(labelText: l10n.calories),
               ),
               const SizedBox(height: AppTheme.spaceSM2),
@@ -269,7 +271,8 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
                   Expanded(
                     child: TextField(
                       controller: proteinController,
-                      keyboardType: TextInputType.number,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
                       decoration: InputDecoration(labelText: l10n.proteinG),
                     ),
                   ),
@@ -277,7 +280,8 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
                   Expanded(
                     child: TextField(
                       controller: carbsController,
-                      keyboardType: TextInputType.number,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
                       decoration: InputDecoration(labelText: l10n.carbsG),
                     ),
                   ),
@@ -285,7 +289,8 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
                   Expanded(
                     child: TextField(
                       controller: fatController,
-                      keyboardType: TextInputType.number,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
                       decoration: InputDecoration(labelText: l10n.fatG),
                     ),
                   ),
@@ -314,11 +319,12 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
               final ingredient = RecipeIngredient(
                 id: const Uuid().v4(),
                 name: nameController.text,
-                amountGrams: double.tryParse(amountController.text) ?? 100,
-                calories: double.tryParse(caloriesController.text) ?? 0,
-                protein: double.tryParse(proteinController.text) ?? 0,
-                carbs: double.tryParse(carbsController.text) ?? 0,
-                fat: double.tryParse(fatController.text) ?? 0,
+                amountGrams:
+                    NumberUtils.parseInput(amountController.text) ?? 100,
+                calories: NumberUtils.parseInput(caloriesController.text) ?? 0,
+                protein: NumberUtils.parseInput(proteinController.text) ?? 0,
+                carbs: NumberUtils.parseInput(carbsController.text) ?? 0,
+                fat: NumberUtils.parseInput(fatController.text) ?? 0,
               );
 
               setState(() => _ingredients.add(ingredient));
@@ -332,6 +338,7 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
   }
 
   Future<void> _save() async {
+    if (_isSaving) return;
     final l10n = AppLocalizations.of(context)!;
     if (_nameController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -343,25 +350,45 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
       return;
     }
 
+    final servings = int.tryParse(_servingsController.text);
+    if (servings == null || servings <= 0) {
+      setState(() => _servingsError = l10n.enterValidPositiveNumber);
+      return;
+    }
+    setState(() {
+      _servingsError = null;
+      _isSaving = true;
+    });
     FocusScope.of(context).unfocus();
 
     final recipe = Recipe(
       id: widget.recipe?.id ?? const Uuid().v4(),
       name: _nameController.text,
       ingredients: _ingredients,
-      servings: int.tryParse(_servingsController.text) ?? 1,
+      servings: servings,
       notes: _notesController.text.isEmpty ? null : _notesController.text,
       createdAt: widget.recipe?.createdAt ?? DateTime.now(),
     );
 
-    final provider = context.read<NutritionProvider>();
-    if (widget.recipe != null) {
-      await provider.updateRecipe(recipe);
-    } else {
-      await provider.addRecipe(recipe);
+    try {
+      final provider = context.read<NutritionProvider>();
+      if (widget.recipe != null) {
+        await provider.updateRecipe(recipe);
+      } else {
+        await provider.addRecipe(recipe);
+      }
+      if (!mounted) return;
+      _draftKey.currentState?.markSaved();
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(l10n.entrySaved)));
+      Navigator.pop(context);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(l10n.saveEntryFailed)));
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
-
-    if (mounted) Navigator.pop(context);
   }
 
   @override
@@ -373,97 +400,107 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
     final servings = int.tryParse(_servingsController.text) ?? 1;
     final perServing = servings > 0 ? totalCal / servings : totalCal;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.recipe != null ? l10n.editRecipe : l10n.newRecipe),
-        actions: [
-          TextButton(
-            onPressed: _save,
-            child: Text(l10n.save),
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          TextField(
-            controller: _nameController,
-            decoration: InputDecoration(labelText: l10n.recipeName),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _servingsController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(labelText: l10n.servings),
-                  onChanged: (_) => setState(() {}),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Text(
-                l10n.kcalPerServing(perServing.toStringAsFixed(0)),
-                style: theme.textTheme.bodyMedium,
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-
-          // Ingredients
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(l10n.ingredients, style: theme.textTheme.titleMedium),
-              TextButton.icon(
-                onPressed: _addIngredient,
-                icon: const Icon(Icons.add),
-                label: Text(l10n.add),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-
-          if (_ingredients.isEmpty)
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Text(
-                  l10n.noIngredientsYet,
-                  style: TextStyle(color: theme.disabledColor),
-                ),
-              ),
-            )
-          else
-            ..._ingredients.asMap().entries.map((entry) {
-              final i = entry.value;
-              return Card(
-                key: ValueKey(i.id),
-                child: ListTile(
-                  dense: true,
-                  title: Text(i.name),
-                  subtitle: Text(
-                    '${i.amountGrams.toStringAsFixed(0)}g • ${i.calories.toStringAsFixed(0)} kcal',
-                  ),
-                  trailing: IconButton(
-                    icon:
-                        const Icon(Icons.delete_outline, color: AppTheme.error),
-                    onPressed: () => setState(() => _ingredients.remove(i)),
-                  ),
-                ),
-              );
-            }),
-
-          const SizedBox(height: 24),
-          TextField(
-            controller: _notesController,
-            maxLines: 3,
-            decoration: InputDecoration(
-              labelText: l10n.noteOptional,
-              alignLabelWithHint: true,
+    return DraftGuard(
+      key: _draftKey,
+      controllers: [_nameController, _servingsController, _notesController],
+      hasOtherChanges: !listEquals(_ingredients,
+          widget.recipe?.ingredients ?? const <RecipeIngredient>[],),
+      isSaving: _isSaving,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(widget.recipe != null ? l10n.editRecipe : l10n.newRecipe),
+          actions: [
+            TextButton(
+              onPressed: _isSaving ? null : _save,
+              child: Text(l10n.save),
             ),
-          ),
-        ],
+          ],
+        ),
+        body: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            TextField(
+              controller: _nameController,
+              decoration: InputDecoration(labelText: l10n.recipeName),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _servingsController,
+                    enabled: !_isSaving,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    decoration: InputDecoration(
+                        labelText: l10n.servings, errorText: _servingsError,),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  l10n.kcalPerServing(perServing.toStringAsFixed(0)),
+                  style: theme.textTheme.bodyMedium,
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // Ingredients
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(l10n.ingredients, style: theme.textTheme.titleMedium),
+                TextButton.icon(
+                  onPressed: _addIngredient,
+                  icon: const Icon(Icons.add),
+                  label: Text(l10n.add),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+
+            if (_ingredients.isEmpty)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Text(
+                    l10n.noIngredientsYet,
+                    style: TextStyle(color: theme.disabledColor),
+                  ),
+                ),
+              )
+            else
+              ..._ingredients.asMap().entries.map((entry) {
+                final i = entry.value;
+                return Card(
+                  key: ValueKey(i.id),
+                  child: ListTile(
+                    dense: true,
+                    title: Text(i.name),
+                    subtitle: Text(
+                      '${i.amountGrams.toStringAsFixed(0)}g • ${i.calories.toStringAsFixed(0)} kcal',
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete_outline,
+                          color: AppTheme.error,),
+                      onPressed: () => setState(() => _ingredients.remove(i)),
+                    ),
+                  ),
+                );
+              }),
+
+            const SizedBox(height: 24),
+            TextField(
+              controller: _notesController,
+              maxLines: 3,
+              decoration: InputDecoration(
+                labelText: l10n.noteOptional,
+                alignLabelWithHint: true,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

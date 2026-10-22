@@ -12,6 +12,8 @@ import 'package:sophis/ui/components/portion_picker_sheet.dart';
 import 'package:sophis/ui/components/common/ui_primitives.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/theme/animations.dart';
+import 'package:sophis/ui/components/organic/utility.dart';
+import 'package:sophis/ui/screens/add_food_screen.dart';
 
 class FoodSearchScreen extends StatefulWidget {
   final String meal;
@@ -61,6 +63,13 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
 
     // Start searching after 2+ characters with 300ms debounce
     if (query.length >= 2) {
+      _searchRequestId++;
+      setState(() {
+        _results = [];
+        _error = null;
+        _apiNotice = null;
+        _isSearchingApi = true;
+      });
       _debounce = Timer(const Duration(milliseconds: 300), () {
         _search(query);
       });
@@ -391,9 +400,34 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
       return _buildMyFoodsAndRecent(l10n);
     }
 
+    if (_searchController.text.trim().length < 2) {
+      return Center(child: Text(l10n.searchMinimumHint));
+    }
+
     if (_error != null) {
-      return Center(
-        child: Text(_error!, style: const TextStyle(color: AppTheme.error)),
+      return SingleChildScrollView(
+        child: EmptyState(
+          icon: Icons.wifi_off_rounded,
+          title: _error!,
+          action: Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            alignment: WrapAlignment.center,
+            children: [
+              FilledButton(
+                onPressed: () => _search(_searchController.text.trim()),
+                child: Text(l10n.tryAgain),
+              ),
+              TextButton(
+                onPressed: () => Navigator.push(
+                  context,
+                  AppTheme.slideRoute(AddFoodScreen(meal: widget.meal)),
+                ),
+                child: Text(l10n.manualEntry),
+              ),
+            ],
+          ),
+        ),
       );
     }
 
@@ -402,10 +436,19 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
         // Still searching API, no local results found yet
         return const LoadingState();
       }
-      return Center(
-        child: Text(
-          l10n.noEntries,
-          style: TextStyle(color: Theme.of(context).disabledColor),
+      return SingleChildScrollView(
+        child: EmptyState(
+          icon: Icons.search_off_rounded,
+          title: l10n.foodSearchEmptyTitle,
+          subtitle: l10n.foodSearchEmptyHint,
+          action: FilledButton.icon(
+            icon: const Icon(Icons.edit_outlined),
+            label: Text(l10n.manualEntry),
+            onPressed: () => Navigator.push(
+              context,
+              AppTheme.slideRoute(AddFoodScreen(meal: widget.meal)),
+            ),
+          ),
         ),
       );
     }

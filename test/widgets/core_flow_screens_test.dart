@@ -31,14 +31,14 @@ void main() {
       expect(find.text('Manual entry'), findsOneWidget);
 
       await tester.enterText(find.byType(TextFormField).at(0), 'Toast');
-      await tester.enterText(find.byType(TextFormField).at(1), '250');
+      await tester.enterText(find.byType(TextFormField).at(1), '250,5');
       await tester.tap(find.widgetWithText(TextButton, 'Save'));
       await tester.pump();
       await tester.pump(const Duration(seconds: 2));
 
       expect(nutrition.entries.single.id, 'manual-entry-1');
       expect(nutrition.entries.single.name, 'Toast');
-      expect(nutrition.entries.single.calories, 250);
+      expect(nutrition.entries.single.calories, 250.5);
       expect(nutrition.entries.single.meal, 'breakfast');
     });
 
