@@ -463,6 +463,12 @@ class NutritionProvider extends ChangeNotifier {
     return entries;
   }
 
+  Future<List<FoodEntry>> repeatEntries(List<FoodEntry> source) async {
+    final entries = await _foodLog.repeatEntries(source);
+    if (entries.isNotEmpty) await _syncNutritionForDate(entries.first.timestamp);
+    return entries;
+  }
+
   Future<List<FoodEntry>> copyYesterdayLoggedMeals({
     DateTime? targetDate,
   }) async {

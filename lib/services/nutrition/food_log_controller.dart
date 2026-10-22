@@ -219,8 +219,11 @@ class FoodLogController {
   /// Repeats the most recently logged meal at [timestamp].
   Future<List<FoodEntry>> repeatLastMeal({DateTime? timestamp, String? meal}) async {
     final source = getLastLoggedMealEntries(meal: meal);
-    if (source.isEmpty) return const <FoodEntry>[];
+    return repeatEntries(source, timestamp: timestamp);
+  }
 
+  Future<List<FoodEntry>> repeatEntries(List<FoodEntry> source, {DateTime? timestamp}) async {
+    if (source.isEmpty) return const <FoodEntry>[];
     final start = timestamp ?? DateTime.now();
     final timestamps = [
       for (var index = 0; index < source.length; index++)

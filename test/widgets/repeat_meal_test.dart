@@ -22,6 +22,16 @@ void main() {
       nutritionProvider: nutrition, settingsProvider: settings,);
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.replay_outlined));
+    await tester.pumpAndSettle();
+    expect(nutrition.getEntriesForDate(now), isEmpty);
+    expect(find.text('breakfast'), findsOneWidget);
+    expect(find.text('dinner'), findsNothing);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(nutrition.getEntriesForDate(now), isEmpty);
+    await tester.tap(find.byIcon(Icons.replay_outlined));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Add'));
     await tester.pump();
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
     await tester.pumpAndSettle();
