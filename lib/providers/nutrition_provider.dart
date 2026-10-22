@@ -147,11 +147,15 @@ class NutritionProvider extends ChangeNotifier {
   /// Called by food log controller when food entries change.
   /// Triggers streak update and home widget refresh.
   Future<void> _onFoodChanged() async {
-    await _updateStreak();
-    await _persistence.saveRecentFoods(
-      _foodLog.recentFoods,
-      _foodLog.recentFoodMeals,
-    );
+    // The food write is already durable. Derived stats and recent-food cache
+    // failures must not invite users to submit the same entry again.
+    try {
+      await _updateStreak();
+      await _persistence.saveRecentFoods(
+          _foodLog.recentFoods, _foodLog.recentFoodMeals,);
+    } catch (error) {
+      debugPrint('Food saved; auxiliary update failed: $error');
+    }
     HomeWidgetService.updateWidgetData(this);
     notifyListeners();
   }
@@ -402,6 +406,24 @@ class NutritionProvider extends ChangeNotifier {
     await _syncNutritionForDate(entry.timestamp);
   }
 
+  Future<void> addFoodEntryWithCustomFood(
+      FoodEntry entry, FoodItem customFood,) async {
+    await _store.commitOrThrow(SaveFoodAndCustomFood(entry, customFood));
+    _foodLog.loadData(
+        [...entries, entry], [...recentFoods], {..._foodLog.recentFoodMeals},);
+    _foodLibrary.loadData(
+      recipes: [...recipes],
+      customFoods: [
+        customFood,
+        ...customFoods.where((food) => food.id != customFood.id),
+      ],
+      favoriteFoods: [...favoriteFoods],
+      customPortions: [..._foodLibrary.customPortions],
+    );
+    await _onFoodChanged();
+    await _syncNutritionForDate(entry.timestamp);
+  }
+
   Future<void> removeFoodEntry(String id) async {
     final entry = _foodLog.entries.where((e) => e.id == id).firstOrNull;
     await _foodLog.removeFoodEntry(id);
@@ -416,14 +438,18 @@ class NutritionProvider extends ChangeNotifier {
   Future<void> _syncNutritionForDate(DateTime date) async {
     if (_settingsProvider?.healthNutritionSyncEnabled != true) return;
     final totals = getTotalsForDate(date);
-    await _healthService.writeNutritionForDay(
-      date,
-      calories: totals.calories,
-      protein: totals.protein,
-      carbs: totals.carbs,
-      fat: totals.fat,
-      fiber: totals.fiber,
-    );
+    try {
+      await _healthService.writeNutritionForDay(
+        date,
+        calories: totals.calories,
+        protein: totals.protein,
+        carbs: totals.carbs,
+        fat: totals.fat,
+        fiber: totals.fiber,
+      );
+    } catch (error) {
+      debugPrint('Food saved locally; Health sync failed: $error');
+    }
   }
 
   Future<void> duplicateFoodEntry(FoodEntry entry, {String? toMeal}) =>
@@ -547,7 +573,11 @@ class NutritionProvider extends ChangeNotifier {
 
     if (_settingsProvider?.healthWeightSyncEnabled == true &&
         entry.source == 'manual') {
-      await _healthService.writeWeight(kg, entry.timestamp);
+      try {
+        await _healthService.writeWeight(kg, entry.timestamp);
+      } catch (error) {
+        debugPrint('Weight saved locally; Health sync failed: $error');
+      }
     }
   }
 

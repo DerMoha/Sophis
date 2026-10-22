@@ -1,4 +1,5 @@
 import 'package:uuid/uuid.dart';
+import 'package:flutter/foundation.dart';
 
 import 'package:sophis/models/food_entry.dart';
 import 'package:sophis/models/food_item.dart';
@@ -81,10 +82,14 @@ class FoodIntakeController {
       final recentItem = selection == null
           ? item
           : item.copyWith(lastUsedPortion: resolvedSelection);
-      await _nutrition.addRecentFood(
-        recentItem,
-        meal: meal,
-      );
+      try {
+        await _nutrition.addRecentFood(
+          recentItem,
+          meal: meal,
+        );
+      } catch (error) {
+        debugPrint('Food saved; recent-food cache update failed: $error');
+      }
       return Success(entry);
     } catch (e) {
       return _unknownFailure(e);
@@ -170,9 +175,9 @@ class FoodIntakeController {
     );
 
     try {
-      await _nutrition.addFoodEntry(entry);
       if (saveAsCustomFood) {
-        await _nutrition.addCustomFood(
+        await _nutrition.addFoodEntryWithCustomFood(
+          entry,
           _createCustomFood(
             name: trimmedName,
             calories: calories,
@@ -182,6 +187,8 @@ class FoodIntakeController {
             fiber: fiber,
           ),
         );
+      } else {
+        await _nutrition.addFoodEntry(entry);
       }
       return Success(entry);
     } catch (e) {

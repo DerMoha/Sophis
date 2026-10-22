@@ -266,7 +266,9 @@ class AnimatedNumber extends StatelessWidget {
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: value),
-      duration: const Duration(milliseconds: 800),
+      duration: MediaQuery.disableAnimationsOf(context)
+          ? Duration.zero
+          : const Duration(milliseconds: 800),
       curve: Curves.easeOutCubic,
       builder: (context, animatedValue, child) {
         return RichText(

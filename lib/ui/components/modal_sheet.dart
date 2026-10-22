@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:sophis/ui/theme/app_theme.dart';
+import 'package:sophis/l10n/generated/app_localizations.dart';
 
 class ModalSheetSurface extends StatelessWidget {
   final Widget child;
@@ -25,7 +26,9 @@ class ModalSheetSurface extends StatelessWidget {
     Widget content = child;
     if (useAnimatedInsets) {
       content = AnimatedPadding(
-        duration: const Duration(milliseconds: 150),
+        duration: mediaQuery.disableAnimations
+            ? Duration.zero
+            : const Duration(milliseconds: 150),
         curve: Curves.easeOut,
         padding: bottomInset,
         child: content,
@@ -124,7 +127,7 @@ class ModalSheetHeader extends StatelessWidget {
                   child: Text(
                     title,
                     style: theme.textTheme.headlineSmall,
-                    overflow: TextOverflow.ellipsis,
+                    softWrap: true,
                   ),
                 ),
               ],
@@ -137,6 +140,7 @@ class ModalSheetHeader extends StatelessWidget {
           if (showCloseButton) ...[
             const SizedBox(width: 8),
             IconButton(
+              tooltip: AppLocalizations.of(context)!.close,
               icon: Container(
                 width: 32,
                 height: 32,
@@ -148,7 +152,7 @@ class ModalSheetHeader extends StatelessWidget {
                 ),
                 child: const Icon(Icons.close, size: 18),
               ),
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.maybePop(context),
             ),
           ],
         ],

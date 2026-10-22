@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'dart:math' as math;
 import 'package:sophis/ui/theme/app_theme.dart';
 
@@ -39,7 +41,9 @@ class RadialProgress extends StatelessWidget {
           if (showGlow && value > 0)
             TweenAnimationBuilder<double>(
               tween: Tween(begin: 0, end: value.clamp(0.0, 1.0)),
-              duration: const Duration(milliseconds: 800),
+              duration: MediaQuery.disableAnimationsOf(context)
+                  ? Duration.zero
+                  : const Duration(milliseconds: 800),
               curve: Curves.easeOutCubic,
               builder: (context, animatedValue, _) {
                 return CustomPaint(
@@ -62,7 +66,9 @@ class RadialProgress extends StatelessWidget {
           ),
           TweenAnimationBuilder<double>(
             tween: Tween(begin: 0, end: value.clamp(0.0, 1.0)),
-            duration: const Duration(milliseconds: 800),
+            duration: MediaQuery.disableAnimationsOf(context)
+                ? Duration.zero
+                : const Duration(milliseconds: 800),
             curve: Curves.easeOutCubic,
             builder: (context, animatedValue, _) {
               return CustomPaint(
@@ -188,93 +194,99 @@ class MacroRing extends StatelessWidget {
     // Tier 2 is always alarming red, regardless of excessColor.
     const tier2Color = AppTheme.error;
     final finalExcessColor = excessColor ?? AppTheme.error;
-    final displayColor = isOver
-        ? (isTier2 ? tier2Color : finalExcessColor)
-        : color;
+    final displayColor =
+        isOver ? (isTier2 ? tier2Color : finalExcessColor) : color;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final ringSize = (constraints.maxWidth -
-                AppTheme.macroRingCompactInnerOffset)
-            .clamp(AppTheme.macroRingCompactMinSize, size);
+    final numbers =
+        NumberFormat('0.#', Localizations.localeOf(context).toString());
+    return Semantics(
+      label: AppLocalizations.of(context)!.macroProgressLabel(
+          label, numbers.format(value), numbers.format(goal), unit,),
+      excludeSemantics: true,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final ringSize =
+              (constraints.maxWidth - AppTheme.macroRingCompactInnerOffset)
+                  .clamp(AppTheme.macroRingCompactMinSize, size);
 
-        final String centerValueText = isCapped
-            ? '>${(AppTheme.macroExcessCap * 100).toInt()}%'
-            : value.toStringAsFixed(0);
+          final String centerValueText = isCapped
+              ? '>${(AppTheme.macroExcessCap * 100).toInt()}%'
+              : value.toStringAsFixed(0);
 
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: ringSize + AppTheme.macroRingCompactTier2Offset,
-              height: ringSize + AppTheme.macroRingCompactTier2Offset,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  // Main ring (0-100%)
-                  RadialProgress(
-                    value: rawProgress.clamp(0.0, 1.0),
-                    size: ringSize,
-                    strokeWidth: AppTheme.macroRingInnerStroke,
-                    color: color,
-                    showGlow: false,
-                  ),
-                  // Excess ring tier 1 (100-200%)
-                  if (isOver)
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: ringSize + AppTheme.macroRingCompactTier2Offset,
+                height: ringSize + AppTheme.macroRingCompactTier2Offset,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Main ring (0-100%)
                     RadialProgress(
-                      value: (rawProgress - 1.0).clamp(0.0, 1.0),
-                      size: ringSize +
-                          AppTheme.macroRingCompactInnerOffset - 2,
-                      strokeWidth: AppTheme.macroRingOuterStroke,
-                      color: finalExcessColor,
-                      backgroundColor: Colors.transparent,
+                      value: rawProgress.clamp(0.0, 1.0),
+                      size: ringSize,
+                      strokeWidth: AppTheme.macroRingInnerStroke,
+                      color: color,
                       showGlow: false,
                     ),
-                  // Excess ring tier 2 (200-300%), always red
-                  if (isTier2)
-                    RadialProgress(
-                      value: (rawProgress - 2.0).clamp(0.0, 1.0),
-                      size: ringSize +
-                          AppTheme.macroRingCompactTier2Offset - 2,
-                      strokeWidth: AppTheme.macroRingTier2Stroke,
-                      color: tier2Color,
-                      backgroundColor: Colors.transparent,
-                      showGlow: false,
-                    ),
-                  Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          centerValueText,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: displayColor,
+                    // Excess ring tier 1 (100-200%)
+                    if (isOver)
+                      RadialProgress(
+                        value: (rawProgress - 1.0).clamp(0.0, 1.0),
+                        size:
+                            ringSize + AppTheme.macroRingCompactInnerOffset - 2,
+                        strokeWidth: AppTheme.macroRingOuterStroke,
+                        color: finalExcessColor,
+                        backgroundColor: Colors.transparent,
+                        showGlow: false,
+                      ),
+                    // Excess ring tier 2 (200-300%), always red
+                    if (isTier2)
+                      RadialProgress(
+                        value: (rawProgress - 2.0).clamp(0.0, 1.0),
+                        size:
+                            ringSize + AppTheme.macroRingCompactTier2Offset - 2,
+                        strokeWidth: AppTheme.macroRingTier2Stroke,
+                        color: tier2Color,
+                        backgroundColor: Colors.transparent,
+                        showGlow: false,
+                      ),
+                    Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            centerValueText,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: displayColor,
+                            ),
                           ),
-                        ),
-                        Text(
-                          unit,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
+                          Text(
+                            unit,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: AppTheme.macroRingCompactLabelGap),
-            Text(
-              label,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.labelMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+              const SizedBox(height: AppTheme.macroRingCompactLabelGap),
+              Text(
+                label,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
-            ),
-          ],
-        );
-      },
+            ],
+          );
+        },
+      ),
     );
   }
 }

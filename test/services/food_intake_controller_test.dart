@@ -35,6 +35,8 @@ void main() {
         () => nutrition.addRecentFood(any(), meal: any(named: 'meal')),
       ).thenAnswer((_) async {});
       when(() => nutrition.addCustomFood(any())).thenAnswer((_) async {});
+      when(() => nutrition.addFoodEntryWithCustomFood(any(), any()))
+          .thenAnswer((_) async {});
     }
 
     setUp(() {
@@ -107,7 +109,7 @@ void main() {
       expect(entry.timestamp, timestamp);
 
       final customFood = verify(
-        () => nutrition.addCustomFood(captureAny()),
+        () => nutrition.addFoodEntryWithCustomFood(entry, captureAny()),
       ).captured.single as FoodItem;
       expect(customFood.id, 'custom_entry-2');
       expect(customFood.name, 'Protein Shake');
@@ -300,7 +302,8 @@ void main() {
       verifyNever(() => nutrition.addCustomFood(any()));
     });
 
-    test('returns failure when a provider write throws', () async {
+    test('kept the saved entry successful when the recent cache failed',
+        () async {
       const item = FoodItem(
         id: 'apple',
         name: 'Apple',
@@ -320,16 +323,13 @@ void main() {
         meal: 'snack',
       );
 
-      expect(result, isA<Failure<FoodEntry>>());
-      final failure = result as Failure<FoodEntry>;
-      expect(failure.errorType, ServiceErrorType.unknown);
-      expect(failure.message, contains('recent failed'));
+      expect(result, isA<Success<FoodEntry>>());
       verify(() => nutrition.addFoodEntry(any())).called(1);
       verify(() => nutrition.addRecentFood(item, meal: 'snack')).called(1);
     });
 
     test('returns failure when saving manual custom food throws', () async {
-      when(() => nutrition.addCustomFood(any()))
+      when(() => nutrition.addFoodEntryWithCustomFood(any(), any()))
           .thenThrow(Exception('custom failed'));
 
       final result = await controller.logManualEntry(
@@ -346,8 +346,9 @@ void main() {
       final failure = result as Failure<FoodEntry>;
       expect(failure.errorType, ServiceErrorType.unknown);
       expect(failure.message, contains('custom failed'));
-      verify(() => nutrition.addFoodEntry(any())).called(1);
-      verify(() => nutrition.addCustomFood(any())).called(1);
+      verifyNever(() => nutrition.addFoodEntry(any()));
+      verify(() => nutrition.addFoodEntryWithCustomFood(any(), any()))
+          .called(1);
     });
   });
 }

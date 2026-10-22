@@ -48,7 +48,9 @@ class AnimatedProgressBar extends StatelessWidget {
           return Stack(
             children: [
               AnimatedContainer(
-                duration: duration,
+                duration: MediaQuery.disableAnimationsOf(context)
+                    ? Duration.zero
+                    : duration,
                 curve: Curves.easeOutCubic,
                 width: constraints.maxWidth * value.clamp(0.0, 1.0),
                 decoration: BoxDecoration(
@@ -100,11 +102,29 @@ class _FluidProgressBarState extends State<FluidProgressBar>
       vsync: this,
       duration: const Duration(milliseconds: 2000),
     );
-    if (widget.animate && widget.value < 1.0) {
+  }
+
+  void _syncMotion() {
+    final animate = widget.animate &&
+        widget.value < 1.0 &&
+        !MediaQuery.disableAnimationsOf(context);
+    if (animate && !_waveController.isAnimating) {
       _waveController.repeat();
-    } else {
+    } else if (!animate) {
       _waveController.stop();
     }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncMotion();
+  }
+
+  @override
+  void didUpdateWidget(FluidProgressBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _syncMotion();
   }
 
   @override
@@ -126,7 +146,9 @@ class _FluidProgressBarState extends State<FluidProgressBar>
           return Stack(
             children: [
               AnimatedContainer(
-                duration: const Duration(milliseconds: 600),
+                duration: MediaQuery.disableAnimationsOf(context)
+                    ? Duration.zero
+                    : const Duration(milliseconds: 600),
                 curve: Curves.easeOutCubic,
                 width: constraints.maxWidth * widget.value.clamp(0.0, 1.0),
                 decoration: BoxDecoration(
@@ -147,19 +169,20 @@ class _FluidProgressBarState extends State<FluidProgressBar>
                         ]
                       : null,
                 ),
-                child: widget.animate
-                    ? AnimatedBuilder(
-                        animation: _waveController,
-                        builder: (context, child) {
-                          return CustomPaint(
-                            painter: _WavePainter(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              animationValue: _waveController.value,
-                            ),
-                          );
-                        },
-                      )
-                    : null,
+                child:
+                    widget.animate && !MediaQuery.disableAnimationsOf(context)
+                        ? AnimatedBuilder(
+                            animation: _waveController,
+                            builder: (context, child) {
+                              return CustomPaint(
+                                painter: _WavePainter(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  animationValue: _waveController.value,
+                                ),
+                              );
+                            },
+                          )
+                        : null,
               ),
             ],
           );
@@ -372,6 +395,7 @@ class _ScaleFadeInState extends State<ScaleFadeIn>
 
   @override
   Widget build(BuildContext context) {
+    if (MediaQuery.disableAnimationsOf(context)) return widget.child;
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
@@ -416,7 +440,8 @@ class AnimatedCounter extends StatelessWidget {
   Widget build(BuildContext context) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: value),
-      duration: duration,
+      duration:
+          MediaQuery.disableAnimationsOf(context) ? Duration.zero : duration,
       curve: curve,
       builder: (context, animatedValue, child) {
         return Text(
@@ -474,21 +499,28 @@ class _PulseAnimationState extends State<PulseAnimation>
         curve: Curves.easeInOut,
       ),
     );
+  }
 
-    if (widget.enabled) {
+  void _syncMotion() {
+    final animate = widget.enabled && !MediaQuery.disableAnimationsOf(context);
+    if (animate && !_controller.isAnimating) {
       _controller.repeat(reverse: true);
+    } else if (!animate) {
+      _controller.stop();
+      _controller.value = 0;
     }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncMotion();
   }
 
   @override
   void didUpdateWidget(PulseAnimation oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.enabled && !_controller.isAnimating) {
-      _controller.repeat(reverse: true);
-    } else if (!widget.enabled) {
-      _controller.stop();
-      _controller.value = 0;
-    }
+    _syncMotion();
   }
 
   @override
@@ -499,7 +531,9 @@ class _PulseAnimationState extends State<PulseAnimation>
 
   @override
   Widget build(BuildContext context) {
-    if (!widget.enabled) return widget.child;
+    if (!widget.enabled || MediaQuery.disableAnimationsOf(context)) {
+      return widget.child;
+    }
 
     return AnimatedBuilder(
       animation: _scaleAnimation,
@@ -546,7 +580,17 @@ class _ShimmerEffectState extends State<ShimmerEffect>
     _controller = AnimationController(
       vsync: this,
       duration: widget.duration,
-    )..repeat();
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _controller.stop();
+    } else if (!_controller.isAnimating) {
+      _controller.repeat();
+    }
   }
 
   @override
@@ -557,6 +601,7 @@ class _ShimmerEffectState extends State<ShimmerEffect>
 
   @override
   Widget build(BuildContext context) {
+    if (MediaQuery.disableAnimationsOf(context)) return widget.child;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -649,6 +694,7 @@ class _BounceButtonState extends State<BounceButton>
   }
 
   void _onTapDown(TapDownDetails details) {
+    if (MediaQuery.disableAnimationsOf(context)) return;
     _controller.forward();
   }
 
@@ -799,7 +845,8 @@ class AnimatedGradientContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
-      duration: duration,
+      duration:
+          MediaQuery.disableAnimationsOf(context) ? Duration.zero : duration,
       builder: (context, value, child) {
         return Container(
           decoration: BoxDecoration(

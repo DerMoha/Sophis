@@ -1,4 +1,16 @@
 class NumberUtils {
+  /// Parses a measurement entered with either a decimal comma or decimal dot.
+  /// Grouping separators are deliberately unsupported in editable quantities.
+  static double? parseInput(String value) {
+    final normalized = value.trim().replaceAll(',', '.');
+    if (!RegExp(r'^[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)$')
+        .hasMatch(normalized)) {
+      return null;
+    }
+    final parsed = double.tryParse(normalized);
+    return parsed != null && parsed.isFinite ? parsed : null;
+  }
+
   /// Formats a numeric value for display.
   /// - 1 decimal place if the absolute value is <= 100
   /// - 0 decimal places if the absolute value is > 100

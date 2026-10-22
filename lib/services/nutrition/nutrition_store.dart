@@ -498,6 +498,25 @@ final class SaveFoodEntry extends NutritionCommand {
   Future<void> apply(NutritionStore store) => store._saveFoodEntry(value);
 }
 
+/// The diary entry and explicitly requested library copy succeed together.
+final class SaveFoodAndCustomFood extends NutritionCommand {
+  final FoodEntry value;
+  final FoodItem customFood;
+  const SaveFoodAndCustomFood(this.value, this.customFood);
+
+  @override
+  Future<void> apply(NutritionStore store) async {
+    await store._saveFoodEntry(value);
+    await store._saveCustomFood(customFood);
+    await store._database.recordLocalMutation(
+      entityType: 'custom_food',
+      entityId: customFood.id,
+      operation: 'upsert',
+      payloadJson: jsonEncode(customFood.toJson()),
+    );
+  }
+}
+
 /// Commits recipient-owned copies and a durable operation receipt in the same
 /// NutritionStore transaction. Retrying after edits/deletes cannot overwrite or
 /// recreate the recipient's independent diary entries.
@@ -982,7 +1001,9 @@ final class NutritionSyncChange {
 }
 
 SyncMutation? _syncMutationFor(NutritionCommand command) => switch (command) {
-      SaveFoodEntry(:final value) => SyncMutation(
+      SaveFoodEntry(:final value) ||
+      SaveFoodAndCustomFood(:final value) =>
+        SyncMutation(
           entityType: 'food_entry',
           entityId: value.id,
           operation: 'upsert',

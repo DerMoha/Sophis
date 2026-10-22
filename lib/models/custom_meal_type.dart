@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sophis/l10n/generated/app_localizations.dart';
 
 /// Custom meal type with user-defined properties
 class CustomMealType {
@@ -25,6 +26,19 @@ class CustomMealType {
       (icon) => icon.codePoint == iconCodePoint,
       orElse: () => Icons.restaurant,
     );
+  }
+
+  /// Translate untouched built-in labels without overwriting user names.
+  String displayName(AppLocalizations l10n) {
+    final original = switch (id) {
+      'breakfast' => 'Breakfast', 'lunch' => 'Lunch',
+      'dinner' => 'Dinner', 'snack' => 'Snacks', _ => null,
+    };
+    if (!isDefault || name != original) return name;
+    return switch (id) {
+      'breakfast' => l10n.breakfast, 'lunch' => l10n.lunch,
+      'dinner' => l10n.dinner, 'snack' => l10n.snacks, _ => name,
+    };
   }
 
   Color get color => Color(colorValue);
