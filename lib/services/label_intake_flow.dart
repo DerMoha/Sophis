@@ -1,9 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 
+import 'package:sophis/services/android_paddle_ocr.dart';
 import 'package:sophis/models/nutrition_label_draft.dart';
 import 'package:sophis/models/food_item.dart';
 import 'package:sophis/models/serving_size.dart';
@@ -15,6 +18,7 @@ import 'package:sophis/services/nutrition_image_quality_service.dart';
 import 'package:sophis/services/nutrition_image_preprocessor.dart';
 import 'package:sophis/services/nutrition_label_ai_provider.dart';
 import 'package:sophis/services/service_result.dart';
+import 'package:sophis/services/scan_model_service.dart';
 
 /// Inputs for a single label-intake scan. The flow owns the OCR + parsing +
 /// Gemini-fallback policy; the caller only provides the bits of context that
@@ -53,6 +57,7 @@ class LabelIntakeResult {
 }
 
 enum LabelIntakeProgress {
+  preparingScanner,
   checkingImage,
   readingText,
   enhancingImage,
@@ -82,10 +87,14 @@ class LabelIntakeFlow {
   final AiProviderRegistry _aiProviders;
   final NutritionImageQualityService _qualityService;
   final NutritionImagePreprocessor _preprocessor;
+  final ScanModelService _scanModels;
   String? _lastDraftPath;
   NutritionLabelDraft? _lastDraft;
+  _LabelScanAttempt? _activeAttempt;
+  bool _disposed = false;
 
   LabelIntakeFlow({
+    ScanModelService scanModels = const ScanModelService(),
     GeminiFoodService? gemini,
     AiProviderRegistry? aiProviderRegistry,
     NutritionImageQualityService qualityService =
@@ -96,7 +105,8 @@ class LabelIntakeFlow {
         _gemini = gemini,
         _aiProviders = aiProviderRegistry ?? _registryForGemini(gemini),
         _qualityService = qualityService,
-        _preprocessor = preprocessor;
+        _preprocessor = preprocessor,
+        _scanModels = scanModels;
 
   static AiProviderRegistry _registryForGemini(GeminiFoodService? gemini) {
     final registry = AiProviderRegistry();
@@ -116,19 +126,31 @@ class LabelIntakeFlow {
     ValueChanged<LabelIntakeProgress>? onProgress,
     bool allowCloudAssist = false,
   }) async {
+    onProgress?.call(LabelIntakeProgress.preparingScanner);
+    final readiness = AndroidPaddleOcr.enabled
+        ? await const AndroidPaddleOcr().prepare()
+        : await _scanModels.ensureAvailable(ScanModel.ocr);
+    if (readiness case Failure<void>()) {
+      return Failure(readiness.errorType, readiness.message);
+    }
     _lastDraftPath = request.imageFile.path;
     _lastDraft = null;
+    final attempt = _beginAttempt();
     try {
       return await _processImage(
         request,
+        attempt: attempt,
         onProgress: onProgress,
         allowCloudAssist: allowCloudAssist,
       ).timeout(_pipelineTimeout);
     } on TimeoutException {
+      attempt.cancelled = true;
       return const Failure(
         ServiceErrorType.network,
         'Nutrition label analysis timed out. Please try again.',
       );
+    } finally {
+      if (identical(_activeAttempt, attempt)) _activeAttempt = null;
     }
   }
 
@@ -143,31 +165,46 @@ class LabelIntakeFlow {
     if (_lastDraftPath == request.imageFile.path && _lastDraft != null) {
       return Success(_lastDraft!);
     }
+    onProgress?.call(LabelIntakeProgress.preparingScanner);
+    final readiness = AndroidPaddleOcr.enabled
+        ? await const AndroidPaddleOcr().prepare()
+        : await _scanModels.ensureAvailable(ScanModel.ocr);
+    if (readiness case Failure<void>()) {
+      return Failure(readiness.errorType, readiness.message);
+    }
     _lastDraftPath = request.imageFile.path;
     _lastDraft = null;
+    final attempt = _beginAttempt();
     try {
       return await _processDraftImage(
         request,
+        attempt: attempt,
         onProgress: onProgress,
         allowCloudAssist: allowCloudAssist,
       ).timeout(_pipelineTimeout);
     } on TimeoutException {
+      attempt.cancelled = true;
       return const Failure(
         ServiceErrorType.network,
         'Nutrition label analysis timed out. Please try again.',
       );
+    } finally {
+      if (identical(_activeAttempt, attempt)) _activeAttempt = null;
     }
   }
 
   Future<ServiceResult<NutritionLabelDraft>> _processDraftImage(
     LabelIntakeRequest request, {
+    required _LabelScanAttempt attempt,
     ValueChanged<LabelIntakeProgress>? onProgress,
     required bool allowCloudAssist,
   }) async {
+    attempt.check();
     onProgress?.call(LabelIntakeProgress.checkingImage);
     final quality = await _qualityService
         .inspect(request.imageFile)
         .timeout(_qualityTimeout);
+    attempt.check();
     if (!quality.isAcceptable) {
       return Failure(ServiceErrorType.parseError, quality.message);
     }
@@ -175,15 +212,18 @@ class LabelIntakeFlow {
     onProgress?.call(LabelIntakeProgress.readingText);
     final documents = <_RecognizedNutritionDocument>[];
     final original = await _recognize(request.imageFile);
+    attempt.check();
     if (original != null) documents.add(original);
 
     var prepared = const <File>[];
     try {
       onProgress?.call(LabelIntakeProgress.enhancingImage);
-      prepared = await _preprocessor
-          .prepareCandidates(request.imageFile)
-          .timeout(_preprocessingTimeout);
+      prepared = await _prepareCandidates(
+        request.imageFile,
+        original?.lines ?? const [],
+      );
       for (final candidate in prepared) {
+        attempt.check();
         onProgress?.call(LabelIntakeProgress.readingText);
         final document = await _recognize(candidate);
         if (document != null) documents.add(document);
@@ -193,12 +233,13 @@ class LabelIntakeFlow {
     } finally {
       await _preprocessor.cleanUpCandidates(prepared);
     }
+    attempt.check();
 
     final resolution = _resolveDocuments(documents);
     final document = resolution?.document ?? _bestDocument(documents);
-    NutritionLabelDraft? draft = document == null
-        ? null
-        : NutritionLabelParser.parseDraft(document.text);
+    NutritionLabelDraft? draft = resolution != null
+        ? NutritionLabelDraft.fromResult(resolution.label)
+        : document?.draft;
     _lastDraft = draft;
     Failure<NutritionLabelDraft>? cloudFailure;
 
@@ -234,33 +275,22 @@ class LabelIntakeFlow {
     NutritionLabelDraft local,
     NutritionLabelDraft cloud,
   ) {
-    final cloudHasNutrition = cloud.hasAnyNutrition;
-    return NutritionLabelDraft(
-      productName: cloud.productName ?? local.productName,
-      brand: cloud.brand ?? local.brand,
-      caloriesPer100: cloud.caloriesPer100 ?? local.caloriesPer100,
-      proteinPer100: cloud.proteinPer100 ?? local.proteinPer100,
-      carbsPer100: cloud.carbsPer100 ?? local.carbsPer100,
-      fatPer100: cloud.fatPer100 ?? local.fatPer100,
-      fiberPer100: cloud.fiberPer100 ?? local.fiberPer100,
-      nutritionUnit:
-          cloudHasNutrition ? cloud.nutritionUnit : local.nutritionUnit,
-      servingAmount: cloud.servingAmount ?? local.servingAmount,
-      servingName: cloud.servingName ?? local.servingName,
-      analysisSource:
-          cloudHasNutrition ? cloud.analysisSource : local.analysisSource,
-    );
+    // A cloud result is one coherent reading. Mixing cells can combine bases.
+    return cloud.hasAnyNutrition ? cloud : local;
   }
 
   Future<ServiceResult<LabelIntakeResult>> _processImage(
     LabelIntakeRequest request, {
+    required _LabelScanAttempt attempt,
     ValueChanged<LabelIntakeProgress>? onProgress,
     required bool allowCloudAssist,
   }) async {
+    attempt.check();
     onProgress?.call(LabelIntakeProgress.checkingImage);
     final quality = await _qualityService
         .inspect(request.imageFile)
         .timeout(_qualityTimeout);
+    attempt.check();
     if (!quality.isAcceptable) {
       return Failure(ServiceErrorType.parseError, quality.message);
     }
@@ -268,12 +298,14 @@ class LabelIntakeFlow {
     onProgress?.call(LabelIntakeProgress.readingText);
     final documents = <_RecognizedNutritionDocument>[];
     final originalDocument = await _recognize(request.imageFile);
+    attempt.check();
     if (originalDocument != null) documents.add(originalDocument);
-    _rememberDraft(originalDocument?.text);
+    _rememberDraft(originalDocument);
 
     if (originalDocument != null) {
       final originalLabel = originalDocument.parsedLabel;
-      if (originalLabel != null &&
+      if (!AndroidPaddleOcr.enabled &&
+          originalLabel != null &&
           NutritionLabelValidator.validate(originalLabel).isHighConfidence &&
           originalDocument.isUnambiguous) {
         return _processParsedText(
@@ -292,10 +324,12 @@ class LabelIntakeFlow {
     var prepared = const <File>[];
     try {
       onProgress?.call(LabelIntakeProgress.enhancingImage);
-      prepared = await _preprocessor
-          .prepareCandidates(request.imageFile)
-          .timeout(_preprocessingTimeout);
+      prepared = await _prepareCandidates(
+        request.imageFile,
+        originalDocument?.lines ?? const [],
+      );
       for (final candidate in prepared) {
+        attempt.check();
         onProgress?.call(LabelIntakeProgress.readingText);
         final document = await _recognize(candidate);
         if (document != null) documents.add(document);
@@ -307,6 +341,7 @@ class LabelIntakeFlow {
     } finally {
       await _preprocessor.cleanUpCandidates(prepared);
     }
+    attempt.check();
 
     final resolution = _resolveDocuments(documents);
     final document = resolution?.document ?? _bestDocument(documents);
@@ -323,7 +358,10 @@ class LabelIntakeFlow {
         allowCloudAssist: allowCloudAssist,
       );
     }
-    _rememberDraft(document.text);
+    _rememberDraft(document);
+    if (resolution != null) {
+      _lastDraft = NutritionLabelDraft.fromResult(resolution.label);
+    }
     onProgress?.call(LabelIntakeProgress.verifyingValues);
     return _processParsedText(
       ocrText: document.text,
@@ -336,6 +374,20 @@ class LabelIntakeFlow {
       barcode: request.barcode,
       allowCloudAssist: allowCloudAssist,
     );
+  }
+
+  @visibleForTesting
+  ({NutritionLabelResult label, NutritionLabelValidation validation})?
+      resolveOcrCandidates(List<List<NutritionOcrLine>> candidates) {
+    final resolution = _resolveDocuments([
+      for (final lines in candidates)
+        _RecognizedNutritionDocument(
+          text: lines.map((line) => line.text).join('\n'),
+          lines: lines,
+        ),
+    ]);
+    if (resolution == null) return null;
+    return (label: resolution.label, validation: resolution.validation);
   }
 
   _LocalLabelResolution? _resolveDocuments(
@@ -362,33 +414,55 @@ class LabelIntakeFlow {
       }
     }
     clusters.sort((a, b) {
-      final countComparison = b.length.compareTo(a.length);
-      if (countComparison != 0) return countComparison;
       final aScore = a.map(_documentScore).reduce((x, y) => x > y ? x : y);
       final bScore = b.map(_documentScore).reduce((x, y) => x > y ? x : y);
-      return bScore.compareTo(aScore);
+      final scoreComparison = bScore.compareTo(aScore);
+      if (scoreComparison != 0) return scoreComparison;
+      final countComparison = b.length.compareTo(a.length);
+      if (countComparison != 0) return countComparison;
+      // Prefer the original capture on ties, before enhanced variants.
+      return documents.indexOf(a.first).compareTo(documents.indexOf(b.first));
     });
 
     final winningCluster = clusters.first;
     final ranked = [...winningCluster]
       ..sort((a, b) => _documentScore(b).compareTo(_documentScore(a)));
     final document = ranked.first;
-    final label = _mergeLabels(
-      winningCluster.map((candidate) => candidate.parsedLabel!).toList(),
-      preferred: document.parsedLabel!,
+    // Keep one observed label intact; averaging can invent unprinted values.
+    final selectedLabel = document.parsedLabel!;
+    // If another reading of the same values saw a '<', retain that evidence.
+    // Losing a faint qualifier must never turn an upper limit into an exact value.
+    final label = selectedLabel.copyWith(
+      upperBoundFields: {
+        ...selectedLabel.upperBoundFields,
+        for (final candidate in usable)
+          if (_labelsAgree(
+            selectedLabel,
+            candidate.parsedLabel!,
+            compareBounds: false,
+          ))
+            ...candidate.parsedLabel!.upperBoundFields,
+      },
     );
     final baseValidation = NutritionLabelValidator.validate(label);
-    final hasConsensus = winningCluster.length >= 2;
+    final hasConsensus = winningCluster.length >= 2 && clusters.length == 1;
     final hasStrongSingle = usable.length == 1 && document.isUnambiguous;
-    final hasReliableLocalResult = hasConsensus || hasStrongSingle;
-    final validation = hasReliableLocalResult
+    final hasReliableLocalResult =
+        (hasConsensus && document.hasExplicitBasis) || hasStrongSingle;
+    final missingUnits = label.presentFields
+        .difference({NutritionLabelField.calories})
+        .difference(label.explicitUnitFields)
+        .isNotEmpty;
+    final validation = hasReliableLocalResult && !missingUnits
         ? baseValidation
         : NutritionLabelValidation(
             isUsable: baseValidation.isUsable,
             isHighConfidence: false,
             issues: [
               ...baseValidation.issues,
-              NutritionLabelIssue.candidateDisagreement,
+              if (!hasReliableLocalResult)
+                NutritionLabelIssue.candidateDisagreement,
+              if (missingUnits) NutritionLabelIssue.missingUnitEvidence,
             ],
           );
     return _LocalLabelResolution(
@@ -398,42 +472,26 @@ class LabelIntakeFlow {
     );
   }
 
-  bool _labelsAgree(NutritionLabelResult a, NutritionLabelResult b) {
-    final pairs = [
-      (a.caloriesPer100g, b.caloriesPer100g, 15.0, 0.08),
-      (a.proteinPer100g, b.proteinPer100g, 1.5, 0.2),
-      (a.carbsPer100g, b.carbsPer100g, 1.5, 0.2),
-      (a.fatPer100g, b.fatPer100g, 1.5, 0.2),
-      (a.fiberPer100g, b.fiberPer100g, 1.5, 0.25),
-    ];
-    final matching = pairs.where((pair) {
-      final (left, right, absoluteTolerance, relativeTolerance) = pair;
-      final tolerance = absoluteTolerance +
-          (left.abs() + right.abs()) / 2 * relativeTolerance;
-      return (left - right).abs() <= tolerance;
-    }).length;
-    return matching >= 4;
-  }
-
-  NutritionLabelResult _mergeLabels(
-    List<NutritionLabelResult> labels, {
-    required NutritionLabelResult preferred,
+  bool _labelsAgree(
+    NutritionLabelResult a,
+    NutritionLabelResult b, {
+    bool compareBounds = true,
   }) {
-    double median(double Function(NutritionLabelResult label) select) {
-      final values = labels.map(select).toList()..sort();
-      final middle = values.length ~/ 2;
-      return values.length.isOdd
-          ? values[middle]
-          : (values[middle - 1] + values[middle]) / 2;
+    if (a.nutritionUnit != b.nutritionUnit ||
+        (compareBounds && !setEquals(a.upperBoundFields, b.upperBoundFields)) ||
+        !setEquals(a.presentFields, b.presentFields)) {
+      return false;
     }
-
-    return preferred.copyWith(
-      caloriesPer100g: median((label) => label.caloriesPer100g),
-      proteinPer100g: median((label) => label.proteinPer100g),
-      carbsPer100g: median((label) => label.carbsPer100g),
-      fatPer100g: median((label) => label.fatPer100g),
-      fiberPer100g: median((label) => label.fiberPer100g),
-    );
+    final pairs = [
+      (a.caloriesPer100g, b.caloriesPer100g),
+      (a.proteinPer100g, b.proteinPer100g),
+      (a.carbsPer100g, b.carbsPer100g),
+      (a.fatPer100g, b.fatPer100g),
+      (a.fiberPer100g, b.fiberPer100g),
+    ];
+    // These are readings of the same printed values, not estimates from
+    // different foods. Every field must agree to claim OCR consensus.
+    return pairs.every((pair) => (pair.$1 - pair.$2).abs() < 0.01);
   }
 
   _RecognizedNutritionDocument? _bestDocument(
@@ -451,12 +509,19 @@ class LabelIntakeFlow {
         label == null ? null : NutritionLabelValidator.validate(label);
     final parseScore = validation == null
         ? 0
-        : validation.isHighConfidence
+        : validation.isUsable &&
+                !validation.issues
+                    .contains(NutritionLabelIssue.calorieMacroMismatch)
             ? 100
             : validation.isUsable
                 ? 60
                 : 20;
-    return parseScore + _nutritionTextScore(document.text);
+    // A printed upper limit is valid evidence, unlike a calorie/macro conflict.
+    // Extra packaging text is not evidence of a better nutrition reading.
+    // Among valid readings prefer complete fields, then the original capture.
+    return parseScore * 100 +
+        (label?.explicitUnitFields.length ?? 0) * 10 +
+        (label?.presentFields.length ?? _nutritionTextScore(document.text));
   }
 
   int _nutritionTextScore(String text) {
@@ -611,9 +676,8 @@ class LabelIntakeFlow {
     return Success(merged.toResult());
   }
 
-  void _rememberDraft(String? text) {
-    if (text == null || text.trim().isEmpty) return;
-    final draft = NutritionLabelParser.parseDraft(text);
+  void _rememberDraft(_RecognizedNutritionDocument? document) {
+    final draft = document?.draft;
     if (draft != null) _lastDraft = draft;
   }
 
@@ -672,6 +736,56 @@ class LabelIntakeFlow {
 
   Future<_RecognizedNutritionDocument?> _recognize(File imageFile) async {
     try {
+      if (AndroidPaddleOcr.enabled) {
+        final lines = await const AndroidPaddleOcr().recognize(imageFile);
+        if (lines.isEmpty) return null;
+        _traceOcr(imageFile, lines);
+        return _RecognizedNutritionDocument(
+          text: lines.map((line) => line.text).join('\n'),
+          lines: lines,
+        );
+      }
+      if (!kIsWeb &&
+          defaultTargetPlatform == TargetPlatform.iOS &&
+          !const bool.fromEnvironment('USE_MLKIT_OCR')) {
+        try {
+          final raw = await const MethodChannel('sophis/nutrition_text')
+              .invokeListMethod<dynamic>(
+            'recognize',
+            {'path': imageFile.path},
+          ).timeout(_ocrTimeout);
+          final lines = (raw ?? []).map((value) {
+            final line = Map<String, dynamic>.from(value as Map);
+            return NutritionOcrLine(
+              text: line['text'] as String,
+              top: (line['top'] as num).toDouble(),
+              height: (line['height'] as num).toDouble(),
+              left: (line['left'] as num).toDouble(),
+              right: (line['right'] as num).toDouble(),
+              tokens: (line['tokens'] as List<dynamic>).map((value) {
+                final token = Map<String, dynamic>.from(value as Map);
+                return NutritionOcrToken(
+                  text: token['text'] as String,
+                  centerX: (token['centerX'] as num).toDouble(),
+                  centerY: (token['centerY'] as num).toDouble(),
+                );
+              }).toList(),
+            );
+          }).toList()
+            ..sort((a, b) => a.top.compareTo(b.top));
+          if (lines.isNotEmpty) {
+            _traceOcr(imageFile, lines);
+            return _RecognizedNutritionDocument(
+              text: lines.map((line) => line.text).join('\n'),
+              lines: lines,
+            );
+          }
+        } on MissingPluginException {
+          // Older host/test builds can still use the portable reader.
+        } on PlatformException catch (error) {
+          debugPrint('Native nutrition OCR unavailable: ${error.code}');
+        }
+      }
       final inputImage = InputImage.fromFile(imageFile);
       final recognizedText =
           await _recognizer.processImage(inputImage).timeout(_ocrTimeout);
@@ -683,11 +797,15 @@ class LabelIntakeFlow {
             NutritionOcrLine(
               text: line.text,
               top: line.boundingBox.top,
+              height: line.boundingBox.height,
+              left: line.boundingBox.left,
+              right: line.boundingBox.right,
               tokens: line.elements
                   .map(
                     (element) => NutritionOcrToken(
                       text: element.text,
                       centerX: element.boundingBox.center.dx,
+                      centerY: element.boundingBox.center.dy,
                     ),
                   )
                   .toList(),
@@ -696,19 +814,81 @@ class LabelIntakeFlow {
         }
       }
       lines.sort((a, b) => a.top.compareTo(b.top));
+      _traceOcr(imageFile, lines);
       return _RecognizedNutritionDocument(
         text: recognizedText.text,
         lines: lines,
       );
     } catch (e) {
-      debugPrint('ML Kit OCR failed: $e');
+      debugPrint('Nutrition OCR failed: $e');
       return null;
     }
   }
 
+  void _traceOcr(File file, List<NutritionOcrLine> lines) {
+    if (!const bool.fromEnvironment('CAPTURE_LABEL_OCR')) return;
+    debugPrint('OCR_JSON:${jsonEncode({
+          'candidate': file.path,
+          'lines': [
+            for (final line in lines)
+              {
+                'text': line.text,
+                'top': line.top,
+                'height': line.height,
+                'left': line.left,
+                'right': line.right,
+                'tokens': [
+                  for (final token in line.tokens)
+                    {
+                      'text': token.text,
+                      'centerX': token.centerX,
+                      'centerY': token.centerY,
+                    },
+                ],
+              },
+          ],
+        })}');
+  }
+
   void dispose() {
+    _disposed = true;
+    _activeAttempt?.cancelled = true;
     _recognizer.close();
     _gemini?.dispose();
+  }
+
+  _LabelScanAttempt _beginAttempt() {
+    _activeAttempt?.cancelled = true;
+    return _activeAttempt = (_LabelScanAttempt()..cancelled = _disposed);
+  }
+
+  Future<List<File>> _prepareCandidates(
+    File file,
+    List<NutritionOcrLine> lines,
+  ) {
+    final pending = _preprocessor.prepareCandidates(file, lines: lines);
+    return pending.timeout(
+      _preprocessingTimeout,
+      onTimeout: () {
+        // A timeout does not cancel native work or an isolate. Clean up late files.
+        unawaited(
+          pending
+              .then(_preprocessor.cleanUpCandidates)
+              .catchError((Object error) {
+            debugPrint('Late nutrition preprocessing cleanup failed: $error');
+          }),
+        );
+        throw TimeoutException('Nutrition image preprocessing timed out');
+      },
+    );
+  }
+}
+
+class _LabelScanAttempt {
+  bool cancelled = false;
+
+  void check() {
+    if (cancelled) throw TimeoutException('Nutrition scan cancelled');
   }
 }
 
@@ -721,12 +901,31 @@ class _RecognizedNutritionDocument {
   NutritionLabelResult? get parsedLabel =>
       NutritionLabelParser.parseLayout(lines);
 
+  NutritionLabelDraft? get draft {
+    final label = parsedLabel;
+    if (label != null) return NutritionLabelDraft.fromResult(label);
+    // Do not reintroduce unsafe text-order values after layout parsing fails.
+    if (hasExplicitBasis) return null;
+    return NutritionLabelParser.parseDraft(text);
+  }
+
+  bool get hasExplicitBasis => NutritionLabelParser.hasPer100Heading(text);
+
   bool get isUnambiguous {
-    final hasPer100Heading = RegExp(
-      r'(?:per|pro|je|pour|por|w)\s*100\s*(?:g|ml)',
-      caseSensitive: false,
-    ).hasMatch(text);
-    if (!hasPer100Heading) return false;
+    if (!hasExplicitBasis) return false;
+    final label = parsedLabel;
+    if (label == null ||
+        label.presentFields
+            .difference({NutritionLabelField.calories})
+            .difference(label.explicitUnitFields)
+            .isNotEmpty) {
+      return false;
+    }
+    // Separate OCR blocks can hide the second column from token counts.
+    if (RegExp(r'portion|serving|%\s*RI', caseSensitive: false)
+        .hasMatch(text)) {
+      return false;
+    }
 
     for (final line in lines) {
       final lower = line.text.toLowerCase();

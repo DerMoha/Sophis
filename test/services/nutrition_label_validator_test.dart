@@ -22,6 +22,27 @@ void main() {
       );
     });
 
+    test('flags portion calories mixed with per-100g macros', () {
+      const label = NutritionLabelResult(
+        caloriesPer100g: 78,
+        proteinPer100g: 11,
+        carbsPer100g: 4,
+        fatPer100g: 0.2,
+      );
+      final validation = NutritionLabelValidator.validate(label);
+      expect(validation.isUsable, isTrue);
+      expect(validation.isHighConfidence, isFalse);
+      expect(
+        validation.issues,
+        contains(NutritionLabelIssue.calorieMacroMismatch),
+      );
+      expect(
+        NutritionLabelValidator.validate(label.copyWith(caloriesPer100g: 62))
+            .isHighConfidence,
+        isTrue,
+      );
+    });
+
     test('rejects values outside the expected nutrient range', () {
       const label = NutritionLabelResult(
         caloriesPer100g: 200,

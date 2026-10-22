@@ -76,6 +76,7 @@ dev_dependencies:
   drift_dev: ^2.30.1
   build_runner: ^2.10.5
   mocktail: ^1.0.4
+  image_picker_platform_interface: ^2.11.1
 
 flutter:
   # ML Kit and Firebase share native libraries; mixed SwiftPM/Pods duplicates them.

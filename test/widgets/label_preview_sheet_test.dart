@@ -67,6 +67,63 @@ const _fullLabel = NutritionLabelResult(
 
 void main() {
   group('showLabelPreviewSheet', () {
+    testWidgets('required an explicit estimate for an upper bound',
+        (tester) async {
+      NutritionLabelResult? result;
+      await tester.pumpWidget(
+        _wrap(
+          label: _fullLabel.copyWith(
+              fiberPer100g: 0.5, upperBoundFields: {NutritionLabelField.fiber},),
+          onResult: (value) => result = value,
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+      final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+      expect(find.text('<0.5'), findsOneWidget);
+      expect(
+          tester
+              .widget<FilledButton>(
+                  find.widgetWithText(FilledButton, l10n.looksGood),)
+              .onPressed,
+          isNull,);
+      await tester.enterText(find.byType(TextField).at(6), '0.25');
+      await tester.pump();
+      await tester.ensureVisible(find.text(l10n.looksGood));
+      await tester.tap(find.text(l10n.looksGood));
+      await tester.pumpAndSettle();
+      expect(result!.fiberPer100g, 0.25);
+      expect(result!.upperBoundFields, isEmpty);
+    });
+
+    testWidgets('kept absent fiber absent after review', (tester) async {
+      NutritionLabelResult? result;
+      await tester.pumpWidget(
+        _wrap(
+          label: _fullLabel.copyWith(presentFields: {
+            NutritionLabelField.calories,
+            NutritionLabelField.protein,
+            NutritionLabelField.carbs,
+            NutritionLabelField.fat,
+          },),
+          onResult: (value) => result = value,
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+      expect(
+          tester
+              .widget<TextField>(find.byType(TextField).at(6))
+              .controller!
+              .text,
+          isEmpty,);
+      final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+      await tester.ensureVisible(find.text(l10n.looksGood));
+      await tester.tap(find.text(l10n.looksGood));
+      await tester.pumpAndSettle();
+      expect(result!.presentFields, isNot(contains(NutritionLabelField.fiber)));
+    });
+
     testWidgets('shows the product name and brand',
         (WidgetTester tester) async {
       await tester.pumpWidget(_wrap(label: _fullLabel));

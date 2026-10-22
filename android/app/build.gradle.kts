@@ -4,7 +4,12 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+val paddleOcrEnabled = providers.gradleProperty("paddleOcr").orNull == "true"
+
 android {
+    sourceSets.getByName("main").java.srcDir(
+        if (paddleOcrEnabled) "src/paddle/kotlin" else "src/noPaddle/kotlin",
+    )
     namespace = "com.sophis.sophis"
     compileSdk = 36
     ndkVersion = flutter.ndkVersion
@@ -50,6 +55,13 @@ flutter {
 }
 
 dependencies {
+    if (paddleOcrEnabled) {
+        implementation(project(":paddle_ocr"))
+        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+        implementation("androidx.exifinterface:exifinterface:1.4.1")
+        implementation("org.opencv:opencv:4.12.0")
+    }
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
-    implementation("com.google.mlkit:text-recognition:16.0.1")
+    implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.1")
+    implementation("com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.1")
 }

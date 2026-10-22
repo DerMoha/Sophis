@@ -51,15 +51,30 @@ class _NutritionLabelDraftSheetState extends State<_NutritionLabelDraftSheet> {
     super.initState();
     _name = TextEditingController(text: widget.draft.productName ?? '');
     _brand = TextEditingController(text: widget.draft.brand ?? '');
-    _calories = _numberController(widget.draft.caloriesPer100);
-    _protein = _numberController(widget.draft.proteinPer100);
-    _carbs = _numberController(widget.draft.carbsPer100);
-    _fat = _numberController(widget.draft.fatPer100);
-    _fiber = _numberController(widget.draft.fiberPer100);
+    _calories = _numberController(
+      widget.draft.caloriesPer100,
+      NutritionLabelField.calories,
+    );
+    _protein = _numberController(
+      widget.draft.proteinPer100,
+      NutritionLabelField.protein,
+    );
+    _carbs =
+        _numberController(widget.draft.carbsPer100, NutritionLabelField.carbs);
+    _fat = _numberController(widget.draft.fatPer100, NutritionLabelField.fat);
+    _fiber =
+        _numberController(widget.draft.fiberPer100, NutritionLabelField.fiber);
   }
 
-  TextEditingController _numberController(double? value) =>
-      TextEditingController(text: value == null ? '' : _format(value));
+  TextEditingController _numberController(
+    double? value,
+    NutritionLabelField field,
+  ) =>
+      TextEditingController(
+        text: value == null
+            ? ''
+            : '${widget.draft.upperBoundFields.contains(field) ? '<' : ''}${_format(value)}',
+      );
 
   String _format(double value) {
     if (value == value.roundToDouble()) return value.toStringAsFixed(0);
@@ -83,6 +98,7 @@ class _NutritionLabelDraftSheetState extends State<_NutritionLabelDraftSheet> {
   NutritionLabelDraft? _currentDraft() {
     final values =
         [_calories, _protein, _carbs, _fat, _fiber].map(_number).toList();
+    if (_fiber.text.trim().isNotEmpty && values[4] == null) return null;
     if (values.take(4).any((value) => value == null || value < 0)) {
       return null;
     }
@@ -172,6 +188,8 @@ class _NutritionLabelDraftSheetState extends State<_NutritionLabelDraftSheet> {
             ),
             const SizedBox(height: 4),
             Text(l10n.nutritionLabelUncertain),
+            if (widget.draft.upperBoundFields.isNotEmpty)
+              Text(l10n.nutritionLabelUpperBoundWarning),
             const SizedBox(height: 8),
             Text(
               analysisText,

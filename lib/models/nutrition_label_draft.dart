@@ -18,6 +18,7 @@ class NutritionLabelDraft {
   final String? servingName;
   final bool wasServingConverted;
   final NutritionLabelAnalysisSource analysisSource;
+  final Set<NutritionLabelField> upperBoundFields;
 
   const NutritionLabelDraft({
     this.productName,
@@ -32,6 +33,7 @@ class NutritionLabelDraft {
     this.servingName,
     this.wasServingConverted = false,
     this.analysisSource = NutritionLabelAnalysisSource.localOcr,
+    this.upperBoundFields = const {},
   });
 
   bool get hasAnyNutrition =>
@@ -61,6 +63,7 @@ class NutritionLabelDraft {
       servingSizeG: servingAmount,
       servingName: servingName,
       wasServingConverted: wasServingConverted,
+      upperBoundFields: upperBoundFields,
       presentFields: {
         NutritionLabelField.calories,
         NutritionLabelField.protein,
@@ -95,6 +98,7 @@ class NutritionLabelDraft {
       servingAmount: result.servingSizeG,
       servingName: result.servingName,
       wasServingConverted: result.wasServingConverted,
+      upperBoundFields: result.upperBoundFields,
     );
   }
 
@@ -111,6 +115,7 @@ class NutritionLabelDraft {
     String? servingName,
     bool? wasServingConverted,
     NutritionLabelAnalysisSource? analysisSource,
+    Set<NutritionLabelField>? upperBoundFields,
   }) {
     return NutritionLabelDraft(
       productName: productName ?? this.productName,
@@ -125,6 +130,7 @@ class NutritionLabelDraft {
       servingName: servingName ?? this.servingName,
       wasServingConverted: wasServingConverted ?? this.wasServingConverted,
       analysisSource: analysisSource ?? this.analysisSource,
+      upperBoundFields: upperBoundFields ?? this.upperBoundFields,
     );
   }
 
@@ -139,6 +145,9 @@ class NutritionLabelDraft {
         'nutritionUnit': nutritionUnit.storageValue,
         'analysisSource': analysisSource.name,
         'wasServingConverted': wasServingConverted,
+        if (upperBoundFields.isNotEmpty)
+          'upperBoundFields':
+              upperBoundFields.map((field) => field.name).toList(),
         if (servingAmount != null) 'servingAmount': servingAmount,
         if (servingName != null) 'servingName': servingName,
       };
@@ -181,6 +190,13 @@ class NutritionLabelDraft {
       servingName: json['servingName'] as String?,
       wasServingConverted: json['wasServingConverted'] as bool? ?? false,
       analysisSource: analysisSource,
+      upperBoundFields: {
+        for (final field in NutritionLabelField.values)
+          if ((json['upperBoundFields'] as List<dynamic>?)
+                  ?.contains(field.name) ??
+              false)
+            field,
+      },
     );
   }
 }

@@ -8,6 +8,7 @@ import 'package:sophis/models/shareable_meal.dart';
 import 'package:sophis/services/barcode_lookup_service.dart';
 import 'package:sophis/services/meal_sharing_service.dart';
 import 'package:sophis/services/service_result.dart';
+import 'package:sophis/services/scan_model_service.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/components/barcode_not_found_sheet.dart';
 import 'package:sophis/ui/components/portion_picker_sheet.dart';
@@ -27,6 +28,31 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
   final MobileScannerController _controller = MobileScannerController();
   bool _isProcessing = false;
   String? _lastScannedCode;
+  bool _isPreparingScanner = true;
+  String? _preparationError;
+
+  @override
+  void initState() {
+    super.initState();
+    _prepareScanner();
+  }
+
+  Future<void> _prepareScanner() async {
+    setState(() {
+      _isPreparingScanner = true;
+      _preparationError = null;
+    });
+    final result =
+        await const ScanModelService().ensureAvailable(ScanModel.barcode);
+    if (!mounted) return;
+    setState(() {
+      _isPreparingScanner = false;
+      _preparationError = switch (result) {
+        Failure<void>(message: final message) => message,
+        Success<void>() => null,
+      };
+    });
+  }
 
   @override
   void dispose() {
@@ -190,70 +216,100 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
                 );
               },
             ),
-            onPressed: () => _controller.toggleTorch(),
+            onPressed: _isPreparingScanner || _preparationError != null
+                ? null
+                : () => _controller.toggleTorch(),
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          MobileScanner(
-            controller: _controller,
-            onDetect: _onBarcodeDetected,
-            errorBuilder: (context, error) {
-              return Center(
+      body: _isPreparingScanner || _preparationError != null
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
-                      Icons.error_outline,
-                      size: 48,
-                      color: Colors.white70,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      error.errorDetails?.message ??
-                          l10n.cameraInitializationFailed,
-                      style: const TextStyle(color: Colors.white70),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 24),
-                    OutlinedButton.icon(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.arrow_back),
-                      label: Text(l10n.goBack),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        side: const BorderSide(color: Colors.white30),
+                    if (_isPreparingScanner) ...[
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 16),
+                      Text(l10n.scannerPreparing),
+                      const SizedBox(height: 8),
+                      Text(
+                        l10n.scannerFirstDownload,
+                        textAlign: TextAlign.center,
                       ),
-                    ),
+                    ] else ...[
+                      Text(_preparationError!, textAlign: TextAlign.center),
+                      const SizedBox(height: 16),
+                      FilledButton(
+                        onPressed: _prepareScanner,
+                        child: Text(l10n.tryAgain),
+                      ),
+                    ],
                   ],
                 ),
-              );
-            },
-          ),
-          // Scan overlay
-          Center(
-            child: Container(
-              width: 250,
-              height: 250,
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.white, width: 2),
-                borderRadius: BorderRadius.circular(AppTheme.radiusSM),
               ),
+            )
+          : Stack(
+              children: [
+                MobileScanner(
+                  controller: _controller,
+                  onDetect: _onBarcodeDetected,
+                  errorBuilder: (context, error) {
+                    return Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            size: 48,
+                            color: Colors.white70,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            error.errorDetails?.message ??
+                                l10n.cameraInitializationFailed,
+                            style: const TextStyle(color: Colors.white70),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 24),
+                          OutlinedButton.icon(
+                            onPressed: () => Navigator.pop(context),
+                            icon: const Icon(Icons.arrow_back),
+                            label: Text(l10n.goBack),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              side: const BorderSide(color: Colors.white30),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                // Scan overlay
+                Center(
+                  child: Container(
+                    width: 250,
+                    height: 250,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.white, width: 2),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+                    ),
+                  ),
+                ),
+                // Status indicator
+                if (_isProcessing)
+                  const Positioned(
+                    bottom: 50,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: CircularProgressIndicator(color: Colors.white),
+                    ),
+                  ),
+              ],
             ),
-          ),
-          // Status indicator
-          if (_isProcessing)
-            const Positioned(
-              bottom: 50,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: CircularProgressIndicator(color: Colors.white),
-              ),
-            ),
-        ],
-      ),
     );
   }
 }

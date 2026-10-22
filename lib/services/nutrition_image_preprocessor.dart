@@ -1,6 +1,9 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
+import 'package:sophis/services/android_paddle_ocr.dart';
+import 'package:sophis/services/nutrition_ocr_document.dart';
+import 'package:sophis/services/nutrition_table_region.dart';
 
 class NutritionImagePreprocessor {
   const NutritionImagePreprocessor();
@@ -10,23 +13,42 @@ class NutritionImagePreprocessor {
     return candidates.firstOrNull;
   }
 
-  /// Builds complementary OCR inputs from the same capture. The full-frame
-  /// variant preserves headings and serving information, while the centered
-  /// variant removes package artwork around the table. Both are deliberately
-  /// grayscale rather than hard-thresholded so decimal separators and thin
-  /// glyphs are not lost.
-  Future<List<File>> prepareCandidates(File source) async {
+  /// Crops around the detected nutrient table and tries color, grayscale and
+  /// inverted text. Falls back to full-frame/centered crops when no table is
+  /// located. The original capture remains a separate candidate in the flow.
+  Future<List<File>> prepareCandidates(
+    File source, {
+    List<NutritionOcrLine> lines = const [],
+  }) async {
+    final region = NutritionTableRegion.locate(lines);
+    if (AndroidPaddleOcr.enabled && region != null) {
+      return const AndroidPaddleOcr().prepareTable(
+        source,
+        left: region.left,
+        top: region.top,
+        right: region.right,
+        bottom: region.bottom,
+      );
+    }
     final bytes = await source.readAsBytes();
-    final encodedCandidates = await compute(_prepareCandidateBytes, bytes);
+    final encodedCandidates = region == null
+        ? await compute(_prepareCandidateBytes, bytes)
+        : await compute(
+            _prepareTableBytes,
+            (bytes, region.left, region.top, region.right, region.bottom),
+          );
     if (encodedCandidates.isEmpty) return const [];
     final directory = await Directory.systemTemp.createTemp('sophis-label-ocr');
 
-    final fullOutput = File('${directory.path}/enhanced-full.jpg');
-    await fullOutput.writeAsBytes(encodedCandidates.first, flush: true);
-    final centeredOutput = File('${directory.path}/enhanced-centered.jpg');
-    await centeredOutput.writeAsBytes(encodedCandidates.last, flush: true);
-
-    return [fullOutput, centeredOutput];
+    final outputs = <File>[];
+    for (var index = 0; index < encodedCandidates.length; index++) {
+      final output = File(
+        '${directory.path}/${region == null ? 'full' : 'table'}-$index.jpg',
+      );
+      await output.writeAsBytes(encodedCandidates[index], flush: true);
+      outputs.add(output);
+    }
+    return outputs;
   }
 
   Future<void> cleanUp(File? file) async {
@@ -96,4 +118,35 @@ img.Image _enhanceForOcr(img.Image source) {
     filter: const [0, -1, 0, -1, 5, -1, 0, -1, 0],
     amount: 0.32,
   );
+}
+
+List<Uint8List> _prepareTableBytes(
+  (Uint8List, double, double, double, double) request,
+) {
+  final decoded = img.decodeImage(request.$1);
+  if (decoded == null) return const [];
+  final source = img.bakeOrientation(decoded);
+  final left = request.$2.round().clamp(0, source.width - 1);
+  final top = request.$3.round().clamp(0, source.height - 1);
+  final right = request.$4.round().clamp(left + 1, source.width);
+  final bottom = request.$5.round().clamp(top + 1, source.height);
+  final cropped = img.copyCrop(
+    source,
+    x: left,
+    y: top,
+    width: right - left,
+    height: bottom - top,
+  );
+  // OCR sees the table at a readable scale, not a downsampled whole package.
+  final table = img.copyResize(
+    cropped,
+    width: 1800,
+    interpolation: img.Interpolation.cubic,
+  );
+  final gray = img.grayscale(table.clone());
+  return [
+    Uint8List.fromList(img.encodeJpg(table, quality: 98)),
+    Uint8List.fromList(img.encodeJpg(gray, quality: 98)),
+    Uint8List.fromList(img.encodeJpg(img.invert(gray), quality: 98)),
+  ];
 }

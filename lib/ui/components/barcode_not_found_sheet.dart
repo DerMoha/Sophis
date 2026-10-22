@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:sophis/ui/components/draft_guard.dart';
 import 'package:provider/provider.dart';
 
 import 'package:sophis/l10n/generated/app_localizations.dart';
@@ -245,7 +246,7 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
 
   void _enterManually() {
     Navigator.pop(context);
-    showModalBottomSheet(
+    showDraftBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,

@@ -32,6 +32,10 @@ class NutritionLabelResult {
   final String? servingName;
   final bool wasServingConverted;
   final Set<NutritionLabelField> presentFields;
+  final Set<NutritionLabelField> upperBoundFields;
+
+  /// OCR evidence only: selected numeric cells with a printed unit.
+  final Set<NutritionLabelField> explicitUnitFields;
 
   const NutritionLabelResult({
     this.productName,
@@ -46,6 +50,8 @@ class NutritionLabelResult {
     this.servingName,
     this.wasServingConverted = false,
     this.presentFields = _allNutritionLabelFields,
+    this.upperBoundFields = const {},
+    this.explicitUnitFields = const {},
   });
 
   bool get hasRequiredNutrition =>
@@ -66,6 +72,8 @@ class NutritionLabelResult {
     String? servingName,
     bool? wasServingConverted,
     Set<NutritionLabelField>? presentFields,
+    Set<NutritionLabelField>? upperBoundFields,
+    Set<NutritionLabelField>? explicitUnitFields,
   }) =>
       NutritionLabelResult(
         productName: clearProductName ? null : productName ?? this.productName,
@@ -80,5 +88,7 @@ class NutritionLabelResult {
         servingName: servingName ?? this.servingName,
         wasServingConverted: wasServingConverted ?? this.wasServingConverted,
         presentFields: presentFields ?? this.presentFields,
+        upperBoundFields: upperBoundFields ?? this.upperBoundFields,
+        explicitUnitFields: explicitUnitFields ?? this.explicitUnitFields,
       );
 }

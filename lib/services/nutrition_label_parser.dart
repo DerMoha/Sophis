@@ -2,24 +2,9 @@ import 'package:sophis/services/gemini/models/nutrition_label_result.dart';
 import 'package:sophis/models/nutrition_label_draft.dart';
 import 'package:sophis/models/nutrition_unit.dart';
 
-class NutritionOcrToken {
-  final String text;
-  final double centerX;
-
-  const NutritionOcrToken({required this.text, required this.centerX});
-}
-
-class NutritionOcrLine {
-  final String text;
-  final double top;
-  final List<NutritionOcrToken> tokens;
-
-  const NutritionOcrLine({
-    required this.text,
-    required this.top,
-    required this.tokens,
-  });
-}
+import 'package:sophis/services/nutrition_ocr_document.dart';
+import 'package:sophis/services/nutrition_table_region.dart';
+export 'nutrition_ocr_document.dart';
 
 class NutritionLabelParser {
   static final RegExp _kcalPattern = RegExp(
@@ -39,7 +24,7 @@ class NutritionLabelParser {
     caseSensitive: false,
   );
   static final RegExp _proteinRegexp = RegExp(
-    r'(?:Protein|Eiwei[ßs]|Eiweiss|Protéines|proteine|Eiwitten|Proteínas|Proteine|Białko|Bialko|Proteiner)',
+    r'(?:Protein|E[il]wei[ßsb]|Eiweiss|Protéines|proteine|Eiwitten|Proteínas|Proteine|Białko|Bialko|Proteiner)',
     caseSensitive: false,
   );
   static final RegExp _carbsRegexp = RegExp(
@@ -69,7 +54,7 @@ class NutritionLabelParser {
     caseSensitive: false,
   );
   static final RegExp _per100Pattern = RegExp(
-    r'(?:per|pro|je|pour|por|w)\s*100\s*(?:g|ml)',
+    r'(?:(?:per|pro|je|pour|por|w)\s*|[øØ⌀]\s*/?\s*|/\s*|\b)100\s*(?:g|ml)\b',
     caseSensitive: false,
   );
   static final RegExp _subLineRegexp = RegExp(
@@ -77,9 +62,11 @@ class NutritionLabelParser {
     caseSensitive: false,
   );
   static final RegExp _isNutritionLabelPattern = RegExp(
-    r'(?:Energie|Energy|Energia|Brennwert|Calories|Calorías|Eiwei[ßs]|Protein|Proteínas|Białko|Kohlenhydrate|Carbohydrate|Koolhydraten|Carboidrati|Węglowodany|Fett|Fat|Vetten|Grasas|Grassi|Tłuszcz|Ballaststoffe|Fiber|Fibre|Vezels|Fibra|Błonnik|Nährwert|Nutrition|Voedingswaarde|Valor\s+nutricional|Wartość\s+odżywcza)',
+    r'(?:Energie|Energy|Energia|Brennwert|Calories|Calorías|E[il]wei[ßsb]|Protein|Proteínas|Białko|Kohlenhydrate|Carbohydrate|Koolhydraten|Carboidrati|Węglowodany|Fett|Fat|Vetten|Grasas|Grassi|Tłuszcz|Ballaststoffe|Fiber|Fibre|Vezels|Fibra|Błonnik|Nährwert|Nutrition|Voedingswaarde|Valor\s+nutricional|Wartość\s+odżywcza)',
     caseSensitive: false,
   );
+
+  static bool hasPer100Heading(String text) => _per100Pattern.hasMatch(text);
 
   static NutritionLabelResult? parse(String ocrText) {
     ocrText = _normalizeOcrText(ocrText);
@@ -181,6 +168,8 @@ class NutritionLabelParser {
       servingName: servingName,
       wasServingConverted: isPerServing && servingSizeG != null,
       presentFields: presentFields,
+      explicitUnitFields: _explicitUnits(lines),
+      upperBoundFields: _upperBounds(lines),
     );
   }
 
@@ -239,6 +228,7 @@ class NutritionLabelParser {
           : secondProductLine == null
               ? productName
               : '$productName $secondProductLine',
+      upperBoundFields: _upperBounds(lines),
       caloriesPer100: scaleValue(calories),
       proteinPer100: scaleValue(protein),
       carbsPer100: scaleValue(carbs),
@@ -251,98 +241,240 @@ class NutritionLabelParser {
     );
   }
 
-  static NutritionLabelResult? parseLayout(List<NutritionOcrLine> lines) {
+  static NutritionLabelResult? parseLayout(List<NutritionOcrLine> input) {
+    final region = NutritionTableRegion.locate(input);
+    final lines = region == null
+        ? input
+        : region.lines.map(_normalizeStandaloneRowLabel).toList();
     final anchor = _findPer100Anchor(lines);
+    if (anchor != null) return _parseAnchoredTable(lines, anchor);
 
-    final reconstructed = lines.map((line) {
-      if (!_isNutrientRow(line.text)) return line.text;
-      if (_subLineRegexp.hasMatch(line.text)) return line.text;
-      final numericTokens = line.tokens
-          .where((token) => RegExp(r'\d').hasMatch(token.text))
-          .toList();
-      if (numericTokens.isEmpty) {
-        final neighboringValue = _nearestValueText(line, lines, anchor);
-        if (neighboringValue == null) return line.text;
-        return '${_rowKeyword(line.text)} $neighboringValue';
-      }
-      if (numericTokens.length < 2 || anchor == null) return line.text;
-
-      final candidates = _kcalPattern.hasMatch(line.text)
-          ? numericTokens
-              .where((token) => token.text.toLowerCase().contains('kcal'))
-              .toList()
-          : numericTokens;
-      final selectable = candidates.isEmpty ? numericTokens : candidates;
-      selectable.sort(
-        (a, b) =>
-            (a.centerX - anchor).abs().compareTo((b.centerX - anchor).abs()),
-      );
-      final keyword = _rowKeyword(line.text);
-      return '$keyword ${selectable.first.text}';
-    }).join('\n');
-
-    return parse(reconstructed);
+    // Without a column heading, only use values explicitly attached to their
+    // nutrient names. Nearest-row guesses can borrow unrelated package text.
+    return parse(lines.map((line) => line.text).join('\n'));
   }
 
-  static String? _nearestValueText(
-    NutritionOcrLine nutrientLine,
-    List<NutritionOcrLine> lines,
-    double? anchor,
-  ) {
-    final isEnergy = _energyKeywordPattern.hasMatch(nutrientLine.text);
-    final candidates = lines.where((line) {
-      final trimmed = line.text.trim();
-      if (isEnergy) {
-        return _kcalPattern.hasMatch(trimmed) || _kjPattern.hasMatch(trimmed);
-      }
-      return RegExp(
-        r'^(?:\s*<?\d+[\.,]?\d*\s*g?\s*)+$',
-        caseSensitive: false,
-      ).hasMatch(trimmed);
-    }).toList();
-    if (candidates.isEmpty) return null;
-    candidates.sort(
-      (a, b) => _neighborScore(a, nutrientLine, anchor)
-          .compareTo(_neighborScore(b, nutrientLine, anchor)),
-    );
-    final nearest = candidates.first;
-    final tokens = nearest.tokens
-        .where((token) => RegExp(r'\d').hasMatch(token.text))
+  // A single character can be lost in a small nutrient name (e.g. ß).
+  // Only repair standalone alphabetic labels inside a detected nutrient table.
+  // Never apply this to numbers, package copy, or ambiguous vocabulary matches.
+  static NutritionOcrLine _normalizeStandaloneRowLabel(NutritionOcrLine line) {
+    final word = line.text.trim().toLowerCase();
+    if (!RegExp(r'^[a-zäöüß]{5,}$').hasMatch(word)) return line;
+    const vocabulary = [
+      'eiweiß',
+      'protein',
+      'kohlenhydrate',
+      'carbohydrates',
+      'ballaststoffe',
+      'fiber',
+      'fibre',
+    ];
+    if (vocabulary.contains(word)) return line;
+    final matches = vocabulary
+        .where(
+          (candidate) =>
+              _oneEditApart(word, candidate) ||
+              _twoSubstitutionsWithPrefix(word, candidate),
+        )
         .toList();
-    if (tokens.isEmpty) return nearest.text;
+    if (matches.length != 1) return line;
+    final label = matches.single;
+    return NutritionOcrLine(
+      text: label,
+      top: line.top,
+      height: line.height,
+      left: line.left,
+      right: line.right,
+      tokens: line.tokens.length == 1
+          ? [
+              NutritionOcrToken(
+                text: label,
+                centerX: line.tokens.single.centerX,
+                centerY: line.tokens.single.centerY,
+              ),
+            ]
+          : line.tokens,
+    );
+  }
 
-    final unitTokens = isEnergy
-        ? tokens
-            .where(
-              (token) => token.text.toLowerCase().contains('kcal'),
-            )
-            .toList()
-        : tokens;
-    final selectable = unitTokens.isEmpty ? tokens : unitTokens;
-    if (anchor != null) {
-      selectable.sort(
-        (a, b) =>
-            (a.centerX - anchor).abs().compareTo((b.centerX - anchor).abs()),
+  static bool _oneEditApart(String a, String b) {
+    if ((a.length - b.length).abs() > 1) return false;
+    var i = 0;
+    var j = 0;
+    var edits = 0;
+    while (i < a.length && j < b.length) {
+      if (a[i] == b[j]) {
+        i++;
+        j++;
+        continue;
+      }
+      if (++edits > 1) return false;
+      if (a.length >= b.length) i++;
+      if (b.length >= a.length) j++;
+    }
+    return edits + (a.length - i) + (b.length - j) == 1;
+  }
+
+  static bool _twoSubstitutionsWithPrefix(String a, String b) {
+    // Restricted to standalone alphabetic labels inside the detected table.
+    // Preserve length and the first two letters; never apply this to values.
+    if (a.length < 6 ||
+        a.length != b.length ||
+        a.substring(0, 2) != b.substring(0, 2)) {
+      return false;
+    }
+    var differences = 0;
+    for (var index = 2; index < a.length; index++) {
+      if (a[index] != b[index]) differences++;
+    }
+    return differences == 2;
+  }
+
+  /// Reconstruct only labelled rows in the selected column. OCR block order
+  /// is not table order; standalone energy cells and reference-intake footers
+  /// must never compete with the labelled energy row.
+  static NutritionLabelResult? _parseAnchoredTable(
+    List<NutritionOcrLine> lines,
+    double anchor,
+  ) {
+    final heading =
+        lines.firstWhere((line) => _per100Pattern.hasMatch(line.text));
+    final otherHeadings = lines.where(
+      (line) =>
+          line != heading &&
+          RegExp(r'portion|serving|%\s*RI', caseSensitive: false)
+              .hasMatch(line.text) &&
+          (line.top - heading.top).abs() < (heading.height ?? 50) * 2,
+    );
+    final otherAnchors = <double>[
+      for (final line in otherHeadings)
+        if (line.tokens.isNotEmpty) line.tokens.first.centerX,
+      for (final token in heading.tokens)
+        if (RegExp(r'portion|serving', caseSensitive: false)
+            .hasMatch(token.text))
+          token.centerX,
+    ];
+    final rightAnchors = otherAnchors.where((x) => x > anchor).toList()..sort();
+    final leftAnchors = otherAnchors.where((x) => x < anchor).toList()..sort();
+    final right = rightAnchors.isEmpty
+        ? double.infinity
+        : (anchor + rightAnchors.first) / 2;
+    final left = leftAnchors.isEmpty
+        ? double.negativeInfinity
+        : (anchor + leftAnchors.last) / 2;
+    final rows = lines
+        .where(
+          (line) =>
+              _isNutrientRow(line.text) || _subLineRegexp.hasMatch(line.text),
+        )
+        .where(
+          (line) =>
+              !_per100Pattern.hasMatch(line.text) &&
+                  !_kcalPattern.hasMatch(line.text) &&
+                  !_kjPattern.hasMatch(line.text) ||
+              _energyKeywordPattern.hasMatch(line.text),
+        )
+        .toList()
+      ..sort((a, b) => a.top.compareTo(b.top));
+    // Estimate the label's tilt from words on the same nutrient row, including
+    // subrows. Single-word labels otherwise have no baseline information.
+    final slopes = <(double, double)>[];
+    for (final row in rows) {
+      final words = row.tokens
+          .where(
+            (token) =>
+                token.centerY != null && !RegExp(r'\d').hasMatch(token.text),
+          )
+          .toList();
+      if (words.length < 2) continue;
+      final dx = words.last.centerX - words.first.centerX;
+      if (dx.abs() < 20) continue;
+      final slope = (words.last.centerY! - words.first.centerY!) / dx;
+      if (slope.abs() < 0.35) slopes.add((slope, dx.abs()));
+    }
+    slopes.sort((a, b) => b.$2.compareTo(a.$2));
+    final slope = slopes.isEmpty ? 0.0 : slopes.first.$1;
+    final gaps = <double>[
+      for (var i = 1; i < rows.length; i++)
+        if (rows[i].top - rows[i - 1].top > 0) rows[i].top - rows[i - 1].top,
+    ]..sort();
+    final maxDistance = gaps.isEmpty ? 0.0 : gaps[gaps.length ~/ 2] * 0.45;
+    final reconstructed = <String>['Nutrition ${heading.text}'];
+    final usedCells = <NutritionOcrToken>{};
+    for (final row in rows) {
+      if (_subLineRegexp.hasMatch(row.text)) continue;
+      final isEnergy = _energyKeywordPattern.hasMatch(row.text);
+      final cells = <(String, double, NutritionOcrToken)>[];
+      for (final line in lines) {
+        final tokens = line.tokens
+            .where((token) => token.centerX > left && token.centerX < right)
+            .toList();
+        if (tokens.isEmpty) continue;
+        // On a combined row, strip the nutrient name but retain adjacent units.
+        final firstNumber =
+            tokens.indexWhere((token) => RegExp(r'\d').hasMatch(token.text));
+        if (firstNumber < 0) continue;
+        final valueTokens = tokens.sublist(firstNumber);
+        if (usedCells.contains(valueTokens.first)) continue;
+        final text =
+            _normalizeOcrText(valueTokens.map((token) => token.text).join(' '))
+                .replaceAll('|', '')
+                .trim();
+        if (isEnergy) {
+          if (!_kcalPattern.hasMatch(text) && !_kjPattern.hasMatch(text)) {
+            continue;
+          }
+        } else if (!RegExp(r'^<?\d+(?:[.,]\d+)?\s*g?$', caseSensitive: false)
+            .hasMatch(text)) {
+          continue;
+        }
+        final origin = row.tokens.firstOrNull;
+        final cell = valueTokens.first;
+        final rowY = origin?.centerY ?? row.top;
+        final cellY = cell.centerY ?? line.top;
+        final expectedY = rowY +
+            (origin == null ? 0 : slope * (cell.centerX - origin.centerX));
+        final distance = (cellY - expectedY).abs();
+        final followingRows = rows.where(
+          (other) =>
+              other.top > row.top && !_subLineRegexp.hasMatch(other.text),
+        );
+        final energyBottom = followingRows.isEmpty
+            ? row.top + maxDistance * 2
+            : followingRows.first.top;
+        final inEnergyBand =
+            isEnergy && cellY >= rowY - maxDistance && cellY < energyBottom;
+        if (distance <= maxDistance || inEnergyBand || identical(line, row)) {
+          cells.add((text, distance, cell));
+        }
+      }
+      cells.sort((a, b) {
+        if (isEnergy) {
+          final aKcal = _kcalPattern.hasMatch(a.$1);
+          final bKcal = _kcalPattern.hasMatch(b.$1);
+          if (aKcal != bKcal) return aKcal ? -1 : 1;
+        }
+        return a.$2.compareTo(b.$2);
+      });
+      if (cells.isEmpty) continue;
+      // Do not guess between two adjacent rows with equally plausible alignment.
+      if (!isEnergy &&
+          cells.length > 1 &&
+          (cells[1].$2 - cells[0].$2).abs() < maxDistance * 0.2) {
+        continue;
+      }
+      usedCells.add(cells.first.$3);
+      reconstructed.add('${_rowKeyword(row.text)} ${cells.first.$1}');
+    }
+    // Preserve serving metadata, but not unrelated numeric body/footer text.
+    final serving =
+        _extractServingSize(lines.map((line) => line.text).toList());
+    if (serving != null) {
+      reconstructed.add(
+        'Serving size $serving ${_extractNutritionUnit(heading.text) == NutritionUnit.milliliter ? 'ml' : 'g'}',
       );
     }
-    return selectable.first.text;
-  }
-
-  static double _neighborScore(
-    NutritionOcrLine candidate,
-    NutritionOcrLine nutrientLine,
-    double? anchor,
-  ) {
-    final verticalDistance = (candidate.top - nutrientLine.top).abs();
-    if (anchor == null || candidate.tokens.isEmpty) return verticalDistance;
-    final horizontalDistance = candidate.tokens
-        .where((token) => RegExp(r'\d').hasMatch(token.text))
-        .map((token) => (token.centerX - anchor).abs())
-        .fold<double>(
-          double.infinity,
-          (best, value) => value < best ? value : best,
-        );
-    return verticalDistance + horizontalDistance * 0.08;
+    return parse(reconstructed.join('\n'));
   }
 
   static double? _findPer100Anchor(List<NutritionOcrLine> lines) {
@@ -405,6 +537,46 @@ class NutritionLabelParser {
     return null;
   }
 
+  static Set<NutritionLabelField> _explicitUnits(List<String> lines) {
+    final fields = <NutritionLabelField>{};
+    for (final entry in {
+      NutritionLabelField.protein: _proteinRegexp,
+      NutritionLabelField.carbs: _carbsRegexp,
+      NutritionLabelField.fat: _fatRegexp,
+      NutritionLabelField.fiber: _fiberRegexp,
+    }.entries) {
+      for (final line in lines) {
+        final keyword = entry.value.firstMatch(line);
+        if (keyword == null || _subLineRegexp.hasMatch(line)) continue;
+        final value = _numberPattern.firstMatch(line.substring(keyword.end));
+        if (value == null) continue;
+        final suffix = line.substring(keyword.end + value.end);
+        if (RegExp(r'^\s*g\b', caseSensitive: false).hasMatch(suffix)) {
+          fields.add(entry.key);
+        }
+        break;
+      }
+    }
+    return fields;
+  }
+
+  static Set<NutritionLabelField> _upperBounds(List<String> lines) => {
+        for (final entry in {
+          NutritionLabelField.calories: _energyKeywordPattern,
+          NutritionLabelField.protein: _proteinRegexp,
+          NutritionLabelField.carbs: _carbsRegexp,
+          NutritionLabelField.fat: _fatRegexp,
+          NutritionLabelField.fiber: _fiberRegexp,
+        }.entries)
+          if (lines.any(
+            (line) =>
+                entry.value.hasMatch(line) &&
+                RegExp(r'<\s*\d').hasMatch(line) &&
+                !_subLineRegexp.hasMatch(line),
+          ))
+            entry.key,
+      };
+
   static double? _extractMacro(List<String> lines, RegExp keywordPattern) {
     for (final rawLine in lines) {
       final line = rawLine.trim();
@@ -452,7 +624,7 @@ class NutritionLabelParser {
 
   static NutritionUnit _extractNutritionUnit(String text) {
     final match = RegExp(
-      r'(?:per|pro|je|pour|por|w)\s*100\s*(g|ml)',
+      r'(?:(?:per|pro|je|pour|por|w)\s*|[øØ⌀]\s*/?\s*|/\s*|\b)100\s*(g|ml)\b',
       caseSensitive: false,
     ).firstMatch(text);
     if (match?.group(1)?.toLowerCase() == 'ml') {

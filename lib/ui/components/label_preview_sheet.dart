@@ -21,6 +21,9 @@ String _validationIssueMessage(
       l10n.nutritionLabelNutrientTotalWarning,
     NutritionLabelIssue.calorieMacroMismatch =>
       l10n.nutritionLabelCaloriesMismatchWarning,
+    NutritionLabelIssue.upperBoundValue => l10n.nutritionLabelUpperBoundWarning,
+    NutritionLabelIssue.missingUnitEvidence =>
+      l10n.nutritionLabelMissingUnitWarning,
     NutritionLabelIssue.candidateDisagreement =>
       l10n.nutritionLabelCandidateDisagreementWarning,
   };
@@ -93,15 +96,20 @@ class _LabelPreviewSheetState extends State<LabelPreviewSheet> {
     super.initState();
     _productName = TextEditingController(text: widget.label.productName);
     _brand = TextEditingController(text: widget.label.brand);
-    _calories = _controller(widget.label.caloriesPer100g);
-    _protein = _controller(widget.label.proteinPer100g);
-    _carbs = _controller(widget.label.carbsPer100g);
-    _fat = _controller(widget.label.fatPer100g);
-    _fiber = _controller(widget.label.fiberPer100g);
+    _calories =
+        _controller(widget.label.caloriesPer100g, NutritionLabelField.calories);
+    _protein =
+        _controller(widget.label.proteinPer100g, NutritionLabelField.protein);
+    _carbs = _controller(widget.label.carbsPer100g, NutritionLabelField.carbs);
+    _fat = _controller(widget.label.fatPer100g, NutritionLabelField.fat);
+    _fiber = _controller(widget.label.fiberPer100g, NutritionLabelField.fiber);
   }
 
-  TextEditingController _controller(double value) => TextEditingController(
-        text: value.toStringAsFixed(value % 1 == 0 ? 0 : 1),
+  TextEditingController _controller(double value, NutritionLabelField field) =>
+      TextEditingController(
+        text: !widget.label.presentFields.contains(field)
+            ? ''
+            : '${widget.label.upperBoundFields.contains(field) ? '<' : ''}${value % 1 == 0 ? value.toStringAsFixed(0) : value.toString()}',
       );
 
   double? _value(TextEditingController controller) =>
@@ -115,7 +123,11 @@ class _LabelPreviewSheetState extends State<LabelPreviewSheet> {
       _fat,
       _fiber,
     ].map(_value).toList();
-    if (values.any((value) => value == null || value < 0)) return null;
+    if (values.take(4).any((value) => value == null || value < 0)) return null;
+    if (_fiber.text.trim().isNotEmpty &&
+        (values[4] == null || values[4]! < 0)) {
+      return null;
+    }
     return widget.label.copyWith(
       productName:
           _productName.text.trim().isEmpty ? null : _productName.text.trim(),
@@ -126,9 +138,10 @@ class _LabelPreviewSheetState extends State<LabelPreviewSheet> {
       proteinPer100g: values[1],
       carbsPer100g: values[2],
       fatPer100g: values[3],
-      fiberPer100g: values[4],
+      fiberPer100g: values[4] ?? 0,
+      upperBoundFields: const {},
       presentFields: requiredNutritionLabelFields.union(
-        {NutritionLabelField.fiber},
+        {if (values[4] != null) NutritionLabelField.fiber},
       ),
     );
   }

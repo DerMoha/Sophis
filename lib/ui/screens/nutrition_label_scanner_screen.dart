@@ -111,6 +111,15 @@ class _NutritionLabelScannerScreenState
 
       if (!mounted) return;
 
+      if (result
+          case Failure<LabelIntakeResult>(
+            errorType: ServiceErrorType.network || ServiceErrorType.unknown,
+            message: final message,
+          )) {
+        await _onFailure(fallback: message);
+        return;
+      }
+
       if (_hasAiFallback && _shouldOfferCloudAssist(result)) {
         final allowCloud = await _confirmCloudAssist();
         if (!mounted) return;
@@ -329,6 +338,7 @@ class _NutritionLabelScannerScreenState
   }
 
   String _progressLabel(AppLocalizations l10n) => switch (_progress) {
+        LabelIntakeProgress.preparingScanner => l10n.scannerPreparing,
         LabelIntakeProgress.checkingImage => l10n.nutritionLabelCheckingImage,
         LabelIntakeProgress.readingText => l10n.nutritionLabelReadingText,
         LabelIntakeProgress.enhancingImage => l10n.nutritionLabelEnhancingImage,

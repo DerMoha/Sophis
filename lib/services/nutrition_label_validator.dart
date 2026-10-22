@@ -9,6 +9,8 @@ enum NutritionLabelIssue {
   nutrientTotalTooHigh,
   calorieMacroMismatch,
   candidateDisagreement,
+  upperBoundValue,
+  missingUnitEvidence,
 }
 
 class NutritionLabelValidation {
@@ -28,6 +30,9 @@ class NutritionLabelValidator {
     final issues = <NutritionLabelIssue>[];
     if (!label.hasRequiredNutrition) {
       issues.add(NutritionLabelIssue.missingRequiredValue);
+    }
+    if (label.upperBoundFields.isNotEmpty) {
+      issues.add(NutritionLabelIssue.upperBoundValue);
     }
     final macros = <double>[
       label.proteinPer100g,
@@ -55,14 +60,18 @@ class NutritionLabelValidator {
         label.fatPer100g * 9 +
         label.fiberPer100g * 2;
     final difference = (estimatedCalories - label.caloriesPer100g).abs();
-    final tolerance = math.max(80.0, label.caloriesPer100g * 0.35);
+    // A plausibility check for review, not a replacement for printed energy.
+    // The old 80 kcal floor hid mixed columns on low-energy products.
+    final tolerance = math.max(10.0, estimatedCalories * 0.20);
     if (estimatedCalories > 0 && difference > tolerance) {
       issues.add(NutritionLabelIssue.calorieMacroMismatch);
     }
 
     final presentMacros = macros.where((value) => value > 0).length;
     final usable = issues.every(
-          (issue) => issue == NutritionLabelIssue.calorieMacroMismatch,
+          (issue) =>
+              issue == NutritionLabelIssue.calorieMacroMismatch ||
+              issue == NutritionLabelIssue.upperBoundValue,
         ) &&
         label.caloriesPer100g > 0 &&
         label.caloriesPer100g <= 950 &&

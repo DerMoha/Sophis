@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 import 'package:mime/mime.dart';
+import 'package:sophis/services/android_paddle_ocr.dart';
 
 enum NutritionImageQualityIssue {
   tooSmall,
@@ -37,6 +38,9 @@ class NutritionImageQualityService {
   const NutritionImageQualityService();
 
   Future<NutritionImageQualityResult> inspect(File file) async {
+    if (AndroidPaddleOcr.enabled) {
+      return _evaluate(await const AndroidPaddleOcr().inspectImage(file));
+    }
     final bytes = await file.readAsBytes();
     if (bytes.isEmpty) {
       return const NutritionImageQualityResult(
@@ -59,6 +63,10 @@ class NutritionImageQualityService {
       );
     }
 
+    return _evaluate(metrics);
+  }
+
+  NutritionImageQualityResult _evaluate(List<double> metrics) {
     if (metrics[0] < 700 || metrics[1] < 500) {
       return const NutritionImageQualityResult(
         issue: NutritionImageQualityIssue.tooSmall,
