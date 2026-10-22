@@ -324,7 +324,7 @@ class NutritionPersistence {
     List<FoodItem> foods,
     Map<String, String> meals,
   ) {
-    final limitedFoods = foods.take(20).toList();
+    final limitedFoods = foods.take(100).toList();
     final limitedIds = limitedFoods.map((food) => food.id).toSet();
     return _database.writeNutritionDocument(
       _recentFoodsKey,

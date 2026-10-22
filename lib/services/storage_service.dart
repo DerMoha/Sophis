@@ -212,7 +212,7 @@ class StorageService {
   }
 
   // Recent Foods
-  static const _maxRecentFoods = 20;
+  static const _maxRecentFoods = 100;
 
   Future<void> saveRecentFoods(
     List<FoodItem> foods,

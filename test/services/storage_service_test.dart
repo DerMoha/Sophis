@@ -145,7 +145,7 @@ void main() {
     test('capped recent foods and preserved meal metadata', () async {
       final storage = await createTestStorage();
       final foods = List<FoodItem>.generate(
-        25,
+        105,
         (index) => FoodItem(
           id: 'food-$index',
           name: 'Food $index',
@@ -164,10 +164,10 @@ void main() {
       await storage.saveRecentFoods(foods, meals);
       final restored = storage.loadRecentFoods(outMeals: restoredMeals);
 
-      expect(restored, hasLength(20));
+      expect(restored, hasLength(100));
       expect(restored.first.id, 'food-0');
       expect(restoredMeals['food-0'], 'breakfast');
-      expect(restoredMeals.containsKey('food-24'), isFalse);
+      expect(restoredMeals.containsKey('food-104'), isFalse);
     });
 
     test('stored secure values and removed legacy keys after migration',

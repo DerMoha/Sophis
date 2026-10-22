@@ -455,8 +455,8 @@ class NutritionProvider extends ChangeNotifier {
   Future<void> duplicateFoodEntry(FoodEntry entry, {String? toMeal}) =>
       _foodLog.duplicateFoodEntry(entry, toMeal: toMeal);
 
-  Future<List<FoodEntry>> repeatLastMeal({DateTime? timestamp}) async {
-    final entries = await _foodLog.repeatLastMeal(timestamp: timestamp);
+  Future<List<FoodEntry>> repeatLastMeal({DateTime? timestamp, String? meal}) async {
+    final entries = await _foodLog.repeatLastMeal(timestamp: timestamp, meal: meal);
     if (entries.isNotEmpty) {
       await _syncNutritionForDate(entries.first.timestamp);
     }
@@ -497,8 +497,8 @@ class NutritionProvider extends ChangeNotifier {
   List<FoodEntry> getEntriesByMeal(String meal) =>
       _foodLog.getEntriesByMeal(meal);
 
-  List<FoodEntry> getLastLoggedMealEntries() =>
-      _foodLog.getLastLoggedMealEntries();
+  List<FoodEntry> getLastLoggedMealEntries({String? meal}) =>
+      _foodLog.getLastLoggedMealEntries(meal: meal);
 
   NutritionTotals getTodayTotals() => _foodLog.getTodayTotals();
 

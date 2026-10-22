@@ -197,10 +197,11 @@ class FoodLogController {
   /// The latest entry identifies the meal instance. Entries from the same
   /// meal and calendar day are copied together, so a multi-item breakfast is
   /// repeated as one action instead of repeating only its final item.
-  List<FoodEntry> getLastLoggedMealEntries() {
-    if (_entries.isEmpty) return const <FoodEntry>[];
+  List<FoodEntry> getLastLoggedMealEntries({String? meal}) {
+    final candidates = meal == null ? _entries : _entries.where((entry) => entry.meal == meal).toList();
+    if (candidates.isEmpty) return const <FoodEntry>[];
 
-    final latestEntry = _entries.reduce(
+    final latestEntry = candidates.reduce(
       (current, candidate) =>
           candidate.timestamp.isAfter(current.timestamp) ? candidate : current,
     );
@@ -216,8 +217,8 @@ class FoodLogController {
   }
 
   /// Repeats the most recently logged meal at [timestamp].
-  Future<List<FoodEntry>> repeatLastMeal({DateTime? timestamp}) async {
-    final source = getLastLoggedMealEntries();
+  Future<List<FoodEntry>> repeatLastMeal({DateTime? timestamp, String? meal}) async {
+    final source = getLastLoggedMealEntries(meal: meal);
     if (source.isEmpty) return const <FoodEntry>[];
 
     final start = timestamp ?? DateTime.now();
@@ -387,9 +388,29 @@ class FoodLogController {
       getTotalsForDateTyped(date);
 
   List<FoodItem> getRecentFoodsForMeal(String meal) {
-    final matching =
-        _recentFoods.where((f) => _recentFoodMeals[f.id] == meal).toList();
-    return matching.isNotEmpty ? matching : _recentFoods;
+    final matching = {for (final food in _recentFoods)
+      if (_recentFoodMeals[food.id] == meal) food.id: food,};
+    // Recover older scanned foods from their logged nutrition snapshots too,
+    // so extending the cache helps existing breakfast histories immediately.
+    final history = _entries.where((entry) => entry.meal == meal && entry.sourceFoodId != null).toList()
+      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    for (final entry in history) {
+      final id = entry.sourceFoodId!;
+      final selection = entry.portionSelection;
+      if (matching.containsKey(id) || selection == null || !selection.isValid) continue;
+      final suffix = ' (${entry.displayPortionText})';
+      final name = entry.name.endsWith(suffix) ? entry.name.substring(0, entry.name.length - suffix.length) : entry.name;
+      final factor = 100 / selection.amount;
+      matching[id] = FoodItem(
+        id: id, name: name, category: 'history',
+        caloriesPer100g: entry.calories * factor, proteinPer100g: entry.protein * factor,
+        carbsPer100g: entry.carbs * factor, fatPer100g: entry.fat * factor,
+        fiberPer100g: entry.fiber * factor, nutritionUnit: selection.unit,
+        lastUsedPortion: selection,
+      );
+      if (matching.length >= 100) break;
+    }
+    return matching.isNotEmpty ? matching.values.take(100).toList() : _recentFoods;
   }
 
   Future<void> addRecentFood(FoodItem food, {String? meal}) async {
@@ -401,8 +422,8 @@ class FoodLogController {
     if (meal != null) {
       _recentFoodMeals[food.id] = meal;
     }
-    if (_recentFoods.length > 20) {
-      _recentFoods = _recentFoods.take(20).toList();
+    if (_recentFoods.length > 100) {
+      _recentFoods = _recentFoods.take(100).toList();
     }
 
     try {

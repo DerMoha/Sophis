@@ -172,9 +172,9 @@ void main() {
         );
       }
 
-      expect(controller.recentFoods, hasLength(20));
+      expect(controller.recentFoods, hasLength(25));
       expect(controller.getRecentFoodsForMeal('snack').single.id, 'recent-24');
-      expect(controller.getRecentFoodsForMeal('breakfast'), hasLength(20));
+      expect(controller.getRecentFoodsForMeal('breakfast'), hasLength(25));
     });
 
     test('managed hydration and workout totals for today', () async {

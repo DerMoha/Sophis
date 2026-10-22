@@ -9,7 +9,7 @@ import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/components/organic_components.dart';
 import 'package:sophis/ui/screens/meal_detail_screen.dart';
 import 'package:sophis/ui/components/quick_add_sheet.dart';
-import 'package:sophis/ui/screens/shared/meal_action_helpers.dart';
+import 'package:sophis/ui/components/repeat_meal_button.dart';
 
 /// A meal section (e.g., Breakfast, Lunch) with food entries.
 class MealSection extends StatelessWidget {
@@ -125,15 +125,7 @@ class _MealSectionContent extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (entries.isNotEmpty)
-          IconButton(
-            icon: Icon(
-              Icons.share_outlined,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            onPressed: () => shareMealEntries(context, entries, title: title),
-            tooltip: l10n.share,
-          ),
+        RepeatMealButton(meal: mealType),
         IconButton(
           icon:
               Icon(Icons.add_circle_outline, color: theme.colorScheme.primary),
