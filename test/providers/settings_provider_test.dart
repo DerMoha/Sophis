@@ -102,6 +102,7 @@ void main() {
       await provider.setDashboardCards(
         const [
           DashboardCard(id: DashboardCardIds.foodDiary),
+          DashboardCard(id: DashboardCardIds.mealPlanner),
           DashboardCard(id: DashboardCardIds.weight),
         ],
       );
@@ -112,7 +113,7 @@ void main() {
       expect(provider.dashboardCards.first.visible, isFalse);
       expect(
         provider.visibleDashboardCards.single.id,
-        DashboardCardIds.foodDiary,
+        DashboardCardIds.mealPlanner,
       );
 
       const brunch = CustomMealType(

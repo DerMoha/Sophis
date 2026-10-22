@@ -53,13 +53,20 @@ void main() {
     expect(find.text('Calories'), findsOneWidget);
     final hero = find.byType(CalorieHeroCard);
     expect(
-        find.descendant(
-            of: hero, matching: find.byType(LinearProgressIndicator),),
-        findsNothing,);
-    expect(find.descendant(of: hero, matching: find.byType(RadialProgress)),
-        findsWidgets,);
-    expect(find.descendant(of: hero, matching: find.byType(MacrosCard)),
-        findsOneWidget,);
+      find.descendant(
+        of: hero,
+        matching: find.byType(LinearProgressIndicator),
+      ),
+      findsNothing,
+    );
+    expect(
+      find.descendant(of: hero, matching: find.byType(RadialProgress)),
+      findsWidgets,
+    );
+    expect(
+      find.descendant(of: hero, matching: find.byType(MacrosCard)),
+      findsOneWidget,
+    );
     expect(find.text('+0 kcal burned'), findsNothing);
     expect(find.text('Macronutrients'), findsNothing);
     expect(find.text('Quick Actions'), findsOneWidget);
@@ -124,7 +131,7 @@ void main() {
     await tester.tap(find.text('More'));
     await tester.pumpAndSettle();
     expect(find.text('Planning'), findsOneWidget);
-    expect(find.text('Tracking'), findsOneWidget);
+    expect(find.text('Log entries'), findsOneWidget);
     expect(find.text('Meal Planner'), findsOneWidget);
 
     await tester.tap(find.text('Today').last);
@@ -132,9 +139,10 @@ void main() {
     await tester.tap(find.text('Add Food'));
     await tester.pumpAndSettle();
     expect(find.text('Search food'), findsOneWidget);
-    expect(find.text('Scan barcode'), findsOneWidget);
+    expect(find.text('Scan product'), findsOneWidget);
     expect(find.text('Manual entry'), findsOneWidget);
-    expect(find.text('Optional AI'), findsOneWidget);
+    expect(find.text('Photograph food'), findsOneWidget);
+    expect(find.text('Optional AI'), findsNothing);
   });
 
   testWidgets('AppShell supported German at 200% text on a narrow screen', (

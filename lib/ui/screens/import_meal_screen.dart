@@ -233,7 +233,7 @@ class _ImportMealScreenState extends State<ImportMealScreen> {
                                               : theme.colorScheme.onSurface,
                                         ),
                                         const SizedBox(width: 6),
-                                        Text(mealType.name),
+                                        Text(mealType.displayName(l10n)),
                                       ],
                                     ),
                                     selected: _selectedMeal == mealType.id,

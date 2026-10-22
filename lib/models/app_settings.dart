@@ -39,7 +39,6 @@ class DashboardCardIds {
   static const dailyGuidance = 'daily_guidance';
 
   static const List<String> defaultOrder = [
-    foodDiary,
     mealPlanner,
     weight,
     recipes,
@@ -49,8 +48,14 @@ class DashboardCardIds {
     dailyGuidance,
   ];
 
-  static List<DashboardCard> get defaultCards =>
-      defaultOrder.map((id) => DashboardCard(id: id)).toList();
+  static List<DashboardCard> get defaultCards => defaultOrder
+      .map(
+        (id) => DashboardCard(
+          id: id,
+          visible: !{activity, workout, progressPhotos}.contains(id),
+        ),
+      )
+      .toList();
 }
 
 /// Preset accent colors

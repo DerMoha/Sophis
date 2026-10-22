@@ -77,7 +77,7 @@ class _MealTypesScreenState extends State<MealTypesScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(l10n.deleteMealType),
-        content: Text(l10n.deleteConfirmation(mealType.name)),
+        content: Text(l10n.deleteConfirmation(mealType.displayName(l10n))),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -141,7 +141,7 @@ class _MealTypeTile extends StatelessWidget {
               color: mealType.color,
             ),
           ),
-          title: Text(mealType.name),
+          title: Text(mealType.displayName(l10n)),
           subtitle: mealType.reminderTime != null
               ? Text(
                   '${l10n.reminderTime}: ${TimeUtils.formatStoredTimeForDisplay(context, mealType.reminderTime)}',
@@ -215,6 +215,17 @@ class _EditMealTypeSheetState extends State<_EditMealTypeSheet> {
     if (_selectedColorIndex < 0) _selectedColorIndex = 0;
 
     _reminderTime = TimeUtils.parseStoredTime(widget.mealType?.reminderTime);
+  }
+
+  bool _nameInitialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_nameInitialized) return;
+    _nameInitialized = true;
+    _nameController.text =
+        widget.mealType?.displayName(AppLocalizations.of(context)!) ?? '';
   }
 
   @override
@@ -445,7 +456,9 @@ class _EditMealTypeSheetState extends State<_EditMealTypeSheet> {
     if (isEditing) {
       // Update existing meal type
       final updated = widget.mealType!.copyWith(
-        name: name,
+        name: name == widget.mealType!.displayName(l10n)
+            ? widget.mealType!.name
+            : name,
         iconCodePoint: selectedIcon.codePoint,
         colorValue: selectedColor.toARGB32(),
         reminderTime: reminderTimeString,

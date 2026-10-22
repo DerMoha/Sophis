@@ -131,7 +131,7 @@ void main() {
           return Text(quickActions.actions.first.id);
         }),
       );
-      expect(find.text(DashboardCardIds.foodDiary), findsOneWidget);
+      expect(find.text(DashboardCardIds.mealPlanner), findsOneWidget);
     });
 
     testWidgets('keeps quick actions out when all are hidden',

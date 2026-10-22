@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:sophis/l10n/generated/app_localizations.dart';
+import 'package:sophis/ui/components/common/entry_feedback.dart';
 import 'package:sophis/models/food_entry.dart';
 import 'package:sophis/models/food_item.dart';
 import 'package:sophis/models/nutrition_unit.dart';
@@ -45,16 +46,57 @@ Future<void> showQuickAddSheet(
     ),
   );
   if (entry == null || !context.mounted) return;
+  showFoodAddedFeedback(context, entry);
+}
+
+enum ProductScanMode { barcode, nutritionLabel }
+
+Future<void> showProductScanOptions(
+  BuildContext context, {
+  required String mealType,
+}) async {
   final l10n = AppLocalizations.of(context)!;
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(l10n.quickAddAdded(entry.name)),
-      action: SnackBarAction(
-        label: l10n.undo,
-        onPressed: () => context.read<NutritionProvider>().removeFoodEntry(
-              entry.id,
+  final navigator = Navigator.of(context);
+  final choice = await showModalBottomSheet<ProductScanMode>(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    showDragHandle: true,
+    builder: (sheetContext) => SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+            child: Text(
+              l10n.scanProduct,
+              style: Theme.of(context).textTheme.titleLarge,
             ),
+          ),
+          _ActionTile(
+            icon: Icons.qr_code_scanner_outlined,
+            label: l10n.scanBarcode,
+            color: Theme.of(context).colorScheme.primary,
+            onTap: () => Navigator.pop(sheetContext, ProductScanMode.barcode),
+          ),
+          _ActionTile(
+            icon: Icons.document_scanner_outlined,
+            label: l10n.nutritionLabelScannerTitle,
+            color: Theme.of(context).colorScheme.primary,
+            onTap: () =>
+                Navigator.pop(sheetContext, ProductScanMode.nutritionLabel),
+          ),
+          const SizedBox(height: 16),
+        ],
       ),
+    ),
+  );
+  if (choice == null || !navigator.mounted) return;
+  navigator.push(
+    AppTheme.slideRoute(
+      choice == ProductScanMode.barcode
+          ? BarcodeScannerScreen(meal: mealType)
+          : NutritionLabelScannerScreen(meal: mealType),
     ),
   );
 }
@@ -92,33 +134,13 @@ class _QuickAddContentState extends State<_QuickAddContent> {
       case Success<FoodEntry>(value: final entry):
         if (!widget.sheetContext.mounted) return;
         Navigator.pop(widget.sheetContext, entry);
-      case Failure<FoodEntry>(message: final message):
+      case Failure<FoodEntry>():
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(message)),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.saveEntryFailed),
+          ),
         );
     }
-  }
-
-  Future<bool> _confirmCameraAccess(BuildContext context) async {
-    final l10n = AppLocalizations.of(context)!;
-    return await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text(l10n.cameraAccessTitle),
-            content: Text(l10n.cameraAccessBarcodeExplanation),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text(l10n.cancel),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: Text(l10n.continueLabel),
-              ),
-            ],
-          ),
-        ) ??
-        false;
   }
 
   @override
@@ -245,30 +267,28 @@ class _QuickAddContentState extends State<_QuickAddContent> {
           },
         ),
         _ActionTile(
-          icon: Icons.qr_code_scanner_outlined,
-          label: l10n.scanBarcode,
-          color: theme.colorScheme.primary,
-          onTap: () async {
-            if (!await _confirmCameraAccess(context)) return;
-            if (!context.mounted) return;
-            Navigator.pop(widget.sheetContext);
-            Navigator.push(
-              context,
-              AppTheme.slideRoute(BarcodeScannerScreen(meal: widget.mealType)),
-            );
-          },
-        ),
-        _ActionTile(
-          icon: Icons.document_scanner_outlined,
-          label: l10n.nutritionLabelScannerTitle,
+          icon: Icons.camera_alt_outlined,
+          label: l10n.photographFood,
+          subtitle: l10n.aiCloudNote,
           color: theme.colorScheme.primary,
           onTap: () {
             Navigator.pop(widget.sheetContext);
             Navigator.push(
               context,
-              AppTheme.slideRoute(
-                NutritionLabelScannerScreen(meal: widget.mealType),
-              ),
+              AppTheme.slideRoute(AIFoodCameraScreen(meal: widget.mealType)),
+            );
+          },
+        ),
+        _ActionTile(
+          icon: Icons.qr_code_scanner_outlined,
+          label: l10n.scanProduct,
+          color: theme.colorScheme.primary,
+          onTap: () {
+            final navigator = Navigator.of(context);
+            Navigator.pop(widget.sheetContext);
+            showProductScanOptions(
+              navigator.context,
+              mealType: widget.mealType,
             );
           },
         ),
@@ -283,37 +303,6 @@ class _QuickAddContentState extends State<_QuickAddContent> {
               AppTheme.slideRoute(AddFoodScreen(meal: widget.mealType)),
             );
           },
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 4),
-          child: Text(
-            l10n.optionalAi,
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        _ActionTile(
-          icon: Icons.auto_awesome_outlined,
-          label: l10n.aiRecognition,
-          color: theme.colorScheme.primary,
-          onTap: () {
-            Navigator.pop(widget.sheetContext);
-            Navigator.push(
-              context,
-              AppTheme.slideRoute(AIFoodCameraScreen(meal: widget.mealType)),
-            );
-          },
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-          child: Text(
-            l10n.aiCloudNote,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
         ),
       ],
     );
@@ -409,12 +398,14 @@ class _RecentFoodChip extends StatelessWidget {
 class _ActionTile extends StatelessWidget {
   final IconData icon;
   final String label;
+  final String? subtitle;
   final Color color;
   final VoidCallback onTap;
 
   const _ActionTile({
     required this.icon,
     required this.label,
+    this.subtitle,
     required this.color,
     required this.onTap,
   });
@@ -436,6 +427,7 @@ class _ActionTile extends StatelessWidget {
           child: Icon(icon, size: 18, color: color),
         ),
         title: Text(label),
+        subtitle: subtitle == null ? null : Text(subtitle!),
         trailing: Icon(
           Icons.chevron_right,
           size: 18,

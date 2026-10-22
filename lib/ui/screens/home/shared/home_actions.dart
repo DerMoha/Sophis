@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/app_settings.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
-import 'package:sophis/ui/screens/food_diary_screen.dart';
 import 'package:sophis/ui/screens/meal_planner_screen.dart';
 import 'package:sophis/ui/screens/weight_tracker_screen.dart';
 import 'package:sophis/ui/screens/recipes_screen.dart';
@@ -49,17 +48,6 @@ HomeAction? _buildAction(
   String id,
 ) {
   switch (id) {
-    case DashboardCardIds.foodDiary:
-      return HomeAction(
-        id: id,
-        icon: Icons.history_rounded,
-        label: l10n.foodDiary,
-        color: theme.colorScheme.primary,
-        onTap: () => Navigator.push(
-          context,
-          AppTheme.slideRoute(const FoodDiaryScreen()),
-        ),
-      );
     case DashboardCardIds.mealPlanner:
       return HomeAction(
         id: id,

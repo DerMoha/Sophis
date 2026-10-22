@@ -107,7 +107,7 @@ class _HomeScreenModernState extends State<HomeScreenModern> {
                           ),
                         ),
                         IconButton(
-                          tooltip: 'Partner sharing',
+                          tooltip: l10n.partnerSharingLabel,
                           onPressed: () => Navigator.push(
                             context,
                             AppTheme.slideRoute(const PeopleScreen()),

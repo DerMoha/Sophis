@@ -238,7 +238,10 @@ class MealCard extends StatelessWidget {
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: entries.isEmpty ? 10 : 16,
+            ),
             child: Row(
               children: [
                 Expanded(

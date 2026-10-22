@@ -193,7 +193,7 @@ Widget renderDashboardSlot(
         index: fadeIndex,
         child: MealSection(
           mealType: mealType.id,
-          title: mealType.name,
+          title: mealType.displayName(AppLocalizations.of(context)!),
           icon: mealType.icon,
           color: mealType.color,
           showMacros: showMacros,

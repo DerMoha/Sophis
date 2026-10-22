@@ -65,22 +65,14 @@ class MoreScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
                   AppSection(
-                    title: l10n.tracking,
+                    title: l10n.captureEntries,
                     children: [
                       AppNavigationRow(
                         title: l10n.water,
                         icon: Icons.water_drop_outlined,
                         onTap: () => _push(context, const WaterScreen()),
-                      ),
-                      AppNavigationRow(
-                        title: l10n.weight,
-                        icon: Icons.monitor_weight_outlined,
-                        onTap: () => _push(
-                          context,
-                          const WeightTrackerScreen(),
-                        ),
                       ),
                       AppNavigationRow(
                         title: l10n.workout,
@@ -90,9 +82,24 @@ class MoreScreen extends StatelessWidget {
                       AppNavigationRow(
                         title: l10n.supplements,
                         icon: Icons.medication_outlined,
+                        showDivider: false,
                         onTap: () => _push(
                           context,
                           const SupplementsScreen(),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  AppSection(
+                    title: l10n.insights,
+                    children: [
+                      AppNavigationRow(
+                        title: l10n.weight,
+                        icon: Icons.monitor_weight_outlined,
+                        onTap: () => _push(
+                          context,
+                          const WeightTrackerScreen(),
                         ),
                       ),
                       AppNavigationRow(
@@ -101,7 +108,7 @@ class MoreScreen extends StatelessWidget {
                         onTap: () => _openProgressPhotos(context),
                       ),
                       AppNavigationRow(
-                        title: l10n.insights,
+                        title: l10n.activity,
                         icon: Icons.insights_outlined,
                         showDivider: false,
                         onTap: () => _push(
@@ -111,12 +118,12 @@ class MoreScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
                   AppSection(
                     title: l10n.settings,
                     children: [
                       AppNavigationRow(
-                        title: l10n.settings,
+                        title: l10n.general,
                         icon: Icons.settings_outlined,
                         showDivider: false,
                         onTap: () => _push(context, const SettingsScreen()),

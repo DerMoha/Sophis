@@ -96,22 +96,23 @@ class _MealSectionContent extends StatelessWidget {
       carbs: totalCarbs,
       fat: totalFat,
       fiber: totalFiber,
-      onHeaderTap: () => Navigator.push(
-        context,
-        AppTheme.slideRoute(
-          MealDetailScreen(
-            mealType: mealType,
-            mealTitle: title,
-            mealIcon: icon,
-          ),
-        ),
-      ),
+      showHeaderChevron: entries.isNotEmpty,
+      onHeaderTap: entries.isEmpty
+          ? () => showQuickAddSheet(context, mealType: mealType)
+          : () => Navigator.push(
+                context,
+                AppTheme.slideRoute(
+                  MealDetailScreen(
+                    mealType: mealType,
+                    mealTitle: title,
+                    mealIcon: icon,
+                  ),
+                ),
+              ),
       addMenu: _buildAddMenu(context, l10n, theme, entries),
-      entries: entries.isEmpty
-          ? [_buildEmptyState(theme, l10n)]
-          : entries
-              .map((entry) => _buildEntryTile(context, l10n, entry))
-              .toList(),
+      entries: entries
+          .map((entry) => _buildEntryTile(context, l10n, entry))
+          .toList(),
     );
   }
 
@@ -143,18 +144,6 @@ class _MealSectionContent extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState(ThemeData theme, AppLocalizations l10n) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-      child: Text(
-        l10n.noEntries,
-        style: theme.textTheme.bodySmall?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
-      ),
-    );
-  }
-
   Widget _buildEntryTile(
     BuildContext context,
     AppLocalizations l10n,
@@ -168,51 +157,8 @@ class _MealSectionContent extends StatelessWidget {
       carbs: entry.carbs,
       fat: entry.fat,
       fiber: entry.fiber,
-      onLongPress: () => _showEntryOptions(context, l10n, entry),
+      onTap: () => showFoodEntryEditor(context, entry),
+      onLongPress: () => showFoodEntryActions(context, entry),
     );
-  }
-
-  void _showEntryOptions(
-    BuildContext context,
-    AppLocalizations l10n,
-    FoodEntry entry,
-  ) {
-    final theme = Theme.of(context);
-
-    showModalBottomSheet(
-      context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading:
-                  Icon(Icons.share_outlined, color: theme.colorScheme.primary),
-              title: Text(l10n.share),
-              onTap: () {
-                Navigator.pop(ctx);
-                _shareSingleItem(context, entry);
-              },
-            ),
-            ListTile(
-              leading:
-                  Icon(Icons.delete_outline, color: theme.colorScheme.error),
-              title: Text(
-                l10n.delete,
-                style: TextStyle(color: theme.colorScheme.error),
-              ),
-              onTap: () {
-                Navigator.pop(ctx);
-                showDeleteFoodEntryConfirmation(context, entry: entry);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _shareSingleItem(BuildContext context, FoodEntry entry) {
-    shareMealEntries(context, [entry]);
   }
 }

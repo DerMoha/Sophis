@@ -17,16 +17,20 @@ import 'package:sophis/ui/screens/shared/meal_action_helpers.dart';
 
 /// Full-screen detail view for a single meal (breakfast, lunch, etc.)
 class MealDetailScreen extends StatelessWidget {
+  final DateTime? date;
   final String mealType;
   final String mealTitle;
   final IconData mealIcon;
 
   const MealDetailScreen({
     super.key,
+    this.date,
     required this.mealType,
     required this.mealTitle,
     required this.mealIcon,
   });
+
+  bool get _canAdd => date == null || DateUtils.isSameDay(date, DateTime.now());
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +39,12 @@ class MealDetailScreen extends StatelessWidget {
 
     return Consumer<NutritionProvider>(
       builder: (context, nutrition, _) {
-        final entries = nutrition.getEntriesByMeal(mealType);
+        final entries = date == null
+            ? nutrition.getEntriesByMeal(mealType)
+            : nutrition
+                .getEntriesForDate(date!)
+                .where((entry) => entry.meal == mealType)
+                .toList();
 
         var totalCalories = 0.0;
         var totalProtein = 0.0;
@@ -50,18 +59,10 @@ class MealDetailScreen extends StatelessWidget {
 
         return Scaffold(
           appBar: AppBar(
-            title: Row(
-              children: [
-                Icon(mealIcon, size: 24),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    mealTitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
+            title: Text(
+              mealTitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
             actions: [
               if (entries.isNotEmpty)
@@ -90,7 +91,7 @@ class MealDetailScreen extends StatelessWidget {
                           child: Column(
                             children: [
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisAlignment: MainAxisAlignment.start,
                                 children: [
                                   Text(
                                     totalCalories.toStringAsFixed(0),
@@ -112,19 +113,19 @@ class MealDetailScreen extends StatelessWidget {
                               Wrap(
                                 spacing: 16,
                                 runSpacing: 12,
-                                alignment: WrapAlignment.spaceEvenly,
+                                alignment: WrapAlignment.start,
                                 children: [
-                                  MacroSummary(
+                                  _MealMacro(
                                     label: l10n.protein,
                                     value: totalProtein,
                                     color: AppTheme.protein,
                                   ),
-                                  MacroSummary(
+                                  _MealMacro(
                                     label: l10n.carbs,
                                     value: totalCarbs,
                                     color: AppTheme.carbs,
                                   ),
-                                  MacroSummary(
+                                  _MealMacro(
                                     label: l10n.fat,
                                     value: totalFat,
                                     color: AppTheme.fat,
@@ -139,7 +140,7 @@ class MealDetailScreen extends StatelessWidget {
                     // Entries list
                     Expanded(
                       child: ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
                         itemCount: entries.length,
                         itemBuilder: (context, index) {
                           final entry = entries[index];
@@ -155,11 +156,13 @@ class MealDetailScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-          floatingActionButton: FloatingActionButton.extended(
-            onPressed: () => _showAddOptions(context),
-            icon: const Icon(Icons.add),
-            label: Text(l10n.add),
-          ),
+          floatingActionButton: !_canAdd
+              ? null
+              : FloatingActionButton.extended(
+                  onPressed: () => _showAddOptions(context),
+                  icon: const Icon(Icons.add),
+                  label: Text(l10n.add),
+                ),
         );
       },
     );
@@ -194,13 +197,6 @@ class MealDetailScreen extends StatelessWidget {
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            l10n.tapToAdd,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
         ],
       ),
     );
@@ -210,6 +206,15 @@ class MealDetailScreen extends StatelessWidget {
     showMealAddOptionsSheet(context, mealType: mealType);
   }
 }
+
+/// Opens the same editor from the diary, meal detail or home screen.
+Future<void> showFoodEntryEditor(BuildContext context, FoodEntry entry) =>
+    _MealEntryCard(entry: entry, mealType: entry.meal)
+        ._showEditDialog(context, AppLocalizations.of(context)!);
+
+void showFoodEntryActions(BuildContext context, FoodEntry entry) =>
+    _MealEntryCard(entry: entry, mealType: entry.meal)
+        ._showQuickActions(context, AppLocalizations.of(context)!);
 
 /// Card for a single food entry with edit controls
 class _MealEntryCard extends StatelessWidget {
@@ -241,9 +246,11 @@ class _MealEntryCard extends StatelessWidget {
         children: [
           // Main content - tappable for quick actions
           InkWell(
-            onTap: () => _showQuickActions(context, l10n),
+            onTap: () => _showEditDialog(context, l10n),
+            onLongPress: () => _showQuickActions(context, l10n),
             borderRadius: const BorderRadius.vertical(
               top: Radius.circular(AppTheme.radiusMD),
+              bottom: Radius.circular(AppTheme.radiusMD),
             ),
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -295,73 +302,12 @@ class _MealEntryCard extends StatelessWidget {
                       ),
                       const Spacer(),
                       Icon(
-                        Icons.touch_app_outlined,
+                        Icons.more_horiz,
                         size: 16,
                         color: theme.colorScheme.onSurfaceVariant
                             .withValues(alpha: 0.5),
                       ),
                     ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-          // Quick portion adjustment bar
-          Container(
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest
-                  .withValues(alpha: 0.3),
-              borderRadius: const BorderRadius.vertical(
-                bottom: Radius.circular(AppTheme.radiusMD),
-              ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _PortionButton(
-                    label: '-25%',
-                    onTap: () => _adjustPortion(context, 0.75),
-                  ),
-                  _PortionButton(
-                    label: '-10%',
-                    onTap: () => _adjustPortion(context, 0.9),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surface.withValues(alpha: 0.8),
-                      borderRadius: BorderRadius.circular(AppTheme.radiusFull),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.local_fire_department_outlined,
-                          size: 14,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${entry.calories.toStringAsFixed(0)} kcal',
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  _PortionButton(
-                    label: '+10%',
-                    onTap: () => _adjustPortion(context, 1.1),
-                  ),
-                  _PortionButton(
-                    label: '+25%',
-                    onTap: () => _adjustPortion(context, 1.25),
                   ),
                 ],
               ),
@@ -383,104 +329,152 @@ class _MealEntryCard extends StatelessWidget {
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
       builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Header with entry info
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: theme.dividerColor,
-                    width: 0.5,
-                  ),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          entry.name,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${entry.calories.toStringAsFixed(0)} kcal',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.primary,
-                          ),
-                        ),
-                      ],
+        top: false,
+        child: ConstrainedBox(
+          constraints:
+              BoxConstraints(maxHeight: MediaQuery.sizeOf(ctx).height * 0.85),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header with entry info
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: theme.dividerColor,
+                        width: 0.5,
+                      ),
                     ),
                   ),
-                ],
-              ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              entry.name,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '${entry.calories.toStringAsFixed(0)} kcal',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _PortionButton(
+                        label: '-25%',
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          _adjustPortion(context, 0.75);
+                        },
+                      ),
+                      _PortionButton(
+                        label: '-10%',
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          _adjustPortion(context, 0.9);
+                        },
+                      ),
+                      _PortionButton(
+                        label: '+10%',
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          _adjustPortion(context, 1.1);
+                        },
+                      ),
+                      _PortionButton(
+                        label: '+25%',
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          _adjustPortion(context, 1.25);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                ActionTile(
+                  icon: Icons.delete_outline,
+                  iconColor: theme.colorScheme.error,
+                  title: l10n.delete,
+                  textColor: theme.colorScheme.error,
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _showDeleteConfirmation(context, l10n);
+                  },
+                ),
+                // Actions
+                ActionTile(
+                  icon: Icons.swap_horiz_outlined,
+                  title: l10n.moveTo,
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _showMoveToMealDialog(context, l10n);
+                  },
+                ),
+                ActionTile(
+                  icon: Icons.copy_outlined,
+                  title: entry.timestamp.year == DateTime.now().year &&
+                          entry.timestamp.month == DateTime.now().month &&
+                          entry.timestamp.day == DateTime.now().day
+                      ? l10n.duplicate
+                      : l10n.copyEntryToToday,
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _duplicateEntry(context, l10n);
+                  },
+                ),
+                ActionTile(
+                  icon: Icons.edit_outlined,
+                  title: l10n.editEntry,
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _showEditDialog(context, l10n);
+                  },
+                ),
+                ActionTile(
+                  icon: Icons.bookmark_add_outlined,
+                  title: l10n.saveToMyFoods,
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _saveToMyFoods(context, l10n);
+                  },
+                ),
+                ActionTile(
+                  icon: Icons.share_outlined,
+                  title: l10n.share,
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _shareEntry(context);
+                  },
+                ),
+              ],
             ),
-            // Actions
-            ActionTile(
-              icon: Icons.swap_horiz_outlined,
-              title: l10n.moveTo,
-              subtitle: l10n.moveToMealSubtitle,
-              onTap: () {
-                Navigator.pop(ctx);
-                _showMoveToMealDialog(context, l10n);
-              },
-            ),
-            ActionTile(
-              icon: Icons.copy_outlined,
-              title: l10n.duplicate,
-              subtitle: l10n.duplicateSubtitle,
-              onTap: () {
-                Navigator.pop(ctx);
-                _duplicateEntry(context, l10n);
-              },
-            ),
-            ActionTile(
-              icon: Icons.edit_outlined,
-              title: l10n.editEntry,
-              subtitle: l10n.editEntrySubtitle,
-              onTap: () {
-                Navigator.pop(ctx);
-                _showEditDialog(context, l10n);
-              },
-            ),
-            ActionTile(
-              icon: Icons.bookmark_add_outlined,
-              title: l10n.saveToMyFoods,
-              subtitle: l10n.saveToMyFoodsSubtitle,
-              onTap: () {
-                Navigator.pop(ctx);
-                _saveToMyFoods(context, l10n);
-              },
-            ),
-            ActionTile(
-              icon: Icons.share_outlined,
-              title: l10n.share,
-              onTap: () {
-                Navigator.pop(ctx);
-                _shareEntry(context);
-              },
-            ),
-            ActionTile(
-              icon: Icons.delete_outline,
-              iconColor: theme.colorScheme.error,
-              title: l10n.delete,
-              textColor: theme.colorScheme.error,
-              onTap: () {
-                Navigator.pop(ctx);
-                _showDeleteConfirmation(context, l10n);
-              },
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -504,14 +498,14 @@ class _MealEntryCard extends StatelessWidget {
           children: meals.map((meal) {
             return ListTile(
               leading: Icon(meal.icon, color: meal.color),
-              title: Text(meal.name),
+              title: Text(meal.displayName(l10n)),
               onTap: () {
                 Navigator.pop(ctx);
                 final nutrition = context.read<NutritionProvider>();
                 final updatedEntry = entry.copyWith(meal: meal.id);
                 nutrition.updateFoodEntry(updatedEntry);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(l10n.movedTo(meal.name))),
+                  SnackBar(content: Text(l10n.movedTo(meal.displayName(l10n)))),
                 );
               },
             );
@@ -521,9 +515,13 @@ class _MealEntryCard extends StatelessWidget {
     );
   }
 
-  void _duplicateEntry(BuildContext context, AppLocalizations l10n) {
+  Future<void> _duplicateEntry(
+    BuildContext context,
+    AppLocalizations l10n,
+  ) async {
     final nutrition = context.read<NutritionProvider>();
-    nutrition.duplicateFoodEntry(entry);
+    await nutrition.duplicateFoodEntry(entry);
+    if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(l10n.entryDuplicated)),
     );
@@ -571,7 +569,7 @@ class _MealEntryCard extends StatelessWidget {
   }
 
   void _showDeleteConfirmation(BuildContext context, AppLocalizations l10n) {
-    showDeleteFoodEntryConfirmation(context, entry: entry);
+    deleteFoodEntryWithUndo(context, entry: entry);
   }
 }
 
@@ -611,6 +609,40 @@ class _PortionButton extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _MealMacro extends StatelessWidget {
+  final String label;
+  final double value;
+  final Color color;
+
+  const _MealMacro({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 6,
+          height: 6,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          '$label ${value.toStringAsFixed(0)}g',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      ],
     );
   }
 }

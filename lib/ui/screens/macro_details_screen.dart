@@ -144,10 +144,7 @@ class MacroDetailsScreen extends StatelessWidget {
       padding: const EdgeInsets.all(AppTheme.spaceLG),
       child: Column(
         children: [
-          Wrap(
-            spacing: AppTheme.spaceMD,
-            runSpacing: AppTheme.spaceMD,
-            crossAxisAlignment: WrapCrossAlignment.center,
+          Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(AppTheme.spaceSM),
@@ -158,23 +155,26 @@ class MacroDetailsScreen extends StatelessWidget {
                 child: Icon(icon, color: color, size: 24),
               ),
               const SizedBox(width: AppTheme.spaceMD),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  Text(
-                    '${current.toStringAsFixed(1)} / ${goal.toStringAsFixed(1)} g',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+                    Text(
+                      '${current.toStringAsFixed(1)} / ${goal.toStringAsFixed(1)} g',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              const SizedBox(width: AppTheme.spaceMD),
               SizedBox(
                 width: AppTheme.macroRingContainerSize,
                 height: AppTheme.macroRingContainerSize,
@@ -312,24 +312,28 @@ class MacroDetailsScreen extends StatelessWidget {
           ),
 
           const SizedBox(height: AppTheme.spaceMD),
-          Wrap(
-            spacing: AppTheme.spaceMD,
-            runSpacing: AppTheme.spaceSM2,
-            alignment: WrapAlignment.spaceBetween,
+          Row(
             children: [
-              Text(
-                statusText,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: statusColor,
-                  fontWeight: FontWeight.w500,
+              Expanded(
+                child: Text(
+                  statusText,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: statusColor,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
-              Text(
-                '${remaining.abs().toStringAsFixed(1)} g',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color:
-                      isOver ? displayExcessColor : theme.colorScheme.onSurface,
-                  fontWeight: FontWeight.bold,
+              const SizedBox(width: AppTheme.spaceMD),
+              Flexible(
+                child: Text(
+                  '${remaining.abs().toStringAsFixed(1)} g',
+                  textAlign: TextAlign.end,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: isOver
+                        ? displayExcessColor
+                        : theme.colorScheme.onSurface,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],

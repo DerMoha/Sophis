@@ -5,8 +5,9 @@ import 'package:provider/provider.dart';
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/food_entry.dart';
 import 'package:sophis/providers/nutrition_provider.dart';
-import 'package:sophis/ui/components/common/ui_primitives.dart';
 import 'package:sophis/ui/screens/food_diary/food_diary_vm.dart';
+import 'package:sophis/ui/screens/meal_detail_screen.dart';
+import 'package:sophis/ui/components/quick_add_sheet.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/theme/animations.dart';
 import 'package:sophis/ui/components/organic_components.dart';
@@ -24,7 +25,7 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
   late DateTime _baseDate;
   int _selectedDayOffset = 0;
 
-  static const int _daysRange = 30; // Show 30 days back
+  int _daysRange = 30;
 
   @override
   void initState() {
@@ -43,7 +44,7 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
 
   DateTime _getDateForOffset(int offset) {
     final today = DateTime(_baseDate.year, _baseDate.month, _baseDate.day);
-    return today.add(Duration(days: offset));
+    return DateTime(today.year, today.month, today.day + offset);
   }
 
   String _getDayName(DateTime date, AppLocalizations l10n, String locale) {
@@ -68,6 +69,7 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
   }
 
   void _goToPreviousDay() {
+    if (_selectedDayOffset <= -_daysRange) return;
     _pageController.previousPage(
       duration: AppTheme.animNormal,
       curve: Curves.easeOutCubic,
@@ -83,6 +85,34 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
       curve: Curves.easeOutCubic,
     );
     HapticFeedback.selectionClick();
+  }
+
+  Future<void> _selectDate() async {
+    final l10n = AppLocalizations.of(context)!;
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: _getDateForOffset(_selectedDayOffset),
+      firstDate: DateTime(1900),
+      lastDate: _getDateForOffset(0),
+      helpText: l10n.selectDate,
+    );
+    if (selected == null || !mounted) return;
+    final offset = DateTime.utc(selected.year, selected.month, selected.day)
+        .difference(
+          DateTime.utc(_baseDate.year, _baseDate.month, _baseDate.day),
+        )
+        .inDays;
+    if (-offset > _daysRange) {
+      setState(() {
+        _daysRange = -offset;
+        _selectedDayOffset = offset;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _pageController.jumpToPage(_daysRange + offset);
+      });
+    } else {
+      _pageController.jumpToPage(_daysRange + offset);
+    }
   }
 
   @override
@@ -146,29 +176,33 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
   ) {
     final canGoForward = _selectedDayOffset < 0;
     final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.3;
-    final dateTitle = Column(
-      children: [
-        AnimatedSwitcher(
-          duration: AppTheme.animFast,
-          child: Text(
-            _getDayName(selectedDate, l10n, locale),
-            key: ValueKey('name_$selectedDate'),
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
+    final dateTitle = InkWell(
+      onTap: _selectDate,
+      borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+      child: Column(
+        children: [
+          AnimatedSwitcher(
+            duration: AppTheme.animFast,
+            child: Text(
+              _getDayName(selectedDate, l10n, locale),
+              key: ValueKey('name_$selectedDate'),
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
-        ),
-        AnimatedSwitcher(
-          duration: AppTheme.animFast,
-          child: Text(
-            _getFormattedDate(selectedDate, locale),
-            key: ValueKey('date_$selectedDate'),
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+          AnimatedSwitcher(
+            duration: AppTheme.animFast,
+            child: Text(
+              _getFormattedDate(selectedDate, locale),
+              key: ValueKey('date_$selectedDate'),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
 
     return Padding(
@@ -340,10 +374,13 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
 
           return [
             _buildMealSection(
+              context,
+              date,
+              mealType.id,
               theme,
               l10n,
               mealEntries,
-              mealType.name,
+              mealType.displayName(l10n),
               mealType.icon,
               mealType.color,
             ),
@@ -351,20 +388,14 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
               const SizedBox(height: AppTheme.spaceSM2),
           ];
         }),
-
-        // Helpful hint when empty
-        if (vm.isEmpty) ...[
-          const SizedBox(height: 32),
-          EmptyDayHint(
-            icon: Icons.restaurant_menu_outlined,
-            title: l10n.noEntriesForDay,
-          ),
-        ],
       ],
     );
   }
 
   Widget _buildMealSection(
+    BuildContext context,
+    DateTime date,
+    String mealType,
     ThemeData theme,
     AppLocalizations l10n,
     List<FoodEntry> mealEntries,
@@ -376,17 +407,34 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
         mealEntries.fold(0.0, (double sum, FoodEntry e) => sum + e.calories);
     final mealColor = color ?? theme.colorScheme.primary;
 
+    void openMeal() {
+      Navigator.of(context).push(
+        AppTheme.slideRoute(
+          MealDetailScreen(
+            date: date,
+            mealType: mealType,
+            mealTitle: title,
+            mealIcon: icon,
+          ),
+        ),
+      );
+    }
+
     return MealCard(
+      onHeaderTap: openMeal,
+      onAddPressed: _isToday(date)
+          ? () => showQuickAddSheet(context, mealType: mealType)
+          : null,
       title: title,
       icon: icon,
       calories: totalCal,
       color: mealColor,
-      emptyLabel: l10n.noEntries,
+      emptyLabel: l10n.addFood,
       entries: mealEntries
           .map(
             (entry) => KeyedSubtree(
               key: ValueKey(entry.id),
-              child: _buildEntryTile(entry),
+              child: _buildEntryTile(context, entry),
             ),
           )
           .toList(),
@@ -569,8 +617,10 @@ class _FoodDiaryScreenState extends State<FoodDiaryScreen> {
     );
   }
 
-  Widget _buildEntryTile(FoodEntry entry) {
+  Widget _buildEntryTile(BuildContext context, FoodEntry entry) {
     return FoodEntryTile(
+      onTap: () => showFoodEntryEditor(context, entry),
+      onLongPress: () => showFoodEntryActions(context, entry),
       name: entry.name,
       calories: entry.calories,
       protein: entry.protein,

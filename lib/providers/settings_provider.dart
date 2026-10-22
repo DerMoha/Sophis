@@ -310,7 +310,9 @@ class SettingsProvider extends ChangeNotifier {
       // Return defaults if not customized
       return DashboardCardIds.defaultCards;
     }
-    return _settings.dashboardCards;
+    return _settings.dashboardCards
+        .where((card) => card.id != DashboardCardIds.foodDiary)
+        .toList();
   }
 
   List<DashboardCard> get visibleDashboardCards =>
