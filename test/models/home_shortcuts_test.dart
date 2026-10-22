@@ -10,10 +10,10 @@ void main() {
         DashboardCardIds.mealPlanner,
         DashboardCardIds.weight,
         DashboardCardIds.recipes,
-        DashboardCardIds.dailyGuidance
+        DashboardCardIds.dailyGuidance,
       ],
     );
     expect(DashboardCardIds.defaultOrder,
-        isNot(contains(DashboardCardIds.foodDiary)));
+        isNot(contains(DashboardCardIds.foodDiary)),);
   });
 }

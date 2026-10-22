@@ -9,13 +9,13 @@ void main() {
     final en = lookupAppLocalizations(const Locale('en'));
     final meals = CustomMealType.defaults;
     expect(meals.map((m) => m.displayName(de)),
-        ['Frühstück', 'Mittagessen', 'Abendessen', 'Snacks']);
+        ['Frühstück', 'Mittagessen', 'Abendessen', 'Snacks'],);
     expect(meals.first.displayName(en), 'Breakfast');
     expect(meals.first.copyWith(name: 'Brunch').displayName(de), 'Brunch');
     expect(
         const CustomMealType(id: 'breakfast', name: 'Breakfast')
             .displayName(de),
-        'Breakfast');
+        'Breakfast',);
     expect(meals.first.name, 'Breakfast');
   });
 }
