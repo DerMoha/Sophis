@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:sophis/ui/components/draft_guard.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -166,8 +167,17 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
                                       enabled: !_isSaving,
                                       keyboardType:
                                           const TextInputType.numberWithOptions(
+                                        // signed maps to iOS numbersAndPunctuation,
+                                        // which offers both '.' and ',' regardless
+                                        // of region; decimalPad shows only one.
+                                        signed: true,
                                         decimal: true,
                                       ),
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter.allow(
+                                          RegExp(r'[\d.,]'),
+                                        ),
+                                      ],
                                       decoration: InputDecoration(
                                         labelText: weightLabel,
                                         errorText: _weightError,
