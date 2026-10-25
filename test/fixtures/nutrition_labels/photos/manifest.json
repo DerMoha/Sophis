@@ -1,0 +1,28 @@
+[
+  {
+    "photo": "energy_drink_bottle.jpg",
+    "note": "Glass bottle, light text on dark label, curved",
+    "unit": "milliliter",
+    "expected": { "calories": 47, "protein": 0, "carbs": 12, "fat": 0, "fiber": null }
+  },
+  {
+    "photo": "skyr_tub.jpg",
+    "note": "Curved tub, two columns (100 g / portion 125 g), labels and values offset",
+    "unit": "gram",
+    "serving": 125,
+    "expected": { "calories": 62, "protein": 11, "carbs": 4, "fat": 0.2, "fiber": 0 }
+  },
+  {
+    "photo": "soy_drink_carton.jpg",
+    "note": "Carton, two columns (100 ml / portion 250 ml), fiber printed as <0.5",
+    "unit": "milliliter",
+    "serving": 250,
+    "expected": { "calories": 64, "protein": 5, "carbs": 7.2, "fat": 1.7, "fiber": "<0.5" }
+  },
+  {
+    "photo": "kidney_beans_can.jpg",
+    "note": "Can, single column per 100 g drained weight, kJ and kcal on separate lines",
+    "unit": "gram",
+    "expected": { "calories": 95, "protein": 6.9, "carbs": 12, "fat": 0.7, "fiber": 6.5 }
+  }
+]

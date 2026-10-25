@@ -75,3 +75,7 @@ backend/functions/*-debug.log
 
 # Local Firebase registered-app build configuration
 config/firebase.production.json
+
+# Real label photos for the local accuracy harness (never committed)
+test/fixtures/nutrition_labels/photos/*
+!test/fixtures/nutrition_labels/photos/manifest.json
