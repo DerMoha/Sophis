@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/providers/settings_provider.dart';
-import 'package:sophis/ui/components/settings/settings_tiles.dart';
+import 'package:sophis/ui/components/common/app_surface.dart';
 import 'package:sophis/ui/components/settings/reminder_time_tile.dart';
 
 class RemindersSection extends StatelessWidget {
@@ -15,37 +15,47 @@ class RemindersSection extends StatelessWidget {
 
     return Column(
       children: [
-        SwitchTile(
-          title: l10n.enableReminders,
-          subtitle: l10n.enableRemindersSubtitle,
-          icon: Icons.alarm_outlined,
-          value: settings.remindersEnabled,
-          onChanged: settings.setRemindersEnabled,
+        AppSection(
+          title: l10n.mealReminders,
+          children: [
+            AppSwitchRow(
+              title: l10n.enableReminders,
+              subtitle: l10n.enableRemindersSubtitle,
+              icon: Icons.alarm_outlined,
+              value: settings.remindersEnabled,
+              onChanged: settings.setRemindersEnabled,
+              showDivider: false,
+            ),
+          ],
         ),
         if (settings.remindersEnabled) ...[
-          const SizedBox(height: 16),
-          ReminderTimeTile(
-            icon: Icons.wb_twilight_rounded,
-            title: l10n.breakfast,
-            time: settings.breakfastReminderTime,
-            defaultTime: const TimeOfDay(hour: 8, minute: 0),
-            onChanged: settings.setBreakfastReminder,
-          ),
-          const SizedBox(height: 8),
-          ReminderTimeTile(
-            icon: Icons.wb_sunny_rounded,
-            title: l10n.lunch,
-            time: settings.lunchReminderTime,
-            defaultTime: const TimeOfDay(hour: 12, minute: 30),
-            onChanged: settings.setLunchReminder,
-          ),
-          const SizedBox(height: 8),
-          ReminderTimeTile(
-            icon: Icons.nights_stay_rounded,
-            title: l10n.dinner,
-            time: settings.dinnerReminderTime,
-            defaultTime: const TimeOfDay(hour: 18, minute: 30),
-            onChanged: settings.setDinnerReminder,
+          const SizedBox(height: 20),
+          AppSection(
+            title: l10n.reminderTimes,
+            children: [
+              ReminderTimeTile(
+                icon: Icons.wb_twilight_rounded,
+                title: l10n.breakfast,
+                time: settings.breakfastReminderTime,
+                defaultTime: const TimeOfDay(hour: 8, minute: 0),
+                onChanged: settings.setBreakfastReminder,
+              ),
+              ReminderTimeTile(
+                icon: Icons.wb_sunny_rounded,
+                title: l10n.lunch,
+                time: settings.lunchReminderTime,
+                defaultTime: const TimeOfDay(hour: 12, minute: 30),
+                onChanged: settings.setLunchReminder,
+              ),
+              ReminderTimeTile(
+                icon: Icons.nights_stay_rounded,
+                title: l10n.dinner,
+                time: settings.dinnerReminderTime,
+                defaultTime: const TimeOfDay(hour: 18, minute: 30),
+                onChanged: settings.setDinnerReminder,
+                showDivider: false,
+              ),
+            ],
           ),
         ],
       ],

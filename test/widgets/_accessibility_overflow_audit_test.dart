@@ -16,7 +16,6 @@ import 'package:sophis/ui/screens/home/modern/home_modern_screen.dart';
 import 'package:sophis/ui/screens/import_meal_screen.dart';
 import 'package:sophis/ui/screens/macro_details_screen.dart';
 import 'package:sophis/ui/screens/meal_detail_screen.dart';
-import 'package:sophis/ui/screens/meal_macros_settings_screen.dart';
 import 'package:sophis/ui/screens/meal_planner_screen.dart';
 import 'package:sophis/ui/screens/meal_types_screen.dart';
 import 'package:sophis/ui/screens/more_screen.dart';
@@ -99,7 +98,6 @@ void main() {
         mealTitle: 'Breakfast',
         mealIcon: Icons.wb_sunny_outlined,
       ),
-      'meal macros settings': const MealMacrosSettingsScreen(),
       'activity graph': const ActivityGraphScreen(),
       'AI food camera': const AIFoodCameraScreen(meal: 'breakfast'),
       'nutrition label scanner': const NutritionLabelScannerScreen(

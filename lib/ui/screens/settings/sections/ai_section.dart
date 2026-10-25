@@ -3,7 +3,7 @@ import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/components/settings/api_key_guide_dialog.dart';
-import 'package:sophis/ui/components/settings/settings_tiles.dart';
+import 'package:sophis/ui/components/common/app_surface.dart';
 
 class AiSection extends StatefulWidget {
   final SettingsProvider settings;
@@ -50,63 +50,58 @@ class _AiSectionState extends State<AiSection> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
     final hasKey = widget.settings.geminiApiKey?.isNotEmpty == true;
     _syncApiKeyController(widget.settings.geminiApiKey ?? '');
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        TextField(
-          decoration: InputDecoration(
-            labelText: l10n.geminiApiKey,
-            hintText: l10n.enterApiKey,
-            suffixIcon: hasKey
-                ? const Icon(Icons.check_circle, color: AppTheme.success)
-                : null,
-          ),
-          obscureText: true,
-          controller: _apiKeyController,
-          focusNode: _apiKeyFocusNode,
-          onChanged: widget.settings.setGeminiApiKey,
-        ),
-        const SizedBox(height: 8),
-        Row(
+        AppSection(
+          title: 'Google Gemini',
+          footer: l10n.getApiKeyHelper,
           children: [
-            Expanded(
-              child: Text(
-                l10n.getApiKeyHelper,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: TextField(
+                decoration: InputDecoration(
+                  labelText: l10n.geminiApiKey,
+                  hintText: l10n.enterApiKey,
+                  suffixIcon: hasKey
+                      ? const Icon(Icons.check_circle, color: AppTheme.success)
+                      : null,
                 ),
+                obscureText: true,
+                controller: _apiKeyController,
+                focusNode: _apiKeyFocusNode,
+                onChanged: widget.settings.setGeminiApiKey,
               ),
             ),
-            TextButton.icon(
-              onPressed: () => _showApiKeyGuide(context),
-              icon: const Icon(Icons.help_outline, size: 16),
-              label: Text(l10n.howToGetApiKey),
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                child: TextButton.icon(
+                  onPressed: () => _showApiKeyGuide(context),
+                  icon: const Icon(Icons.help_outline, size: 16),
+                  label: Text(l10n.howToGetApiKey),
+                ),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 16),
-        SwitchTile(
-          title: l10n.labelCloudHelpTitle,
-          subtitle: l10n.labelCloudHelpSubtitle,
-          icon: Icons.document_scanner_outlined,
-          value: widget.settings.labelCloudHelpEnabled,
-          onChanged: widget.settings.setLabelCloudHelpEnabled,
-        ),
-        const SizedBox(height: 16),
-        Text(
-          l10n.aiAccuracyDisclaimer,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
+        const SizedBox(height: 20),
+        AppSection(
+          title: l10n.labelScanning,
+          footer: l10n.aiAccuracyDisclaimer,
+          children: [
+            AppSwitchRow(
+              title: l10n.labelCloudHelpTitle,
+              subtitle: l10n.labelCloudHelpSubtitle,
+              icon: Icons.document_scanner_outlined,
+              value: widget.settings.labelCloudHelpEnabled,
+              onChanged: widget.settings.setLabelCloudHelpEnabled,
+              showDivider: false,
+            ),
+          ],
         ),
       ],
     );

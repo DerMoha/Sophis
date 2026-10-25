@@ -871,5 +871,43 @@
   "foodResultDetails": "Notes & nutrition",
   "captureEntries": "Log entries",
   "selectFood": "Select {name}",
-  "addSelection": "Add selection"
+  "addSelection": "Add selection",
+  "settingsSubtitle": "Goals, appearance, connections, data",
+  "settingsNutritionAndGoals": "Nutrition & Goals",
+  "settingsApp": "App",
+  "languageAndUnits": "Language & Units",
+  "aboutSophis": "About Sophis",
+  "helpAndLegal": "Help & Legal",
+  "settingsMeals": "Meals",
+  "settingsMealsSummary": "{count, plural, =1{1 meal} other{{count} meals}}",
+  "@settingsMealsSummary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingOn": "On",
+  "settingOff": "Off",
+  "healthSyncActive": "{count} of 3 active",
+  "@healthSyncActive": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "aiKeySet": "API key set",
+  "notSetUp": "Not set up",
+  "offSignedIn": "Signed in",
+  "offAnonymous": "Anonymous",
+  "settingsAccount": "Account",
+  "partnerSharingSubtitle": "Goals, daily intake and meals",
+  "dataSectionSubtitle": "Export, import and delete",
+  "backup": "Backup",
+  "dangerZone": "Danger Zone",
+  "quickActionsCompact": "Compact",
+  "quickActionsLarge": "Large",
+  "labelScanning": "Label Scanning",
+  "reminderTimes": "Times"
 }

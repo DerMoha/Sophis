@@ -1,8 +1,7 @@
 export 'appearance_section.dart';
-export 'nutrition_section.dart';
-export 'language_section.dart';
-export 'units_section.dart';
-export 'dashboard_section.dart';
+export 'meals_section.dart';
+export 'supplements_section.dart';
+export 'language_and_units_section.dart';
 export 'privacy_section.dart';
 export 'reminders_section.dart';
 export 'fitness_section.dart';

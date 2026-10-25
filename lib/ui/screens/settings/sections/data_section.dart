@@ -6,8 +6,7 @@ import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/providers/supplements_provider.dart';
 import 'package:sophis/services/service_result.dart';
-import 'package:sophis/ui/theme/app_theme.dart';
-import 'package:sophis/ui/components/settings/settings_tiles.dart';
+import 'package:sophis/ui/components/common/app_surface.dart';
 
 class DataSection extends StatefulWidget {
   const DataSection({super.key});
@@ -154,39 +153,44 @@ class _DataSectionState extends State<DataSection> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
 
     return Column(
       children: [
-        DataActionTile(
-          title: l10n.exportData,
-          subtitle: l10n.exportDataSubtitle,
-          icon: Icons.upload_outlined,
-          isLoading: _isExporting,
-          onTap: () => _handleExport(context, l10n),
+        AppSection(
+          title: l10n.backup,
+          footer: l10n.autoRestoreBackupNote,
+          children: [
+            AppRow(
+              title: l10n.exportData,
+              subtitle: l10n.exportDataSubtitle,
+              icon: Icons.ios_share_outlined,
+              isLoading: _isExporting,
+              onTap: () => _handleExport(context, l10n),
+            ),
+            AppRow(
+              title: l10n.importData,
+              subtitle: l10n.importDataSubtitle,
+              icon: Icons.download_outlined,
+              isLoading: _isImporting,
+              showDivider: false,
+              onTap: () => _handleImport(context, l10n),
+            ),
+          ],
         ),
-        const SizedBox(height: AppTheme.spaceSM2),
-        DataActionTile(
-          title: l10n.importData,
-          subtitle: l10n.importDataSubtitle,
-          icon: Icons.download_outlined,
-          isLoading: _isImporting,
-          onTap: () => _handleImport(context, l10n),
-        ),
-        const SizedBox(height: AppTheme.spaceSM2),
-        Text(
-          l10n.autoRestoreBackupNote,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(height: AppTheme.spaceLG),
-        DataActionTile(
-          title: l10n.deleteAllData,
-          subtitle: l10n.deleteAllDataSubtitle,
-          icon: Icons.delete_forever_outlined,
-          isLoading: _isDeleting,
-          onTap: () => _handleDeleteAll(context, l10n),
+        const SizedBox(height: 20),
+        AppSection(
+          title: l10n.dangerZone,
+          children: [
+            AppRow(
+              title: l10n.deleteAllData,
+              subtitle: l10n.deleteAllDataSubtitle,
+              icon: Icons.delete_forever_outlined,
+              isLoading: _isDeleting,
+              destructive: true,
+              showDivider: false,
+              onTap: () => _handleDeleteAll(context, l10n),
+            ),
+          ],
         ),
       ],
     );

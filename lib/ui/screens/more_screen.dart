@@ -120,10 +120,11 @@ class MoreScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   AppSection(
-                    title: l10n.settings,
+                    title: l10n.settingsApp,
                     children: [
                       AppNavigationRow(
-                        title: l10n.general,
+                        title: l10n.settings,
+                        subtitle: l10n.settingsSubtitle,
                         icon: Icons.settings_outlined,
                         showDivider: false,
                         onTap: () => _push(context, const SettingsScreen()),

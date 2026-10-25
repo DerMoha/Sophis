@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/providers/settings_provider.dart';
+import 'package:sophis/ui/components/common/app_surface.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 
 class OpenFoodFactsSection extends StatefulWidget {
@@ -71,61 +72,57 @@ class _OpenFoodFactsSectionState extends State<OpenFoodFactsSection> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
     final hasCredentials = widget.settings.hasOffCredentials;
     _syncControllers();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return AppSection(
+      title: l10n.settingsAccount,
+      footer: l10n.offAccountOptional,
       children: [
-        TextField(
-          decoration: InputDecoration(
-            labelText: l10n.offUsername,
-            hintText: l10n.offUsernameHint,
-            suffixIcon: hasCredentials
-                ? const Icon(Icons.check_circle, color: AppTheme.success)
-                : null,
-          ),
-          controller: _usernameController,
-          focusNode: _usernameFocusNode,
-          onChanged: (_) => _onCredentialsChanged(),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          decoration: InputDecoration(
-            labelText: l10n.offPassword,
-            hintText: l10n.offPasswordHint,
-            suffixIcon: hasCredentials
-                ? const Icon(Icons.check_circle, color: AppTheme.success)
-                : null,
-          ),
-          obscureText: true,
-          controller: _passwordController,
-          focusNode: _passwordFocusNode,
-          onChanged: (_) => _onCredentialsChanged(),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                l10n.offAccountOptional,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: Column(
+            children: [
+              TextField(
+                decoration: InputDecoration(
+                  labelText: l10n.offUsername,
+                  hintText: l10n.offUsernameHint,
+                  suffixIcon: hasCredentials
+                      ? const Icon(Icons.check_circle, color: AppTheme.success)
+                      : null,
                 ),
+                controller: _usernameController,
+                focusNode: _usernameFocusNode,
+                autocorrect: false,
+                onChanged: (_) => _onCredentialsChanged(),
               ),
-            ),
-            TextButton.icon(
+              const SizedBox(height: 12),
+              TextField(
+                decoration: InputDecoration(
+                  labelText: l10n.offPassword,
+                  hintText: l10n.offPasswordHint,
+                  suffixIcon: hasCredentials
+                      ? const Icon(Icons.check_circle, color: AppTheme.success)
+                      : null,
+                ),
+                obscureText: true,
+                controller: _passwordController,
+                focusNode: _passwordFocusNode,
+                onChanged: (_) => _onCredentialsChanged(),
+              ),
+            ],
+          ),
+        ),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+            child: TextButton.icon(
               onPressed: () => _showCreateAccountInfo(context),
               icon: const Icon(Icons.help_outline, size: 16),
               label: Text(l10n.offCreateAccount),
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
             ),
-          ],
+          ),
         ),
       ],
     );
