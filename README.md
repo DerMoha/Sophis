@@ -36,15 +36,13 @@ unchanged. See [Android size decisions](docs/android-app-size.md).
 
 ## Optional partner sharing
 
-Partner sharing uses the registered Sophis Firebase iOS/Android apps on the free
-Spark plan. Normal `flutter run` builds include their public client identifiers;
-no CLI sign-in or extra build flags are required. Firebase opens only when the
-user enters Partner sharing. The local diary remains available without login.
+One partner per account. Both see each other's goals and the meals of the last
+7 days, the home screen shows what the partner has left today, and partner
+meals can be copied into the own diary with one tap. It uses Firebase Auth and
+Firestore on the free Spark plan; there are no Cloud Functions. The local diary
+works without login.
 
-See [Firebase setup](docs/firebase-setup.md) for deployment status and
-[backend testing](backend/README.md) for security and native integration checks.
-Full diary backup and cross-device synchronization are not provided by this
-feature.
+See [Firebase setup](docs/firebase-setup.md) and [backend](backend/README.md).
 
 ## OS Backup Restore (No Login Required)
 

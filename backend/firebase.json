@@ -1,5 +1,5 @@
 {
-  "firestore": {"rules": "firestore.rules", "indexes": "firestore.spark.indexes.json"},
+  "firestore": {"rules": "firestore.rules", "indexes": "firestore.indexes.json"},
   "emulators": {
     "auth": {"port": 19099},
     "firestore": {"port": 18080},

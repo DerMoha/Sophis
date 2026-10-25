@@ -9,7 +9,6 @@ import 'package:sophis/models/meal_plan.dart';
 import 'package:sophis/models/meal_template.dart';
 import 'package:sophis/models/nutrition_backup.dart';
 import 'package:sophis/models/recipe.dart';
-import 'package:sophis/models/social/social_snapshot.dart';
 import 'package:sophis/models/supplement.dart';
 import 'package:sophis/models/supplement_log.dart';
 import 'package:sophis/models/user_profile.dart';
@@ -35,7 +34,6 @@ final class NutritionStore {
   final StreamController<ServiceResult<NutritionSnapshot>> _changes =
       StreamController<ServiceResult<NutritionSnapshot>>.broadcast(sync: true);
   final Uuid _uuid;
-  final DateTime Function() _clock;
 
   Future<void>? _initialization;
   Future<void> _lastCommit = Future<void>.value();
@@ -46,11 +44,9 @@ final class NutritionStore {
     this._database,
     this._storage, {
     Uuid uuid = const Uuid(),
-    DateTime Function()? clock,
     NutritionPersistence? persistence,
   })  : _persistence = persistence ?? NutritionPersistence(_database, _storage),
-        _uuid = uuid,
-        _clock = clock ?? DateTime.now;
+        _uuid = uuid;
 
   /// Returns one coherent state after legacy reconciliation and database open.
   Future<ServiceResult<NutritionSnapshot>> snapshot() async {
@@ -66,57 +62,11 @@ final class NutritionStore {
     }
   }
 
-  /// Local diary changes for accepted partner connections. Full-history reads
-  /// index older rows while retaining their unknown original logging time.
-  Future<List<FoodSharingChange>> foodSharingChanges({
-    int afterSequence = 0,
-    int limit = 100,
-    bool includeHistory = false,
-  }) async {
-    await _ensureInitialized();
-    return _database.transaction(() async {
-      if (includeHistory) {
-        await _database.indexFoodSharingHistory(now: _clock());
-      }
-      final rows = await _database.foodSharingChanges(
-        afterSequence: afterSequence,
-        limit: limit,
-      );
-      final foods = {
-        for (final entry in await _database.getAllFoods()) entry.id: entry,
-      };
-      return [
-        for (final row in rows)
-          FoodSharingChange(
-            foodId: row.foodId,
-            originallyLoggedAt: row.originallyLoggedAt == null
-                ? null
-                : DateTime.fromMillisecondsSinceEpoch(
-                    row.originallyLoggedAt!,
-                    isUtc: true,
-                  ),
-            changedAt:
-                DateTime.fromMillisecondsSinceEpoch(row.changedAt, isUtc: true),
-            revision: row.revision,
-            sequence: row.sequence,
-            deleted: row.deletedAt != null,
-            entry: row.deletedAt != null ? null : foods[row.foodId],
-          ),
-      ];
-    });
-  }
-
   Future<void> _saveFoodEntry(FoodEntry entry) async {
-    await _database.recordFoodSharingOrigin(
-      entry.id,
-      deleted: false,
-      now: _clock(),
-    );
     await _database.upsertFood(entry);
   }
 
   Future<void> _deleteFoodEntry(String id) async {
-    await _database.recordFoodSharingOrigin(id, deleted: true, now: _clock());
     await _database.deleteFood(id);
   }
 
@@ -464,26 +414,6 @@ final class NutritionStore {
   }
 }
 
-final class FoodSharingChange {
-  final String foodId;
-  final DateTime? originallyLoggedAt;
-  final DateTime changedAt;
-  final int revision;
-  final int sequence;
-  final bool deleted;
-  final FoodEntry? entry;
-
-  const FoodSharingChange({
-    required this.foodId,
-    required this.originallyLoggedAt,
-    required this.changedAt,
-    required this.revision,
-    required this.sequence,
-    required this.deleted,
-    required this.entry,
-  });
-}
-
 sealed class NutritionCommand {
   const NutritionCommand();
 
@@ -513,101 +443,6 @@ final class SaveFoodAndCustomFood extends NutritionCommand {
       entityId: customFood.id,
       operation: 'upsert',
       payloadJson: jsonEncode(customFood.toJson()),
-    );
-  }
-}
-
-/// Commits recipient-owned copies and a durable operation receipt in the same
-/// NutritionStore transaction. Retrying after edits/deletes cannot overwrite or
-/// recreate the recipient's independent diary entries.
-final class ImportSocialMeal extends NutritionCommand {
-  final String operationId;
-  final List<FoodEntry> entries;
-
-  ImportSocialMeal({
-    required this.operationId,
-    required SocialSnapshot snapshot,
-    required double selectedServings,
-    required DateTime timestamp,
-    required String meal,
-  }) : entries = List.unmodifiable(
-          snapshot.entriesForImport(
-            operationId: operationId,
-            selectedServings: selectedServings,
-            timestamp: timestamp,
-            meal: meal,
-            nutritionVisible: snapshot.nutritionAvailable,
-          ),
-        );
-
-  @override
-  Future<void> apply(NutritionStore store) async {
-    final receiptKey = 'social_import:diary:$operationId';
-    if (await store._database.readNutritionDocument(receiptKey) != null) return;
-    for (final entry in entries) {
-      await store._saveFoodEntry(entry);
-      await store._database.recordLocalMutation(
-        entityType: 'food_entry',
-        entityId: entry.id,
-        operation: 'upsert',
-        payloadJson: jsonEncode(entry.toJson()),
-      );
-    }
-    await store._database.writeNutritionDocument(
-      receiptKey,
-      jsonEncode({'entryIds': entries.map((entry) => entry.id).toList()}),
-    );
-  }
-}
-
-/// Recipe copies use new local IDs and are never linked to author revisions.
-/// Nutrition and any missing ingredient portions must be resolved before saving
-/// a recipe, so unknown values are not silently stored as zero-calorie nutrition.
-final class ImportSocialRecipe extends NutritionCommand {
-  final String operationId;
-  final Recipe recipe;
-
-  ImportSocialRecipe({required this.operationId, required Recipe recipe})
-      : recipe = Recipe(
-          id: 'social_recipe_$operationId',
-          name: recipe.name,
-          ingredients: List.unmodifiable([
-            for (var index = 0; index < recipe.ingredients.length; index++)
-              RecipeIngredient(
-                id: 'social_recipe_${operationId}_$index',
-                name: recipe.ingredients[index].name,
-                amountGrams: recipe.ingredients[index].amountGrams,
-                calories: recipe.ingredients[index].calories,
-                protein: recipe.ingredients[index].protein,
-                carbs: recipe.ingredients[index].carbs,
-                fat: recipe.ingredients[index].fat,
-                fiber: recipe.ingredients[index].fiber,
-              ),
-          ]),
-          servings: recipe.servings,
-          notes: recipe.notes,
-          createdAt: recipe.createdAt,
-        ) {
-    if (!RegExp(r'^[A-Za-z0-9_-]{1,128}$').hasMatch(operationId)) {
-      throw const FormatException('Invalid recipe import operation');
-    }
-    SocialSnapshot.fromRecipe(this.recipe);
-  }
-
-  @override
-  Future<void> apply(NutritionStore store) async {
-    final receiptKey = 'social_import:recipe:$operationId';
-    if (await store._database.readNutritionDocument(receiptKey) != null) return;
-    await store._saveRecipe(recipe);
-    await store._database.recordLocalMutation(
-      entityType: 'recipe',
-      entityId: recipe.id,
-      operation: 'upsert',
-      payloadJson: jsonEncode(recipe.toJson()),
-    );
-    await store._database.writeNutritionDocument(
-      receiptKey,
-      jsonEncode({'recipeId': recipe.id}),
     );
   }
 }

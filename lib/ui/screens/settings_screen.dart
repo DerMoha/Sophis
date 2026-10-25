@@ -11,7 +11,7 @@ import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/ui/components/common/app_surface.dart';
 import 'package:sophis/ui/components/settings/water_sizes_dialog.dart';
 import 'package:sophis/ui/screens/goals_setup_screen.dart';
-import 'package:sophis/ui/screens/social/people_screen.dart';
+import 'package:sophis/ui/screens/partner/partner_screen.dart';
 import 'package:sophis/ui/screens/settings/sections/sections.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 
@@ -213,7 +213,7 @@ class SettingsScreen extends StatelessWidget {
                 subtitle: l10n.partnerSharingSubtitle,
                 icon: Icons.people_outline,
                 showDivider: false,
-                onTap: () => _push(context, const PeopleScreen()),
+                onTap: () => _push(context, const PartnerScreen()),
               ),
             ],
           ),

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:sophis/ui/screens/social/people_screen.dart';
+import 'package:sophis/ui/screens/partner/partner_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/providers/settings_provider.dart';
+import 'package:sophis/ui/components/partner_card.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/screens/dashboard_settings_screen.dart';
 import 'package:sophis/ui/screens/home/shared/dashboard_slot.dart';
@@ -113,7 +114,7 @@ class _HomeScreenModernState extends State<HomeScreenModern> {
                           tooltip: l10n.partnerSharingLabel,
                           onPressed: () => Navigator.push(
                             context,
-                            AppTheme.slideRoute(const PeopleScreen()),
+                            AppTheme.slideRoute(const PartnerScreen()),
                           ),
                           icon: const Icon(Icons.favorite_outline),
                         ),
@@ -146,7 +147,10 @@ class _HomeScreenModernState extends State<HomeScreenModern> {
           SliverPadding(
             padding: EdgeInsets.fromLTRB(20, 8, 20, bottomPadding),
             sliver: SliverList(
-              delegate: SliverChildListDelegate(children),
+              delegate: SliverChildListDelegate([
+                const PartnerCard(),
+                ...children,
+              ]),
             ),
           ),
         ],

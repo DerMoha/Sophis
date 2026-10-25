@@ -1,183 +1,105 @@
 rules_version = '2';
+
+// Partner sharing: one partner per account. Each person writes one document per
+// diary day; the partner reads it. Nothing else is stored.
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
-    function bounded() { return request.query.limit != null && request.query.limit <= 20; }
-    function text(v, n) { return v is string && v.size() > 0 && v.size() <= n; }
-    function number(v, n) { return v is number && v >= 0 && v <= n; }
-    function revision(v) { return v is int && v >= 0 && v <= 9007199254740991; }
-    function zone(v) { return v == null || text(v, 100); }
-    function connection(id) { return get(/databases/$(database)/documents/partnerConnections/$(id)).data; }
-    function member(c) { return signedIn() && request.auth.uid in c.participants; }
-    function active(c) { return member(c) && c.status == 'accepted' && c.revokedAt == null; }
-    function defaultSettings(s) {
-      return s == {
-        'meals': true, 'summaries': true, 'goals': true, 'paused': false,
-        'revision': 0, 'mealGeneration': 0, 'summaryGeneration': 0, 'goalGeneration': 0,
-        'mealStart': null, 'summaryStart': null, 'mealTimeZone': null, 'summaryTimeZone': null
-      };
+    function me() { return request.auth.uid; }
+    function name(v) { return v is string && v.size() > 0 && v.size() <= 40; }
+    function profilePath(id) { return /databases/$(database)/documents/partnerProfiles/$(id); }
+    function connectionPath(id) { return /databases/$(database)/documents/partnerConnections/$(id); }
+    function invitePath(code) { return /databases/$(database)/documents/partnerInvites/$(code); }
+
+    // A profile joins a connection that is created in the same batch by one of
+    // its two participants, and only while it has no partner yet.
+    function linking(id) {
+      let next = request.resource.data.connectionId;
+      return resource.data.connectionId == null && next is string
+        && !exists(connectionPath(next)) && existsAfter(connectionPath(next))
+        && getAfter(connectionPath(next)).data.participants.hasAll([id, me()]);
     }
-    function validSettings(s) {
-      return s.keys().hasOnly(['meals','summaries','goals','paused','revision',
-        'mealGeneration','summaryGeneration','goalGeneration','mealStart','summaryStart','mealTimeZone','summaryTimeZone'])
-        && s.meals is bool && s.summaries is bool && s.goals is bool && s.paused is bool
-        && revision(s.revision) && revision(s.mealGeneration) && revision(s.summaryGeneration) && revision(s.goalGeneration)
-        && (s.mealStart == null || s.mealStart is timestamp)
-        && (s.summaryStart == null || s.summaryStart is timestamp)
-        && zone(s.mealTimeZone) && zone(s.summaryTimeZone);
-    }
-    function ownSettingsChange(a, b) {
-      let uid = request.auth.uid;
-      let old = a.settings[uid];
-      let next = b.settings[uid];
-      return b.diff(a).affectedKeys().hasOnly(['settings'])
-        && b.settings.diff(a.settings).affectedKeys().hasOnly([uid])
-        && validSettings(next)
-        && next.revision == old.revision
-        && next.diff(old).affectedKeys().hasOnly(['mealTimeZone','summaryTimeZone']);
+    // A profile leaves a connection that is deleted in the same batch, or that
+    // is already gone.
+    function unlinking(id) {
+      let old = resource.data.connectionId;
+      return old is string && request.resource.data.connectionId == null
+        && !existsAfter(connectionPath(old))
+        && (exists(connectionPath(old))
+          ? get(connectionPath(old)).data.participants.hasAll([id, me()])
+          : id == me());
     }
 
-    match /partnerProfiles/{uid} {
-      allow get: if signedIn() && request.auth.uid == uid;
-      allow create, update: if signedIn() && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['accountId','displayName'])
-        && request.resource.data.accountId == uid && text(request.resource.data.displayName, 60);
+    match /partnerProfiles/{id} {
+      allow get: if signedIn() && me() == id;
+      allow create: if signedIn() && me() == id
+        && request.resource.data.keys().hasOnly(['displayName', 'connectionId'])
+        && name(request.resource.data.displayName)
+        && request.resource.data.connectionId == null;
+      allow update: if signedIn() && (
+        (me() == id
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName'])
+          && name(request.resource.data.displayName))
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['connectionId'])
+          && (linking(id) || unlinking(id))));
+      allow delete: if signedIn() && me() == id && resource.data.connectionId == null;
     }
-    match /partnerInvitations/{id} {
-      function live(d) { return !d.revoked && d.expiresAt > request.time; }
-      allow get: if signedIn() && (resource.data.inviterId == request.auth.uid
-        || (live(resource.data) && (resource.data.consumedBy == null || resource.data.consumedBy == request.auth.uid)));
-      allow create: if signedIn() && id.matches('^[a-f0-9]{64}$')
-        && request.resource.data.keys().hasOnly(['inviterId','displayName','expiresAt','createdAt','consumedBy','revoked'])
-        && request.resource.data.inviterId == request.auth.uid
-        && request.resource.data.displayName == get(/databases/$(database)/documents/partnerProfiles/$(request.auth.uid)).data.displayName
-        && request.resource.data.createdAt == request.time
+
+    // The code is the capability: anyone signed in who knows it may read it.
+    match /partnerInvites/{code} {
+      allow get: if signedIn();
+      allow list: if signedIn() && resource.data.inviterId == me();
+      allow create: if signedIn() && code.matches('^[A-HJ-NP-Z2-9]{8}$')
+        && request.resource.data.keys().hasOnly(['inviterId', 'displayName', 'expiresAt'])
+        && request.resource.data.inviterId == me()
+        && request.resource.data.displayName == get(profilePath(me())).data.displayName
+        && get(profilePath(me())).data.connectionId == null
         && request.resource.data.expiresAt is timestamp
         && request.resource.data.expiresAt > request.time
-        && request.resource.data.expiresAt <= request.time + duration.value(49, 'h')
-        && request.resource.data.consumedBy == null && request.resource.data.revoked == false;
-      allow update: if signedIn() && (
-        (request.auth.uid == resource.data.inviterId
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['revoked'])
-          && request.resource.data.revoked == true)
-        || (live(resource.data) && resource.data.consumedBy == null
-          && request.auth.uid != resource.data.inviterId
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['consumedBy'])
-          && request.resource.data.consumedBy == request.auth.uid
-          && getAfter(/databases/$(database)/documents/partnerConnections/$(id)).data.participants == [resource.data.inviterId, request.auth.uid])
-      );
-    }
-    match /partnerConnections/{id} {
-      allow get: if member(resource.data);
-      allow list: if bounded() && member(resource.data);
-      allow create: if signedIn() && validConnectionCreation(id, request.resource.data);
-      allow update: if member(resource.data) && resource.data.revokedAt == null && (
-        (request.auth.uid == resource.data.inviterId && resource.data.status == 'pending'
-          && request.resource.data.status == 'accepted'
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']))
-        || (request.resource.data.status == 'revoked' && request.resource.data.revokedAt == request.time
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','revokedAt']))
-        || (active(resource.data) && ownSettingsChange(resource.data, request.resource.data))
-      );
-    }
-    function validConnectionCreation(id, d) {
-      let inv = get(/databases/$(database)/documents/partnerInvitations/$(id)).data;
-      let consumed = getAfter(/databases/$(database)/documents/partnerInvitations/$(id)).data;
-      return d.keys().hasOnly(['participants','inviterId','status','revokedAt','createdAt','displayNames','settings'])
-        && inv.consumedBy == null && !inv.revoked && inv.expiresAt > request.time
-        && consumed.consumedBy == request.auth.uid && request.auth.uid != inv.inviterId
-        && d.participants == [inv.inviterId, request.auth.uid] && d.inviterId == inv.inviterId
-        && d.status == 'pending' && d.revokedAt == null && d.createdAt == request.time
-        && d.displayNames.keys().hasOnly(d.participants) && d.settings.keys().hasOnly(d.participants)
-        && d.displayNames[inv.inviterId] == inv.displayName
-        && d.displayNames[request.auth.uid] == get(/databases/$(database)/documents/partnerProfiles/$(request.auth.uid)).data.displayName
-        && defaultSettings(d.settings[inv.inviterId]) && defaultSettings(d.settings[request.auth.uid]);
+        && request.resource.data.expiresAt <= request.time + duration.value(2, 'd');
+      allow delete: if signedIn() && (resource.data.inviterId == me() || accepted(code));
+      function accepted(code) {
+        let joined = getAfter(profilePath(me())).data.connectionId;
+        return joined is string && getAfter(connectionPath(joined)).data.invite == code;
+      }
     }
 
-    function author(c, uid) { return member(c) && request.auth.uid == uid; }
-    function readable(c, uid, d, kind, generation) {
-      return active(c) && d.generation == c.settings[uid][generation];
-    }
-    function liveSource(c, uid, d, kind, prefix) {
-      let s = c.settings[uid];
-      return active(c) && author(c, uid)
-        && d.consentRevision == s.revision && d.generation == s[prefix + 'Generation']
-        && revision(d.sourceRevision) && d.originallyLoggedAt is timestamp && d.changedAt is timestamp
-        && d.originallyLoggedAt <= d.changedAt
-        && d.changedAt <= request.time + duration.value(5, 'm')
-        && d.publishedAt is timestamp && d.deletedAt == null
-        && d.localDate is string && d.localDate.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
-        && text(d.timeZone, 100);
-    }
-    function sourceCreate(c, uid, d, kind, prefix) {
-      return liveSource(c, uid, d, kind, prefix)
-        && d.publishedAt == request.time;
-    }
-    function sourceUpdate(c, uid, d, old, kind, prefix) {
-      return old.deletedAt == null && liveSource(c, uid, d, kind, prefix)
-        && d.sourceRevision >= old.sourceRevision
-        && (d.generation != old.generation || d.sourceRevision > old.sourceRevision)
-        && d.originallyLoggedAt == old.originallyLoggedAt
-        && d.publishedAt == old.publishedAt;
-    }
-    function tombstone(c, uid, d) {
-      return author(c, uid) && d.keys().hasOnly(['deletedAt','sourceRevision'])
-        && d.deletedAt == request.time && revision(d.sourceRevision);
-    }
-    function macros(d) {
-      return number(d.calories,100000) && number(d.protein,10000) && number(d.carbs,10000) && number(d.fat,10000);
-    }
-    function snapshot(s) {
-      let item = s.items[0];
-      return s.keys().hasOnly(['schemaVersion','title','servings','items'])
-        && s.schemaVersion == 1 && text(s.title,160) && s.servings == 1
-        && s.items is list && s.items.size() == 1
-        && item.keys().hasAll(['name','calories','protein','carbs','fat','fiber'])
-        && item.keys().hasOnly(['name','calories','protein','carbs','fat','fiber','portionAmount','portionUnit','portionLabel','portionQuantity'])
-        && text(item.name,160) && macros(item) && number(item.fiber,10000)
-        && (!('portionAmount' in item) || (number(item.portionAmount,100000) && item.portionAmount > 0 && item.portionUnit in ['g','ml']))
-        && (!('portionUnit' in item) || ('portionAmount' in item))
-        && (!('portionLabel' in item) || text(item.portionLabel,160))
-        && (!('portionQuantity' in item) || (number(item.portionQuantity,10000) && item.portionQuantity > 0));
-    }
-    function meal(d) {
-      return d.keys().hasOnly(['sourceRevision','generation','consentRevision','originallyLoggedAt','changedAt','localDate','timeZone','deletedAt','publishedAt','snapshot','mealCategory'])
-        && text(d.mealCategory,128) && snapshot(d.snapshot);
-    }
-    function contribution(d) {
-      return d.keys().hasOnly(['sourceRevision','generation','consentRevision','originallyLoggedAt','changedAt','localDate','timeZone','deletedAt','publishedAt','calories','protein','carbs','fat']) && macros(d);
-    }
-    match /partnerConnections/{cid}/members/{uid}/meals/{id} {
-      allow get: if author(connection(cid), uid) || (readable(connection(cid), uid, resource.data, 'meals','mealGeneration') && resource.data.deletedAt == null);
-      allow list: if bounded() && readable(connection(cid), uid, resource.data, 'meals','mealGeneration') && resource.data.deletedAt == null;
-      allow create: if tombstone(connection(cid), uid, request.resource.data)
-        || (meal(request.resource.data) && sourceCreate(connection(cid), uid, request.resource.data, 'meals','meal'));
-      allow update: if (tombstone(connection(cid), uid, request.resource.data) && request.resource.data.sourceRevision >= resource.data.sourceRevision)
-        || (meal(request.resource.data) && sourceUpdate(connection(cid), uid, request.resource.data, resource.data, 'meals','meal'));
-    }
-    match /partnerConnections/{cid}/members/{uid}/contributions/{id} {
-      allow get: if author(connection(cid), uid) || (readable(connection(cid), uid, resource.data, 'summaries','summaryGeneration') && resource.data.deletedAt == null);
-      allow list: if bounded() && readable(connection(cid), uid, resource.data, 'summaries','summaryGeneration') && resource.data.deletedAt == null;
-      allow create: if tombstone(connection(cid), uid, request.resource.data)
-        || (contribution(request.resource.data) && sourceCreate(connection(cid), uid, request.resource.data, 'summaries','summary'));
-      allow update: if (tombstone(connection(cid), uid, request.resource.data) && request.resource.data.sourceRevision >= resource.data.sourceRevision)
-        || (contribution(request.resource.data) && sourceUpdate(connection(cid), uid, request.resource.data, resource.data, 'summaries','summary'));
-    }
-    match /partnerConnections/{cid}/members/{uid}/goals/{id} {
-      function validGoal(c, d) {
-        let s = c.settings[uid];
-        return id == 'current' && active(c) && author(c, uid)
-          && d.keys().hasOnly(['goals','generation','sourceRevision','consentRevision','timeZone'])
-          && d.generation == s.goalGeneration && d.consentRevision == s.revision
-          && revision(d.sourceRevision) && text(d.timeZone,100)
-          && (d.goals == null || (d.goals.keys().hasOnly(['calories','protein','carbs','fat']) && macros(d.goals)));
+    match /partnerConnections/{cid} {
+      function member() { return signedIn() && me() in get(connectionPath(cid)).data.participants; }
+
+      allow get: if signedIn() && me() in resource.data.participants;
+      allow delete: if signedIn() && me() in resource.data.participants;
+      // Accepting consumes the invite and links both profiles atomically.
+      allow create: if signedIn() && accepting(request.resource.data);
+      function accepting(d) {
+        let invite = get(invitePath(d.invite)).data;
+        return d.keys().hasOnly(['participants', 'names', 'invite', 'createdAt'])
+          && d.invite is string && exists(invitePath(d.invite))
+          && !existsAfter(invitePath(d.invite))
+          && invite.expiresAt > request.time && invite.inviterId != me()
+          && d.participants == [invite.inviterId, me()]
+          && d.names.keys().hasOnly(d.participants)
+          && d.names[invite.inviterId] == invite.displayName
+          && d.names[me()] == get(profilePath(me())).data.displayName
+          && d.createdAt == request.time
+          && getAfter(profilePath(invite.inviterId)).data.connectionId == cid
+          && getAfter(profilePath(me())).data.connectionId == cid;
       }
-      allow get: if author(connection(cid), uid) || readable(connection(cid), uid, resource.data,'goals','goalGeneration');
-      allow list: if bounded() && readable(connection(cid), uid, resource.data,'goals','goalGeneration');
-      allow create: if validGoal(connection(cid), request.resource.data);
-      allow update: if validGoal(connection(cid), request.resource.data) && request.resource.data.sourceRevision > resource.data.sourceRevision;
+
+      match /days/{day} {
+        allow get, list, delete: if member();
+        allow create, update: if member()
+          && day == me() + '_' + request.resource.data.date
+          && request.resource.data.keys().hasOnly(['date', 'goals', 'burned', 'entries', 'updatedAt'])
+          && request.resource.data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+          && (request.resource.data.goals == null || request.resource.data.goals is map)
+          && request.resource.data.burned is number
+          && request.resource.data.entries is list
+          && request.resource.data.entries.size() <= 300
+          && request.resource.data.updatedAt == request.time;
+      }
     }
-    // No public profiles, collection-group queries, legacy feeds or other data.
+
     match /{document=**} { allow read, write: if false; }
   }
 }

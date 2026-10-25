@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/providers/nutrition_provider.dart';
+import 'package:sophis/providers/partner_provider.dart';
 import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/services/database_service.dart';
 import 'package:sophis/services/food_intake_controller.dart';
@@ -250,6 +251,7 @@ Future<void> pumpTestApp(
   NutritionProvider? nutritionProvider,
   SettingsProvider? settingsProvider,
   FoodIntakeController? foodIntakeController,
+  PartnerProvider? partnerProvider,
   Locale? locale,
   TextScaler? textScaler,
 }) async {
@@ -261,6 +263,8 @@ Future<void> pumpTestApp(
       ChangeNotifierProvider<NutritionProvider>.value(value: nutritionProvider),
     if (foodIntakeController != null)
       Provider<FoodIntakeController>.value(value: foodIntakeController),
+    if (partnerProvider != null)
+      ChangeNotifierProvider<PartnerProvider>.value(value: partnerProvider),
   ];
 
   final app = MaterialApp(

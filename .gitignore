@@ -68,7 +68,7 @@ BUILD_NOTES.md
 .codegraph/
 
 # Local social backend dependencies and emulator state
-backend/functions/node_modules/
+backend/rules-test/node_modules/
 backend/.firebase/
 backend/*-debug.log
 backend/functions/*-debug.log

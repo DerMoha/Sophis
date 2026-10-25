@@ -9,8 +9,9 @@ import 'package:sophis/l10n/generated/app_localizations.dart';
 
 import 'package:sophis/models/shareable_meal.dart';
 import 'package:sophis/providers/settings_provider.dart';
-import 'package:sophis/providers/social_provider.dart';
-import 'package:sophis/ui/screens/social/people_screen.dart';
+import 'package:sophis/providers/partner_provider.dart';
+import 'package:sophis/services/partner/partner_backend.dart';
+import 'package:sophis/ui/screens/partner/partner_screen.dart';
 import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/services/meal_sharing_service.dart';
 import 'package:sophis/services/barcode_lookup_service.dart';
@@ -77,7 +78,12 @@ class _SophisBootstrapAppState extends State<SophisBootstrapApp> {
           return MultiProvider(
             providers: [
               ChangeNotifierProvider(
-                create: (_) => SocialProvider(nutrition: runtime.nutrition),
+                create: (_) {
+                  final partner = PartnerProvider(nutrition: runtime.nutrition);
+                  unawaited(partner.start());
+                  return partner;
+                },
+                lazy: false,
               ),
               ChangeNotifierProvider<SettingsProvider>.value(
                 value: runtime.settings,
@@ -195,15 +201,13 @@ class _SophisAppState extends State<SophisApp> {
 
   void _handleDeepLink(String url) {
     final uri = Uri.tryParse(url);
-    if (uri?.scheme == 'sophis' &&
-        uri?.host == 'people' &&
-        uri?.path == '/invite') {
-      final token = uri?.queryParameters['token'];
-      if (token != null && RegExp(r'^[A-Za-z0-9_-]{43}$').hasMatch(token)) {
+    if (uri?.scheme == 'sophis' && uri?.host == 'partner') {
+      final code = PartnerInvite.normalize(uri?.queryParameters['code'] ?? '');
+      if (code != null) {
         Future.delayed(const Duration(milliseconds: 100), () {
           if (mounted) {
             navigatorKey.currentState?.push(
-              AppTheme.slideRoute(PeopleScreen(invitationToken: token)),
+              AppTheme.slideRoute(PartnerScreen(inviteCode: code)),
             );
           }
         });
