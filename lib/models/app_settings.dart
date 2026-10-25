@@ -102,6 +102,8 @@ class AppSettings {
   // Meal display settings
   final bool showMealMacros;
   final bool showSupplements;
+  // Send unclear nutrition label photos to the configured AI provider
+  final bool labelCloudHelpEnabled;
   // Quick Action Button Size
   final QuickActionSize quickActionSize;
   // Require device authentication before showing progress photos
@@ -131,6 +133,7 @@ class AppSettings {
     this.customMealTypes = const [],
     this.showMealMacros = false,
     this.showSupplements = true,
+    this.labelCloudHelpEnabled = false,
     this.quickActionSize = QuickActionSize.small,
     this.progressPhotoLockEnabled = false,
     this.onboardingCompleted = false,
@@ -160,6 +163,7 @@ class AppSettings {
         'customMealTypes': customMealTypes.map((m) => m.toJson()).toList(),
         'showMealMacros': showMealMacros,
         'showSupplements': showSupplements,
+        'labelCloudHelpEnabled': labelCloudHelpEnabled,
         'quickActionSize': quickActionSize.index,
         'progressPhotoLockEnabled': progressPhotoLockEnabled,
         'onboardingCompleted': onboardingCompleted,
@@ -202,6 +206,7 @@ class AppSettings {
             const [],
         showMealMacros: json['showMealMacros'] as bool? ?? false,
         showSupplements: json['showSupplements'] as bool? ?? true,
+        labelCloudHelpEnabled: json['labelCloudHelpEnabled'] as bool? ?? false,
         quickActionSize: json['quickActionSize'] != null
             ? QuickActionSize.values[json['quickActionSize']]
             : QuickActionSize.small,
@@ -234,6 +239,7 @@ class AppSettings {
     List<CustomMealType>? customMealTypes,
     bool? showMealMacros,
     bool? showSupplements,
+    bool? labelCloudHelpEnabled,
     QuickActionSize? quickActionSize,
     bool? progressPhotoLockEnabled,
     bool? onboardingCompleted,
@@ -272,6 +278,8 @@ class AppSettings {
         customMealTypes: customMealTypes ?? this.customMealTypes,
         showMealMacros: showMealMacros ?? this.showMealMacros,
         showSupplements: showSupplements ?? this.showSupplements,
+        labelCloudHelpEnabled:
+            labelCloudHelpEnabled ?? this.labelCloudHelpEnabled,
         quickActionSize: quickActionSize ?? this.quickActionSize,
         progressPhotoLockEnabled:
             progressPhotoLockEnabled ?? this.progressPhotoLockEnabled,

@@ -17,7 +17,6 @@ void main() {
   setUpAll(() async {
     for (final entry in {
       'Plus Jakarta Sans': 'assets/fonts/PlusJakartaSans-Variable.ttf',
-      'DM Serif Display': 'assets/fonts/DMSerifDisplay-Regular.ttf',
       'MaterialIcons': 'fonts/MaterialIcons-Regular.otf',
     }.entries) {
       final loader = FontLoader(entry.key)

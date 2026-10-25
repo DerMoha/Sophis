@@ -139,9 +139,10 @@ void main() {
     await tester.tap(find.text('Add Food'));
     await tester.pumpAndSettle();
     expect(find.text('Search food'), findsOneWidget);
-    expect(find.text('Scan product'), findsOneWidget);
+    expect(find.text('Barcode'), findsOneWidget);
+    expect(find.text('Nutrition label'), findsOneWidget);
+    expect(find.text('Food photo'), findsOneWidget);
     expect(find.text('Manual entry'), findsOneWidget);
-    expect(find.text('Photograph food'), findsOneWidget);
     expect(find.text('Optional AI'), findsNothing);
   });
 

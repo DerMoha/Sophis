@@ -85,9 +85,6 @@ flutter:
   uses-material-design: true
   generate: true
   fonts:
-    - family: DM Serif Display
-      fonts:
-        - asset: assets/fonts/DMSerifDisplay-Regular.ttf
     - family: Plus Jakarta Sans
       fonts:
         - asset: assets/fonts/PlusJakartaSans-Variable.ttf

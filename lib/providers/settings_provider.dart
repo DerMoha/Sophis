@@ -163,6 +163,14 @@ class SettingsProvider extends ChangeNotifier {
     );
   }
 
+  bool get labelCloudHelpEnabled => _settings.labelCloudHelpEnabled;
+
+  Future<void> setLabelCloudHelpEnabled(bool enabled) async {
+    await _persistSettings(
+      settings: _settings.copyWith(labelCloudHelpEnabled: enabled),
+    );
+  }
+
   QuickActionSize get quickActionSize => _settings.quickActionSize;
   bool get progressPhotoLockEnabled => _settings.progressPhotoLockEnabled;
 

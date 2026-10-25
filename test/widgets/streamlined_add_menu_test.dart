@@ -18,21 +18,27 @@ void main() {
       final Widget screen = switch (surface) {
         'home' => const Scaffold(
             body: MealSection(
-                mealType: 'breakfast',
-                title: 'Breakfast',
-                icon: Icons.restaurant,
-                showMacros: false,),),
+              mealType: 'breakfast',
+              title: 'Breakfast',
+              icon: Icons.restaurant,
+              showMacros: false,
+            ),
+          ),
         'diary' => const FoodDiaryScreen(),
         _ => MealDetailScreen(
             date: DateTime.now(),
             mealType: 'breakfast',
             mealTitle: 'Breakfast',
-            mealIcon: Icons.restaurant,),
+            mealIcon: Icons.restaurant,
+          ),
       };
-      await pumpTestApp(tester, screen,
-          nutritionProvider: nutrition,
-          settingsProvider: settings,
-          textScaler: const TextScaler.linear(2),);
+      await pumpTestApp(
+        tester,
+        screen,
+        nutritionProvider: nutrition,
+        settingsProvider: settings,
+        textScaler: const TextScaler.linear(2),
+      );
       await tester.pumpAndSettle();
       final add = surface == 'meal'
           ? find.byType(FloatingActionButton)
@@ -43,15 +49,16 @@ void main() {
       await tester.pumpAndSettle();
       for (final label in [
         'Search food',
-        'Photograph food',
-        'Scan product',
+        'Barcode',
+        'Nutrition label',
+        'Food photo',
         'Manual entry',
       ]) {
         await tester.ensureVisible(find.text(label));
         await tester.pumpAndSettle();
         expect(find.text(label).hitTestable(), findsOneWidget);
       }
-      expect(find.text('Scan barcode'), findsNothing);
+      expect(find.text('Scan product'), findsNothing);
       expect(find.text('Optional AI'), findsNothing);
       expect(tester.takeException(), isNull);
     });

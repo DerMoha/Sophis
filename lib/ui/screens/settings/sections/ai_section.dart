@@ -3,6 +3,7 @@ import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
 import 'package:sophis/ui/components/settings/api_key_guide_dialog.dart';
+import 'package:sophis/ui/components/settings/settings_tiles.dart';
 
 class AiSection extends StatefulWidget {
   final SettingsProvider settings;
@@ -91,6 +92,14 @@ class _AiSectionState extends State<AiSection> {
               ),
             ),
           ],
+        ),
+        const SizedBox(height: 16),
+        SwitchTile(
+          title: l10n.labelCloudHelpTitle,
+          subtitle: l10n.labelCloudHelpSubtitle,
+          icon: Icons.document_scanner_outlined,
+          value: widget.settings.labelCloudHelpEnabled,
+          onChanged: widget.settings.setLabelCloudHelpEnabled,
         ),
         const SizedBox(height: 16),
         Text(

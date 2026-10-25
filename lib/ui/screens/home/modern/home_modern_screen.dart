@@ -51,16 +51,19 @@ class _HomeScreenModernState extends State<HomeScreenModern> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final baseTheme = Theme.of(context);
-    TextStyle? serif(TextStyle? style) => style?.copyWith(
-          fontFamily: 'DM Serif Display',
-          fontWeight: FontWeight.w400,
+    // Bold, tightly tracked sans headings keep the dashboard calm and legible.
+    TextStyle? heading(TextStyle? style) => style?.copyWith(
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.4,
         );
     final theme = baseTheme.copyWith(
       textTheme: baseTheme.textTheme.copyWith(
-        headlineMedium: serif(baseTheme.textTheme.headlineMedium),
-        headlineSmall: serif(baseTheme.textTheme.headlineSmall),
-        displaySmall: serif(baseTheme.textTheme.displaySmall),
-        titleMedium: serif(baseTheme.textTheme.titleMedium),
+        headlineMedium: heading(baseTheme.textTheme.headlineMedium),
+        headlineSmall: heading(baseTheme.textTheme.headlineSmall),
+        displaySmall: heading(baseTheme.textTheme.displaySmall),
+        titleMedium: baseTheme.textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
 
@@ -102,7 +105,7 @@ class _HomeScreenModernState extends State<HomeScreenModern> {
                       children: [
                         Expanded(
                           child: Text(
-                            l10n.today,
+                            l10n.appTitle,
                             style: theme.textTheme.headlineMedium,
                           ),
                         ),

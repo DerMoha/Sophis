@@ -104,6 +104,7 @@ void main() {
       'AI food camera': const AIFoodCameraScreen(meal: 'breakfast'),
       'nutrition label scanner': const NutritionLabelScannerScreen(
         meal: 'breakfast',
+        openCameraOnStart: false,
       ),
     };
 

@@ -1,5 +1,6 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/ui/theme/app_theme.dart';
@@ -7,11 +8,13 @@ import 'package:sophis/ui/theme/app_theme.dart';
 class NutritionLabelCameraScreen extends StatefulWidget {
   final String title;
   final String guidance;
+  final bool allowGallery;
 
   const NutritionLabelCameraScreen({
     super.key,
     required this.title,
     required this.guidance,
+    this.allowGallery = false,
   });
 
   @override
@@ -129,9 +132,21 @@ class _NutritionLabelCameraScreenState extends State<NutritionLabelCameraScreen>
         _capturing = false;
         _error = AppLocalizations.of(
           context,
-        )!.nutritionLabelCameraCaptureFailed;
+        )!
+            .nutritionLabelCameraCaptureFailed;
       });
     }
+  }
+
+  Future<void> _pickFromGallery() async {
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 2048,
+      maxHeight: 2048,
+      imageQuality: 95,
+    );
+    if (picked == null || !mounted) return;
+    Navigator.pop(context, picked);
   }
 
   @override
@@ -171,7 +186,7 @@ class _NutritionLabelCameraScreenState extends State<NutritionLabelCameraScreen>
                 );
               },
             )
-          else
+          else if (_initializing)
             const Center(child: CircularProgressIndicator()),
           const _NutritionTableOverlay(),
           SafeArea(
@@ -197,7 +212,26 @@ class _NutritionLabelCameraScreenState extends State<NutritionLabelCameraScreen>
                   ),
                 ),
                 const SizedBox(height: 22),
-                _ShutterButton(onPressed: _capturing ? null : _capture),
+                Row(
+                  children: [
+                    Expanded(
+                      child: widget.allowGallery
+                          ? Center(
+                              child: IconButton.filledTonal(
+                                tooltip: AppLocalizations.of(
+                                  context,
+                                )!
+                                    .chooseFromGallery,
+                                onPressed: _capturing ? null : _pickFromGallery,
+                                icon: const Icon(Icons.photo_library_outlined),
+                              ),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                    _ShutterButton(onPressed: _capturing ? null : _capture),
+                    const Spacer(),
+                  ],
+                ),
                 const SizedBox(height: 32),
               ],
             ),
@@ -264,9 +298,9 @@ class _TopBar extends StatelessWidget {
               title,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-              ),
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
             ),
           ),
           IconButton.filledTonal(

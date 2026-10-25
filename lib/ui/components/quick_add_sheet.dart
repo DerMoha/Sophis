@@ -49,58 +49,6 @@ Future<void> showQuickAddSheet(
   showFoodAddedFeedback(context, entry);
 }
 
-enum ProductScanMode { barcode, nutritionLabel }
-
-Future<void> showProductScanOptions(
-  BuildContext context, {
-  required String mealType,
-}) async {
-  final l10n = AppLocalizations.of(context)!;
-  final navigator = Navigator.of(context);
-  final choice = await showModalBottomSheet<ProductScanMode>(
-    context: context,
-    isScrollControlled: true,
-    useSafeArea: true,
-    showDragHandle: true,
-    builder: (sheetContext) => SingleChildScrollView(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-            child: Text(
-              l10n.scanProduct,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-          ),
-          _ActionTile(
-            icon: Icons.qr_code_scanner_outlined,
-            label: l10n.scanBarcode,
-            color: Theme.of(context).colorScheme.primary,
-            onTap: () => Navigator.pop(sheetContext, ProductScanMode.barcode),
-          ),
-          _ActionTile(
-            icon: Icons.document_scanner_outlined,
-            label: l10n.nutritionLabelScannerTitle,
-            color: Theme.of(context).colorScheme.primary,
-            onTap: () =>
-                Navigator.pop(sheetContext, ProductScanMode.nutritionLabel),
-          ),
-          const SizedBox(height: 16),
-        ],
-      ),
-    ),
-  );
-  if (choice == null || !navigator.mounted) return;
-  navigator.push(
-    AppTheme.slideRoute(
-      choice == ProductScanMode.barcode
-          ? BarcodeScannerScreen(meal: mealType)
-          : NutritionLabelScannerScreen(meal: mealType),
-    ),
-  );
-}
-
 class _QuickAddContent extends StatefulWidget {
   final String mealType;
   final ScrollController scrollController;
@@ -242,69 +190,89 @@ class _QuickAddContentState extends State<_QuickAddContent> {
     );
   }
 
+  void _open(Widget screen) {
+    Navigator.pop(widget.sheetContext);
+    Navigator.push(context, AppTheme.slideRoute(screen));
+  }
+
   Widget _buildActionsSection(
     BuildContext context,
     AppLocalizations l10n,
     ThemeData theme,
   ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 10),
-          child: Text(l10n.addFood, style: theme.textTheme.titleLarge),
-        ),
-        _ActionTile(
-          icon: Icons.search_outlined,
-          label: l10n.searchFood,
-          color: theme.colorScheme.primary,
-          onTap: () {
-            Navigator.pop(widget.sheetContext);
-            Navigator.push(
-              context,
-              AppTheme.slideRoute(FoodSearchScreen(meal: widget.mealType)),
-            );
-          },
-        ),
-        _ActionTile(
-          icon: Icons.camera_alt_outlined,
-          label: l10n.photographFood,
-          subtitle: l10n.aiCloudNote,
-          color: theme.colorScheme.primary,
-          onTap: () {
-            Navigator.pop(widget.sheetContext);
-            Navigator.push(
-              context,
-              AppTheme.slideRoute(AIFoodCameraScreen(meal: widget.mealType)),
-            );
-          },
-        ),
-        _ActionTile(
-          icon: Icons.qr_code_scanner_outlined,
-          label: l10n.scanProduct,
-          color: theme.colorScheme.primary,
-          onTap: () {
-            final navigator = Navigator.of(context);
-            Navigator.pop(widget.sheetContext);
-            showProductScanOptions(
-              navigator.context,
-              mealType: widget.mealType,
-            );
-          },
-        ),
-        _ActionTile(
-          icon: Icons.edit_outlined,
-          label: l10n.manualEntry,
-          color: theme.colorScheme.primary,
-          onTap: () {
-            Navigator.pop(widget.sheetContext);
-            Navigator.push(
-              context,
-              AppTheme.slideRoute(AddFoodScreen(meal: widget.mealType)),
-            );
-          },
-        ),
-      ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 8, bottom: 12),
+            child: Text(l10n.addFood, style: theme.textTheme.titleLarge),
+          ),
+          _SearchEntryTile(
+            label: l10n.searchFood,
+            onTap: () => _open(FoodSearchScreen(meal: widget.mealType)),
+          ),
+          const SizedBox(height: AppTheme.spaceSM),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: _CaptureTile(
+                    icon: Icons.qr_code_scanner_outlined,
+                    label: l10n.addFoodBarcode,
+                    semanticLabel: l10n.scanBarcode,
+                    onTap: () =>
+                        _open(BarcodeScannerScreen(meal: widget.mealType)),
+                  ),
+                ),
+                const SizedBox(width: AppTheme.spaceSM),
+                Expanded(
+                  child: _CaptureTile(
+                    icon: Icons.document_scanner_outlined,
+                    label: l10n.addFoodNutritionLabel,
+                    semanticLabel: l10n.nutritionLabelScannerTitle,
+                    onTap: () => _open(
+                      NutritionLabelScannerScreen(meal: widget.mealType),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppTheme.spaceSM),
+                Expanded(
+                  child: _CaptureTile(
+                    icon: Icons.camera_alt_outlined,
+                    label: l10n.addFoodPhoto,
+                    semanticLabel: l10n.photographFood,
+                    badge: l10n.addFoodPhotoAiBadge,
+                    onTap: () =>
+                        _open(AIFoodCameraScreen(meal: widget.mealType)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(
+              l10n.aiCloudNote,
+              textAlign: TextAlign.end,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          const SizedBox(height: AppTheme.spaceSM),
+          Align(
+            alignment: Alignment.center,
+            child: TextButton.icon(
+              onPressed: () => _open(AddFoodScreen(meal: widget.mealType)),
+              icon: const Icon(Icons.edit_outlined, size: 18),
+              label: Text(l10n.manualEntry),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -395,45 +363,100 @@ class _RecentFoodChip extends StatelessWidget {
   }
 }
 
-class _ActionTile extends StatelessWidget {
-  final IconData icon;
+class _SearchEntryTile extends StatelessWidget {
   final String label;
-  final String? subtitle;
-  final Color color;
   final VoidCallback onTap;
 
-  const _ActionTile({
+  const _SearchEntryTile({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+      borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Icon(
+                Icons.search,
+                size: 20,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  label,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CaptureTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String semanticLabel;
+  final String? badge;
+  final VoidCallback onTap;
+
+  const _CaptureTile({
     required this.icon,
     required this.label,
-    this.subtitle,
-    required this.color,
+    required this.semanticLabel,
+    this.badge,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: ListTile(
-        leading: Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(AppTheme.radiusXS),
+    final color = theme.colorScheme.primary;
+    return Semantics(
+      button: true,
+      label: semanticLabel,
+      excludeSemantics: true,
+      child: Material(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Badge(
+                  isLabelVisible: badge != null,
+                  label: badge == null ? null : Text(badge!),
+                  backgroundColor: theme.colorScheme.tertiary,
+                  textColor: theme.colorScheme.onTertiary,
+                  child: Icon(icon, size: 28, color: color),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
           ),
-          child: Icon(icon, size: 18, color: color),
         ),
-        title: Text(label),
-        subtitle: subtitle == null ? null : Text(subtitle!),
-        trailing: Icon(
-          Icons.chevron_right,
-          size: 18,
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
-        onTap: onTap,
       ),
     );
   }

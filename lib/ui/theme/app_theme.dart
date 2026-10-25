@@ -260,7 +260,7 @@ class AppTheme {
         backgroundColor: _lightSurface,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
-        height: 76,
+        height: 56,
         indicatorColor: accentColor.withValues(alpha: 0.12),
         labelTextStyle: WidgetStateProperty.resolveWith(
           (states) => TextStyle(
@@ -496,7 +496,7 @@ class AppTheme {
         backgroundColor: _darkSurface,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
-        height: 76,
+        height: 56,
         indicatorColor: accentColor.withValues(alpha: 0.12),
         labelTextStyle: WidgetStateProperty.resolveWith(
           (states) => TextStyle(

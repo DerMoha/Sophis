@@ -76,24 +76,15 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
         fallbackBrand: widget.partialBrand,
         barcode: widget.barcode,
       );
-      var result = await flow.processImage(
+      // Cloud help is a standing choice in Settings; no per-scan prompt.
+      final cloudAssistAllowed = flow.hasGeminiFallback &&
+          context.read<SettingsProvider>().labelCloudHelpEnabled;
+      final result = await flow.processImage(
         request,
-        allowCloudAssist: false,
+        allowCloudAssist: cloudAssistAllowed,
       );
-      var cloudAssistAllowed = false;
 
       if (!mounted) return;
-      if (flow.hasGeminiFallback && _shouldOfferCloudAssist(result)) {
-        final allowCloud = await _confirmCloudAssist(l10n);
-        if (!mounted) return;
-        if (allowCloud) {
-          cloudAssistAllowed = true;
-          result = await flow.processImage(
-            request,
-            allowCloudAssist: true,
-          );
-        }
-      }
       switch (result) {
         case Success<LabelIntakeResult>(value: final intake):
           await _onSuccess(intake);
@@ -149,37 +140,6 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
       flow.dispose();
       if (mounted) setState(() => _isAnalyzing = false);
     }
-  }
-
-  bool _shouldOfferCloudAssist(ServiceResult<LabelIntakeResult> result) {
-    return switch (result) {
-      Success<LabelIntakeResult>(value: final intake) =>
-        intake.source == NutritionLabelAnalysisSource.localOcr &&
-            !intake.validation.isHighConfidence,
-      Failure<LabelIntakeResult>() => true,
-    };
-  }
-
-  Future<bool> _confirmCloudAssist(AppLocalizations l10n) async {
-    return await showDialog<bool>(
-          context: context,
-          barrierDismissible: false,
-          builder: (dialogContext) => AlertDialog(
-            title: Text(l10n.nutritionLabelCloudConsentTitle),
-            content: Text(l10n.nutritionLabelCloudConsentBody),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext, false),
-                child: Text(l10n.nutritionLabelCloudConsentDecline),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(dialogContext, true),
-                child: Text(l10n.nutritionLabelCloudConsentConfirm),
-              ),
-            ],
-          ),
-        ) ??
-        false;
   }
 
   LabelIntakeFlow _buildFlow() {
