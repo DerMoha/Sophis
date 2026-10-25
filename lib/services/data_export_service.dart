@@ -61,17 +61,17 @@ class DataExportService {
     NutritionProvider nutrition,
   ) async {
     try {
-      final result = await FilePicker.pickFiles(
+      final files = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: const ['zip'],
       );
-      if (result == null || result.files.isEmpty) {
+      if (files.isEmpty) {
         return const Success(
           ImportResult(success: false, message: 'No file selected'),
         );
       }
 
-      final path = result.files.single.path;
+      final path = files.single.path;
       if (path == null) {
         throw const FormatException('Selected backup is not readable');
       }
