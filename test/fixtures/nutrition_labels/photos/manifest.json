@@ -3,26 +3,161 @@
     "photo": "energy_drink_bottle.jpg",
     "note": "Glass bottle, light text on dark label, curved",
     "unit": "milliliter",
-    "expected": { "calories": 47, "protein": 0, "carbs": 12, "fat": 0, "fiber": null }
+    "expected": {
+      "calories": 47,
+      "protein": 0,
+      "carbs": 12,
+      "fat": 0,
+      "fiber": null
+    }
   },
   {
     "photo": "skyr_tub.jpg",
     "note": "Curved tub, two columns (100 g / portion 125 g), labels and values offset",
     "unit": "gram",
     "serving": 125,
-    "expected": { "calories": 62, "protein": 11, "carbs": 4, "fat": 0.2, "fiber": 0 }
+    "expected": {
+      "calories": 62,
+      "protein": 11,
+      "carbs": 4,
+      "fat": 0.2,
+      "fiber": 0
+    }
   },
   {
     "photo": "soy_drink_carton.jpg",
     "note": "Carton, two columns (100 ml / portion 250 ml), fiber printed as <0.5",
     "unit": "milliliter",
     "serving": 250,
-    "expected": { "calories": 64, "protein": 5, "carbs": 7.2, "fat": 1.7, "fiber": "<0.5" }
+    "expected": {
+      "calories": 64,
+      "protein": 5,
+      "carbs": 7.2,
+      "fat": 1.7,
+      "fiber": "<0.5"
+    }
   },
   {
     "photo": "kidney_beans_can.jpg",
     "note": "Can, single column per 100 g drained weight, kJ and kcal on separate lines",
     "unit": "gram",
-    "expected": { "calories": 95, "protein": 6.9, "carbs": 12, "fat": 0.7, "fiber": 6.5 }
+    "expected": {
+      "calories": 95,
+      "protein": 6.9,
+      "carbs": 12,
+      "fat": 0.7,
+      "fiber": 6.5
+    }
+  },
+  {
+    "photo": "protein_bar_sideways.jpg",
+    "note": "Photo rotated 90 degrees, light text on dark, trilingual labels, motion blur, polyols row",
+    "unit": "gram",
+    "serving": 45,
+    "expected": {
+      "calories": 416,
+      "protein": 31,
+      "carbs": 29,
+      "fat": 21,
+      "fiber": 6.9
+    }
+  },
+  {
+    "photo": "dark_chocolate_box.jpg",
+    "note": "Ruled single-column table, kJ/kcal split in one cell, no fiber row",
+    "unit": "gram",
+    "expected": {
+      "calories": 576,
+      "protein": 10,
+      "carbs": 24,
+      "fat": 46,
+      "fiber": null
+    }
+  },
+  {
+    "photo": "grated_cheese_sideways.jpg",
+    "note": "Photo rotated 90 degrees, four columns incl. %RM, glossy bag",
+    "unit": "gram",
+    "serving": 50,
+    "expected": {
+      "calories": 264,
+      "protein": 28,
+      "carbs": 2,
+      "fat": 16,
+      "fiber": 0
+    }
+  },
+  {
+    "photo": "jam_jar.jpg",
+    "note": "Curved jar, values printed one row below their labels, no fiber row",
+    "unit": "gram",
+    "expected": {
+      "calories": 216,
+      "protein": 0.8,
+      "carbs": 50.7,
+      "fat": 0.3,
+      "fiber": null
+    }
+  },
+  {
+    "photo": "pasta_sauce_multilingual.jpg",
+    "note": "Curved jar, seven-language row labels, unit in its own column before the value",
+    "unit": "gram",
+    "expected": {
+      "calories": 87,
+      "protein": 3.3,
+      "carbs": 6.3,
+      "fat": 5,
+      "fiber": 2
+    }
+  },
+  {
+    "photo": "granola_raspberry_dark.jpg",
+    "note": "Light text on dark background with a drawing behind the table, no grid",
+    "unit": "gram",
+    "expected": {
+      "calories": 432,
+      "protein": 10,
+      "carbs": 65,
+      "fat": 13,
+      "fiber": 8
+    }
+  },
+  {
+    "photo": "basmati_rice_bag.jpg",
+    "note": "Wrinkled bag, two columns, per-100 values offset from their labels",
+    "unit": "gram",
+    "serving": 62.5,
+    "expected": {
+      "calories": 352,
+      "protein": 8.4,
+      "carbs": 76.7,
+      "fat": 1,
+      "fiber": 1.3
+    }
+  },
+  {
+    "photo": "mie_noodles_cropped.jpg",
+    "note": "Row labels cut off at the left edge, glare on clear plastic",
+    "unit": "gram",
+    "expected": {
+      "calories": 363,
+      "protein": 11,
+      "carbs": 75,
+      "fat": 1.1,
+      "fiber": 4.3
+    }
+  },
+  {
+    "photo": "granola_chocolate.jpg",
+    "note": "Thin light text on textured brown box, kJ and kcal on two lines",
+    "unit": "gram",
+    "expected": {
+      "calories": 447,
+      "protein": 11,
+      "carbs": 56,
+      "fat": 17,
+      "fiber": 13
+    }
   }
 ]

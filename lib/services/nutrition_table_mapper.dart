@@ -75,7 +75,14 @@ class NutritionTableMapper {
                 ? _valueText(rows[index + 1], -1, valueColumn, '')
                 : null;
         final kj = _match(_kj, text);
-        final kcal = _match(_kcal, text) ??
+        // "Brennwert kJ/kcal | 918/216": the units are in the label cell.
+        final pair =
+            RegExp(r'kj\s*/\s*kcal').hasMatch(_normalize(row[labelColumn]))
+                ? RegExp(r'\d+(?:[.,]\d+)?\s*/\s*(\d+(?:[.,]\d+)?)')
+                    .firstMatch(text ?? '')
+                : null;
+        final kcal = (pair == null ? null : _parse(pair.group(1)!)) ??
+            _match(_kcal, text) ??
             _match(_kcal, next) ??
             (kj == null ? null : (kj / 4.184).roundToDouble());
         if (kcal != null) values[field] = kcal;
@@ -122,25 +129,28 @@ class NutritionTableMapper {
 
   static NutritionLabelField? _fieldFor(String text) {
     // "davon" / "of which" rows (sugars, saturates) are sub-rows, never totals.
-    if (RegExp(r'davon|of which|dont|saur|satur|zucker|sugar').hasMatch(text)) {
+    // Fragments too ("avon", "gesatt"), for labels cut off at the edge.
+    if (RegExp(r'avon|of which|dont|saur|satur|gesatt|zucker|sugar')
+        .hasMatch(text)) {
       return null;
     }
-    if (RegExp(r'^(energie|brennwert|energy|kalorien|calories|energia)')
+    // Distinctive inner fragments also match names that OCR clipped or
+    // garbled at the start ("rergie", "ehlenhydrate", "ciweiß").
+    if (RegExp(r'ergie|brennwert|energy|kalorien|calor|energia|kj\s*/\s*kcal')
         .hasMatch(text)) {
       return NutritionLabelField.calories;
     }
-    if (RegExp(r'^(fett|fat|matieres grasses|lipides|grassi|vetten)')
+    if (RegExp(r'^(fett|fat|matieres grasses|lipides|grassi|vetten|grasas)\b')
         .hasMatch(text)) {
       return NutritionLabelField.fat;
     }
-    if (RegExp(r'^(kohlenhydrat|carbohydrate|glucides|carboidrati|koolhydrat)')
-        .hasMatch(text)) {
+    if (RegExp(r'hydrat|glucides|carboidrati|carbohidrat').hasMatch(text)) {
       return NutritionLabelField.carbs;
     }
-    if (RegExp(r'^(ballaststoff|fibre|fiber|vezels|fibres)').hasMatch(text)) {
+    if (RegExp(r'aststoff|fibre|fiber|vezels|fibra').hasMatch(text)) {
       return NutritionLabelField.fiber;
     }
-    if (RegExp(r'^(eiwei|protein|proteines|proteine|eiwit)').hasMatch(text)) {
+    if (RegExp(r'weiß|weiss|eiwei|protein|eiwit').hasMatch(text)) {
       return NutritionLabelField.protein;
     }
     return null;

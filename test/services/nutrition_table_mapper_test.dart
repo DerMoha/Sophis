@@ -95,6 +95,41 @@ void main() {
       expect(label.servingSizeG, 125);
     });
 
+    test('matched row names clipped or garbled by OCR', () {
+      // Captured from a bag photographed with the label column cut off.
+      final label = NutritionTableMapper.map([
+        [
+          ['rergie', '1บ37 kJ/'],
+          ['', '363 kcal | 1,1 g'],
+          ['lavon gesattigte', ''],
+          ['ettsäuren', '0,3 g'],
+          ['ehlenhydrate', '75 g'],
+          ['lavon Zucker', '2,9 g'],
+          ['allaststoffe', '4,3 g'],
+          ['ciweiß', '11 g'],
+        ],
+      ])!;
+
+      expect(label.caloriesPer100g, 363);
+      expect(label.carbsPer100g, 75);
+      expect(label.fiberPer100g, 4.3);
+      expect(label.proteinPer100g, 11);
+      // The fat row lost its name; it stays absent rather than guessed.
+      expect(label.presentFields.contains(NutritionLabelField.fat), isFalse);
+    });
+
+    test('read kcal from a kJ/kcal pair whose units sit in the label', () {
+      final label = NutritionTableMapper.map([
+        [
+          ['DURCHSCHNITTLICHE | NÄHRWERTE', 'pro | 100 g'],
+          ['Sternwert kJ/kcal', '918/216', '11%'],
+          ['Kohlenhydrate', '50,7 g', '20%'],
+        ],
+      ])!;
+      expect(label.caloriesPer100g, 216);
+      expect(label.carbsPer100g, 50.7);
+    });
+
     test('converted kJ only when no kcal is printed', () {
       final label = NutritionTableMapper.map([
         [

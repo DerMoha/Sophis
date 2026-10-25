@@ -78,3 +78,49 @@ What real Vision output looks like (captured with
 
 Same caveat as above: these four products were used for earlier tuning, so this
 is not yet an independent score.
+
+## Independent set: 9 new products (2026-10-25)
+
+These nine photos were never used for tuning. They were picked to be hard:
+two are sideways, two are light text on a dark background, three are curved
+jars, one has the label column cut off, and one labels its rows in seven
+languages.
+
+| Photo | First run (P2) | After fixes | Remaining problem |
+| --- | --- | --- | --- |
+| Protein bar, sideways, blurred | 0/5 | 0/5 | No table or usable lines found in any orientation |
+| Dark chocolate, ruled table | 5/5 | 5/5 | — |
+| Grated cheese, sideways, 4 columns | 4/5 | **5/5** | Serving (50 g) missed: OCR read "Potion" |
+| Jam jar, values one row below labels | 2/5 | 3/5 | Fat and protein row names lost by OCR |
+| Pasta sauce, 7-language labels | 0/5 | 0/5 | No table detected; the line parser can't pair multilingual rows |
+| Raspberry granola, dark, no grid | 5/5 | 5/5 | — |
+| Basmati rice, two columns, offset | 5/5 | 5/5 | — |
+| Mie noodles, labels cut off | 1/5 | 4/5 | Fat row name fully cut off |
+| Chocolate granola, thin text | 5/5 | 5/5 | — |
+| **Total** | **27/45, 4/9 complete** | **32/45, 5/9 complete** | |
+
+All 13 photos together: **52/65 fields, 9/13 complete scans.** The original
+four stay at 20/20.
+
+**No wrong values in either run.** Every miss is a missing field. The review
+screen then asks for it instead of logging a wrong number.
+
+Fixes in this round:
+
+- Row names match on distinctive fragments, so names that OCR clips or garbles
+  still count (`rergie`, `ehlenhydrate`, `ciweiß`). Sub-row fragments
+  (`avon`, `gesatt`, `saur`) are still excluded.
+- `Brennwert kJ/kcal | 918/216`: when the units sit in the label cell, the
+  second number is read as kcal.
+- Table reading retries the photo turned a quarter each way when no table is
+  found. That fixed the sideways cheese bag, but not the blurred bar.
+
+What's left fits the next phases:
+
+- **Pasta sauce, jam:** the text is all there, but the pairing is broken.
+  This is the job P3 (Apple's on-device model over the OCR text) is planned
+  for.
+- **Protein bar:** a blurred single shot. Live scanning (P4), which reads many
+  frames, is the fix.
+- **Speed:** photos that fall back to the line parser still take 8–20 s; table
+  hits take 2–3 s.

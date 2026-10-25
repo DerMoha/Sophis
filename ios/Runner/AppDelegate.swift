@@ -77,7 +77,12 @@ private final class NutritionTextRecognition: NSObject, FlutterPlugin {
     Task.detached(priority: .userInitiated) {
       do {
         let image = try Self.uprightImage(path: path)
-        let observations = try await RecognizeDocumentsRequest().perform(on: image, orientation: nil)
+        // Sideways photos often yield no table; retry turned a quarter each way.
+        var observations: [DocumentObservation] = []
+        for orientation in [nil, CGImagePropertyOrientation.right, .left] {
+          observations = try await RecognizeDocumentsRequest().perform(on: image, orientation: orientation)
+          if observations.contains(where: { !$0.document.tables.isEmpty }) { break }
+        }
         let tables: [[[String]]] = observations.flatMap { observation in
           observation.document.tables.map { table in
             table.rows.map { cells in
