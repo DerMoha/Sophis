@@ -34,26 +34,76 @@ private final class NutritionTextRecognition: NSObject, FlutterPlugin {
   }
 
   func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-    guard call.method == "recognize",
-          let args = call.arguments as? [String: Any],
+    guard let args = call.arguments as? [String: Any],
           let path = args["path"] as? String else {
       result(FlutterMethodNotImplemented)
       return
     }
+    switch call.method {
+    case "recognize":
+      recognizeLines(path: path, result: result)
+    case "recognizeDocument":
+      recognizeDocument(path: path, result: result)
+    default:
+      result(FlutterMethodNotImplemented)
+    }
+  }
+
+  /// Decodes the image and normalizes EXIF orientation, so coordinates match
+  /// upright crop pixels.
+  private static func uprightImage(path: String) throws -> CGImage {
+    guard let input = UIImage(contentsOfFile: path) else {
+      throw NSError(domain: "NutritionOCR", code: 1, userInfo: [NSLocalizedDescriptionKey: "Cannot decode image"])
+    }
+    let format = UIGraphicsImageRendererFormat()
+    format.scale = 1
+    let upright = UIGraphicsImageRenderer(size: input.size, format: format).image { _ in
+      input.draw(in: CGRect(origin: .zero, size: input.size))
+    }
+    guard let image = upright.cgImage else {
+      throw NSError(domain: "NutritionOCR", code: 2, userInfo: [NSLocalizedDescriptionKey: "Cannot normalize image"])
+    }
+    return image
+  }
+
+  /// Reads tables as rows of cell transcripts (iOS 26+ document recognition).
+  /// Cells are placed by their column index so merged or empty cells keep the
+  /// remaining values in their columns.
+  private func recognizeDocument(path: String, result: @escaping FlutterResult) {
+    guard #available(iOS 26.0, *) else {
+      result(FlutterError(code: "unsupported", message: "Document recognition needs iOS 26", details: nil))
+      return
+    }
+    Task.detached(priority: .userInitiated) {
+      do {
+        let image = try Self.uprightImage(path: path)
+        let observations = try await RecognizeDocumentsRequest().perform(on: image, orientation: nil)
+        let tables: [[[String]]] = observations.flatMap { observation in
+          observation.document.tables.map { table in
+            table.rows.map { cells in
+              let width = (cells.map { $0.columnRange.upperBound }.max() ?? -1) + 1
+              var row = Array(repeating: "", count: width)
+              for cell in cells {
+                row[cell.columnRange.lowerBound] = cell.content.text.transcript
+              }
+              return row
+            }
+          }
+        }
+        let text = observations.map { $0.document.text.transcript }.joined(separator: "\n")
+        await MainActor.run { result(["tables": tables, "text": text]) }
+      } catch {
+        await MainActor.run {
+          result(FlutterError(code: "recognition_failed", message: error.localizedDescription, details: nil))
+        }
+      }
+    }
+  }
+
+  private func recognizeLines(path: String, result: @escaping FlutterResult) {
     DispatchQueue.global(qos: .userInitiated).async {
       do {
-        guard let input = UIImage(contentsOfFile: path) else {
-          throw NSError(domain: "NutritionOCR", code: 1, userInfo: [NSLocalizedDescriptionKey: "Cannot decode image"])
-        }
-        // Normalize EXIF orientation; coordinates now match upright crop pixels.
-        let format = UIGraphicsImageRendererFormat()
-        format.scale = 1
-        let upright = UIGraphicsImageRenderer(size: input.size, format: format).image { _ in
-          input.draw(in: CGRect(origin: .zero, size: input.size))
-        }
-        guard let image = upright.cgImage else {
-          throw NSError(domain: "NutritionOCR", code: 2, userInfo: [NSLocalizedDescriptionKey: "Cannot normalize image"])
-        }
+        let image = try Self.uprightImage(path: path)
         let request = VNRecognizeTextRequest()
         request.recognitionLevel = .accurate
         request.usesLanguageCorrection = true

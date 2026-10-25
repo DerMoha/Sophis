@@ -16,6 +16,7 @@ import 'package:sophis/services/nutrition_label_parser.dart';
 import 'package:sophis/services/nutrition_label_validator.dart';
 import 'package:sophis/services/nutrition_image_quality_service.dart';
 import 'package:sophis/services/nutrition_image_preprocessor.dart';
+import 'package:sophis/services/nutrition_table_mapper.dart';
 import 'package:sophis/services/nutrition_label_ai_provider.dart';
 import 'package:sophis/services/service_result.dart';
 import 'package:sophis/services/scan_model_service.dart';
@@ -280,6 +281,114 @@ class LabelIntakeFlow {
   }
 
   Future<ServiceResult<LabelIntakeResult>> _processImage(
+    LabelIntakeRequest request, {
+    required _LabelScanAttempt attempt,
+    ValueChanged<LabelIntakeProgress>? onProgress,
+    required bool allowCloudAssist,
+  }) async {
+    attempt.check();
+    onProgress?.call(LabelIntakeProgress.readingText);
+    // Tier 1: Apple's table reader already pairs each label with its value.
+    final tableLabel = await _readTable(request.imageFile);
+    attempt.check();
+    final tableValidation = tableLabel == null
+        ? null
+        : NutritionLabelValidator.validate(tableLabel);
+    // A printed "<" bound still needs the user's estimate; the review screen
+    // asks for it, so it does not need the slower line-based reader.
+    if (tableLabel != null &&
+        tableLabel.hasRequiredNutrition &&
+        tableValidation!.isUsable &&
+        tableValidation.issues.every(
+          (issue) => issue == NutritionLabelIssue.upperBoundValue,
+        )) {
+      _lastDraft = NutritionLabelDraft.fromResult(tableLabel);
+      return _processParsedText(
+        ocrText: '',
+        localLabel: tableLabel,
+        localValidation: tableValidation,
+        imageFile: request.imageFile,
+        idGenerator: request.idGenerator,
+        fallbackProductName: request.fallbackProductName,
+        fallbackBrand: request.fallbackBrand,
+        barcode: request.barcode,
+        allowCloudAssist: allowCloudAssist,
+      );
+    }
+
+    final result = await _processImageWithOcr(
+      request,
+      attempt: attempt,
+      onProgress: onProgress,
+      allowCloudAssist: allowCloudAssist,
+    );
+    if (result is Success<LabelIntakeResult> || tableLabel == null) {
+      return result;
+    }
+    // The line-based reader failed; keep whichever reading found more.
+    final tableDraft = NutritionLabelDraft.fromResult(tableLabel);
+    if (_presentCount(tableDraft) > _presentCount(_lastDraft)) {
+      _lastDraft = tableDraft;
+    }
+    if (tableLabel.hasRequiredNutrition && tableValidation!.isUsable) {
+      return _processParsedText(
+        ocrText: '',
+        localLabel: tableLabel,
+        localValidation: tableValidation,
+        imageFile: request.imageFile,
+        idGenerator: request.idGenerator,
+        fallbackProductName: request.fallbackProductName,
+        fallbackBrand: request.fallbackBrand,
+        barcode: request.barcode,
+        allowCloudAssist: allowCloudAssist,
+      );
+    }
+    return result;
+  }
+
+  static int _presentCount(NutritionLabelDraft? draft) => draft == null
+      ? 0
+      : [
+          draft.caloriesPer100,
+          draft.proteinPer100,
+          draft.carbsPer100,
+          draft.fatPer100,
+          draft.fiberPer100,
+        ].whereType<double>().length;
+
+  /// Rows of cells from iOS 26+ document recognition, mapped to values.
+  /// Null on other platforms, older iOS, or when no table is found.
+  Future<NutritionLabelResult?> _readTable(File imageFile) async {
+    if (kIsWeb ||
+        defaultTargetPlatform != TargetPlatform.iOS ||
+        const bool.fromEnvironment('USE_MLKIT_OCR')) {
+      return null;
+    }
+    try {
+      final raw = await const MethodChannel('sophis/nutrition_text')
+          .invokeMapMethod<String, dynamic>(
+        'recognizeDocument',
+        {'path': imageFile.path},
+      ).timeout(_ocrTimeout);
+      final tables = [
+        for (final table in (raw?['tables'] as List<dynamic>? ?? const []))
+          [
+            for (final row in table as List<dynamic>)
+              [for (final cell in row as List<dynamic>) cell as String],
+          ],
+      ];
+      return NutritionTableMapper.map(tables);
+    } on MissingPluginException {
+      return null;
+    } on PlatformException catch (error) {
+      debugPrint('Nutrition table reader unavailable: ${error.code}');
+      return null;
+    } on TimeoutException {
+      return null;
+    }
+  }
+
+  Future<ServiceResult<LabelIntakeResult>> _processImageWithOcr(
     LabelIntakeRequest request, {
     required _LabelScanAttempt attempt,
     ValueChanged<LabelIntakeProgress>? onProgress,

@@ -49,3 +49,32 @@ the parser and the validator. Cloud help was off.
    with the in-app camera, saved via the debug OCR trace.
 2. Re-run the harness after each phase (P2 table reader, P3 on-device model)
    and append the score here.
+
+## P2 — table reader (2026-10-25): 20/20 fields, 4/4 complete scans
+
+iOS 26+ `RecognizeDocumentsRequest` now runs first and returns rows of cells.
+`NutritionTableMapper` maps each row label to its per-100 value. The
+line-based pipeline only runs when the table reading is incomplete or fails
+validation.
+
+| Photo | Baseline | P2 | Path taken |
+| --- | --- | --- | --- |
+| Energy drink bottle | 5/5, 7.3 s | 5/5, 8.4 s | Table unreadable (rows merged on the curved bottle), so the old pipeline ran |
+| Skyr tub | 4/5 (carbs missing), 6.5 s | **5/5, 1.0 s** | Table |
+| Soy drink carton | 5/5, 5.6 s | 5/5, **1.5 s** | Table (the `<0,5` fiber still goes to review) |
+| Kidney beans can | 5/5, 1.0 s | 5/5, 1.8 s | No table found (no grid lines), so the old pipeline ran |
+
+What real Vision output looks like (captured with
+`--dart-define=DUMP_LABEL_TABLES=true`):
+
+- Label and value often share one cell (`"Energie\n270 kJ/64 kcal"`). The
+  value inside the label cell wins over the header column.
+- On curved packs, rows can shift: the skyr tub keeps kcal in the label cell
+  but every other per-100 value at the top of the next column.
+- When OCR garbles a nutrient name (`Eiwejß]`) or merges rows, the mapper
+  leaves the field absent. The validator then sends the photo to the old
+  pipeline, which is the safe direction.
+- A table without ruling lines (the beans can) is not detected as a table.
+
+Same caveat as above: these four products were used for earlier tuning, so this
+is not yet an independent score.

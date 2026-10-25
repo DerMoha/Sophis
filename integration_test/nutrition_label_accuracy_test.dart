@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
@@ -78,6 +79,24 @@ Future<Map<String, Object?>> _score(
   try {
     final request =
         LabelIntakeRequest(imageFile: file, idGenerator: () => name);
+    if (const bool.fromEnvironment('DUMP_LABEL_TABLES')) {
+      try {
+        final tables = await const MethodChannel('sophis/nutrition_text')
+            .invokeMapMethod<String, dynamic>(
+          'recognizeDocument',
+          {'path': file.path},
+        );
+        debugPrint('TABLE_JSON:${jsonEncode({
+              'photo': name,
+              'tables': tables?['tables'],
+            })}');
+      } on PlatformException catch (error) {
+        debugPrint('TABLE_JSON:${jsonEncode({
+              'photo': name,
+              'error': error.code,
+            })}');
+      }
+    }
     final result = await flow.processImage(request);
     final intake = result.valueOrNull;
     final draft = intake != null
