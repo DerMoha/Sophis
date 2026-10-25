@@ -54,12 +54,22 @@ void main() {
       final correct =
           rows.fold<int>(0, (sum, row) => sum + (row['correct']! as int));
       final complete = rows.where((row) => row['complete'] == true).length;
+      // A wrong prefilled value is worse than a missing one; track it apart.
+      final wrong = rows.fold<int>(
+        0,
+        (sum, row) =>
+            sum +
+            (row['fields']! as Map<String, String>)
+                .values
+                .where((result) => result.startsWith('wrong'))
+                .length,
+      );
       for (final row in rows) {
         debugPrint('SCORE_JSON:${jsonEncode(row)}');
       }
       debugPrint(
-        'SCORE_SUMMARY: fields $correct/$total, complete scans '
-        '$complete/${rows.length}',
+        'SCORE_SUMMARY: fields $correct/$total, wrong $wrong, complete '
+        'scans $complete/${rows.length}',
       );
       if (strict) expect(correct, total);
     },

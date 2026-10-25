@@ -124,3 +124,39 @@ What's left fits the next phases:
   frames, is the fix.
 - **Speed:** photos that fall back to the line parser still take 8–20 s; table
   hits take 2–3 s.
+
+## P3 — on-device model (2026-10-25): 53/65 fields, 0 wrong, 10/13 complete
+
+When the table and line readers both fail, Apple's on-device model
+(`FoundationModels`, iOS 26+ with Apple Intelligence) reads the OCR text and
+returns per-100 values as structured output with greedy decoding. It ran in
+the iOS 27 simulator. Nothing leaves the device.
+
+The first version scored higher, **56/65**, but **5 of its values were
+wrong**: protein 0 and fiber 0 on a jam that prints neither as zero, the
+protein bar's salt as its fat, and 17 g carbs on the pasta sauce. A bare
+digit is not proof, because "0" and "1" appear on every package. The
+shipped version is stricter:
+
+- Every number must appear with its unit (`5,0 g`, `g 5,0`, `87 kcal`,
+  `kcal 87`, or `918/216` after `kJ/kcal`).
+- Fiber is only accepted when a fiber word is printed.
+- A model reading is used only when it is complete and the energy matches
+  the macros. It is always marked for review (`modelReading`).
+- Partial model readings never prefill the review screen. An empty field is
+  safer than a wrong one.
+
+| Photo | P2 fixes | P3 | |
+| --- | --- | --- | --- |
+| Mie noodles, labels cut off | 4/5 draft | **5/5 complete** | Model paired the fat row the table lost |
+| Jam jar | 3/5 draft | 3/5 draft | Model's reading failed the checks and was rejected |
+| Pasta sauce, 7 languages | 0/5 | 0/5 | Model's reading incomplete or inconsistent; rejected |
+| Protein bar, blurred | 0/5 | 0/5 | — |
+| All others | 5/5 | 5/5 | Unchanged; the model never ran |
+
+The scoreboard now counts wrong values separately (`SCORE_SUMMARY ... wrong N`).
+That count should stay at 0 for every future change.
+
+Takeaway: the model helps only at the edges. The remaining failures are
+caused by the input itself: a blurred single shot and a jar the camera saw
+at an angle. That points to **P4, live scanning**, as the next step.

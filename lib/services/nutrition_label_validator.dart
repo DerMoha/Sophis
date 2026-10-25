@@ -11,6 +11,8 @@ enum NutritionLabelIssue {
   candidateDisagreement,
   upperBoundValue,
   missingUnitEvidence,
+  // Values paired by the on-device model; always reviewed.
+  modelReading,
 }
 
 class NutritionLabelValidation {

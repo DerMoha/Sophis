@@ -17,6 +17,7 @@ import 'package:sophis/services/nutrition_label_validator.dart';
 import 'package:sophis/services/nutrition_image_quality_service.dart';
 import 'package:sophis/services/nutrition_image_preprocessor.dart';
 import 'package:sophis/services/nutrition_table_mapper.dart';
+import 'package:sophis/services/on_device_label_reader.dart';
 import 'package:sophis/services/nutrition_label_ai_provider.dart';
 import 'package:sophis/services/service_result.dart';
 import 'package:sophis/services/scan_model_service.dart';
@@ -91,6 +92,9 @@ class LabelIntakeFlow {
   final ScanModelService _scanModels;
   String? _lastDraftPath;
   NutritionLabelDraft? _lastDraft;
+  String? _lastOcrText;
+  String? _lastDocumentText;
+  final OnDeviceLabelReader _onDeviceReader;
   _LabelScanAttempt? _activeAttempt;
   bool _disposed = false;
 
@@ -102,7 +106,9 @@ class LabelIntakeFlow {
         const NutritionImageQualityService(),
     NutritionImagePreprocessor preprocessor =
         const NutritionImagePreprocessor(),
-  })  : _recognizer = TextRecognizer(script: TextRecognitionScript.latin),
+    OnDeviceLabelReader onDeviceReader = const OnDeviceLabelReader(),
+  })  : _onDeviceReader = onDeviceReader,
+        _recognizer = TextRecognizer(script: TextRecognitionScript.latin),
         _gemini = gemini,
         _aiProviders = aiProviderRegistry ?? _registryForGemini(gemini),
         _qualityService = qualityService,
@@ -136,6 +142,8 @@ class LabelIntakeFlow {
     }
     _lastDraftPath = request.imageFile.path;
     _lastDraft = null;
+    _lastOcrText = null;
+    _lastDocumentText = null;
     final attempt = _beginAttempt();
     try {
       return await _processImage(
@@ -322,28 +330,66 @@ class LabelIntakeFlow {
       onProgress: onProgress,
       allowCloudAssist: allowCloudAssist,
     );
-    if (result is Success<LabelIntakeResult> || tableLabel == null) {
+    if (result is Success<LabelIntakeResult>) return result;
+    if (tableLabel != null) {
+      // The line-based reader failed; keep whichever reading found more.
+      final tableDraft = NutritionLabelDraft.fromResult(tableLabel);
+      if (_presentCount(tableDraft) > _presentCount(_lastDraft)) {
+        _lastDraft = tableDraft;
+      }
+      if (tableLabel.hasRequiredNutrition && tableValidation!.isUsable) {
+        return _processParsedText(
+          ocrText: '',
+          localLabel: tableLabel,
+          localValidation: tableValidation,
+          imageFile: request.imageFile,
+          idGenerator: request.idGenerator,
+          fallbackProductName: request.fallbackProductName,
+          fallbackBrand: request.fallbackBrand,
+          barcode: request.barcode,
+          allowCloudAssist: allowCloudAssist,
+        );
+      }
+    }
+
+    // Tier 2: the on-device model pairs rows the readers could not, e.g.
+    // multilingual labels or values printed a line below their names.
+    attempt.check();
+    onProgress?.call(LabelIntakeProgress.verifyingValues);
+    final ocrText = [_lastDocumentText, _lastOcrText]
+        .whereType<String>()
+        .where((text) => text.trim().isNotEmpty)
+        .join('\n\n');
+    final modelLabel = await _onDeviceReader.read(ocrText);
+    attempt.check();
+    if (modelLabel == null) return result;
+    // A model reading is used only when complete and the printed energy
+    // matches the macros. Partial readings never prefill the review screen:
+    // a wrong prefilled value is worse than an empty field.
+    final modelValidation = NutritionLabelValidator.validate(modelLabel);
+    if (!modelLabel.hasRequiredNutrition ||
+        !modelValidation.isUsable ||
+        modelValidation.issues
+            .contains(NutritionLabelIssue.calorieMacroMismatch)) {
       return result;
     }
-    // The line-based reader failed; keep whichever reading found more.
-    final tableDraft = NutritionLabelDraft.fromResult(tableLabel);
-    if (_presentCount(tableDraft) > _presentCount(_lastDraft)) {
-      _lastDraft = tableDraft;
-    }
-    if (tableLabel.hasRequiredNutrition && tableValidation!.isUsable) {
-      return _processParsedText(
-        ocrText: '',
-        localLabel: tableLabel,
-        localValidation: tableValidation,
-        imageFile: request.imageFile,
-        idGenerator: request.idGenerator,
-        fallbackProductName: request.fallbackProductName,
-        fallbackBrand: request.fallbackBrand,
-        barcode: request.barcode,
-        allowCloudAssist: allowCloudAssist,
-      );
-    }
-    return result;
+    _lastDraft = NutritionLabelDraft.fromResult(modelLabel);
+    // Model readings are always shown for review, even when plausible.
+    return _processParsedText(
+      ocrText: ocrText,
+      localLabel: modelLabel,
+      localValidation: NutritionLabelValidation(
+        isUsable: true,
+        isHighConfidence: false,
+        issues: [...modelValidation.issues, NutritionLabelIssue.modelReading],
+      ),
+      imageFile: request.imageFile,
+      idGenerator: request.idGenerator,
+      fallbackProductName: request.fallbackProductName,
+      fallbackBrand: request.fallbackBrand,
+      barcode: request.barcode,
+      allowCloudAssist: allowCloudAssist,
+    );
   }
 
   static int _presentCount(NutritionLabelDraft? draft) => draft == null
@@ -377,6 +423,7 @@ class LabelIntakeFlow {
               [for (final cell in row as List<dynamic>) cell as String],
           ],
       ];
+      _lastDocumentText = raw?['text'] as String?;
       return NutritionTableMapper.map(tables);
     } on MissingPluginException {
       return null;
@@ -788,6 +835,10 @@ class LabelIntakeFlow {
   void _rememberDraft(_RecognizedNutritionDocument? document) {
     final draft = document?.draft;
     if (draft != null) _lastDraft = draft;
+    final text = document?.text;
+    if (text != null && text.length > (_lastOcrText?.length ?? 0)) {
+      _lastOcrText = text;
+    }
   }
 
   FoodItem _buildProduct({

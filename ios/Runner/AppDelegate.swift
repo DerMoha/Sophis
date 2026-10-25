@@ -1,4 +1,5 @@
 import Flutter
+import FoundationModels
 import UIKit
 import Vision
 import flutter_local_notifications
@@ -34,8 +35,15 @@ private final class NutritionTextRecognition: NSObject, FlutterPlugin {
   }
 
   func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-    guard let args = call.arguments as? [String: Any],
-          let path = args["path"] as? String else {
+    guard let args = call.arguments as? [String: Any] else {
+      result(FlutterMethodNotImplemented)
+      return
+    }
+    if call.method == "interpretLabel", let text = args["text"] as? String {
+      interpretLabel(text: text, result: result)
+      return
+    }
+    guard let path = args["path"] as? String else {
       result(FlutterMethodNotImplemented)
       return
     }
@@ -105,6 +113,56 @@ private final class NutritionTextRecognition: NSObject, FlutterPlugin {
     }
   }
 
+  /// Pairs nutrients with their per-100 values from OCR text using Apple's
+  /// on-device language model (iOS 26+, Apple Intelligence). Nothing leaves
+  /// the device. The caller must still check every number against the text.
+  private func interpretLabel(text: String, result: @escaping FlutterResult) {
+    guard #available(iOS 26.0, *) else {
+      result(["status": "unavailable", "reason": "osVersion"])
+      return
+    }
+    let model = SystemLanguageModel.default
+    switch model.availability {
+    case .available:
+      break
+    case .unavailable(let reason):
+      result(["status": "unavailable", "reason": String(describing: reason)])
+      return
+    }
+    Task.detached(priority: .userInitiated) {
+      do {
+        let session = LanguageModelSession(model: model, instructions: Self.labelInstructions)
+        let response = try await session.respond(
+          to: "OCR text of the nutrition label:\n\(text.prefix(6000))",
+          generating: LabelFacts.self,
+          options: GenerationOptions(samplingMode: .greedy)
+        )
+        let facts = response.content
+        var values: [String: Any] = ["basis": facts.basis]
+        if let v = facts.kcalPer100 { values["calories"] = v }
+        if let v = facts.fatPer100 { values["fat"] = v }
+        if let v = facts.carbohydratesPer100 { values["carbs"] = v }
+        if let v = facts.fiberPer100 { values["fiber"] = v }
+        if let v = facts.proteinPer100 { values["protein"] = v }
+        if let v = facts.portionSize { values["serving"] = v }
+        await MainActor.run { result(["status": "ok", "values": values]) }
+      } catch {
+        await MainActor.run {
+          result(["status": "failed", "reason": error.localizedDescription])
+        }
+      }
+    }
+  }
+
+  private static let labelInstructions = """
+    You read food nutrition labels from OCR text. The text can be garbled, \
+    in several languages, split across lines, or have a value on a different \
+    line than its row name. Labels usually have a per 100 g or per 100 ml \
+    column and sometimes a per portion column; always use the per 100 column. \
+    Only return numbers that appear in the text. If a value is not printed, \
+    leave it empty. Never estimate or calculate values.
+    """
+
   private func recognizeLines(path: String, result: @escaping FlutterResult) {
     DispatchQueue.global(qos: .userInitiated).async {
       do {
@@ -140,4 +198,24 @@ private final class NutritionTextRecognition: NSObject, FlutterPlugin {
       }
     }
   }
+}
+
+
+@available(iOS 26.0, *)
+@Generable
+private struct LabelFacts {
+  @Guide(description: "Basis of the per 100 column: g or ml")
+  var basis: String
+  @Guide(description: "Energy in kcal per 100 g or 100 ml, as printed")
+  var kcalPer100: Double?
+  @Guide(description: "Total fat per 100, not saturated fat")
+  var fatPer100: Double?
+  @Guide(description: "Total carbohydrates per 100, not sugars")
+  var carbohydratesPer100: Double?
+  @Guide(description: "Dietary fibre per 100")
+  var fiberPer100: Double?
+  @Guide(description: "Protein per 100")
+  var proteinPer100: Double?
+  @Guide(description: "Printed portion size in g or ml, if any")
+  var portionSize: Double?
 }

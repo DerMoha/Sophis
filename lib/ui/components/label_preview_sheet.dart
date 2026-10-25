@@ -24,7 +24,8 @@ String _validationIssueMessage(
     NutritionLabelIssue.upperBoundValue => l10n.nutritionLabelUpperBoundWarning,
     NutritionLabelIssue.missingUnitEvidence =>
       l10n.nutritionLabelMissingUnitWarning,
-    NutritionLabelIssue.candidateDisagreement =>
+    NutritionLabelIssue.candidateDisagreement ||
+    NutritionLabelIssue.modelReading =>
       l10n.nutritionLabelCandidateDisagreementWarning,
   };
 }
