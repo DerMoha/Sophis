@@ -129,6 +129,22 @@
   "nutritionSyncSubtitle": "Send your food logs to Apple Health",
   "aiSection": "AI",
   "geminiApiKey": "Gemini API Key",
+  "cloudAiProviders": "Cloud AI",
+  "aiProviderLabel": "Provider",
+  "aiModelIdLabel": "Model ID",
+  "aiModelDefaultHint": "Leave blank to use the default model",
+  "customAiEndpointLabel": "OpenAI-compatible API base URL",
+  "customAiEndpointHint": "https://example.com/v1",
+  "aiProviderKeyLabel": "{provider} API key",
+  "@aiProviderKeyLabel": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "aiKeysStayLocalBilling": "API keys stay on this device. When you use AI, selected content is sent to this provider. Usage may be billed.",
+  "customAiEndpointName": "Custom endpoint",
   "enterApiKey": "Enter your API key",
   "getApiKeyHelper": "Get a free key at aistudio.google.com",
   "howToGetApiKey": "How to get a key",

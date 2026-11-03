@@ -11,7 +11,8 @@ import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/food_item.dart';
 import 'package:sophis/models/recipe.dart';
 import 'package:sophis/services/gemini/models/models.dart';
-import 'package:sophis/services/gemini_food_service.dart';
+import 'package:sophis/services/ai_food_service.dart';
+import 'package:sophis/services/ai_food_service_factory.dart';
 import 'package:sophis/providers/nutrition_provider.dart';
 import 'package:sophis/services/openfoodfacts_service.dart';
 import 'package:sophis/services/service_result.dart';
@@ -47,7 +48,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
   final TextEditingController _searchController = TextEditingController();
   final OpenFoodFactsService _foodService = OpenFoodFactsService();
   final ImagePicker _imagePicker = ImagePicker();
-  GeminiFoodService? _geminiService;
+  AiFoodService? _aiService;
 
   List<FoodItem> _searchResults = [];
   bool _isSearching = false;
@@ -70,17 +71,21 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
         mealTypes.any((mealType) => mealType.id == initialMealType)
             ? initialMealType!
             : mealTypes.first.id;
-    _initGemini();
+    _initAiService();
   }
 
-  Future<void> _initGemini() async {
+  Future<void> _initAiService() async {
     final settings = context.read<SettingsProvider>();
-    final apiKey = settings.geminiApiKey;
+    final apiKey = settings.activeAiApiKey;
     if (apiKey != null && apiKey.isNotEmpty) {
-      _geminiService = GeminiFoodService();
-      final initResult = _geminiService!.initialize(apiKey);
+      _aiService = AiFoodServiceFactory.create(
+        provider: settings.aiProvider,
+        model: settings.aiModel,
+        baseUrl: settings.aiBaseUrl,
+      );
+      final initResult = _aiService!.initialize(apiKey);
       if (!initResult.isSuccess) {
-        _geminiService = null;
+        _aiService = null;
       }
       if (!mounted) return;
     }
@@ -90,6 +95,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
   void dispose() {
     _tabController.dispose();
     _searchController.dispose();
+    _aiService?.dispose();
     super.dispose();
   }
 
@@ -118,82 +124,90 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
                   title: l10n.addMeal,
                   padding: const EdgeInsets.fromLTRB(20, 16, 16, 8),
                 ),
-                if (!keyboardOpen) Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                      border: Border.all(
-                        color:
-                            theme.colorScheme.primary.withValues(alpha: 0.12),
+                if (!keyboardOpen)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
                       ),
-                      borderRadius: BorderRadius.circular(AppTheme.radiusFull),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: _selectedMealType,
-                        isDense: true,
-                        isExpanded: true,
-                        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                        icon: Icon(
-                          Icons.keyboard_arrow_down_rounded,
-                          color: theme.colorScheme.primary,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                        border: Border.all(
+                          color:
+                              theme.colorScheme.primary.withValues(alpha: 0.12),
                         ),
-                        items: mealTypes
-                            .map(
-                              (mealType) => DropdownMenuItem(
-                                value: mealType.id,
-                                child: Text(mealType.displayName(l10n)),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedMealType = value!;
-                          });
-                        },
+                        borderRadius:
+                            BorderRadius.circular(AppTheme.radiusFull),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _selectedMealType,
+                          isDense: true,
+                          isExpanded: true,
+                          borderRadius:
+                              BorderRadius.circular(AppTheme.radiusMD),
+                          icon: Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            color: theme.colorScheme.primary,
+                          ),
+                          items: mealTypes
+                              .map(
+                                (mealType) => DropdownMenuItem(
+                                  value: mealType.id,
+                                  child: Text(mealType.displayName(l10n)),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedMealType = value!;
+                            });
+                          },
+                        ),
                       ),
                     ),
                   ),
-                ),
 
                 // Tabs
-                if (!keyboardOpen) Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color:
-                          theme.colorScheme.surfaceContainerHighest.withValues(
-                        alpha: 0.45,
+                if (!keyboardOpen)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest
+                            .withValues(
+                          alpha: 0.45,
+                        ),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusLG),
                       ),
-                      borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-                    ),
-                    child: TabBar(
-                      controller: _tabController,
-                      tabs: [
-                        Tab(text: l10n.recipes),
-                        Tab(text: l10n.searchFood),
-                        Tab(text: '📷 ${l10n.scan}'),
-                        Tab(text: l10n.manualEntry),
-                      ],
-                      labelColor: theme.colorScheme.primary,
-                      unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
-                      labelStyle: theme.textTheme.labelMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
+                      child: TabBar(
+                        controller: _tabController,
+                        tabs: [
+                          Tab(text: l10n.recipes),
+                          Tab(text: l10n.searchFood),
+                          Tab(text: '📷 ${l10n.scan}'),
+                          Tab(text: l10n.manualEntry),
+                        ],
+                        labelColor: theme.colorScheme.primary,
+                        unselectedLabelColor:
+                            theme.colorScheme.onSurfaceVariant,
+                        labelStyle: theme.textTheme.labelMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                        dividerColor: Colors.transparent,
+                        indicator: BoxDecoration(
+                          color: theme.colorScheme.surface,
+                          borderRadius:
+                              BorderRadius.circular(AppTheme.radiusMD),
+                        ),
+                        indicatorSize: TabBarIndicatorSize.tab,
+                        isScrollable: true,
                       ),
-                      dividerColor: Colors.transparent,
-                      indicator: BoxDecoration(
-                        color: theme.colorScheme.surface,
-                        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                      ),
-                      indicatorSize: TabBarIndicatorSize.tab,
-                      isScrollable: true,
                     ),
                   ),
-                ),
 
                 // Tab content
                 Expanded(
@@ -230,13 +244,21 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
       return ListView(
         padding: const EdgeInsets.all(24),
         children: [
-          Icon(Icons.menu_book_outlined, size: AppTheme.iconXL,
-            color: theme.colorScheme.onSurfaceVariant,),
+          Icon(
+            Icons.menu_book_outlined,
+            size: AppTheme.iconXL,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
           const SizedBox(height: 16),
-          Text(l10n.noRecipes, textAlign: TextAlign.center,
-            style: theme.textTheme.titleMedium,),
-          TextButton(onPressed: () => _tabController.animateTo(3),
-            child: Text(l10n.manualEntry),),
+          Text(
+            l10n.noRecipes,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.titleMedium,
+          ),
+          TextButton(
+            onPressed: () => _tabController.animateTo(3),
+            child: Text(l10n.manualEntry),
+          ),
         ],
       );
     }
@@ -440,7 +462,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
     AppLocalizations l10n,
   ) {
     // Check if API key is set
-    if (_geminiService == null || !_geminiService!.hasApiKey) {
+    if (_aiService == null || !_aiService!.hasApiKey) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
@@ -681,7 +703,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
   }
 
   Future<void> _scanRecipe() async {
-    if (_scannedImage == null || _geminiService == null) return;
+    if (_scannedImage == null || _aiService == null) return;
 
     setState(() {
       _isScanning = true;
@@ -689,7 +711,7 @@ class _AddPlannedMealSheetState extends State<AddPlannedMealSheet>
     });
 
     final extractionResult =
-        await _geminiService!.extractRecipeFromImage(_scannedImage!);
+        await _aiService!.extractRecipeFromImage(_scannedImage!);
     if (!mounted) return;
 
     switch (extractionResult) {

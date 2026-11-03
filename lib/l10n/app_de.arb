@@ -80,6 +80,22 @@
   "nutritionSyncSubtitle": "Ernährungstagebuch an Apple Health senden",
   "aiSection": "KI",
   "geminiApiKey": "Gemini API Key",
+  "cloudAiProviders": "Cloud-KI",
+  "aiProviderLabel": "Anbieter",
+  "aiModelIdLabel": "Modell-ID",
+  "aiModelDefaultHint": "Leer lassen, um das Standardmodell zu verwenden",
+  "customAiEndpointLabel": "OpenAI-kompatible API-Basis-URL",
+  "customAiEndpointHint": "https://example.com/v1",
+  "aiProviderKeyLabel": "API-Schlüssel für {provider}",
+  "@aiProviderKeyLabel": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "aiKeysStayLocalBilling": "API-Schlüssel bleiben auf diesem Gerät. Bei der KI-Nutzung werden ausgewählte Inhalte an diesen Anbieter gesendet. Die Nutzung kann kostenpflichtig sein.",
+  "customAiEndpointName": "Eigener Endpoint",
   "enterApiKey": "API Key eingeben",
   "getApiKeyHelper": "Kostenlosen Key auf aistudio.google.com erhalten",
   "howToGetApiKey": "So bekommst du einen Key",

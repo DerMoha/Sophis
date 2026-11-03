@@ -192,7 +192,7 @@ class _LabelPreviewSheetState extends State<LabelPreviewSheet> {
     final canConfirm = draft != null &&
         (validation?.isUsable ?? false) &&
         NutritionLabelValidator.validate(draft).isUsable;
-    final sourceText = widget.source == NutritionLabelAnalysisSource.gemini
+    final sourceText = widget.source != NutritionLabelAnalysisSource.localOcr
         ? l10n.nutritionLabelAiResult
         : l10n.nutritionLabelLocalResult;
     final analysisText = widget.label.wasServingConverted
@@ -213,7 +213,7 @@ class _LabelPreviewSheetState extends State<LabelPreviewSheet> {
             _AnalysisSourceNote(
               theme: theme,
               text: analysisText,
-              isAi: widget.source == NutritionLabelAnalysisSource.gemini,
+              isAi: widget.source != NutritionLabelAnalysisSource.localOcr,
             ),
             if (validation == null || !validation.isHighConfidence)
               _ConfidenceWarning(

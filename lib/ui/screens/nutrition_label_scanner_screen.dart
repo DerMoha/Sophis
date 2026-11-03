@@ -9,7 +9,7 @@ import 'package:uuid/uuid.dart';
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/models/nutrition_label_draft.dart';
 import 'package:sophis/providers/settings_provider.dart';
-import 'package:sophis/services/gemini_food_service.dart';
+import 'package:sophis/services/ai_food_service_factory.dart';
 import 'package:sophis/services/gemini/models/nutrition_label_result.dart';
 import 'package:sophis/services/label_intake_flow.dart';
 import 'package:sophis/services/service_result.dart';
@@ -46,13 +46,18 @@ class _NutritionLabelScannerScreenState
   @override
   void initState() {
     super.initState();
-    final apiKey = context.read<SettingsProvider>().geminiApiKey;
-    final gemini = GeminiFoodService();
+    final settings = context.read<SettingsProvider>();
+    final apiKey = settings.activeAiApiKey;
+    final aiService = AiFoodServiceFactory.create(
+      provider: settings.aiProvider,
+      model: settings.aiModel,
+      baseUrl: settings.aiBaseUrl,
+    );
     if (apiKey != null && apiKey.isNotEmpty) {
-      gemini.initialize(apiKey);
+      aiService.initialize(apiKey);
     }
-    _flow = LabelIntakeFlow(gemini: gemini);
-    _cloudHelpAllowed = _flow.hasGeminiFallback &&
+    _flow = LabelIntakeFlow(aiService: aiService);
+    _cloudHelpAllowed = _flow.hasCloudAiFallback &&
         context.read<SettingsProvider>().labelCloudHelpEnabled;
     // Go straight to the camera; this screen only shows progress and retries.
     if (widget.openCameraOnStart) {
@@ -129,7 +134,7 @@ class _NutritionLabelScannerScreenState
                 .copyWith(analysisSource: intake.source),
             scanned: intake.label,
             needsReview: !intake.validation.isHighConfidence,
-            outcome: intake.source == NutritionLabelAnalysisSource.gemini
+            outcome: intake.source != NutritionLabelAnalysisSource.localOcr
                 ? NutritionScanOutcome.cloudSuccess
                 : NutritionScanOutcome.localSuccess,
           );

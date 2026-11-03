@@ -187,7 +187,7 @@ class SettingsScreen extends StatelessWidget {
               AppNavigationRow(
                 title: l10n.aiSection,
                 subtitle:
-                    settings.hasGeminiApiKey ? l10n.aiKeySet : l10n.notSetUp,
+                    settings.hasActiveAiApiKey ? l10n.aiKeySet : l10n.notSetUp,
                 icon: Icons.auto_awesome_outlined,
                 onTap: () => _openSection(
                   context,

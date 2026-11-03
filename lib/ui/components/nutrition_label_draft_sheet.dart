@@ -151,7 +151,7 @@ class _NutritionLabelDraftSheetState extends State<_NutritionLabelDraftSheet> {
     final label = current?.toResult();
     final canConfirm =
         label != null && NutritionLabelValidator.validate(label).isUsable;
-    final sourceText = widget.source == NutritionLabelAnalysisSource.gemini
+    final sourceText = widget.source != NutritionLabelAnalysisSource.localOcr
         ? l10n.nutritionLabelAiResult
         : l10n.nutritionLabelLocalResult;
     final analysisText = widget.draft.wasServingConverted

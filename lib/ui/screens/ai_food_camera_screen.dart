@@ -8,10 +8,14 @@ import 'package:gal/gal.dart';
 
 import 'package:sophis/l10n/generated/app_localizations.dart';
 import 'package:sophis/services/gemini_food_service.dart';
+import 'package:sophis/services/ai_food_service.dart';
+import 'package:sophis/services/ai_food_service_factory.dart';
+import 'package:sophis/services/remote_ai_food_service.dart';
 import 'package:sophis/services/gemini/models/models.dart';
 import 'package:sophis/services/service_result.dart';
 import 'package:sophis/services/food_intake_controller.dart';
 import 'package:sophis/providers/settings_provider.dart';
+import 'package:sophis/models/app_settings.dart';
 import 'package:sophis/models/shareable_meal.dart';
 import 'package:sophis/ui/components/ai_food_image_tile.dart';
 import 'package:sophis/ui/components/ai_food_result.dart';
@@ -36,7 +40,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
   static const int maxImages = 5;
 
   final _picker = ImagePicker();
-  final _geminiService = GeminiFoodService();
+  late AiFoodService _aiService;
 
   final List<File> _images = [];
   List<EditableFoodResult>? _results;
@@ -94,13 +98,19 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
   }
 
   Future<void> _initService() async {
-    final apiKey = context.read<SettingsProvider>().geminiApiKey;
+    final settings = context.read<SettingsProvider>();
+    final apiKey = settings.activeAiApiKey;
 
-    final remaining = await GeminiFoodService.getRemainingRequests();
+    final remaining = settings.aiProvider == AiProvider.gemini
+        ? await GeminiFoodService.getRemainingRequests()
+        : await RemoteAiFoodService.getRemainingRequests(settings.aiProvider);
     if (mounted) setState(() => _remainingRequests = remaining);
     if (!mounted) return;
 
     if (apiKey == null || apiKey.isEmpty) {
+      if (_serviceInitialized) {
+        _aiService.dispose();
+      }
       if (mounted) {
         setState(() {
           _serviceInitialized = false;
@@ -120,7 +130,13 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       });
     }
 
-    final cloudInitResult = _geminiService.initialize(apiKey);
+    if (_serviceInitialized) _aiService.dispose();
+    _aiService = AiFoodServiceFactory.create(
+      provider: settings.aiProvider,
+      model: settings.aiModel,
+      baseUrl: settings.aiBaseUrl,
+    );
+    final cloudInitResult = _aiService.initialize(apiKey);
 
     if (!mounted) return;
 
@@ -132,7 +148,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
         case Failure<void>(message: final message):
           _serviceInitialized = false;
           _error = AppLocalizations.of(context)!.errorInit(message);
-          _showApiKeyAction = _isApiKeyFailure(message);
+          _showApiKeyAction = true;
       }
       _isInitializing = false;
     });
@@ -140,7 +156,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
 
   @override
   void dispose() {
-    _geminiService.dispose();
+    if (_serviceInitialized) _aiService.dispose();
     _disposeResults(_results);
     super.dispose();
   }
@@ -237,14 +253,17 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       _isLoading = true;
       _error = null;
     });
+    final activeProvider = context.read<SettingsProvider>().aiProvider;
 
     try {
-      final analysisResult = await _geminiService.analyzeFoodMultiple(
+      final analysisResult = await _aiService.analyzeFoodMultiple(
         _images,
         correctionHint: correctionHint,
       );
 
-      final remaining = await GeminiFoodService.getRemainingRequests();
+      final remaining = activeProvider == AiProvider.gemini
+          ? await GeminiFoodService.getRemainingRequests()
+          : await RemoteAiFoodService.getRemainingRequests(activeProvider);
 
       if (!mounted) return;
 
@@ -334,20 +353,23 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     String correctionHint,
   ) async {
     setState(() => _isLoading = true);
+    final activeProvider = context.read<SettingsProvider>().aiProvider;
 
     final confirmedFoods = (_results ?? [])
         .where((r) => r != result)
         .map((r) => r.currentAnalysis)
         .toList();
 
-    final reanalysisResult = await _geminiService.reanalyzeSingleFood(
+    final reanalysisResult = await _aiService.reanalyzeSingleFood(
       _images,
       currentFood: result.getEditedAnalysis(),
       correctionHint: correctionHint,
       confirmedFoods: confirmedFoods,
     );
 
-    final remaining = await GeminiFoodService.getRemainingRequests();
+    final remaining = activeProvider == AiProvider.gemini
+        ? await GeminiFoodService.getRemainingRequests()
+        : await RemoteAiFoodService.getRemainingRequests(activeProvider);
 
     if (!mounted) return;
 
@@ -405,7 +427,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
       AppTheme.slideRoute(const SettingsScreen.ai()),
     );
 
-    if (!mounted || !context.read<SettingsProvider>().hasGeminiApiKey) return;
+    if (!mounted || !context.read<SettingsProvider>().hasActiveAiApiKey) return;
     await _initService();
   }
 
@@ -414,15 +436,24 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     final results = _results;
     if (results == null || results.isEmpty) return;
     setState(() => _isAddingFood = true);
-    final outcome = await addSelectedAiFoods(results, context.read<FoodIntakeController>(), widget.meal);
+    final outcome = await addSelectedAiFoods(
+      results,
+      context.read<FoodIntakeController>(),
+      widget.meal,
+    );
     if (!mounted) return;
     setState(() => _isAddingFood = false);
-    showFoodsAddedFeedback(context, outcome.added.keys.toList(), onUndone: (entry) {
-      if (!mounted) return;
-      setState(() => outcome.added[entry]!.isAdded = false);
-    },);
+    showFoodsAddedFeedback(
+      context,
+      outcome.added.keys.toList(),
+      onUndone: (entry) {
+        if (!mounted) return;
+        setState(() => outcome.added[entry]!.isAdded = false);
+      },
+    );
     if (outcome.error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(outcome.error!)));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(outcome.error!)));
     }
   }
 
@@ -465,7 +496,7 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
     final theme = Theme.of(context);
 
     final hasApiKey =
-        context.select<SettingsProvider, bool>((s) => s.hasGeminiApiKey);
+        context.select<SettingsProvider, bool>((s) => s.hasActiveAiApiKey);
 
     if (hasApiKey && !_serviceInitialized && !_isInitializing) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -688,7 +719,8 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                     onEdit: () => _showEditSheet(result, allowReAnalyze: true),
                     onShare: () => _shareSingleFood(result),
                     enabled: !_isAddingFood,
-                    onToggleSelection: () => setState(() => result.isSelected = !result.isSelected),
+                    onToggleSelection: () =>
+                        setState(() => result.isSelected = !result.isSelected),
                   ),
                 const SizedBox(height: 8),
                 FilledButton.icon(
@@ -708,12 +740,25 @@ class _AIFoodCameraScreenState extends State<AIFoodCameraScreen> {
                   style: theme.textTheme.bodySmall,
                 ),
                 const SizedBox(height: 12),
-                SizedBox(width: double.infinity, child: FilledButton.icon(
-                  onPressed: !_isAddingFood && results.any((result) => result.isSelected && !result.isAdded) ? _addAllFoods : null,
-                  icon: const Icon(Icons.add),
-                  label: Text(results.where((result) => !result.isAdded).every((result) => result.isSelected)
-                    ? l10n.addAll : l10n.addSelection,),
-                ),),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: !_isAddingFood &&
+                            results.any(
+                              (result) => result.isSelected && !result.isAdded,
+                            )
+                        ? _addAllFoods
+                        : null,
+                    icon: const Icon(Icons.add),
+                    label: Text(
+                      results
+                              .where((result) => !result.isAdded)
+                              .every((result) => result.isSelected)
+                          ? l10n.addAll
+                          : l10n.addSelection,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),

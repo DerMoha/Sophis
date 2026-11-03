@@ -10,7 +10,7 @@ import 'package:sophis/models/food_item.dart';
 import 'package:sophis/models/nutrition_label_draft.dart';
 import 'package:sophis/providers/settings_provider.dart';
 import 'package:sophis/services/barcode_lookup_service.dart';
-import 'package:sophis/services/gemini_food_service.dart';
+import 'package:sophis/services/ai_food_service_factory.dart';
 import 'package:sophis/services/gemini/models/nutrition_label_result.dart';
 import 'package:sophis/services/label_intake_flow.dart';
 import 'package:sophis/services/nutrition_label_validator.dart';
@@ -77,7 +77,7 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
         barcode: widget.barcode,
       );
       // Cloud help is a standing choice in Settings; no per-scan prompt.
-      final cloudAssistAllowed = flow.hasGeminiFallback &&
+      final cloudAssistAllowed = flow.hasCloudAiFallback &&
           context.read<SettingsProvider>().labelCloudHelpEnabled;
       final result = await flow.processImage(
         request,
@@ -143,12 +143,17 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
   }
 
   LabelIntakeFlow _buildFlow() {
-    final apiKey = context.read<SettingsProvider>().geminiApiKey;
-    final gemini = GeminiFoodService();
+    final settings = context.read<SettingsProvider>();
+    final apiKey = settings.activeAiApiKey;
+    final aiService = AiFoodServiceFactory.create(
+      provider: settings.aiProvider,
+      model: settings.aiModel,
+      baseUrl: settings.aiBaseUrl,
+    );
     if (apiKey != null && apiKey.isNotEmpty) {
-      gemini.initialize(apiKey);
+      aiService.initialize(apiKey);
     }
-    return LabelIntakeFlow(gemini: gemini);
+    return LabelIntakeFlow(aiService: aiService);
   }
 
   Future<void> _onSuccess(
@@ -176,7 +181,7 @@ class _BarcodeNotFoundSheetState extends State<BarcodeNotFoundSheet> {
       confirmed: confirmedLabel,
       outcome: fromPartialDraft
           ? NutritionScanOutcome.partialManualCompletion
-          : intake.source == NutritionLabelAnalysisSource.gemini
+          : intake.source != NutritionLabelAnalysisSource.localOcr
               ? NutritionScanOutcome.cloudSuccess
               : NutritionScanOutcome.localSuccess,
     );
