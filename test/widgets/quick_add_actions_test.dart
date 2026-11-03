@@ -48,7 +48,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Optional AI'), findsNothing);
       expect(find.text('Scan product'), findsNothing);
-      expect(find.text('Photos are sent to Google Gemini.'), findsOneWidget);
+      expect(find.text('Photos are sent to your selected AI provider.'), findsOneWidget);
       await tester.ensureVisible(find.text(action));
       await tester.tap(find.text(action));
       if (action == 'Nutrition label') {
