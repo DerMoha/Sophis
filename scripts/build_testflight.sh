@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SOPHIS_PRIVACY_POLICY_URL="${SOPHIS_PRIVACY_POLICY_URL:-https://dermoha.github.io/Sophis/privacy.html}"
+SOPHIS_SUPPORT_URL="${SOPHIS_SUPPORT_URL:-https://dermoha.github.io/Sophis/support.html}"
+SOPHIS_TERMS_URL="${SOPHIS_TERMS_URL:-https://dermoha.github.io/Sophis/terms.html}"
+
 usage() {
   cat <<'EOF'
 Build a signed Sophis iOS IPA for TestFlight.
 
-Required environment variables:
+Optional URL overrides (defaults to the published Sophis GitHub Pages site):
   SOPHIS_PRIVACY_POLICY_URL  Public HTTPS privacy policy URL
   SOPHIS_SUPPORT_URL         Public HTTPS support URL
   SOPHIS_TERMS_URL           Public HTTPS terms URL
