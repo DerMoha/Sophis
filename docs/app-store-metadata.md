@@ -41,7 +41,8 @@ immer vor dem Speichern.
 
 ## Review notes
 
-- No account is required.
+- Core tracking needs no account. Optional partner sharing uses a Firebase
+  account and supports account deletion in the app.
 - Manual entry and food search work without a cloud AI provider.
 - Barcode and nutrition-label flows request camera access only after a user
   selects the relevant action.

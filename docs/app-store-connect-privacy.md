@@ -6,7 +6,8 @@ of every enabled AI provider, Open Food Facts, and Brocade before publishing.
 
 ## What Sophis does not do
 
-- No user account or developer-operated backend.
+- Core tracking needs no account; optional partner sharing uses Firebase Auth
+  and Cloud Firestore.
 - No advertising, cross-app tracking, data broker, or analytics SDK.
 - No transmission of the local nutrition database merely because the app is
   installed or used offline.
@@ -14,6 +15,11 @@ of every enabled AI provider, Open Food Facts, and Brocade before publishing.
   high-confidence result.
 
 ## What can leave the device
+
+- Partner account email, account identifier, display name, and authentication
+  data sent to Firebase; shared diary entries, goals, and burned calories sent
+  to Firestore and made available to the connected partner. Review these as
+  linked to the user's identity for App Privacy.
 
 - Selected meal or recipe images and text sent directly to the AI provider
   selected by the user (Gemini, OpenAI, OpenRouter, Anthropic, or a custom

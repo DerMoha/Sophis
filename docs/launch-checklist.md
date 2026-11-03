@@ -38,7 +38,9 @@
     selects an AI action and supplies that provider's API key.
   - Health and fitness data is exchanged with Apple Health only after explicit
     permission.
-  - Sophis has no account, advertising, tracking, analytics SDK, or data broker.
+  - Optional partner sharing uses Firebase accounts and shares diary days,
+    goals, and burned calories with the connected partner.
+  - Sophis has no advertising, tracking, analytics SDK, or data broker.
 - Add localized English and German name/subtitle/description/keywords, privacy
   URL, support URL, review notes, screenshots, and the current version/build.
 - State in review notes that AI is optional and explain how reviewers can test

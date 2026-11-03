@@ -6,9 +6,9 @@
 
 **Contact:** [SUPPORT EMAIL AND POSTAL/LEGAL CONTACT AS REQUIRED]
 
-Sophis is a local-first nutrition tracking application. Sophis does not
-require an account, operate a user-data backend, use advertising, include
-cross-app tracking, or include third-party analytics.
+Sophis is a local-first nutrition tracking application. Core tracking does not require an account. Optional partner sharing uses
+Firebase Authentication and Cloud Firestore. Sophis does not use advertising,
+cross-app tracking, or third-party analytics.
 
 This policy explains what is processed on the device and what leaves the
 device when a user chooses an external feature. The final published version
@@ -35,6 +35,20 @@ Apple Health data is read or written only after the user grants the relevant
 HealthKit permission. Notifications and progress-photo biometric protection
 are handled locally by the operating system.
 
+## Optional partner sharing
+
+Creating a partner account sends your email address and authentication
+credentials to Firebase Authentication. Your profile includes a display name
+and account identifier. Connecting a partner shares your last seven diary
+days, including food entries, nutrition goals, and burned calories, through
+Cloud Firestore. Your connected partner can access this information.
+
+Disconnecting removes the shared day documents and connection. Account deletion
+in the app also removes your profile, invitations, and Firebase account.
+Deleting only local app data does not delete the remote partner account or
+copies another person has already retained. Firebase processing and retention
+are governed by Google's terms and privacy policy.
+
 ## Optional external features
 
 - Food search sends the search term to Open Food Facts. Barcode lookup sends
@@ -50,8 +64,10 @@ are handled locally by the operating system.
 - If the user submits a product to Open Food Facts, the entered Open Food
   Facts credentials and product data are sent to that service.
 
-Sophis does not proxy these requests through a developer-operated server.
-Google, Open Food Facts, Brocade, and Apple control their own processing and
+AI and food lookup requests are sent directly to the selected services.
+Partner sharing separately uses the Firebase backend described above.
+The selected AI providers, Google Firebase, Open Food Facts, Brocade, and Apple
+control their own processing and
 retention under their respective terms and privacy policies. Sophis does not
 use health, fitness, or photo data for advertising, marketing, or tracking.
 
