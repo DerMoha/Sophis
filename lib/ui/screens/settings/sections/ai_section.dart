@@ -73,13 +73,18 @@ class _AiSectionState extends State<AiSection> {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
               child: DropdownButtonFormField<AiProvider>(
+                isExpanded: true,
                 initialValue: widget.settings.aiProvider,
                 decoration: InputDecoration(labelText: l10n.aiProviderLabel),
                 items: AiProvider.values
                     .map(
                       (provider) => DropdownMenuItem(
                         value: provider,
-                        child: Text(_providerName(provider, l10n)),
+                        child: Text(
+                          _providerName(provider, l10n),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     )
                     .toList(),

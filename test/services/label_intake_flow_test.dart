@@ -7,7 +7,10 @@ import 'package:sophis/services/gemini_food_service.dart';
 import 'package:sophis/services/label_intake_flow.dart';
 import 'package:sophis/services/service_result.dart';
 
-class _MockGemini extends Mock implements GeminiFoodService {}
+class _MockGemini extends Mock implements GeminiFoodService {
+  @override
+  String get providerId => 'gemini';
+}
 
 void main() {
   group('LabelIntakeFlow', () {
