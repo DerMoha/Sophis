@@ -11,7 +11,7 @@ import 'package:sophis/models/nutrition_label_draft.dart';
 import 'package:sophis/models/food_item.dart';
 import 'package:sophis/models/serving_size.dart';
 import 'package:sophis/services/gemini/models/nutrition_label_result.dart';
-import 'package:sophis/services/gemini_food_service.dart';
+import 'package:sophis/services/ai_food_service.dart';
 import 'package:sophis/services/nutrition_label_parser.dart';
 import 'package:sophis/services/nutrition_label_validator.dart';
 import 'package:sophis/services/nutrition_image_quality_service.dart';
@@ -23,7 +23,7 @@ import 'package:sophis/services/service_result.dart';
 import 'package:sophis/services/scan_model_service.dart';
 
 /// Inputs for a single label-intake scan. The flow owns the OCR + parsing +
-/// Gemini-fallback policy; the caller only provides the bits of context that
+/// Cloud-AI fallback policy; the caller only provides the bits of context that
 /// vary by entry point (scanner vs. barcode-not-found recovery).
 class LabelIntakeRequest {
   final File imageFile;
@@ -69,7 +69,7 @@ enum LabelIntakeProgress {
 /// Deep service that owns the label-intake pipeline:
 /// 1. ML Kit OCR extraction
 /// 2. Local regex parser (NutritionLabelParser)
-/// 3. Gemini fallback (parseNutritionText) when local parse fails
+/// 3. Selected cloud AI fallback when local parsing fails
 /// 4. Calorie-sentinel validation
 /// 5. ServingSize generation
 /// 6. FoodItem construction
@@ -85,7 +85,7 @@ class LabelIntakeFlow {
   static const Duration _ocrTimeout = Duration(seconds: 8);
 
   final TextRecognizer _recognizer;
-  final GeminiFoodService? _gemini;
+  final AiFoodService? _aiService;
   final AiProviderRegistry _aiProviders;
   final NutritionImageQualityService _qualityService;
   final NutritionImagePreprocessor _preprocessor;
@@ -100,7 +100,8 @@ class LabelIntakeFlow {
 
   LabelIntakeFlow({
     ScanModelService scanModels = const ScanModelService(),
-    GeminiFoodService? gemini,
+    AiFoodService? aiService,
+    AiFoodService? gemini,
     AiProviderRegistry? aiProviderRegistry,
     NutritionImageQualityService qualityService =
         const NutritionImageQualityService(),
@@ -109,21 +110,23 @@ class LabelIntakeFlow {
     OnDeviceLabelReader onDeviceReader = const OnDeviceLabelReader(),
   })  : _onDeviceReader = onDeviceReader,
         _recognizer = TextRecognizer(script: TextRecognitionScript.latin),
-        _gemini = gemini,
-        _aiProviders = aiProviderRegistry ?? _registryForGemini(gemini),
+        _aiService = aiService ?? gemini,
+        _aiProviders =
+            aiProviderRegistry ?? _registryForCloudAi(aiService ?? gemini),
         _qualityService = qualityService,
         _preprocessor = preprocessor,
         _scanModels = scanModels;
 
-  static AiProviderRegistry _registryForGemini(GeminiFoodService? gemini) {
+  static AiProviderRegistry _registryForCloudAi(AiFoodService? aiService) {
     final registry = AiProviderRegistry();
-    if (gemini != null) {
-      registry.register(GeminiNutritionLabelAiProvider(gemini));
+    if (aiService != null) {
+      registry.register(CloudNutritionLabelAiProvider(aiService));
     }
     return registry;
   }
 
-  bool get hasGeminiFallback => _gemini?.hasApiKey ?? false;
+  bool get hasCloudAiFallback => _aiService?.hasApiKey ?? false;
+  bool get hasGeminiFallback => hasCloudAiFallback;
 
   /// Run the full pipeline on an image file. Returns a ServiceResult so the
   /// caller can surface the failure message without knowing about the
@@ -748,7 +751,9 @@ class LabelIntakeFlow {
           if (geminiLabel != null &&
               NutritionLabelValidator.validate(geminiLabel).isUsable) {
             label = geminiLabel;
-            source = NutritionLabelAnalysisSource.gemini;
+            source = _aiService?.providerId == 'gemini'
+                ? NutritionLabelAnalysisSource.gemini
+                : NutritionLabelAnalysisSource.cloudAi;
           }
         case final Failure<NutritionLabelResult?> failure:
           geminiFailure = failure;
@@ -818,9 +823,9 @@ class LabelIntakeFlow {
           Failure(type, message),
       };
     }
-    final gemini = _gemini;
-    if (gemini == null || !gemini.hasApiKey) return const Success(null);
-    return gemini.parseNutritionText(ocrText);
+    final aiService = _aiService;
+    if (aiService == null || !aiService.hasApiKey) return const Success(null);
+    return aiService.parseNutritionText(ocrText);
   }
 
   Success<NutritionLabelResult?> _rememberAndReturnCloudResult(
@@ -1014,7 +1019,7 @@ class LabelIntakeFlow {
     _disposed = true;
     _activeAttempt?.cancelled = true;
     _recognizer.close();
-    _gemini?.dispose();
+    _aiService?.dispose();
   }
 
   _LabelScanAttempt _beginAttempt() {

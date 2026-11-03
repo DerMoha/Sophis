@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:sophis/models/nutrition_label_draft.dart';
-import 'package:sophis/services/gemini_food_service.dart';
+import 'package:sophis/services/ai_food_service.dart';
 import 'package:sophis/services/gemini/models/nutrition_label_result.dart';
 import 'package:sophis/services/service_result.dart';
 
@@ -54,14 +54,14 @@ class AiProviderRegistry {
   }
 }
 
-/// First adapter for the existing BYO Gemini integration.
-class GeminiNutritionLabelAiProvider implements NutritionLabelAiProvider {
-  final GeminiFoodService service;
+/// Cloud adapter for the user-selected provider.
+class CloudNutritionLabelAiProvider implements NutritionLabelAiProvider {
+  final AiFoodService service;
 
-  const GeminiNutritionLabelAiProvider(this.service);
+  const CloudNutritionLabelAiProvider(this.service);
 
   @override
-  String get id => 'gemini';
+  String get id => service.providerId;
 
   @override
   Future<ServiceResult<NutritionLabelDraft>> readLabel({
@@ -80,7 +80,9 @@ class GeminiNutritionLabelAiProvider implements NutritionLabelAiProvider {
             )
           : Success(
               NutritionLabelDraft.fromResult(label).copyWith(
-                analysisSource: NutritionLabelAnalysisSource.gemini,
+                analysisSource: service.providerId == 'gemini'
+                    ? NutritionLabelAnalysisSource.gemini
+                    : NutritionLabelAnalysisSource.cloudAi,
               ),
             ),
       Failure<NutritionLabelResult?>(

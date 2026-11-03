@@ -3,6 +3,8 @@ import 'package:sophis/models/custom_meal_type.dart';
 
 enum AIMode { offlineBasic, offlinePro, cloud }
 
+enum AiProvider { gemini, openAi, openRouter, anthropic, custom }
+
 enum UnitSystem { metric, imperial }
 
 enum QuickActionSize { small, large }
@@ -77,6 +79,10 @@ class AccentColors {
 /// App settings and preferences
 class AppSettings {
   final AIMode aiMode;
+  final AiProvider aiProvider;
+  final String aiModel;
+  final String aiBaseUrl;
+  final Map<String, String> aiModels;
   final ThemeMode themeMode;
   final String? localeOverride;
   final double waterGoalMl;
@@ -113,6 +119,10 @@ class AppSettings {
 
   const AppSettings({
     this.aiMode = AIMode.offlineBasic,
+    this.aiProvider = AiProvider.gemini,
+    this.aiModel = '',
+    this.aiBaseUrl = '',
+    this.aiModels = const {},
     this.themeMode = ThemeMode.system,
     this.localeOverride,
     this.waterGoalMl = 2000,
@@ -143,6 +153,10 @@ class AppSettings {
 
   Map<String, dynamic> toJson() => {
         'aiMode': aiMode.index,
+        'aiProvider': aiProvider.index,
+        'aiModel': aiModel,
+        'aiBaseUrl': aiBaseUrl,
+        'aiModels': aiModels,
         'themeMode': themeMode.index,
         'localeOverride': localeOverride,
         'waterGoalMl': waterGoalMl,
@@ -173,6 +187,17 @@ class AppSettings {
         aiMode: json['aiMode'] != null
             ? AIMode.values[json['aiMode']]
             : AIMode.offlineBasic,
+        aiProvider: json['aiProvider'] != null &&
+                (json['aiProvider'] as int) >= 0 &&
+                (json['aiProvider'] as int) < AiProvider.values.length
+            ? AiProvider.values[json['aiProvider'] as int]
+            : AiProvider.gemini,
+        aiModel: json['aiModel'] as String? ?? '',
+        aiBaseUrl: json['aiBaseUrl'] as String? ?? '',
+        aiModels: (json['aiModels'] as Map<String, dynamic>?)?.map(
+              (key, value) => MapEntry(key, value.toString()),
+            ) ??
+            const {},
         themeMode: json['themeMode'] != null
             ? ThemeMode.values[json['themeMode']]
             : ThemeMode.system,
@@ -219,6 +244,10 @@ class AppSettings {
 
   AppSettings copyWith({
     AIMode? aiMode,
+    AiProvider? aiProvider,
+    String? aiModel,
+    String? aiBaseUrl,
+    Map<String, String>? aiModels,
     ThemeMode? themeMode,
     String? localeOverride,
     double? waterGoalMl,
@@ -250,6 +279,10 @@ class AppSettings {
   }) =>
       AppSettings(
         aiMode: aiMode ?? this.aiMode,
+        aiProvider: aiProvider ?? this.aiProvider,
+        aiModel: aiModel ?? this.aiModel,
+        aiBaseUrl: aiBaseUrl ?? this.aiBaseUrl,
+        aiModels: aiModels ?? this.aiModels,
         themeMode: themeMode ?? this.themeMode,
         localeOverride:
             clearLocale ? null : (localeOverride ?? this.localeOverride),

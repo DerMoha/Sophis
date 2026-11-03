@@ -353,6 +353,27 @@ class StorageService {
     return await _secureStorage.read(key: _apiKeyStorageKey);
   }
 
+  Future<void> saveAiApiKey(String providerId, String? key) async {
+    final storageKey = 'ai_api_key_$providerId';
+    if (key == null || key.isEmpty) {
+      await _secureStorage.delete(key: storageKey);
+      if (providerId == 'gemini') {
+        await _secureStorage.delete(key: _apiKeyStorageKey);
+      }
+      return;
+    }
+    await _secureStorage.write(key: storageKey, value: key);
+    if (providerId == 'gemini') {
+      await _secureStorage.write(key: _apiKeyStorageKey, value: key);
+    }
+  }
+
+  Future<String?> loadAiApiKey(String providerId) async {
+    final key = await _secureStorage.read(key: 'ai_api_key_$providerId');
+    if (key != null || providerId != 'gemini') return key;
+    return loadApiKey();
+  }
+
   // OpenFoodFacts credentials
   Future<void> saveOffCredentials(String? userId, String? password) async {
     if (userId == null || userId.isEmpty) {

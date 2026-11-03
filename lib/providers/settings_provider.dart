@@ -13,7 +13,7 @@ class SettingsProvider extends ChangeNotifier {
   final NotificationService _notifications;
   final HealthServiceProtocol _healthService;
   AppSettings _settings;
-  String? _geminiApiKey;
+  final Map<AiProvider, String?> _aiApiKeys = {};
   String? _offUserId;
   String? _offPassword;
 
@@ -32,11 +32,13 @@ class SettingsProvider extends ChangeNotifier {
 
   Future<void> _loadSecureData() async {
     try {
-      _geminiApiKey = await _storage.loadApiKey();
+      for (final provider in AiProvider.values) {
+        _aiApiKeys[provider] = await _storage.loadAiApiKey(provider.name);
+      }
       _offUserId = await _storage.loadOffUserId();
       _offPassword = await _storage.loadOffPassword();
     } catch (e) {
-      _geminiApiKey = null;
+      _aiApiKeys.clear();
       _offUserId = null;
       _offPassword = null;
     }
@@ -49,9 +51,15 @@ class SettingsProvider extends ChangeNotifier {
   AIMode get aiMode => _settings.aiMode;
   bool get onboardingCompleted => _settings.onboardingCompleted;
 
-  String? get geminiApiKey => _geminiApiKey;
-  bool get hasGeminiApiKey =>
-      _geminiApiKey != null && _geminiApiKey!.isNotEmpty;
+  String? get geminiApiKey => _aiApiKeys[AiProvider.gemini];
+  bool get hasGeminiApiKey => geminiApiKey != null && geminiApiKey!.isNotEmpty;
+  AiProvider get aiProvider => _settings.aiProvider;
+  String get aiModel => _settings.aiModel;
+  String get aiBaseUrl => _settings.aiBaseUrl;
+  String? get activeAiApiKey => _aiApiKeys[aiProvider];
+  bool get hasActiveAiApiKey => activeAiApiKey?.isNotEmpty == true;
+
+  String? apiKeyFor(AiProvider provider) => _aiApiKeys[provider];
 
   String? get offUserId => _offUserId;
   String? get offPassword => _offPassword;
@@ -122,9 +130,35 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   Future<void> setGeminiApiKey(String? key) async {
-    _geminiApiKey = key;
-    await _storage.saveApiKey(key);
+    await setAiApiKey(AiProvider.gemini, key);
+  }
+
+  Future<void> setAiApiKey(AiProvider provider, String? key) async {
+    _aiApiKeys[provider] = key;
+    await _storage.saveAiApiKey(provider.name, key);
     notifyListeners();
+  }
+
+  Future<void> setAiProvider(AiProvider provider) async {
+    await _persistSettings(
+      settings: _settings.copyWith(
+        aiProvider: provider,
+        aiModel: _settings.aiModels[provider.name] ?? '',
+      ),
+    );
+  }
+
+  Future<void> setAiModel(String model) async {
+    await _persistSettings(
+      settings: _settings.copyWith(
+        aiModel: model,
+        aiModels: {..._settings.aiModels, aiProvider.name: model},
+      ),
+    );
+  }
+
+  Future<void> setAiBaseUrl(String url) async {
+    await _persistSettings(settings: _settings.copyWith(aiBaseUrl: url));
   }
 
   Future<void> setOffCredentials(String? userId, String? password) async {
@@ -442,7 +476,7 @@ class SettingsProvider extends ChangeNotifier {
   /// Resets in-memory settings after StorageService has cleared local data.
   Future<void> resetAfterDataDeletion() async {
     _settings = _storage.loadSettings();
-    _geminiApiKey = null;
+    _aiApiKeys.clear();
     _offUserId = null;
     _offPassword = null;
     await _notifications.cancelAllReminders();

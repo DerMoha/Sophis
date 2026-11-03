@@ -1,6 +1,6 @@
 import 'package:sophis/models/nutrition_unit.dart';
 
-enum NutritionLabelAnalysisSource { localOcr, gemini }
+enum NutritionLabelAnalysisSource { localOcr, gemini, cloudAi }
 
 enum NutritionLabelField { calories, protein, carbs, fat, fiber }
 

@@ -10,9 +10,10 @@ import 'package:sophis/services/gemini_image_part_builder.dart';
 import 'package:sophis/services/gemini/models/models.dart';
 import 'package:sophis/models/nutrition_unit.dart';
 import 'package:sophis/services/service_result.dart';
+import 'package:sophis/services/ai_food_service.dart';
 
 /// Gemini AI service for accurate food recognition and nutrition estimation
-class GeminiFoodService {
+class GeminiFoodService implements AiFoodService {
   static const String modelName = 'gemini-3.5-flash-lite';
   static const String _fallbackModelName = 'gemini-3.6-flash';
   static const Duration _foodAnalysisTimeout = Duration(seconds: 45);
@@ -20,17 +21,28 @@ class GeminiFoodService {
   static const Duration _nutritionImageTimeout = Duration(seconds: 20);
 
   GenerativeModel? _model;
+  final String? selectedModel;
   String? _apiKey;
   bool _isInitialized = false;
   final GeminiImagePartBuilder _imagePartBuilder =
       const GeminiImagePartBuilder();
+
+  GeminiFoodService({this.selectedModel});
+
+  String get _primaryModelName => selectedModel?.trim().isNotEmpty == true
+      ? selectedModel!.trim()
+      : modelName;
 
   // App-side rate limit for Gemini requests
   static const int dailyLimit = 20;
   static const String _requestCountKey = 'gemini_request_count';
   static const String _requestDateKey = 'gemini_request_date';
 
+  @override
   bool get isInitialized => _isInitialized;
+  @override
+  String get providerId => 'gemini';
+  @override
   bool get hasApiKey => _apiKey != null && _apiKey!.isNotEmpty;
 
   /// Get today's request count
@@ -92,6 +104,7 @@ class GeminiFoodService {
   }
 
   /// Initialize with API key
+  @override
   ServiceResult<void> initialize(String apiKey) {
     if (apiKey.isEmpty) {
       return const Failure(ServiceErrorType.authFailed, 'API key is required');
@@ -99,7 +112,7 @@ class GeminiFoodService {
 
     _apiKey = apiKey;
     _model = GenerativeModel(
-      model: modelName,
+      model: _primaryModelName,
       apiKey: apiKey,
     );
     _isInitialized = true;
@@ -112,6 +125,7 @@ class GeminiFoodService {
   }
 
   /// Analyze multiple food images with optional correction hint
+  @override
   Future<ServiceResult<List<FoodAnalysis>>> analyzeFoodMultiple(
     List<File> imageFiles, {
     String? correctionHint,
@@ -178,7 +192,7 @@ If no food is visible, return: {"foods": []}
     try {
       debugPrint(
         'Gemini food analysis started '
-        '(model: $modelName, images: ${imageFiles.length})',
+        '(model: $_primaryModelName, images: ${imageFiles.length})',
       );
       final imageParts = await _buildImageParts(imageFiles).timeout(
         const Duration(seconds: 15),
@@ -218,7 +232,7 @@ If no food is visible, return: {"foods": []}
   }) async {
     try {
       return await _generateFoodAnalysisWithModel(
-        model: modelName,
+        model: _primaryModelName,
         imageParts: imageParts,
         prompt: prompt,
       );
@@ -226,11 +240,13 @@ If no food is visible, return: {"foods": []}
       if (!_isModelUnavailable(error)) rethrow;
 
       debugPrint(
-        '$modelName is unavailable for this API project; '
+        '$_primaryModelName is unavailable for this API project; '
         'retrying with $_fallbackModelName',
       );
       return _generateFoodAnalysisWithModel(
-        model: _fallbackModelName,
+        model: _primaryModelName == _fallbackModelName
+            ? modelName
+            : _fallbackModelName,
         imageParts: imageParts,
         prompt: prompt,
       );
@@ -355,6 +371,7 @@ If no food is visible, return: {"foods": []}
   }
 
   /// Re-analyze a single food item while keeping other items unchanged
+  @override
   Future<ServiceResult<FoodAnalysis?>> reanalyzeSingleFood(
     List<File> imageFiles, {
     required FoodAnalysis currentFood,
@@ -508,6 +525,7 @@ Respond ONLY with valid JSON in this exact format, no other text:
   }
 
   /// Extract recipe ingredients from an image of a recipe (cookbook, screenshot, etc.)
+  @override
   Future<ServiceResult<RecipeExtraction>> extractRecipeFromImage(
     File imageFile,
   ) async {
@@ -674,6 +692,7 @@ If no recipe is visible or readable, return:
   /// Reads a nutrition label directly from the source image. OCR text is only
   /// supporting evidence: the visible table layout remains authoritative so a
   /// per-serving column is not accidentally treated as the per-100g column.
+  @override
   Future<ServiceResult<NutritionLabelResult?>> parseNutritionImage(
     File imageFile, {
     String? ocrText,
@@ -778,6 +797,7 @@ not a readable nutrition label, return null for calories and all other values.
   /// Parse raw OCR text into nutrition values using Gemini (text-only, no image).
   /// This is used as a fallback when local ML Kit OCR succeeds but local
   /// parsing fails on complex or unusual label formats.
+  @override
   Future<ServiceResult<NutritionLabelResult?>> parseNutritionText(
     String ocrText,
   ) async {
@@ -864,8 +884,10 @@ clearly not a nutrition label, return null for calories and all other values.
 
   Future<String> _generateNutritionParts(List<Part> parts) async {
     final containsImage = parts.any((part) => part is DataPart);
-    final primaryModel = containsImage ? _fallbackModelName : modelName;
-    final secondaryModel = containsImage ? modelName : _fallbackModelName;
+    final primaryModel = _primaryModelName;
+    final secondaryModel = _primaryModelName == _fallbackModelName
+        ? modelName
+        : _fallbackModelName;
     final timeout =
         containsImage ? _nutritionImageTimeout : _nutritionTextTimeout;
     try {
@@ -970,6 +992,7 @@ clearly not a nutrition label, return null for calories and all other values.
     return text;
   }
 
+  @override
   void dispose() {
     _model = null;
     _isInitialized = false;
