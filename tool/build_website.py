@@ -5,17 +5,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1] / 'website'
 BASE = 'https://dermoha.github.io/Sophis/'
 EMAIL = 'sophis@brokenmoha.de'
-MARK = '''<svg viewBox="0 0 1024 1024" aria-hidden="true"><g transform="translate(0 1024) scale(1 -1)" fill="none" stroke="currentColor" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"><path d="M512 300V470 M512 350C365 365 280 465 285 600C435 585 510 490 512 350 M512 350C659 365 744 465 739 600C589 585 514 490 512 350 M512 710C415 605 445 550 512 500C579 550 609 605 512 710Z"/></g></svg>'''
 TEXT = {
 'en': {
  'nav': ['Overview', 'Support', 'Privacy', 'Beta terms'], 'skip': 'Skip to content',
- 'tag': 'A calmer way to track', 'hero': 'Your nutrition.<br>At your pace.',
- 'intro': 'A clear place for your meals, water and progress. Start with what you need, and make room for the rest when you’re ready.',
- 'help': 'Get support', 'source': 'View on GitHub', 'eyebrow': 'SOPHIS FOR iOS',
- 'beta': 'The TestFlight beta is on its way.', 'beta_body': 'We’re preparing the first public invitation. The testing link will appear here once the build is available.',
- 'features': [('Make logging easier', 'Add food manually, scan a barcode or read a nutrition label.'), ('Keep a daily overview', 'Bring meals, water, weight and meal planning together.'), ('Choose your AI', 'Optional photo analysis with your own key for Gemini, OpenAI, OpenRouter, Anthropic or a compatible endpoint.')],
- 'local_title': 'You decide what connects.', 'local_body': 'Core tracking stays on your device and needs no account. Cloud AI and sharing with one partner are optional. Each external feature tells you what is sent.',
- 'contact_title': 'A question, a bug, an idea?', 'contact_body': 'Tell us what happened and what you expected. A short, clear report helps us improve the beta.',
+ 'intro': 'Sophis is an iOS app for tracking meals, nutrition and water.',
  'email_label': 'Email support', 'issue_label': 'Report an issue', 'issue_body': 'GitHub Issues is public and requires a GitHub account. Include your app version, iOS version and steps to reproduce a bug. Keep API keys, passwords, health records and private photos out of public reports.',
  'delete_title': 'Account & data deletion', 'delete_body': 'Delete your optional partner account within the app. Local tracking data can be removed separately in Settings. For a private support or privacy request, email us.',
  'privacy_title': 'Privacy policy', 'privacy_intro': 'What stays on your device, and what happens when you choose an external feature.',
@@ -38,13 +31,7 @@ TEXT = {
  ]},
 'de': {
  'nav': ['Übersicht', 'Hilfe', 'Datenschutz', 'Beta-Bedingungen'], 'skip': 'Zum Inhalt',
- 'tag': 'Entspannter tracken', 'hero': 'Deine Ernährung.<br>In deinem Tempo.',
- 'intro': 'Ein übersichtlicher Platz für Mahlzeiten, Wasser und Fortschritte. Starte mit dem, was du brauchst. Alles Weitere kannst du später einrichten.',
- 'help': 'Hilfe bekommen', 'source': 'Auf GitHub ansehen', 'eyebrow': 'SOPHIS FÜR iOS',
- 'beta': 'Die TestFlight-Beta kommt.', 'beta_body': 'Wir bereiten die erste öffentliche Einladung vor. Sobald der Build verfügbar ist, findest du hier den Testlink.',
- 'features': [('Lebensmittel leichter erfassen', 'Trage Essen manuell ein, scanne einen Barcode oder lies eine Nährwerttabelle aus.'), ('Den Tag im Blick behalten', 'Mahlzeiten, Wasser, Gewicht und Essensplanung an einem Ort.'), ('Deine KI selbst wählen', 'Optionale Fotoanalyse mit deinem eigenen Schlüssel für Gemini, OpenAI, OpenRouter, Anthropic oder einen kompatiblen Anbieter.')],
- 'local_title': 'Du entscheidest, was sich verbindet.', 'local_body': 'Grundlegendes Tracking bleibt auf deinem Gerät und braucht kein Konto. Cloud-KI und das Teilen mit einem Partner sind optional. Die jeweilige Funktion zeigt dir, was übertragen wird.',
- 'contact_title': 'Eine Frage, ein Fehler, eine Idee?', 'contact_body': 'Beschreibe kurz, was passiert ist und was du erwartet hast. Ein klarer Bericht hilft uns, die Beta zu verbessern.',
+ 'intro': 'Sophis ist eine iOS-App zum Erfassen von Mahlzeiten, Nährwerten und Wasser.',
  'email_label': 'Support per E-Mail', 'issue_label': 'Fehler melden', 'issue_body': 'GitHub Issues ist öffentlich und erfordert ein GitHub-Konto. Nenne App-Version, iOS-Version und die Schritte zum Fehler. API-Schlüssel, Passwörter, Gesundheitsdaten und private Fotos gehören nicht in öffentliche Berichte.',
  'delete_title': 'Konto & Daten löschen', 'delete_body': 'Dein optionales Partnerkonto kannst du in der App löschen. Lokale Trackingdaten entfernst du separat in den Einstellungen. Für vertrauliche Support- oder Datenschutzanfragen schreibe uns eine E-Mail.',
  'privacy_title': 'Datenschutzerklärung', 'privacy_intro': 'Was auf deinem Gerät bleibt und was bei optionalen externen Funktionen passiert.',
@@ -66,26 +53,36 @@ TEXT = {
  ('Deine Rechte', ['Gesetzliche Rechte, die nicht ausgeschlossen werden dürfen, werden durch diese Hinweise nicht eingeschränkt. Für die Beta-Verteilung gelten außerdem die TestFlight-Bedingungen von Apple.', 'Bei Fragen hilft dir der <a href="support.html">Support</a>.'])
  ]}
 }
-PAGES = ['index.html','support.html','privacy.html','terms.html']
+PAGES = ['index.html', 'support.html', 'privacy.html', 'terms.html']
+
 def layout(lang, page, title, body):
- t=TEXT[lang]; prefix='../' if lang=='de' else ''; target=('de/' if lang=='en' else '../')+page
- nav=''.join(f'<a href="{p}"'+(' aria-current="page"' if p==page else '')+f'>{label}</a>' for p,label in zip(PAGES,t['nav']))
- switch=f'<a class="language" href="{target}" lang="'+('de' if lang=='en' else 'en')+'" aria-label="'+('Auf Deutsch lesen' if lang=='en' else 'Read in English')+'">'+('DE' if lang=='en' else 'EN')+'</a>'
+ t = TEXT[lang]
+ prefix = '../' if lang == 'de' else ''
+ target = ('de/' if lang == 'en' else '../') + page
+ nav = ' · '.join(f'<a href="{p}"' + (' aria-current="page"' if p == page else '') + f'>{label}</a>' for p, label in zip(PAGES, t['nav']))
  return f'''<!doctype html>
-<html lang="{lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{escape(title)} · Sophis</title><meta name="description" content="{escape(t['privacy_intro'] if page=='privacy.html' else t['intro'])}">
-<link rel="stylesheet" href="{prefix}site.css"><link rel="alternate" hreflang="en" href="{BASE}{page}"><link rel="alternate" hreflang="de" href="{BASE}de/{page}"></head>
-<body><a class="skip" href="#main">{t['skip']}</a><header class="header wrap"><a class="brand" href="index.html"><span class="logo">{MARK}</span>Sophis</a><nav aria-label="{'Main navigation' if lang=='en' else 'Hauptnavigation'}">{nav}</nav>{switch}</header>
-<main id="main" class="wrap">{body}</main><footer class="footer wrap"><div><a class="brand small" href="index.html">Sophis</a><p>{t['operator']}</p></div><div><a href="mailto:{EMAIL}">{EMAIL}</a><a href="https://github.com/DerMoha/Sophis">GitHub ↗</a><span>{t['updated']}</span></div></footer></body></html>'''
-def document(t,kind):
- sections=t[kind]; toc=''.join(f'<a href="#section-{i}">{title}</a>' for i,(title,_) in enumerate(sections,1))
- body=''.join(f'<section id="section-{i}"><h2>{title}</h2>'+''.join(p if p.startswith('<ul>') else '<p>'+p+'</p>' for p in paragraphs)+'</section>' for i,(title,paragraphs) in enumerate(sections,1))
- return f'<div class="page-heading"><p class="eyebrow">SOPHIS</p><h1>{t[kind+"_title"]}</h1><p class="lead">{t[kind+"_intro"]}</p><p class="date">{t["updated"]}</p></div><div class="document-grid"><aside><p class="eyebrow">{t["contents"]}</p>{toc}</aside><article class="document">{body}</article></div>'
-for lang,t in TEXT.items():
- folder=ROOT/('de' if lang=='de' else '');folder.mkdir(parents=True,exist_ok=True)
- features=''.join(f'<article class="feature"><span class="feature-number">0{i}</span><h2>{title}</h2><p>{body}</p></article>' for i,(title,body) in enumerate(t['features'],1))
- home=f'''<section class="hero"><div><p class="eyebrow">{t['tag']}</p><h1>{t['hero']}</h1><p class="lead">{t['intro']}</p><div class="actions"><a class="button" href="support.html">{t['help']} <span>↗</span></a><a class="text-link" href="https://github.com/DerMoha/Sophis">{t['source']} ↗</a></div></div><div class="brand-card"><div class="logo large">{MARK}</div><p class="eyebrow">{t['eyebrow']}</p><p class="brand-card-name">Sophis</p><div class="beta-status"><span class="status-dot"></span>TestFlight Beta</div></div></section><section class="features">{features}</section><section class="statement"><span class="eyebrow">{'YOUR CHOICE' if lang=='en' else 'DEINE ENTSCHEIDUNG'}</span><h2>{t['local_title']}</h2><p>{t['local_body']}</p><a class="text-link" href="privacy.html">{t['nav'][2]} →</a></section><section class="beta-banner"><div><h2>{t['beta']}</h2><p>{t['beta_body']}</p></div><span class="badge">iOS 17+</span></section>'''
- support=f'''<div class="page-heading"><p class="eyebrow">SUPPORT</p><h1>{t['contact_title']}</h1><p class="lead">{t['contact_body']}</p></div><div class="contact-grid"><section class="contact-card primary"><h2>{t['email_label']}</h2><a class="email" href="mailto:{EMAIL}">{EMAIL} ↗</a><p>{'For questions and private requests.' if lang=='en' else 'Für Fragen und vertrauliche Anliegen.'}</p></section><section class="contact-card"><h2>{t['issue_label']}</h2><p>{t['issue_body']}</p><a class="text-link" href="https://github.com/DerMoha/Sophis/issues">GitHub Issues ↗</a></section></div><section class="statement"><h2>{t['delete_title']}</h2><p>{t['delete_body']}</p></section>'''
- for page,title,body in [('index.html','Nutrition tracking' if lang=='en' else 'Ernährungstracking',home),('support.html',t['nav'][1],support),('privacy.html',t['privacy_title'],document(t,'privacy')),('terms.html',t['terms_title'],document(t,'terms'))]:
-  (folder/page).write_text(layout(lang,page,title,body))
-(ROOT/'.nojekyll').touch()
+<html lang="{lang}">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{escape(title)} · Sophis</title>
+<link rel="stylesheet" href="{prefix}site.css?v=2">
+<link rel="alternate" hreflang="en" href="{BASE}{page}">
+<link rel="alternate" hreflang="de" href="{BASE}de/{page}"></head>
+<body><a class="skip" href="#main">{t['skip']}</a>
+<header><a href="index.html" class="brand">Sophis</a><a href="{target}" lang="{'de' if lang == 'en' else 'en'}">{'Deutsch' if lang == 'en' else 'English'}</a></header>
+<nav aria-label="{'Navigation' if lang == 'en' else 'Navigation'}">{nav}</nav>
+<main id="main">{body}</main>
+<footer>{t['operator']} · <a href="mailto:{EMAIL}">{EMAIL}</a></footer>
+</body></html>'''
+
+def document(t, kind):
+ sections = ''.join('<section><h2>' + title + '</h2>' + ''.join(p if p.startswith('<ul>') else '<p>' + p + '</p>' for p in paragraphs) + '</section>' for title, paragraphs in t[kind])
+ return f'<h1>{t[kind + "_title"]}</h1><p class="muted">{t["updated"]}</p>{sections}'
+
+for lang, t in TEXT.items():
+ folder = ROOT / ('de' if lang == 'de' else '')
+ folder.mkdir(parents=True, exist_ok=True)
+ home = f'<h1>Sophis</h1><p>{t["intro"]}</p><p>' + ('The TestFlight beta is being prepared. A testing link will be added here when available.' if lang == 'en' else 'Die TestFlight-Beta wird vorbereitet. Sobald sie verfügbar ist, findest du hier den Testlink.') + '</p><p><a href="https://github.com/DerMoha/Sophis">GitHub</a></p>'
+ support = f'<h1>{t["nav"][1]}</h1><p>' + ('Questions or problems? Email ' if lang == 'en' else 'Bei Fragen oder Problemen schreibe an ') + f'<a href="mailto:{EMAIL}">{EMAIL}</a>.</p><h2>{t["issue_label"]}</h2><p>{t["issue_body"]}</p><p><a href="https://github.com/DerMoha/Sophis/issues">GitHub Issues</a></p><h2>{t["delete_title"]}</h2><p>{t["delete_body"]}</p>'
+ for page, title, body in [('index.html', t['nav'][0], home), ('support.html', t['nav'][1], support), ('privacy.html', t['privacy_title'], document(t, 'privacy')), ('terms.html', t['terms_title'], document(t, 'terms'))]:
+  (folder / page).write_text(layout(lang, page, title, body))
+(ROOT / '.nojekyll').touch()
