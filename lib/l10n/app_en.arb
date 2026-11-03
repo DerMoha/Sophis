@@ -66,7 +66,7 @@
       }
     }
   },
-  "errorApiKey": "Please set your Gemini API key in Settings",
+  "errorApiKey": "Please configure your AI provider API key in Settings",
   "errorInit": "Failed to initialize: {error}",
   "@errorInit": {
     "placeholders": {
@@ -91,7 +91,7 @@
       }
     }
   },
-  "goToSettings": "Set up Gemini API key",
+  "goToSettings": "Set up AI provider",
   "activity": "Activity",
   "burned": "+{amount} burned",
   "@burned": {
@@ -876,7 +876,7 @@
   "photographFood": "Photograph food",
   "scanProduct": "Scan product",
   "labelCloudHelpTitle": "Cloud help for labels",
-  "labelCloudHelpSubtitle": "Send hard-to-read label photos to Google Gemini. Off keeps label scans on your phone.",
+  "labelCloudHelpSubtitle": "Send hard-to-read label content to the selected AI provider. Off keeps label scans on your phone.",
   "labelReviewRequired": "Required",
   "labelReviewEnterEstimate": "Enter an estimate",
   "addFoodBarcode": "Barcode",

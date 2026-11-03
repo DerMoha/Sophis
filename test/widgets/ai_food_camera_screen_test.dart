@@ -63,7 +63,7 @@ void main() {
     expect(gallery.onPressed, isNull);
   });
 
-  testWidgets('AI screen opens Gemini settings when the key is missing', (
+  testWidgets('AI screen opens provider settings when the key is missing', (
     tester,
   ) async {
     final settings = await createWidgetTestSettingsProvider(tester);
@@ -76,9 +76,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Gemini-Key eintragen'), findsOneWidget);
+    expect(find.text('KI-Anbieter einrichten'), findsOneWidget);
 
-    await tester.tap(find.text('Gemini-Key eintragen'));
+    await tester.tap(find.text('KI-Anbieter einrichten'));
     await tester.pumpAndSettle();
 
     expect(find.text('API-Schlüssel für Google Gemini'), findsOneWidget);
