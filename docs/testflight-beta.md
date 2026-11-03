@@ -30,14 +30,17 @@
 
 ## Build and upload
 
-Replace the example domains with the three published URLs and run the release
-script. The script defaults the build number to the current Unix timestamp;
-pass an explicit number when you need a predictable build identifier.
+The release script defaults to the published GitHub Pages URLs:
+
+- Privacy: https://dermoha.github.io/Sophis/privacy.html
+- Support: https://dermoha.github.io/Sophis/support.html
+- Terms: https://dermoha.github.io/Sophis/terms.html
+- Public support and beta feedback: sophis@brokenmoha.de
+
+Override URLs with the three `SOPHIS_*_URL` environment variables when needed.
+Use a new build number for each uploaded build:
 
 ```bash
-export SOPHIS_PRIVACY_POLICY_URL=https://example.com/privacy
-export SOPHIS_SUPPORT_URL=https://example.com/support
-export SOPHIS_TERMS_URL=https://example.com/terms
 scripts/build_testflight.sh 2026110301
 ```
 
@@ -47,9 +50,6 @@ External testing requires Apple's beta review.
 
 ## Still needs account-owner input
 
-- Legal developer name, support contact, published URL domain, and final policy
-  wording.
-- Apple Developer/App Store Connect access and verification that signing works
-  for this machine.
+- Private review contact phone number for App Store Connect.
 - Final App Privacy and export-compliance answers based on the exact providers
   and production build.
