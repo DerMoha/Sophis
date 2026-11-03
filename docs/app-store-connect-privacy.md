@@ -24,8 +24,9 @@ of every enabled AI provider, Open Food Facts, and Brocade before publishing.
 - Selected meal or recipe images and text sent directly to the AI provider
   selected by the user (Gemini, OpenAI, OpenRouter, Anthropic, or a custom
   OpenAI-compatible endpoint) when the user invokes an AI feature.
-- OCR text sent to the selected provider only as the optional nutrition-label
-  fallback when local parsing is uncertain and a user API key is configured.
+- Label images and/or OCR text sent to the selected provider as the optional
+  nutrition-label fallback when local parsing is uncertain and a user API key
+  is configured.
 - Search terms sent to Open Food Facts.
 - Barcodes sent to Open Food Facts and, when needed, Brocade.
 - Product data and optional Open Food Facts credentials sent when the user

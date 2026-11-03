@@ -59,8 +59,8 @@ are governed by Google's terms and privacy policy.
   OpenRouter, Anthropic, or a custom OpenAI-compatible endpoint) using the
   user's own API key.
 - If local nutrition-label parsing is uncertain and the user has configured a
-  cloud AI API key, Sophis sends the OCR text—not the original label image—to
-  that provider as a fallback. AI results are estimates and must be reviewed.
+  cloud AI API key, Sophis may send the label image and/or OCR text to
+  that provider as an optional fallback. AI results are estimates and must be reviewed.
 - If the user submits a product to Open Food Facts, the entered Open Food
   Facts credentials and product data are sent to that service.
 
