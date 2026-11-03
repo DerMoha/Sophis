@@ -8,9 +8,8 @@
 - Open `ios/Runner.xcworkspace` and verify that the Runner and
   SophisWidgetExtension targets both use iOS 17.0, automatic signing, and the
   expected App Group, HealthKit, and keychain entitlements.
-- Xcode 27 beta builds are currently accepted for TestFlight only when the
-  exact beta/SDK combination is listed in Apple's App Store Connect release
-  notes. Use a stable Xcode release for the eventual App Store submission.
+- Use an Xcode version currently supported by App Store Connect for the beta
+  upload; verify the minimum version shown by Apple before each release.
 - Configure App Store distribution signing for `com.sophis.sophis` and the
   `SophisWidgetExtension` target.
 - Verify the HealthKit entitlement, keychain access group, and
@@ -35,8 +34,8 @@
   - Nutrition history, settings, credentials, and progress photos are stored
     locally by default.
   - Food search/barcode terms are sent to Open Food Facts and Brocade.
-  - Images/text are sent to Google Gemini only after the user selects an AI
-    action and supplies an API key.
+  - Images/text are sent to the selected AI provider only after the user
+    selects an AI action and supplies that provider's API key.
   - Health and fitness data is exchanged with Apple Health only after explicit
     permission.
   - Sophis has no account, advertising, tracking, analytics SDK, or data broker.

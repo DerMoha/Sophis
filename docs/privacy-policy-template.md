@@ -22,13 +22,14 @@ Sophis stores nutrition goals and logs, water and weight entries, workouts,
 meal plans, recipes, supplement records, preferences, barcode results, and
 progress photos locally on the device. The app uses SQLite and local
 preferences for app data and the operating system's secure credential storage
-for a user-provided Gemini API key and optional Open Food Facts credentials.
+for a user-provided AI provider API key and optional Open Food Facts
+credentials.
 
 Nutrition-label scanning is local by default. Google ML Kit performs on-device
 text recognition, and Sophis applies a local parser and validation rules to
-the OCR result. The original label image is not sent to Gemini during this
-local pass. Captured label images are currently also saved to the device's
-Photos library; users can manage or delete those copies there.
+the OCR result. The original label image is not sent to a cloud AI provider
+during this local pass. Captured label images are currently also saved to the
+device's Photos library; users can manage or delete those copies there.
 
 Apple Health data is read or written only after the user grants the relevant
 HealthKit permission. Notifications and progress-photo biometric protection
@@ -40,10 +41,12 @@ are handled locally by the operating system.
   the barcode to Open Food Facts and, if needed, Brocade to find product
   information. Returned results may be cached locally.
 - AI food, recipe, and image features send the image or text selected by the
-  user directly from the app to Google Gemini using the user's own API key.
+  user directly from the app to their selected provider (Google Gemini, OpenAI,
+  OpenRouter, Anthropic, or a custom OpenAI-compatible endpoint) using the
+  user's own API key.
 - If local nutrition-label parsing is uncertain and the user has configured a
-  Gemini API key, Sophis sends the OCR text—not the original label image—to
-  Gemini as a fallback. Gemini results are estimates and must be reviewed.
+  cloud AI API key, Sophis sends the OCR text—not the original label image—to
+  that provider as a fallback. AI results are estimates and must be reviewed.
 - If the user submits a product to Open Food Facts, the entered Open Food
   Facts credentials and product data are sent to that service.
 

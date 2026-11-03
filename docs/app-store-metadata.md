@@ -15,8 +15,9 @@ workout, supplement, and progress-photo tools stay available without crowding
 the daily flow.
 
 Your core history is stored locally. AI photo analysis is optional, uses your
-own Gemini API key, and clearly identifies when selected content is sent for
-cloud processing. AI nutrition estimates should always be reviewed.
+own key with Gemini, OpenAI, OpenRouter, Anthropic, or a compatible endpoint,
+and clearly identifies when selected content is sent for cloud processing. AI
+nutrition estimates should always be reviewed.
 
 ## Deutsch
 
@@ -33,14 +34,15 @@ Gewicht, Training, Supplemente und Fortschrittsfotos bleiben verfügbar, ohne
 den täglichen Ablauf zu überladen.
 
 Deine wichtigsten Daten werden lokal gespeichert. Die KI-Fotoanalyse ist
-optional, verwendet deinen eigenen Gemini-API-Schlüssel und weist darauf hin,
-wenn ausgewählte Inhalte zur Cloud-Verarbeitung gesendet werden. Prüfe
-KI-Schätzungen immer vor dem Speichern.
+optional und nutzt deinen eigenen Schlüssel bei Gemini, OpenAI, OpenRouter,
+Anthropic oder einem kompatiblen Endpoint. Die App weist darauf hin, wenn
+ausgewählte Inhalte zur Cloud-Verarbeitung gesendet werden. Prüfe KI-Schätzungen
+immer vor dem Speichern.
 
 ## Review notes
 
 - No account is required.
-- Manual entry and food search work without Gemini.
+- Manual entry and food search work without a cloud AI provider.
 - Barcode and nutrition-label flows request camera access only after a user
   selects the relevant action.
 - HealthKit, notifications, biometrics, and AI are optional.
