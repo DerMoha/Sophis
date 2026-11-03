@@ -81,7 +81,7 @@ void main() {
     await tester.tap(find.text('Gemini-Key eintragen'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Gemini API Key'), findsOneWidget);
+    expect(find.text('API-Schlüssel für Google Gemini'), findsOneWidget);
     expect(find.text('API Key eingeben'), findsOneWidget);
   });
 }
