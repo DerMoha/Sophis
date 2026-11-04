@@ -81,7 +81,7 @@ def document(t, kind):
 for lang, t in TEXT.items():
  folder = ROOT / ('de' if lang == 'de' else '')
  folder.mkdir(parents=True, exist_ok=True)
- home = f'<h1>Sophis</h1><p>{t["intro"]}</p><p>' + ('The TestFlight beta is awaiting Apple’s review. <a href="https://testflight.apple.com/join/wf41vGqu">TestFlight invitation</a> (available after approval).' if lang == 'en' else 'Die TestFlight-Beta wartet auf Apples Prüfung. <a href="https://testflight.apple.com/join/wf41vGqu">TestFlight-Einladung</a> (nach der Freigabe nutzbar).') + '</p><p><a href="https://github.com/DerMoha/Sophis">GitHub</a></p>'
+ home = f'<h1>Sophis</h1><p>{t["intro"]}</p><p>' + ('<a href="https://testflight.apple.com/join/wf41vGqu">Join the beta here.</a>' if lang == 'en' else '<a href="https://testflight.apple.com/join/wf41vGqu">Hier kannst du der Beta beitreten.</a>') + '</p><p><a href="https://github.com/DerMoha/Sophis">GitHub</a></p>'
  support = f'<h1>{t["nav"][1]}</h1><p>' + ('Questions or problems? Email ' if lang == 'en' else 'Bei Fragen oder Problemen schreibe an ') + f'<a href="mailto:{EMAIL}">{EMAIL}</a>.</p><h2>{t["issue_label"]}</h2><p>{t["issue_body"]}</p><p><a href="https://github.com/DerMoha/Sophis/issues">GitHub Issues</a></p><h2>{t["delete_title"]}</h2><p>{t["delete_body"]}</p>'
  for page, title, body in [('index.html', t['nav'][0], home), ('support.html', t['nav'][1], support), ('privacy.html', t['privacy_title'], document(t, 'privacy')), ('terms.html', t['terms_title'], document(t, 'terms'))]:
   (folder / page).write_text(layout(lang, page, title, body))
